@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { PlatformProvider } from "@/OS/lib/PlatformDetection";
-import { ThemeProvider } from "@/OS/lib/ThemeProvider";
-import { Web3Provider } from "./lib/Web3";
+import { Providers } from "./providers";
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,11 +26,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Web3Provider>
-          <PlatformProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-          </PlatformProvider>
-        </Web3Provider>
+        <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
