@@ -1,26 +1,256 @@
-@import "tailwindcss";
+/* Berry OS - Global Styles */
 
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================================================
+   ROOT THEME VARIABLES
+   These are set dynamically by applySettings.ts when the theme changes.
+   Default values here are for Berry Classic theme.
+   ============================================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* === BACKGROUNDS === */
+  --berry-bg: #e0e0e0;
+  --berry-bg-secondary: #f0f0f0;
+  --berry-bg-tertiary: #ffffff;
+  --berry-desktop-bg: #008080;
+
+  /* === TEXT === */
+  --berry-text: #000000;
+  --berry-text-primary: #000000;
+  --berry-text-secondary: #333333;
+  --berry-text-muted: #666666;
+  --berry-text-inverse: #ffffff;
+
+  /* === ACCENT / PRIMARY === */
+  --berry-accent: #e93737;
+  --berry-primary: #e93737;
+  --berry-primary-hover: #cc2f2f;
+  --berry-accent-hover: #cc2f2f;
+  --berry-accent-active: #a32525;
+
+  /* === WINDOW CHROME === */
+  --berry-window-bg: #f0f0f0;
+  --berry-window-border: #cccccc;
+  --berry-title-bar-bg: #cccccc;
+  --berry-title-bar-text: #000000;
+  --berry-window-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+
+  /* === CONTROLS === */
+  --berry-button-bg: #e0e0e0;
+  --berry-button-text: #000000;
+  --berry-input-bg: #ffffff;
+  --berry-input-border: #cccccc;
+  --berry-border: #cccccc;
+
+  /* === DOCK === */
+  --berry-dock-bg: rgba(255, 255, 255, 0.25);
+  --berry-dock-border: rgba(255, 255, 255, 0.3);
+  --berry-dock-icon-size: 48px;
+
+  /* === MENU BAR === */
+  --berry-menu-bar-bg: #e0e0e0;
+  --berry-menu-bar-text: #000000;
+  --berry-menubar-height: 28px;
+
+  /* === SEMANTIC COLORS === */
+  --berry-success: #28a745;
+  --berry-warning: #ffc107;
+  --berry-error: #dc3545;
+  --berry-info: #17a2b8;
+
+  /* === TYPOGRAPHY === */
+  --berry-font-system: "Chicago", "Geneva", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --berry-font-size: 12px;
+  --berry-font-size-base: 14px;
+
+  /* === DESKTOP ICONS === */
+  --berry-desktop-icon-size: 64px;
+  --berry-desktop-icon-spacing: 16px;
+
+  /* === MISC === */
+  --berry-border-radius: 0px;
+  --berry-scrollbar-width: 16px;
+  --berry-scrollbar-track: var(--berry-bg-secondary);
+  --berry-scrollbar-thumb: #999999;
+  --berry-transition-speed: 0.15s;
+  --berry-easing: ease;
+
+  /* === Z-INDEX SCALE === */
+  --z-desktop: 0;
+  --z-window: 100;
+  --z-window-focused: 200;
+  --z-modal: 1000;
+  --z-dropdown: 1100;
+  --z-tooltip: 1200;
+  --z-dock: 1300;
+  --z-menubar: 1400;
+  --z-notification: 1500;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================================================
+   THEME DATA ATTRIBUTES
+   Applied by applySettings.ts to enable dark mode specific overrides
+   ============================================================================ */
+[data-theme="dark"] {
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* ============================================================================
+   FONT FACES
+   ============================================================================ */
+@font-face {
+  font-family: "Chicago";
+  src: url("/fonts/Chicago.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geneva";
+  src: url("/fonts/Geneva.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
+html,
+body {
+  height: 100%;
+  width: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-size-base);
+  color: var(--berry-text-primary);
+  background: var(--berry-desktop-bg);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* Selection */
+::selection {
+  background: var(--berry-accent);
+  color: var(--berry-text-inverse);
+}
+
+/* Focus outline */
+:focus-visible {
+  outline: 2px solid var(--berry-accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   SCROLLBAR STYLING
+   ============================================================================ */
+::-webkit-scrollbar {
+  width: var(--berry-scrollbar-width);
+  height: var(--berry-scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--berry-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--berry-scrollbar-thumb);
+  border: 1px solid var(--berry-border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--berry-text-muted);
+}
+
+/* ============================================================================
+   ACCESSIBILITY CLASSES
+   Applied by applySettings.ts based on user preferences
+   ============================================================================ */
+
+/* Reduce motion preference */
+.reduce-motion,
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Also respect system preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Reduce transparency - use solid backgrounds */
+.reduce-transparency .dock,
+.reduce-transparency [class*="dock"],
+.reduce-transparency .menuBar,
+.reduce-transparency [class*="menuBar"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* High contrast mode */
+.high-contrast {
+  --berry-border: currentColor;
+}
+
+.high-contrast * {
+  border-color: currentColor !important;
+}
+
+/* Enhanced focus indicators */
+.enhanced-focus *:focus-visible {
+  outline: 3px solid var(--berry-accent) !important;
+  outline-offset: 3px !important;
+}
+
+/* Large click targets */
+.large-click-targets button,
+.large-click-targets [role="button"],
+.large-click-targets a,
+.large-click-targets input[type="checkbox"],
+.large-click-targets input[type="radio"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

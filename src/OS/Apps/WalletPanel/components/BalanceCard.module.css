@@ -1,0 +1,88 @@
+/* BalanceCard Component */
+
+.balanceCard {
+  padding: 16px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.label {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--berry-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.balanceDisplay {
+  padding: 20px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.amount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.symbol {
+  font-size: 28px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.value {
+  font-family: var(--berry-font-system);
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  line-height: 1;
+}
+
+.unit {
+  font-family: var(--berry-font-system);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--berry-text-secondary);
+  line-height: 1;
+  align-self: flex-end;
+  padding-bottom: 4px;
+}
+
+/* Loading skeleton */
+.loadingSkeleton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.skeletonIcon {
+  width: 32px;
+  height: 32px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonValue {
+  width: 120px;
+  height: 32px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+

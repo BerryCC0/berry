@@ -1,0 +1,58 @@
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--berry-border-light, rgba(0, 0, 0, 0.08));
+  gap: 16px;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.labelContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+}
+
+.description {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.control {
+  flex-shrink: 0;
+}
+
+/* Setting Group */
+.group {
+  margin-bottom: 24px;
+}
+
+.groupTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.groupContent {
+  background: var(--berry-bg-secondary);
+  border-radius: 8px;
+  padding: 4px 16px;
+}
+

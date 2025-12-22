@@ -1,0 +1,137 @@
+/* Window - Mobile Platform Styles */
+
+.window {
+  position: fixed;
+  top: var(--berry-menubar-height);
+  left: 0;
+  right: 0;
+  bottom: var(--berry-dock-size);
+  display: flex;
+  flex-direction: column;
+  background: var(--berry-bg);
+  z-index: var(--z-window);
+}
+
+.windowFocused {
+  z-index: var(--z-window-focused);
+}
+
+.windowBlurred {
+  display: none;
+}
+
+.windowDragging,
+.windowResizing {
+  /* No dragging/resizing on mobile */
+}
+
+/* Title Bar */
+.titleBar {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    #eeeeee 100%
+  );
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.titleBarFocused {
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    #f0f0f0 100%
+  );
+}
+
+.titleBarDragging {
+  /* No dragging on mobile */
+}
+
+/* Window Controls */
+.windowControls {
+  display: flex;
+  gap: 8px;
+}
+
+.controlButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #e0e0e0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--berry-text);
+}
+
+.controlButton:active {
+  background: #d0d0d0;
+}
+
+.closeButton {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+  color: white;
+}
+
+.minimizeButton {
+  background: linear-gradient(135deg, #ffd93d 0%, #f5c800 100%);
+}
+
+.maximizeButton {
+  display: none; /* No maximize on mobile */
+}
+
+/* Title */
+.titleIcon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  image-rendering: pixelated;
+}
+
+.titleText {
+  flex: 1;
+  font-family: var(--berry-font-system);
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--berry-text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titleTextBlurred {
+  color: var(--berry-text-secondary);
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  overflow: auto;
+  background: var(--berry-bg);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* No resize handles on mobile */
+.resizeHandle,
+.resizeHandleN,
+.resizeHandleS,
+.resizeHandleE,
+.resizeHandleW,
+.resizeHandleNE,
+.resizeHandleNW,
+.resizeHandleSE,
+.resizeHandleSW {
+  display: none;
+}
+

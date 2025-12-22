@@ -1,0 +1,82 @@
+/* Desktop - Mobile Platform Styles */
+
+.desktop {
+  position: fixed;
+  top: var(--berry-menubar-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--berry-desktop-bg);
+  /* Simpler pattern for mobile */
+  background-image: 
+    linear-gradient(45deg, rgba(0, 102, 102, 0.3) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 102, 102, 0.3) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 102, 102, 0.3) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 102, 102, 0.3) 75%);
+  background-size: 4px 4px;
+  overflow: hidden;
+  z-index: var(--z-desktop);
+}
+
+.iconContainer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 16px;
+  width: 100%;
+}
+
+/* Desktop Icon - Mobile */
+.icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.icon:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.iconSelected {
+  background: rgba(0, 0, 255, 0.2);
+}
+
+.iconImage {
+  width: 56px;
+  height: 56px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.iconLabel {
+  margin-top: 6px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: #ffffff;
+  text-align: center;
+  text-shadow: 
+    1px 1px 2px rgba(0, 0, 0, 0.9),
+    -1px -1px 2px rgba(0, 0, 0, 0.9);
+  word-break: break-word;
+  max-width: 72px;
+  line-height: 1.2;
+}
+
+.iconLabelSelected {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+  text-shadow: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Dragging state - mobile uses grid so this is less relevant but included for consistency */
+.iconDragging {
+  opacity: 0.85;
+  z-index: 1000;
+  transform: scale(1.05);
+}
+

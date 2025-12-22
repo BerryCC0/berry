@@ -1,0 +1,152 @@
+/* MenuBar - Mobile Platform Styles */
+
+.menuBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--berry-menubar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    #f0f0f0 100%
+  );
+  border-bottom: 1px solid var(--berry-border);
+  z-index: var(--z-menubar);
+  user-select: none;
+}
+
+.menuItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.menuItem:active {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.menuItemActive {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.berryMenu {
+  padding: 0 4px;
+}
+
+.berryIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.appName {
+  font-weight: bold;
+}
+
+.menuLabel {
+  font-family: var(--berry-font-system);
+  font-size: 14px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.statusArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+}
+
+.walletButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--berry-text);
+}
+
+.walletButton:active {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.walletIndicator {
+  color: #4ade80;
+  font-size: 10px;
+}
+
+.walletAddress {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+}
+
+.clock {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text);
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: fixed;
+  top: var(--berry-menubar-height);
+  left: 0;
+  right: 0;
+  background: var(--berry-bg);
+  border-bottom: 1px solid var(--berry-border);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: var(--z-dropdown);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 16px;
+  color: var(--berry-text);
+  border-bottom: 1px solid var(--berry-bg-secondary);
+}
+
+.dropdownItem:active {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: var(--berry-border);
+}
+
+.dropdownItemIcon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  object-fit: contain;
+}
+
+.dropdownItemDisabled {
+  color: var(--berry-text-secondary);
+}
+

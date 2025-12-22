@@ -1,0 +1,134 @@
+/* WalletPanel - Wallet Management App */
+
+.container {
+  height: 100%;
+  background: var(--berry-bg-primary);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Disconnected State */
+.disconnected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1;
+  padding: 40px 24px;
+}
+
+.iconLarge {
+  font-size: 64px;
+  margin-bottom: 16px;
+  filter: grayscale(0.3);
+}
+
+.title {
+  font-family: var(--berry-font-system);
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin: 0 0 12px 0;
+}
+
+.description {
+  font-size: 14px;
+  color: var(--berry-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+  max-width: 280px;
+}
+
+.connectButton {
+  background: var(--berry-accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 40px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.connectButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.connectButton:active {
+  transform: translateY(0);
+}
+
+.note {
+  font-size: 11px;
+  color: var(--berry-text-muted);
+  margin-top: 24px;
+  line-height: 1.6;
+}
+
+/* Footer Actions */
+.footer {
+  padding: 16px;
+  border-top: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.secondaryButton {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  color: var(--berry-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.secondaryButton:hover {
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-primary);
+}
+
+.disconnectButton {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid var(--berry-error, #ef4444);
+  border-radius: 8px;
+  color: var(--berry-error, #ef4444);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.disconnectButton:hover {
+  background: var(--berry-error, #ef4444);
+  color: white;
+}
+
+/* Custom scrollbar */
+.container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.container::-webkit-scrollbar-track {
+  background: var(--berry-bg-secondary);
+}
+
+.container::-webkit-scrollbar-thumb {
+  background: var(--berry-border);
+  border-radius: 4px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background: var(--berry-text-muted);
+}

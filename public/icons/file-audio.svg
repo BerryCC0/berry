@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Audio file -->
+  <path d="M6 2h14l6 6v22H6V2z" fill="#fff"/>
+  <path d="M20 2v6h6" fill="#e0e0e0"/>
+  <rect x="6" y="2" width="20" height="28" stroke="#000" stroke-width="1" fill="none"/>
+  <path d="M20 2l6 6h-6V2z" stroke="#000" stroke-width="1" fill="none"/>
+  <!-- Audio icon -->
+  <circle cx="13" cy="22" r="3" fill="#8B4513" stroke="#000" stroke-width="0.5"/>
+  <path d="M16 22V12l6-2v8" stroke="#000" stroke-width="1.5" fill="none"/>
+  <circle cx="22" cy="20" r="2" fill="#8B4513" stroke="#000" stroke-width="0.5"/>
+</svg>
+

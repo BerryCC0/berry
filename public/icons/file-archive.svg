@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Archive/zip file -->
+  <path d="M6 2h14l6 6v22H6V2z" fill="#fff"/>
+  <path d="M20 2v6h6" fill="#e0e0e0"/>
+  <rect x="6" y="2" width="20" height="28" stroke="#000" stroke-width="1" fill="none"/>
+  <path d="M20 2l6 6h-6V2z" stroke="#000" stroke-width="1" fill="none"/>
+  <!-- Zipper pattern -->
+  <rect x="14" y="4" width="4" height="3" fill="#808080"/>
+  <rect x="14" y="10" width="4" height="3" fill="#808080"/>
+  <rect x="14" y="16" width="4" height="3" fill="#808080"/>
+  <rect x="14" y="22" width="4" height="5" fill="#FFD700" stroke="#000" stroke-width="0.5"/>
+</svg>
+

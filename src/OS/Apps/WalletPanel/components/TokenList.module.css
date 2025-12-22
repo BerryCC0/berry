@@ -1,0 +1,188 @@
+/* TokenList Component */
+
+.tokenList {
+  padding: 16px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.label {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--berry-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+}
+
+.tokenRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  transition: background 0.1s ease;
+}
+
+.tokenRow:not(:last-child) {
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.tokenRow:hover {
+  background: var(--berry-bg-tertiary);
+}
+
+.tokenIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--berry-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tokenLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tokenEmoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.tokenInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tokenSymbol {
+  font-family: var(--berry-font-system);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.tokenName {
+  font-size: 11px;
+  color: var(--berry-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tokenBalance {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  text-align: right;
+}
+
+/* Loading skeleton */
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--berry-bg-primary);
+  border-radius: 8px;
+}
+
+.skeletonIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--berry-bg-tertiary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonText {
+  flex: 1;
+  height: 16px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.1s;
+}
+
+.skeletonBalance {
+  width: 60px;
+  height: 16px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Error state */
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  color: var(--berry-text-secondary);
+  font-size: 13px;
+}
+
+/* Empty state */
+.empty {
+  padding: 24px 16px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  color: var(--berry-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Custom scrollbar */
+.list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: var(--berry-border);
+  border-radius: 3px;
+}
+
+.list::-webkit-scrollbar-thumb:hover {
+  background: var(--berry-text-muted);
+}
+

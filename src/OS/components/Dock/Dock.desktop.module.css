@@ -1,0 +1,252 @@
+/* Dock - Desktop Platform Styles (Modern macOS Style) */
+
+.dock {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-dock);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+
+  /* Icon size variable - controlled by resize */
+  --dock-icon-size: 48px;
+}
+
+/* Position: Bottom (default) */
+.dock,
+.dockBottom {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Position: Left */
+.dockLeft {
+  left: 8px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.dockLeft .dockContainer {
+  flex-direction: column;
+}
+
+.dockLeft .dockSection {
+  flex-direction: column;
+}
+
+.dockLeft .dockDivider {
+  width: calc(var(--dock-icon-size) * 0.6);
+  height: 1px;
+  margin: 6px 0;
+  cursor: ew-resize;
+}
+
+.dockLeft .dockDivider:hover {
+  width: calc(var(--dock-icon-size) * 0.75);
+  height: 1px;
+}
+
+.dockLeft .dockIconLabel {
+  left: calc(100% + 8px);
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Position: Right */
+.dockRight {
+  right: 8px;
+  left: auto;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.dockRight .dockContainer {
+  flex-direction: column;
+}
+
+.dockRight .dockSection {
+  flex-direction: column;
+}
+
+.dockRight .dockDivider {
+  width: calc(var(--dock-icon-size) * 0.6);
+  height: 1px;
+  margin: 6px 0;
+  cursor: ew-resize;
+}
+
+.dockRight .dockDivider:hover {
+  width: calc(var(--dock-icon-size) * 0.75);
+  height: 1px;
+}
+
+.dockRight .dockIconLabel {
+  right: calc(100% + 8px);
+  left: auto;
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Auto-hide: Hidden state */
+.dockHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dockHidden.dockBottom {
+  transform: translateX(-50%) translateY(100%);
+}
+
+.dockHidden.dockLeft {
+  transform: translateY(-50%) translateX(-100%);
+}
+
+.dockHidden.dockRight {
+  transform: translateY(-50%) translateX(100%);
+}
+
+.dockContainer {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 4px 10px;
+  background: var(--berry-dock-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--berry-dock-border);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Dock Section - groups of icons */
+.dockSection {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* Divider between sections */
+.dockDivider {
+  width: 1px;
+  height: calc(var(--dock-icon-size) * 0.6);
+  margin: 0 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1px;
+  cursor: ns-resize;
+  transition: background 0.15s ease, height 0.15s ease;
+  align-self: center;
+}
+
+.dockDivider:hover {
+  background: rgba(0, 0, 0, 0.4);
+  height: calc(var(--dock-icon-size) * 0.75);
+}
+
+/* Dock Icon */
+.dockIcon {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dockIcon:hover {
+  transform: scale(1.1);
+}
+
+.dockIconFocused {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dockIconImage {
+  width: var(--dock-icon-size);
+  height: var(--dock-icon-size);
+  image-rendering: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: width 0.1s ease, height 0.1s ease;
+}
+
+.dockIconLabel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  background: rgba(30, 30, 30, 0.9);
+  color: white;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dockIcon:hover .dockIconLabel {
+  opacity: 1;
+}
+
+/* Running indicator dot */
+.runningIndicator {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+}
+
+.minimizedIndicator {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* =============================================================================
+   TRIGGER ZONES FOR AUTO-HIDE
+   Invisible areas at screen edges that reveal the dock on hover
+   ============================================================================= */
+
+.dockTrigger {
+  position: fixed;
+  z-index: calc(var(--z-dock) - 1);
+  background: transparent;
+}
+
+/* Bottom trigger - full width strip at bottom of screen */
+.dockTriggerBottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+/* Left trigger - full height strip at left of screen */
+.dockTriggerLeft {
+  left: 0;
+  top: var(--berry-menubar-height, 28px);
+  bottom: 0;
+  width: 4px;
+}
+
+/* Right trigger - full height strip at right of screen */
+.dockTriggerRight {
+  right: 0;
+  top: var(--berry-menubar-height, 28px);
+  bottom: 0;
+  width: 4px;
+}

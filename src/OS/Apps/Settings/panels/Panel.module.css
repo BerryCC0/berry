@@ -1,0 +1,287 @@
+.panel {
+  max-width: 600px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.actions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--berry-border-light, rgba(0, 0, 0, 0.08));
+  display: flex;
+  gap: 12px;
+}
+
+.note {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--berry-bg-secondary);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.note strong {
+  color: var(--berry-text-primary);
+}
+
+.statusText {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  font-style: italic;
+}
+
+/* About Panel */
+.aboutContainer {
+  text-align: center;
+  padding: 16px;
+}
+
+.logoSection {
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 12px;
+}
+
+.productName {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.version {
+  font-size: 13px;
+  color: var(--berry-text-secondary);
+}
+
+.descriptionSection {
+  margin-bottom: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.descriptionSection p {
+  margin-bottom: 8px;
+}
+
+.subtext {
+  color: var(--berry-text-secondary);
+  font-size: 13px;
+}
+
+.infoSection {
+  background: var(--berry-bg-secondary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--berry-border-light, rgba(0, 0, 0, 0.08));
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoLabel {
+  font-size: 13px;
+  color: var(--berry-text-secondary);
+}
+
+.infoValue {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.credits {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.credits p {
+  margin-bottom: 4px;
+}
+
+.links a {
+  color: var(--berry-primary);
+  text-decoration: none;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* Wallpaper Picker */
+.wallpaperPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.colorSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.colorSwatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.colorSwatch:hover {
+  transform: scale(1.1);
+}
+
+.colorSwatchActive {
+  border-color: var(--berry-accent);
+  box-shadow: 
+    inset 0 0 0 1px rgba(0, 0, 0, 0.15),
+    0 0 0 2px var(--berry-accent);
+}
+
+.customUrlRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.customUrlInput {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--berry-input-border);
+  border-radius: 4px;
+  background: var(--berry-input-bg);
+  color: var(--berry-text-primary);
+  min-width: 0;
+}
+
+.customUrlInput:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.customUrlInput::placeholder {
+  color: var(--berry-text-muted);
+}
+
+.customUrlButton {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--berry-input-border);
+  border-radius: 4px;
+  background: var(--berry-button-bg);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  transition: background 0.1s ease;
+  white-space: nowrap;
+}
+
+.customUrlButton:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+}
+
+.customUrlButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Add App Row */
+.addAppRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Theme Editor Styles */
+.editorHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.backButton {
+  background: transparent;
+  border: none;
+  color: var(--berry-accent);
+  cursor: pointer;
+  font-family: var(--berry-font-system);
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: var(--berry-border-radius);
+  transition: background 0.1s ease;
+}
+
+.backButton:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.themeNameInput {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--berry-input-border);
+  border-radius: var(--berry-border-radius);
+  background: var(--berry-input-bg);
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+  min-width: 200px;
+}
+
+.themeNameInput:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.gradientInput {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--berry-input-border);
+  border-radius: var(--berry-border-radius);
+  background: var(--berry-input-bg);
+  color: var(--berry-text-primary);
+  font-family: monospace;
+  min-width: 180px;
+}
+
+.gradientInput:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.editorActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--berry-border-light, rgba(0, 0, 0, 0.08));
+}
+
+.actionGroup {
+  display: flex;
+  gap: 8px;
+}
+

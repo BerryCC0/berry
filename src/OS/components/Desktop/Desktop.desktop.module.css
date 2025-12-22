@@ -1,0 +1,128 @@
+/* Desktop - Desktop Platform Styles */
+
+.desktop {
+  position: fixed;
+  top: var(--berry-menubar-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Base color from theme */
+  background-color: var(--berry-desktop-bg);
+  /* Wallpaper image (set via CSS variable by applySettings) */
+  background-image: var(--berry-wallpaper, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  z-index: var(--z-desktop);
+}
+
+/* Fallback stippled pattern when no wallpaper is set */
+.desktop::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Classic Mac stippled pattern - only visible when no wallpaper */
+  background-image: 
+    linear-gradient(45deg, rgba(0, 0, 0, 0.15) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.15) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.15) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.15) 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+  pointer-events: none;
+  opacity: var(--berry-wallpaper-stipple, 1);
+}
+
+.iconContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+}
+
+/* Grid size: Compact */
+.gridCompact {
+  --desktop-grid-gap: 8px;
+  --desktop-icon-width: 64px;
+}
+
+/* Grid size: Normal (default) */
+.gridNormal {
+  --desktop-grid-gap: 16px;
+  --desktop-icon-width: 80px;
+}
+
+/* Grid size: Spacious */
+.gridSpacious {
+  --desktop-grid-gap: 24px;
+  --desktop-icon-width: 96px;
+}
+
+/* Desktop Icon */
+.icon {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--desktop-icon-width, 80px);
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.iconSelected {
+  background: rgba(0, 0, 255, 0.2);
+}
+
+.iconSelected:hover {
+  background: rgba(0, 0, 255, 0.3);
+}
+
+.iconImage {
+  width: var(--berry-desktop-icon-size, 48px);
+  height: var(--berry-desktop-icon-size, 48px);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.iconLabel {
+  margin-top: 4px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: #ffffff;
+  text-align: center;
+  text-shadow: 
+    1px 1px 1px rgba(0, 0, 0, 0.8),
+    -1px -1px 1px rgba(0, 0, 0, 0.8),
+    1px -1px 1px rgba(0, 0, 0, 0.8),
+    -1px 1px 1px rgba(0, 0, 0, 0.8);
+  word-break: break-word;
+  max-width: 72px;
+  line-height: 1.2;
+}
+
+.iconLabelSelected {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+  text-shadow: none;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+/* Dragging state */
+.iconDragging {
+  opacity: 0.85;
+  z-index: 1000;
+  cursor: grabbing;
+  transform: scale(1.05);
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+

@@ -1,0 +1,97 @@
+/**
+ * ScrollArea Styles
+ * Mac OS 8 classic scrollbar appearance
+ */
+
+.scrollArea {
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: #808080 #c0c0c0;
+}
+
+/* Webkit scrollbar styling (Chrome, Safari, newer Edge) */
+.scrollArea::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+.scrollArea::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #c0c0c0 50%, #a0a0a0 50%);
+  background-size: 2px 2px;
+  border: 1px solid #808080;
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080;
+}
+
+.scrollArea::-webkit-scrollbar-thumb:hover {
+  background: #d0d0d0;
+}
+
+.scrollArea::-webkit-scrollbar-thumb:active {
+  background: #a0a0a0;
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
+}
+
+.scrollArea::-webkit-scrollbar-corner {
+  background: #c0c0c0;
+  border: 1px solid #808080;
+}
+
+/* Scrollbar buttons */
+.scrollArea::-webkit-scrollbar-button {
+  width: 16px;
+  height: 16px;
+  background: #c0c0c0;
+  border: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080;
+}
+
+.scrollArea::-webkit-scrollbar-button:hover {
+  background: #d0d0d0;
+}
+
+.scrollArea::-webkit-scrollbar-button:active {
+  background: #a0a0a0;
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
+}
+
+/* Up arrow */
+.scrollArea::-webkit-scrollbar-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M4 2L1 5h6z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Down arrow */
+.scrollArea::-webkit-scrollbar-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M4 6L1 3h6z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Left arrow */
+.scrollArea::-webkit-scrollbar-button:horizontal:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M2 4l3-3v6z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Right arrow */
+.scrollArea::-webkit-scrollbar-button:horizontal:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M6 4l-3-3v6z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+

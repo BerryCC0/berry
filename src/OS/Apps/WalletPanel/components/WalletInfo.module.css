@@ -1,0 +1,148 @@
+/* WalletInfo Component */
+
+.walletInfo {
+  padding: 16px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Avatar */
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 5%;
+  background: linear-gradient(135deg, var(--berry-accent) 0%, var(--berry-accent-hover) 100%);
+  border: 2px solid var(--berry-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  text-transform: uppercase;
+}
+
+/* Identity */
+.identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.ensName {
+  font-family: var(--berry-font-system);
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.address {
+  font-size: 12px;
+  color: var(--berry-text-muted);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.addressOnly {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+/* Copy button */
+.copyButton {
+  padding: 8px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  color: var(--berry-text-secondary);
+}
+
+.copyButton:hover {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-accent);
+  color: var(--berry-accent);
+}
+
+.copyButton:active {
+  transform: scale(0.95);
+}
+
+/* Network indicator */
+.network {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.networkDot {
+  color: var(--berry-success, #22c55e);
+  font-size: 10px;
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.networkText {
+  font-size: 12px;
+  color: var(--berry-text-primary);
+}
+
+/* Manage button */
+.manageButton {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.manageButton:hover {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-accent);
+}
+
+.manageButton:active {
+  transform: scale(0.98);
+}
+

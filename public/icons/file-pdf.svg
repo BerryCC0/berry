@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- PDF file -->
+  <path d="M6 2h14l6 6v22H6V2z" fill="#fff"/>
+  <path d="M20 2v6h6" fill="#e0e0e0"/>
+  <rect x="6" y="2" width="20" height="28" stroke="#000" stroke-width="1" fill="none"/>
+  <path d="M20 2l6 6h-6V2z" stroke="#000" stroke-width="1" fill="none"/>
+  <!-- PDF label -->
+  <rect x="8" y="18" width="16" height="8" rx="1" fill="#D32F2F"/>
+  <text x="16" y="24" font-family="Geneva, sans-serif" font-size="5" fill="#fff" text-anchor="middle" font-weight="bold">PDF</text>
+</svg>
+

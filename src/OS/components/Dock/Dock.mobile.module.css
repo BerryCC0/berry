@@ -1,0 +1,98 @@
+/* Dock - Mobile Platform Styles (Modern Style) */
+
+.dock {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-dock);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+
+  /* Icon size variable */
+  --dock-icon-size: 44px;
+}
+
+.dockContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Dock Section - groups of icons */
+.dockSection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Divider between sections (simpler on mobile, no resize) */
+.dockDivider {
+  width: 1px;
+  height: calc(var(--dock-icon-size) * 0.5);
+  margin: 0 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1px;
+  align-self: center;
+}
+
+/* Dock Icon */
+.dockIcon {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.dockIcon:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dockIconFocused {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dockIconImage {
+  width: var(--dock-icon-size);
+  height: var(--dock-icon-size);
+  image-rendering: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Labels hidden on mobile */
+.dockIconLabel {
+  display: none;
+}
+
+/* Running indicator dot */
+.runningIndicator {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+}
+
+.minimizedIndicator {
+  background: rgba(0, 0, 0, 0.3);
+}

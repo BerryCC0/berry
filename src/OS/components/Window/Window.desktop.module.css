@@ -1,0 +1,236 @@
+/* Window - Desktop Platform Styles */
+
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--berry-window-bg);
+  border: 1px solid var(--berry-window-border);
+  box-shadow: var(--berry-window-shadow, 2px 2px 0 rgba(0, 0, 0, 0.3));
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.windowFocused {
+  box-shadow: 
+    4px 4px 0 rgba(0, 0, 0, 0.4),
+    inset -1px -1px 0 #888888,
+    inset 1px 1px 0 #ffffff;
+}
+
+.windowBlurred {
+  opacity: 0.95;
+}
+
+.windowDragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.windowResizing {
+  user-select: none;
+}
+
+/* Window styles: Classic (default) */
+.windowClassic {
+  border-radius: 0;
+}
+
+/* Window styles: Modern */
+.windowModern {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.windowModern .titleBar {
+  border-radius: 8px 8px 0 0;
+}
+
+/* No shadow setting */
+.windowNoShadow {
+  box-shadow: 
+    inset -1px -1px 0 #888888,
+    inset 1px 1px 0 #ffffff !important;
+}
+
+/* Title Bar */
+.titleBar {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 4px;
+  background: var(--berry-title-bar-bg);
+  color: var(--berry-title-bar-text);
+  border-bottom: 1px solid var(--berry-window-border);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.titleBarFocused {
+  opacity: 1;
+}
+
+.titleBarDragging {
+  cursor: grabbing;
+}
+
+/* Window Controls (Traffic Lights) */
+.windowControls {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.controlButton {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  background: #c0c0c0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  color: transparent;
+}
+
+.controlButton:hover {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.closeButton {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+  border-color: #cc4444;
+}
+
+.closeButton:hover {
+  background: linear-gradient(135deg, #ff8080 0%, #ff6b6b 100%);
+}
+
+.minimizeButton {
+  background: linear-gradient(135deg, #ffd93d 0%, #f5c800 100%);
+  border-color: #c9a000;
+}
+
+.minimizeButton:hover {
+  background: linear-gradient(135deg, #ffe066 0%, #ffd93d 100%);
+}
+
+.maximizeButton {
+  background: linear-gradient(135deg, #6bcb77 0%, #4caf50 100%);
+  border-color: #388e3c;
+}
+
+.maximizeButton:hover {
+  background: linear-gradient(135deg, #81d88a 0%, #6bcb77 100%);
+}
+
+/* Title Text */
+.titleIcon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  image-rendering: pixelated;
+}
+
+.titleText {
+  flex: 1;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: inherit;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titleTextBlurred {
+  opacity: 0.6;
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  overflow: auto;
+  background: var(--berry-bg);
+}
+
+/* Resize Handles */
+.resizeHandle {
+  position: absolute;
+  z-index: 10;
+}
+
+.resizeHandleN {
+  top: -4px;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  cursor: n-resize;
+}
+
+.resizeHandleS {
+  bottom: -4px;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  cursor: s-resize;
+}
+
+.resizeHandleE {
+  top: 8px;
+  right: -4px;
+  bottom: 8px;
+  width: 8px;
+  cursor: e-resize;
+}
+
+.resizeHandleW {
+  top: 8px;
+  left: -4px;
+  bottom: 8px;
+  width: 8px;
+  cursor: w-resize;
+}
+
+.resizeHandleNE {
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: ne-resize;
+}
+
+.resizeHandleNW {
+  top: -4px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: nw-resize;
+}
+
+.resizeHandleSE {
+  bottom: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+  /* Classic Mac resize grip */
+  background: 
+    linear-gradient(135deg, transparent 50%, #888888 50%, #888888 60%, transparent 60%),
+    linear-gradient(135deg, transparent 70%, #888888 70%, #888888 80%, transparent 80%);
+}
+
+.resizeHandleSW {
+  bottom: -4px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: sw-resize;
+}
+

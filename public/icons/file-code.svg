@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Code file -->
+  <path d="M6 2h14l6 6v22H6V2z" fill="#fff"/>
+  <path d="M20 2v6h6" fill="#e0e0e0"/>
+  <rect x="6" y="2" width="20" height="28" stroke="#000" stroke-width="1" fill="none"/>
+  <path d="M20 2l6 6h-6V2z" stroke="#000" stroke-width="1" fill="none"/>
+  <!-- Code brackets -->
+  <path d="M12 14l-3 4 3 4" stroke="#0066CC" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M20 14l3 4-3 4" stroke="#0066CC" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <line x1="17" y1="12" x2="15" y2="24" stroke="#0066CC" stroke-width="1"/>
+</svg>
+

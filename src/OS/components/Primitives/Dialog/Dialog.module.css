@@ -1,0 +1,102 @@
+/**
+ * Dialog Styles
+ * Mac OS 8 classic dialog appearance
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.dialog {
+  background: #c0c0c0;
+  border: 2px solid #000;
+  border-radius: 0;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080,
+    4px 4px 0 rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+.titleBar {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: #fff;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--berry-font-system, "Geneva", sans-serif);
+  font-size: 12px;
+  font-weight: bold;
+  user-select: none;
+}
+
+.title {
+  flex: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.closeButton {
+  background: #c0c0c0;
+  border: 1px solid #808080;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: bold;
+  color: #000;
+  padding: 0;
+  line-height: 1;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080;
+}
+
+.closeButton:hover {
+  background: #d0d0d0;
+}
+
+.closeButton:active {
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
+}
+
+.content {
+  padding: 16px;
+  font-family: var(--berry-font-system, "Geneva", sans-serif);
+  font-size: 12px;
+  color: #000;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.actions {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #808080;
+}
+
+.alertMessage {
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+

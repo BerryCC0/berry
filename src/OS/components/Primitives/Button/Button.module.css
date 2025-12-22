@@ -1,0 +1,137 @@
+/**
+ * Button Styles
+ * Mac OS 8 classic button appearance
+ */
+
+.button {
+  font-family: var(--berry-font-system, "Geneva", sans-serif);
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  user-select: none;
+  transition: none; /* No transitions for retro feel */
+}
+
+.button:focus {
+  outline: 2px solid var(--berry-accent, #000);
+  outline-offset: 2px;
+}
+
+/* Variant: Default */
+.default {
+  background: linear-gradient(180deg, #fff 0%, #ccc 100%);
+  color: #000;
+  border: 1px solid #808080;
+  border-radius: 3px;
+  box-shadow: 
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080,
+    1px 1px 0 #000;
+}
+
+.default:hover:not(.disabled) {
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+}
+
+.default:active:not(.disabled),
+.default.active {
+  background: linear-gradient(180deg, #999 0%, #ccc 100%);
+  box-shadow: 
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
+}
+
+/* Variant: Primary */
+.primary {
+  background: var(--berry-button-primary-bg, #000);
+  color: var(--berry-button-primary-text, #fff);
+  border: 2px solid #000;
+  border-radius: 4px;
+  box-shadow: 
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.primary:hover:not(.disabled) {
+  background: #333;
+}
+
+.primary:active:not(.disabled),
+.primary.active {
+  background: #555;
+  box-shadow: 
+    inset 1px 1px 0 rgba(0, 0, 0, 0.2),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Variant: Text */
+.text {
+  background: transparent;
+  color: var(--berry-text, #000);
+  border: none;
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+.text:hover:not(.disabled) {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.text:active:not(.disabled),
+.text.active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Variant: Icon */
+.icon {
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  padding: 4px;
+  min-width: auto;
+}
+
+.icon:hover:not(.disabled) {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.icon:active:not(.disabled),
+.icon.active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Sizes */
+.small {
+  padding: 4px 10px;
+  font-size: 11px;
+  min-height: 22px;
+}
+
+.medium {
+  padding: 6px 14px;
+  font-size: 12px;
+  min-height: 26px;
+}
+
+.large {
+  padding: 8px 20px;
+  font-size: 13px;
+  min-height: 32px;
+}
+
+/* Full width */
+.fullWidth {
+  width: 100%;
+}
+
+/* Disabled */
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

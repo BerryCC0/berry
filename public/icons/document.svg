@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Classic Mac document -->
+  <path d="M6 2h14l6 6v22H6V2z" fill="#fff"/>
+  <path d="M20 2v6h6" fill="#e0e0e0"/>
+  <rect x="6" y="2" width="20" height="28" stroke="#000" stroke-width="1" fill="none"/>
+  <path d="M20 2l6 6h-6V2z" stroke="#000" stroke-width="1" fill="none"/>
+  <!-- Lines -->
+  <line x1="9" y1="12" x2="23" y2="12" stroke="#808080" stroke-width="1"/>
+  <line x1="9" y1="16" x2="23" y2="16" stroke="#808080" stroke-width="1"/>
+  <line x1="9" y1="20" x2="23" y2="20" stroke="#808080" stroke-width="1"/>
+  <line x1="9" y1="24" x2="18" y2="24" stroke="#808080" stroke-width="1"/>
+</svg>
+

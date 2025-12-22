@@ -1,0 +1,170 @@
+/* MenuBar - Desktop Platform Styles */
+
+.menuBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--berry-menubar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: var(--berry-menu-bar-bg);
+  color: var(--berry-menu-bar-text);
+  border-bottom: 1px solid var(--berry-border);
+  z-index: var(--z-menubar);
+  user-select: none;
+}
+
+.menuItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.menuItemActive {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.berryMenu {
+  padding: 0 8px;
+}
+
+.berryIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.appName {
+  font-weight: bold;
+}
+
+.menuLabel {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.statusArea {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.statusItem:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.walletButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.walletButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.walletIndicator {
+  color: #4ade80;
+  font-size: 8px;
+}
+
+.walletAddress {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 10px;
+}
+
+.walletAvatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 5%;
+  object-fit: cover;
+}
+
+.clock {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: inherit;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: var(--z-dropdown);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.dropdownDivider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--berry-border);
+}
+
+.dropdownItemIcon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  object-fit: contain;
+}
+
+.dropdownItemDisabled {
+  color: var(--berry-text-secondary);
+  cursor: default;
+}
+
+.dropdownItemDisabled:hover {
+  background: transparent;
+  color: var(--berry-text-secondary);
+}
+

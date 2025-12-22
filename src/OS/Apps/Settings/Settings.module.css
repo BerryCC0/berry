@@ -1,0 +1,90 @@
+.container {
+  display: flex;
+  height: 100%;
+  background: var(--berry-bg);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 200px;
+  background: var(--berry-bg-secondary);
+  border-right: 1px solid var(--berry-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.headerIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.headerTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sidebarItems {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.sidebarItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.sidebarItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sidebarItemActive {
+  background: var(--berry-primary);
+  color: white;
+}
+
+.sidebarItemActive:hover {
+  background: var(--berry-primary);
+}
+
+.sidebarIcon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.sidebarLabel {
+  flex: 1;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+
+/* Placeholder - can be removed */
+.placeholder {
+  color: var(--berry-text-secondary);
+  font-style: italic;
+}

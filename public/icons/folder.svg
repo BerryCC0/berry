@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Classic Mac folder -->
+  <path d="M2 8h10l2-3h16v22H2V8z" fill="#FFD700"/>
+  <path d="M2 8h28v19H2V8z" fill="#FFC107"/>
+  <path d="M2 8h10l2-3h16v2H14l-2 3H2V8z" fill="#FFE082"/>
+  <rect x="2" y="8" width="28" height="19" stroke="#000" stroke-width="1" fill="none"/>
+  <path d="M2 8l10 0 2-3h16" stroke="#000" stroke-width="1" fill="none"/>
+</svg>
+

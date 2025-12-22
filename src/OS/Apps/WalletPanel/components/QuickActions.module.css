@@ -1,0 +1,127 @@
+/* QuickActions Component */
+
+.quickActions {
+  padding: 16px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.label {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--berry-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.actionButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.actionButton:hover {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-accent);
+  transform: translateY(-2px);
+}
+
+.actionButton:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.actionIcon {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--berry-accent);
+}
+
+.actionLabel {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-primary);
+  font-weight: 500;
+}
+
+/* Receive panel */
+.receivePanel {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.receiveTitle {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin-bottom: 10px;
+}
+
+.addressBox {
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.addressCode {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+  color: var(--berry-text-primary);
+  line-height: 1.5;
+}
+
+.copyButton {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--berry-accent);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copyButton:hover {
+  opacity: 0.9;
+}
+
+.copyButton:active {
+  transform: scale(0.98);
+}
+
