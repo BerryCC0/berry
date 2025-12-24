@@ -40,6 +40,10 @@ export type SystemEvents = {
   "fs:file-created": { path: string };
   "fs:file-deleted": { path: string };
 
+  // Boot events
+  "boot:apps-registered": { count: number };
+  "boot:complete": Record<string, never>;
+
   // App events
   "app:launched": { appId: string; windowId: string };
   "app:closed": { appId: string; windowId: string };

@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { appLauncher } from "@/OS/lib/AppLauncher";
 import { useLaunchpadStore } from "@/OS/store/launchpadStore";
+import { systemBus } from "@/OS/lib/EventBus";
 import { getIcon } from "@/OS/lib/IconRegistry";
 import type { AppConfig } from "@/OS/types/app";
 import styles from "./Launchpad.module.css";
@@ -41,8 +42,23 @@ export function Launchpad() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
   const [openFolder, setOpenFolder] = useState<LaunchpadFolder | null>(null);
+  
+  // Track app registry version - increments when apps are registered
+  const [appRegistryVersion, setAppRegistryVersion] = useState(0);
 
-  // Build items list with folders
+  // Listen for boot:apps-registered event to refresh app list
+  useEffect(() => {
+    const handleAppsRegistered = () => {
+      setAppRegistryVersion((v) => v + 1);
+    };
+
+    systemBus.on("boot:apps-registered", handleAppsRegistered);
+    return () => {
+      systemBus.off("boot:apps-registered", handleAppsRegistered);
+    };
+  }, []);
+
+  // Build items list with folders - re-computes when apps are registered
   const { items, allAppsFlat } = useMemo(() => {
     const allApps = appLauncher.getAll().filter((app) => !HIDDEN_APPS.has(app.id));
     
@@ -86,7 +102,7 @@ export function Launchpad() {
     });
 
     return { items: itemsList, allAppsFlat: allApps };
-  }, []);
+  }, [appRegistryVersion]);
 
   // Filter items by search query
   const filteredItems = useMemo(() => {

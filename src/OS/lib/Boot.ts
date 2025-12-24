@@ -13,7 +13,7 @@
 
 import { appLauncher } from "./AppLauncher";
 import { osAppConfigs } from "@/OS/Apps/OSAppConfig";
-import { initializeBridgeForwarding } from "./EventBus";
+import { initializeBridgeForwarding, systemBus } from "./EventBus";
 import { enforceAllWindowBounds } from "./WindowManager";
 import { persistence } from "./Persistence";
 import { applyAppearance, applyAccessibility } from "./Settings";
@@ -182,6 +182,9 @@ function registerOSApps(): void {
   }
 
   appLauncher.registerAll(osAppConfigs);
+
+  // Emit event so components can refresh their app lists
+  systemBus.emit("boot:apps-registered", { count: osAppConfigs.length });
 }
 
 /**
