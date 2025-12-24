@@ -65,6 +65,12 @@ export function useRouteSync() {
         }
         return "/app/settings";
 
+      case "camp":
+        if (state.path && typeof state.path === 'string' && state.path.length > 0) {
+          return `/app/camp/${state.path}`;
+        }
+        return "/app/camp";
+
       default:
         return `/app/${appId}`;
     }

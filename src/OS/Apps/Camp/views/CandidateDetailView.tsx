@@ -8,6 +8,7 @@
 import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useCandidate } from '../hooks/useCandidates';
+import { ShareButton } from '../components/ShareButton';
 import styles from './CandidateDetailView.module.css';
 
 interface CandidateDetailViewProps {
@@ -49,7 +50,10 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
 
   return (
     <div className={styles.container}>
-      <button className={styles.backButton} onClick={onBack}>← Back</button>
+      <div className={styles.navBar}>
+        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        <ShareButton path={`candidate/${proposer}/${slug}`} />
+      </div>
 
       <div className={styles.header}>
         <span className={styles.label}>Candidate</span>

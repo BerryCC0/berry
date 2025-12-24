@@ -10,6 +10,7 @@ import { useAccount } from 'wagmi';
 import { useProposal } from '../hooks';
 import { useVote } from '@/app/lib/nouns/hooks';
 import { getSupportLabel, getSupportColor } from '../types';
+import { ShareButton } from '../components/ShareButton';
 import styles from './ProposalDetailView.module.css';
 
 interface ProposalDetailViewProps {
@@ -57,7 +58,10 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
 
   return (
     <div className={styles.container}>
-      <button className={styles.backButton} onClick={onBack}>← Back</button>
+      <div className={styles.navBar}>
+        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        <ShareButton path={`proposal/${proposalId}`} />
+      </div>
 
       <div className={styles.header}>
         <span className={styles.id}>Proposal #{proposal.id}</span>

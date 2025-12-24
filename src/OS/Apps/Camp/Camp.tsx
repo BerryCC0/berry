@@ -25,24 +25,29 @@ import {
 } from './views';
 import styles from './Camp.module.css';
 
-interface CampProps {
-  windowId: string;
-  path?: string; // Initial path from deep link
-  onPathChange?: (path: string) => void; // Callback to sync URL
+import type { AppComponentProps } from '@/OS/types/app';
+
+interface CampInitialState {
+  path?: string;
 }
 
 type TabId = 'activity' | 'proposals' | 'candidates' | 'voters';
 
-export function Camp({ windowId, path, onPathChange }: CampProps) {
-  // Parse initial route from path prop
-  const [route, setRoute] = useState<CampRoute>(() => parseRoute(path));
+export function Camp({ windowId, initialState, onStateChange }: AppComponentProps) {
+  // Cast initialState to our expected shape
+  const campState = initialState as CampInitialState | undefined;
+  
+  // Parse initial route from initialState
+  const [route, setRoute] = useState<CampRoute>(() => parseRoute(campState?.path));
   const [history, setHistory] = useState<CampRoute[]>([]);
 
-  // Update route when path prop changes (deep link)
+  // Update route when initialState changes (deep link)
   useEffect(() => {
-    const newRoute = parseRoute(path);
-    setRoute(newRoute);
-  }, [path]);
+    if (campState?.path !== undefined) {
+      const newRoute = parseRoute(campState.path);
+      setRoute(newRoute);
+    }
+  }, [campState?.path]);
 
   // Navigate to a new route
   const navigate = useCallback((pathOrRoute: string | CampRoute) => {
@@ -54,10 +59,10 @@ export function Camp({ windowId, path, onPathChange }: CampProps) {
     setHistory(prev => [...prev, route]);
     setRoute(newRoute);
     
-    // Notify parent for URL sync
+    // Notify parent for URL sync via state change
     const newPath = routeToPath(newRoute);
-    onPathChange?.(newPath);
-  }, [route, onPathChange]);
+    onStateChange?.({ path: newPath });
+  }, [route, onStateChange]);
 
   // Go back in history
   const goBack = useCallback(() => {
@@ -65,13 +70,13 @@ export function Camp({ windowId, path, onPathChange }: CampProps) {
       const prevRoute = history[history.length - 1];
       setHistory(prev => prev.slice(0, -1));
       setRoute(prevRoute);
-      onPathChange?.(routeToPath(prevRoute));
+      onStateChange?.({ path: routeToPath(prevRoute) });
     } else {
       // Default to activity
       setRoute({ view: 'activity' });
-      onPathChange?.('');
+      onStateChange?.({ path: '' });
     }
-  }, [history, onPathChange]);
+  }, [history, onStateChange]);
 
   // Get current tab from route
   const getCurrentTab = (): TabId => {

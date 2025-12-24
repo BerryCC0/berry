@@ -9,6 +9,7 @@ import { useEnsName, useEnsAvatar } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useVoter } from '../hooks';
 import { getSupportLabel, getSupportColor } from '../types';
+import { ShareButton } from '../components/ShareButton';
 import styles from './VoterDetailView.module.css';
 
 interface VoterDetailViewProps {
@@ -49,7 +50,10 @@ export function VoterDetailView({ address, onNavigate, onBack }: VoterDetailView
 
   return (
     <div className={styles.container}>
-      <button className={styles.backButton} onClick={onBack}>← Back</button>
+      <div className={styles.navBar}>
+        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        <ShareButton path={`voter/${address}`} />
+      </div>
 
       <div className={styles.profile}>
         {ensAvatar ? (
