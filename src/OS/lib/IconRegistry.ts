@@ -86,7 +86,7 @@ const iconRegistry: Record<IconId, string> = {
   "pdf-viewer": `${ICONS_BASE_PATH}/pdf-viewer.svg`,
   "nouns-auction": `${ICONS_BASE_PATH}/nouns-auction.svg`,
   "camp": `${ICONS_BASE_PATH}/camp.svg`,
-  "treasury": `${ICONS_BASE_PATH}/treasury.svg`,
+  "treasury": `${ICONS_BASE_PATH}/treasury.png`,
 
   // File type icons
   "file-text": `${ICONS_BASE_PATH}/file-text.svg`,
