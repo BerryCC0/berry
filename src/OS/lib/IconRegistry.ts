@@ -32,7 +32,14 @@ export type AppIconId =
   | "calculator"
   | "settings"
   | "wallet"
-  | "about";
+  | "about"
+  | "text-editor"
+  | "image-viewer"
+  | "sound-jam"
+  | "movie-player"
+  | "pdf-viewer"
+  | "nouns-auction"
+  | "camp";
 
 /**
  * File type icon IDs
@@ -71,6 +78,13 @@ const iconRegistry: Record<IconId, string> = {
   "settings": `${ICONS_BASE_PATH}/settings.png`,
   "wallet": `${ICONS_BASE_PATH}/wallet.svg`,
   "about": `${ICONS_BASE_PATH}/about.svg`,
+  "text-editor": `${ICONS_BASE_PATH}/text-editor.svg`,
+  "image-viewer": `${ICONS_BASE_PATH}/image-viewer.svg`,
+  "sound-jam": `${ICONS_BASE_PATH}/sound-jam.svg`,
+  "movie-player": `${ICONS_BASE_PATH}/movie-player.svg`,
+  "pdf-viewer": `${ICONS_BASE_PATH}/pdf-viewer.svg`,
+  "nouns-auction": `${ICONS_BASE_PATH}/nouns-auction.svg`,
+  "camp": `${ICONS_BASE_PATH}/camp.svg`,
 
   // File type icons
   "file-text": `${ICONS_BASE_PATH}/file-text.svg`,

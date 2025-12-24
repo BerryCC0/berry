@@ -1,0 +1,63 @@
+/**
+ * VoterCard Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  cursor: pointer;
+}
+
+.card:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rank {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  min-width: 24px;
+}
+
+.name {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.statValue {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+}
+
+.statLabel {
+  font-family: var(--berry-font-system);
+  font-size: 9px;
+  color: var(--berry-text-muted);
+  text-transform: uppercase;
+}

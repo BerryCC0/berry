@@ -1,0 +1,32 @@
+/**
+ * BidderDisplay Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.bidderDisplay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  object-fit: cover;
+  border: 1px solid var(--berry-border);
+}
+
+.avatarPlaceholder {
+  width: 20px;
+  height: 20px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: 2px;
+}
+
+.name {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-primary);
+}

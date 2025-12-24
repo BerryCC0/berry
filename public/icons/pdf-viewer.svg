@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Document background -->
+  <rect x="10" y="6" width="44" height="52" rx="3" fill="#fff" stroke="#333" stroke-width="2"/>
+  <!-- Folded corner -->
+  <path d="M42 6v10h12L42 6z" fill="#e0e0e0" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
+  <!-- PDF badge -->
+  <rect x="14" y="36" width="36" height="16" rx="2" fill="#DC2626"/>
+  <text x="32" y="48" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#fff" text-anchor="middle">PDF</text>
+</svg>
+

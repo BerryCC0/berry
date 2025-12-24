@@ -16,10 +16,12 @@ import { MenuBar } from "@/OS/components/MenuBar";
 import { Dock } from "@/OS/components/Dock";
 import { WindowManager } from "@/OS/components/WindowManager";
 import { BootOverlay } from "@/OS/components/BootOverlay";
+import { Launchpad } from "@/OS/components/Launchpad";
 import { SleepOverlay } from "@/OS/components/MenuBar/components/SleepOverlay";
 import { ShutdownOverlay } from "@/OS/components/MenuBar/components/ShutdownOverlay";
+import { NounsIconProvider } from "@/OS/components/NounsIconProvider";
 import { bootBerryOS, shutdownBerryOS } from "@/OS/lib/Boot";
-import { usePersistence, useApplySettings, useBootSequence } from "@/OS/hooks";
+import { usePersistence, useApplySettings, useBootSequence, useRouteSync } from "@/OS/hooks";
 import { useBootStore } from "@/OS/store/bootStore";
 
 export default function Home() {
@@ -42,6 +44,9 @@ export default function Home() {
   // Apply live settings changes after boot is complete
   useApplySettings();
 
+  // Sync URL with window state for deep linking
+  useRouteSync();
+
   return (
     <>
       {/* Boot overlay - shows until OS is fully ready */}
@@ -56,6 +61,8 @@ export default function Home() {
       <Desktop />
       <WindowManager />
       <Dock />
+      <Launchpad />
+      {isReady && <NounsIconProvider />}
       {isSleeping && <SleepOverlay onWake={wake} />}
       {isShutdown && <ShutdownOverlay />}
     </>

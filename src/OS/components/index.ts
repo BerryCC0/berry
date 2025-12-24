@@ -10,6 +10,7 @@ export { Dock } from "./Dock";
 export { WindowManager } from "./WindowManager";
 export { AppErrorBoundary } from "./AppErrorBoundary";
 export { BootOverlay } from "./BootOverlay";
+export { Launchpad } from "./Launchpad";
 export { SleepOverlay } from "./MenuBar/components/SleepOverlay";
 export { ShutdownOverlay } from "./MenuBar/components/ShutdownOverlay";
 

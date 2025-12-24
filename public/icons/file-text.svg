@@ -1,14 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!-- Text file -->
-  <path d="M6 2h14l6 6v22H6V2z" fill="#fff"/>
-  <path d="M20 2v6h6" fill="#e0e0e0"/>
-  <rect x="6" y="2" width="20" height="28" stroke="#000" stroke-width="1" fill="none"/>
-  <path d="M20 2l6 6h-6V2z" stroke="#000" stroke-width="1" fill="none"/>
-  <!-- Text lines -->
-  <line x1="9" y1="12" x2="23" y2="12" stroke="#333" stroke-width="1"/>
-  <line x1="9" y1="15" x2="21" y2="15" stroke="#333" stroke-width="1"/>
-  <line x1="9" y1="18" x2="23" y2="18" stroke="#333" stroke-width="1"/>
-  <line x1="9" y1="21" x2="19" y2="21" stroke="#333" stroke-width="1"/>
-  <line x1="9" y1="24" x2="22" y2="24" stroke="#333" stroke-width="1"/>
+  <path d="M6 2h14l6 6v20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <path d="M20 2v6h6" fill="none" stroke="#333" stroke-width="1.5"/>
+  <path d="M8 14h12M8 18h12M8 22h8" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
 </svg>
-

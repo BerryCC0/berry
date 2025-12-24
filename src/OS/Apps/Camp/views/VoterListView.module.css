@@ -1,0 +1,52 @@
+/**
+ * VoterListView Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.select {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--berry-input-border);
+  background: var(--berry-input-bg);
+  color: var(--berry-text-primary);
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.loading,
+.empty,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.errorDetail {
+  font-size: 10px;
+  color: var(--berry-error);
+  margin-top: 4px;
+}

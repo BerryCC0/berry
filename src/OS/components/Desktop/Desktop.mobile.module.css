@@ -2,7 +2,8 @@
 
 .desktop {
   position: fixed;
-  top: var(--berry-menubar-height);
+  /* Account for safe areas (notch) */
+  top: calc(var(--berry-menubar-height) + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   bottom: 0;

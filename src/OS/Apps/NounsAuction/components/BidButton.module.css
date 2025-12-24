@@ -1,0 +1,101 @@
+/**
+ * BidButton Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.bidButton {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--berry-border);
+}
+
+.bidInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-primary);
+  font-weight: bold;
+}
+
+.inputRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.input {
+  flex: 1;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--berry-input-border);
+  background: var(--berry-input-bg);
+  color: var(--berry-text-primary);
+}
+
+.input:focus {
+  outline: 2px solid var(--berry-accent);
+  outline-offset: -2px;
+}
+
+.input:disabled {
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-muted);
+}
+
+.button {
+  white-space: nowrap;
+  min-width: 90px;
+  padding: 4px 12px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  background: var(--berry-button-bg);
+  color: var(--berry-button-text);
+  border: 1px solid var(--berry-border);
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--berry-accent);
+  color: white;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.connectMessage {
+  text-align: center;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 8px;
+  margin: 0;
+}
+
+.error {
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--berry-error) 15%, transparent);
+  border: 1px solid var(--berry-error);
+  color: var(--berry-error);
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+}
+
+.success {
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--berry-success) 15%, transparent);
+  border: 1px solid var(--berry-success);
+  color: var(--berry-success);
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+}

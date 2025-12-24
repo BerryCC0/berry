@@ -3,13 +3,35 @@
 /**
  * WindowManager Component
  * Renders all open windows with their app components
+ * 
+ * Apps are lazy-loaded and wrapped in Suspense for code splitting
  */
 
+import { Suspense } from "react";
 import { useWindowStore } from "@/OS/store/windowStore";
 import { Window } from "@/OS/components/Window";
 import { AppErrorBoundary } from "@/OS/components/AppErrorBoundary";
 import { appLauncher } from "@/OS/lib/AppLauncher";
 import type { AppComponentProps } from "@/OS/types/app";
+
+/**
+ * Loading fallback for lazy-loaded app components
+ */
+function AppLoadingFallback() {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100%',
+      fontFamily: 'var(--berry-font-system)',
+      fontSize: 12,
+      color: 'var(--berry-text-secondary)',
+    }}>
+      Loading...
+    </div>
+  );
+}
 
 export function WindowManager() {
   const windows = useWindowStore((state) => state.windows);
@@ -52,7 +74,9 @@ export function WindowManager() {
               onClose={() => handleCloseWindow(window.id)}
             >
               {AppComponent ? (
-                <AppComponent {...appProps} />
+                <Suspense fallback={<AppLoadingFallback />}>
+                  <AppComponent {...appProps} />
+                </Suspense>
               ) : (
                 // Fallback for unregistered apps
                 <div

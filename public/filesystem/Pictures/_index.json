@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Screenshots",
+    "path": "/Pictures/Screenshots",
+    "type": "directory",
+    "size": 128,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381723380,
+    "modifiedAt": 1766383753279,
+    "isHidden": false
+  },
+  {
+    "name": "Wallpapers",
+    "path": "/Pictures/Wallpapers",
+    "type": "directory",
+    "size": 128,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381718165,
+    "modifiedAt": 1766383753280,
+    "isHidden": false
+  }
+]

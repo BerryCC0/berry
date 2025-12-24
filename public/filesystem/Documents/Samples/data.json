@@ -1,0 +1,20 @@
+{
+  "name": "Berry OS",
+  "version": "0.1.0",
+  "description": "A Mac OS 8 recreation for the web",
+  "features": [
+    "Virtual filesystem",
+    "Window management",
+    "Classic aesthetics",
+    "Web3 integration"
+  ],
+  "author": {
+    "name": "Berry OS Team",
+    "url": "https://berryos.app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/berryos/berryos"
+  }
+}
+

@@ -15,6 +15,29 @@ import {
 } from "@/OS/types/window";
 import { systemBus } from "@/OS/lib/EventBus";
 
+/**
+ * Window limits per PERFORMANCE.md
+ * Prevents memory issues from too many open windows
+ */
+const WINDOW_LIMITS = {
+  desktop: {
+    max: 50,
+    warnAt: 40,
+  },
+  mobile: {
+    max: 10,
+    warnAt: 8,
+  },
+};
+
+/**
+ * Check if we're on mobile (basic check, more detailed in PlatformDetection)
+ */
+function isMobileDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768;
+}
+
 interface WindowStore {
   // State
   windows: Map<string, WindowState>;
@@ -49,9 +72,24 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
   // Actions
   createWindow: (appId: string, config: WindowConfig) => {
+    const { nextZIndex, focusedWindowId: previousFocusedId, windows } = get();
+    
+    // Check window limits per PERFORMANCE.md
+    const limits = isMobileDevice() ? WINDOW_LIMITS.mobile : WINDOW_LIMITS.desktop;
+    const currentCount = windows.size;
+    
+    if (currentCount >= limits.max) {
+      console.warn(`[WindowStore] Maximum windows reached (${limits.max}). Cannot create new window.`);
+      systemBus.emit("window:limit-reached", { currentCount, limit: limits.max });
+      return ""; // Return empty string to indicate failure
+    }
+    
+    if (currentCount >= limits.warnAt) {
+      console.warn(`[WindowStore] ${currentCount} windows open, approaching limit of ${limits.max}`);
+    }
+    
     const windowId = generateWindowId();
     const instanceId = generateInstanceId(appId);
-    const { nextZIndex, focusedWindowId: previousFocusedId } = get();
 
     const windowState: WindowState = {
       id: windowId,

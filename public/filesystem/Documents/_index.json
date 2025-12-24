@@ -1,0 +1,36 @@
+[
+  {
+    "name": "Samples",
+    "path": "/Documents/Samples",
+    "type": "directory",
+    "size": 160,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381700141,
+    "modifiedAt": 1766383753278,
+    "isHidden": false
+  },
+  {
+    "name": "Getting Started.md",
+    "path": "/Documents/Getting Started.md",
+    "type": "file",
+    "size": 1464,
+    "mimeType": "text/markdown",
+    "extension": "md",
+    "icon": "/icons/file-text.svg",
+    "createdAt": 1766381693689,
+    "modifiedAt": 1766382011098,
+    "isHidden": false
+  },
+  {
+    "name": "Welcome to Berry OS.txt",
+    "path": "/Documents/Welcome to Berry OS.txt",
+    "type": "file",
+    "size": 559,
+    "mimeType": "text/plain",
+    "extension": "txt",
+    "icon": "/icons/file-text.svg",
+    "createdAt": 1766381684567,
+    "modifiedAt": 1766382011085,
+    "isHidden": false
+  }
+]

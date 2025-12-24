@@ -1,11 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!-- Video file -->
-  <path d="M6 2h14l6 6v22H6V2z" fill="#fff"/>
-  <path d="M20 2v6h6" fill="#e0e0e0"/>
-  <rect x="6" y="2" width="20" height="28" stroke="#000" stroke-width="1" fill="none"/>
-  <path d="M20 2l6 6h-6V2z" stroke="#000" stroke-width="1" fill="none"/>
-  <!-- Video icon -->
-  <rect x="9" y="12" width="14" height="10" rx="1" fill="#333" stroke="#000" stroke-width="0.5"/>
-  <path d="M13 15v4l5-2z" fill="#fff"/>
+  <path d="M6 2h14l6 6v20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <path d="M20 2v6h6" fill="none" stroke="#333" stroke-width="1.5"/>
+  <rect x="8" y="13" width="12" height="9" rx="1" fill="#34495e" stroke="#34495e"/>
+  <path d="M13 15l5 3-5 3z" fill="#fff"/>
 </svg>
-

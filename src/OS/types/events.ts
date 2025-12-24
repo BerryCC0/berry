@@ -19,6 +19,7 @@ export type SystemEvents = {
   "window:minimized": { windowId: string };
   "window:maximized": { windowId: string };
   "window:restored": { windowId: string };
+  "window:limit-reached": { currentCount: number; limit: number };
 
   // Theme events
   "theme:changed": { theme: Theme };

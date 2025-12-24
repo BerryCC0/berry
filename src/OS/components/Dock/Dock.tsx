@@ -17,6 +17,7 @@ import { useWindowStore } from "@/OS/store/windowStore";
 import { useBootStore } from "@/OS/store/bootStore";
 import { useDockStore } from "@/OS/store/dockStore";
 import { useSettingsStore } from "@/OS/store/settingsStore";
+import { useLaunchpadStore } from "@/OS/store/launchpadStore";
 import { appLauncher } from "@/OS/lib/AppLauncher";
 import { getIcon } from "@/OS/lib/IconRegistry";
 import { DockIcon } from "./components/DockIcon";
@@ -158,11 +159,13 @@ export function Dock() {
     [focusWindow, restoreWindow]
   );
 
+  // Launchpad store
+  const toggleLaunchpad = useLaunchpadStore((state) => state.toggle);
+
   // Handle Launchpad click
   const handleLaunchpadClick = useCallback(() => {
-    // TODO: Open Launchpad overlay
-    console.log("[Dock] Launchpad clicked - coming soon");
-  }, []);
+    toggleLaunchpad();
+  }, [toggleLaunchpad]);
 
   // Divider drag handlers for resizing
   const handleDividerMouseDown = useCallback(
@@ -270,17 +273,17 @@ export function Dock() {
           title="Drag to resize dock"
         />
 
-        {/* Section 3: Launchpad */}
+        {/* Section 3: Applications (Launchpad) */}
         <div className={styles.dockSection}>
-          <div className={styles.dockIcon} onClick={handleLaunchpadClick}>
+          <div className={styles.dockIcon} onClick={handleLaunchpadClick} title="Applications">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={getIcon("launchpad")}
-              alt="Launchpad"
+              alt="Applications"
               className={styles.dockIconImage}
               draggable={false}
             />
-            <span className={styles.dockIconLabel}>Launchpad</span>
+            <span className={styles.dockIconLabel}>Applications</span>
           </div>
         </div>
       </div>

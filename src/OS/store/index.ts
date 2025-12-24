@@ -12,4 +12,5 @@ export { useBootStore } from "./bootStore";
 export { useDockStore, MIN_ICON_SIZE, MAX_ICON_SIZE, DEFAULT_ICON_SIZE } from "./dockStore";
 export type { PinnedApp } from "./dockStore";
 export { useSettingsStore } from "./settingsStore";
+export { useLaunchpadStore } from "./launchpadStore";
 

@@ -1,0 +1,136 @@
+/**
+ * BidHistory Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.bidHistory {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+  margin: 0;
+  padding: 0;
+}
+
+.scrollContainer {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.bidsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bidItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  gap: 8px;
+}
+
+.bidItem:hover {
+  background: var(--berry-bg-tertiary);
+}
+
+.bidderSection {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bidDetails {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bidAmount {
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+}
+
+.viewTx {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-button-bg);
+  color: var(--berry-text-primary);
+  text-decoration: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.viewTx:hover {
+  background: var(--berry-accent);
+  color: white;
+}
+
+.noBids {
+  text-align: center;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 12px;
+  margin: 0;
+}
+
+.loadingText {
+  color: var(--berry-text-muted);
+}
+
+.bidderInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bidderPfp {
+  width: 20px;
+  height: 20px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: 2px;
+}
+
+.clientBadge {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  color: var(--berry-text-secondary);
+  display: inline-block;
+  font-family: var(--berry-font-system);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  width: fit-content;
+}
+
+.berryBadge {
+  background: color-mix(in srgb, var(--berry-accent) 20%, transparent);
+  border-color: var(--berry-accent);
+  color: var(--berry-text-primary);
+  font-weight: bold;
+}

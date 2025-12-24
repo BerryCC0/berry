@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Film reel background -->
+  <rect x="6" y="12" width="52" height="40" rx="4" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+  <!-- Film holes top -->
+  <circle cx="14" cy="18" r="3" fill="#333"/>
+  <circle cx="26" cy="18" r="3" fill="#333"/>
+  <circle cx="38" cy="18" r="3" fill="#333"/>
+  <circle cx="50" cy="18" r="3" fill="#333"/>
+  <!-- Film holes bottom -->
+  <circle cx="14" cy="46" r="3" fill="#333"/>
+  <circle cx="26" cy="46" r="3" fill="#333"/>
+  <circle cx="38" cy="46" r="3" fill="#333"/>
+  <circle cx="50" cy="46" r="3" fill="#333"/>
+  <!-- Play button -->
+  <circle cx="32" cy="32" r="10" fill="rgba(255,255,255,0.2)"/>
+  <path d="M28 26l12 6-12 6V26z" fill="#fff"/>
+</svg>
+

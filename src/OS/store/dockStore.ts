@@ -25,6 +25,8 @@ export interface PinnedApp {
  */
 const DEFAULT_PINNED_APPS: PinnedApp[] = [
   { appId: "finder", title: "Finder", icon: getIcon("finder") },
+  { appId: "nouns-auction", title: "Nouns Auction", icon: getIcon("nouns-auction") },
+  { appId: "camp", title: "Camp", icon: getIcon("camp") },
   { appId: "calculator", title: "Calculator", icon: getIcon("calculator") },
   { appId: "settings", title: "Settings", icon: getIcon("settings") },
 ];
@@ -50,6 +52,9 @@ interface DockActions {
   
   /** Reorder pinned apps (Finder stays first) */
   reorderPinnedApps: (appIds: string[]) => void;
+  
+  /** Update an app's icon dynamically */
+  updateAppIcon: (appId: string, icon: string) => void;
   
   /** Set icon size */
   setIconSize: (size: number) => void;
@@ -120,6 +125,14 @@ export const useDockStore = create<DockState & DockActions>((set, get) => ({
 
     const { pinnedApps } = get();
     set({ pinnedApps: pinnedApps.filter((app) => app.appId !== appId) });
+  },
+
+  updateAppIcon: (appId: string, icon: string) => {
+    const { pinnedApps } = get();
+    const updatedApps = pinnedApps.map((app) =>
+      app.appId === appId ? { ...app, icon } : app
+    );
+    set({ pinnedApps: updatedApps });
   },
 
   reorderPinnedApps: (appIds: string[]) => {

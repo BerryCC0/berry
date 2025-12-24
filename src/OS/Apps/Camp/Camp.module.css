@@ -1,0 +1,69 @@
+/**
+ * Camp App Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.camp {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--berry-bg);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.logo {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+}
+
+.tab {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 4px 12px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-button-bg);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  margin-left: -1px;
+}
+
+.tab:first-child {
+  margin-left: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.tab:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.tab:hover:not(.active) {
+  background: var(--berry-bg-tertiary);
+}
+
+.tab.active {
+  background: var(--berry-primary);
+  color: white;
+  border-color: var(--berry-primary);
+  position: relative;
+  z-index: 1;
+}
+
+.content {
+  flex: 1;
+  overflow: hidden;
+}

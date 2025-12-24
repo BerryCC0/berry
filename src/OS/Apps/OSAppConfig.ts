@@ -1,14 +1,26 @@
 /**
  * OS App Configuration
  * Registry of core OS applications that are always available
+ * 
+ * Apps are lazy-loaded for better bundle size per PERFORMANCE.md
  */
 
+import { lazy } from "react";
 import type { AppConfig } from "@/OS/types/app";
 import { getIcon } from "@/OS/lib/IconRegistry";
-import { Finder } from "./Finder/Finder";
-import { Calculator } from "./Calculator/Calculator";
-import { Settings } from "./Settings/Settings";
-import { WalletPanel } from "./WalletPanel/WalletPanel";
+
+// Lazy load all app components - each becomes its own chunk
+const Finder = lazy(() => import("./Finder/Finder").then(m => ({ default: m.Finder })));
+const Calculator = lazy(() => import("./Calculator/Calculator").then(m => ({ default: m.Calculator })));
+const Settings = lazy(() => import("./Settings/Settings").then(m => ({ default: m.Settings })));
+const WalletPanel = lazy(() => import("./WalletPanel/WalletPanel").then(m => ({ default: m.WalletPanel })));
+const TextEditor = lazy(() => import("./TextEditor/TextEditor").then(m => ({ default: m.TextEditor })));
+const ImageViewer = lazy(() => import("./ImageViewer/ImageViewer").then(m => ({ default: m.ImageViewer })));
+const SoundJam = lazy(() => import("./SoundJam/SoundJam").then(m => ({ default: m.SoundJam })));
+const MoviePlayer = lazy(() => import("./MoviePlayer/MoviePlayer").then(m => ({ default: m.MoviePlayer })));
+const PDFViewer = lazy(() => import("./PDFViewer/PDFViewer").then(m => ({ default: m.PDFViewer })));
+const NounsAuction = lazy(() => import("./NounsAuction/NounsAuction").then(m => ({ default: m.NounsAuction })));
+const Camp = lazy(() => import("./Camp/Camp").then(m => ({ default: m.Camp })));
 
 /**
  * Finder - File browser
@@ -95,6 +107,154 @@ const walletPanelConfig: AppConfig = {
 };
 
 /**
+ * TextEditor - Text viewer with markdown preview
+ */
+const textEditorConfig: AppConfig = {
+  id: "text-editor",
+  name: "TextEditor",
+  icon: getIcon("text-editor"),
+  category: "utilities",
+  singleton: false,
+  showInDock: false,
+  window: {
+    width: 600,
+    height: 500,
+    minWidth: 300,
+    minHeight: 200,
+    isResizable: true,
+  },
+  permissions: ["filesystem:read"],
+  component: TextEditor,
+};
+
+/**
+ * ImageViewer - Image viewer with zoom and pan
+ */
+const imageViewerConfig: AppConfig = {
+  id: "image-viewer",
+  name: "ImageViewer",
+  icon: getIcon("image-viewer"),
+  category: "utilities",
+  singleton: false,
+  showInDock: false,
+  window: {
+    width: 800,
+    height: 600,
+    minWidth: 400,
+    minHeight: 300,
+    isResizable: true,
+  },
+  permissions: ["filesystem:read"],
+  component: ImageViewer,
+};
+
+/**
+ * SoundJam - Audio player with visualization
+ */
+const soundJamConfig: AppConfig = {
+  id: "sound-jam",
+  name: "SoundJam",
+  icon: getIcon("sound-jam"),
+  category: "utilities",
+  singleton: true,
+  showInDock: false,
+  window: {
+    width: 400,
+    height: 200,
+    minWidth: 320,
+    minHeight: 150,
+    isResizable: true,
+  },
+  permissions: ["filesystem:read"],
+  component: SoundJam,
+};
+
+/**
+ * MoviePlayer - Video player
+ */
+const moviePlayerConfig: AppConfig = {
+  id: "movie-player",
+  name: "MoviePlayer",
+  icon: getIcon("movie-player"),
+  category: "utilities",
+  singleton: false,
+  showInDock: false,
+  window: {
+    width: 720,
+    height: 480,
+    minWidth: 400,
+    minHeight: 300,
+    isResizable: true,
+  },
+  permissions: ["filesystem:read"],
+  component: MoviePlayer,
+};
+
+/**
+ * PDFViewer - PDF document viewer
+ */
+const pdfViewerConfig: AppConfig = {
+  id: "pdf-viewer",
+  name: "PDFViewer",
+  icon: getIcon("pdf-viewer"),
+  category: "utilities",
+  singleton: false,
+  showInDock: false,
+  window: {
+    width: 700,
+    height: 900,
+    minWidth: 400,
+    minHeight: 500,
+    isResizable: true,
+  },
+  permissions: ["filesystem:read"],
+  component: PDFViewer,
+};
+
+/**
+ * Nouns Auction - Daily Nouns auction participation
+ */
+const nounsAuctionConfig: AppConfig = {
+  id: "nouns-auction",
+  name: "Nouns Auction",
+  icon: getIcon("nouns-auction"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 680,
+    height: 520,
+    minWidth: 480,
+    minHeight: 400,
+    isResizable: true,
+  },
+  permissions: [],
+  component: NounsAuction,
+};
+
+/**
+ * Camp - Nouns Governance
+ * Comprehensive governance app with proposals, voting, and delegation
+ */
+const campConfig: AppConfig = {
+  id: "camp",
+  name: "Camp",
+  icon: getIcon("camp"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 800,
+    height: 600,
+    minWidth: 600,
+    minHeight: 450,
+    isResizable: true,
+  },
+  permissions: ["network", "wallet"],
+  component: Camp,
+};
+
+/**
  * All OS app configurations
  * 
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -104,6 +264,13 @@ export const osAppConfigs: AppConfig[] = [
   calculatorConfig,
   settingsConfig,
   walletPanelConfig,
+  textEditorConfig,
+  imageViewerConfig,
+  soundJamConfig,
+  moviePlayerConfig,
+  pdfViewerConfig,
+  nounsAuctionConfig,
+  campConfig,
 ];
 
 /**

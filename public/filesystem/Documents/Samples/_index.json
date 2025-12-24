@@ -1,0 +1,26 @@
+[
+  {
+    "name": "data.json",
+    "path": "/Documents/Samples/data.json",
+    "type": "file",
+    "size": 394,
+    "mimeType": "application/json",
+    "extension": "json",
+    "icon": "/icons/file-text.svg",
+    "createdAt": 1766381708717,
+    "modifiedAt": 1766382011108,
+    "isHidden": false
+  },
+  {
+    "name": "example.txt",
+    "path": "/Documents/Samples/example.txt",
+    "type": "file",
+    "size": 557,
+    "mimeType": "text/plain",
+    "extension": "txt",
+    "icon": "/icons/file-text.svg",
+    "createdAt": 1766381700142,
+    "modifiedAt": 1766382011108,
+    "isHidden": false
+  }
+]

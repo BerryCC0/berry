@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Applications",
+    "path": "/Applications",
+    "type": "directory",
+    "size": 128,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381739887,
+    "modifiedAt": 1766383753253,
+    "isHidden": false
+  },
+  {
+    "name": "Documents",
+    "path": "/Documents",
+    "type": "directory",
+    "size": 192,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381684566,
+    "modifiedAt": 1766383753279,
+    "isHidden": false
+  },
+  {
+    "name": "Pictures",
+    "path": "/Pictures",
+    "type": "directory",
+    "size": 160,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381718164,
+    "modifiedAt": 1766383753280,
+    "isHidden": false
+  },
+  {
+    "name": "System",
+    "path": "/System",
+    "type": "directory",
+    "size": 160,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381729817,
+    "modifiedAt": 1766383753282,
+    "isHidden": false
+  }
+]

@@ -54,6 +54,23 @@
   --berry-dock-border: rgba(255, 255, 255, 0.3);
   --berry-dock-icon-size: 48px;
 
+  /* === LAUNCHPAD === */
+  --launchpad-bg: rgba(40, 40, 45, 0.92);
+  --launchpad-border: rgba(255, 255, 255, 0.1);
+  --launchpad-divider: rgba(255, 255, 255, 0.08);
+  --launchpad-title: rgba(255, 255, 255, 0.9);
+  --launchpad-text: #ffffff;
+  --launchpad-text-muted: rgba(255, 255, 255, 0.4);
+  --launchpad-search-bg: rgba(255, 255, 255, 0.1);
+  --launchpad-search-bg-focus: rgba(255, 255, 255, 0.15);
+  --launchpad-button-bg: rgba(255, 255, 255, 0.1);
+  --launchpad-button-bg-hover: rgba(255, 255, 255, 0.18);
+  --launchpad-item-hover: rgba(255, 255, 255, 0.08);
+  --launchpad-folder-bg: rgba(255, 255, 255, 0.12);
+  --launchpad-dot: rgba(255, 255, 255, 0.25);
+  --launchpad-dot-hover: rgba(255, 255, 255, 0.4);
+  --launchpad-dot-active: #ffffff;
+
   /* === MENU BAR === */
   --berry-menu-bar-bg: #e0e0e0;
   --berry-menu-bar-text: #000000;

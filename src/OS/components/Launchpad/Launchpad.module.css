@@ -1,0 +1,351 @@
+/* Launchpad Modal */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 80px; /* Space for dock */
+  /* Dim background - clicking outside closes */
+  background: rgba(0, 0, 0, 0.3);
+  animation: overlayFadeIn 0.2s ease-out;
+}
+
+.overlay.animating {
+  pointer-events: none;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal container */
+.container {
+  width: 90%;
+  max-width: 720px;
+  max-height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px 24px;
+  /* Frosted glass modal - theme aware */
+  background: var(--launchpad-bg, rgba(40, 40, 45, 0.92));
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 16px;
+  border: 1px solid var(--launchpad-border, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 1px rgba(255, 255, 255, 0.1) inset;
+  animation: modalSlideUp 0.25s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--launchpad-divider, rgba(255, 255, 255, 0.08));
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--launchpad-title, rgba(255, 255, 255, 0.9));
+  margin: 0;
+}
+
+.searchContainer {
+  position: relative;
+  width: 200px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  padding-right: 32px;
+  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  background: var(--launchpad-search-bg, rgba(255, 255, 255, 0.1));
+  color: var(--launchpad-text, #fff);
+  outline: none;
+  transition: background 0.2s ease;
+}
+
+.searchInput::placeholder {
+  color: var(--launchpad-text-muted, rgba(255, 255, 255, 0.4));
+}
+
+.searchInput:focus {
+  background: var(--launchpad-search-bg-focus, rgba(255, 255, 255, 0.15));
+}
+
+.clearSearch {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--launchpad-text-muted, rgba(255, 255, 255, 0.4));
+  cursor: pointer;
+  padding: 4px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.clearSearch:hover {
+  color: var(--launchpad-text, #fff);
+}
+
+.backButton {
+  background: var(--launchpad-button-bg, rgba(255, 255, 255, 0.1));
+  border: none;
+  color: var(--launchpad-text, #fff);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.backButton:hover {
+  background: var(--launchpad-button-bg-hover, rgba(255, 255, 255, 0.18));
+}
+
+/* Apps grid */
+.grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px 8px;
+  align-content: start;
+  justify-items: center;
+  overflow-y: auto;
+  padding: 4px;
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+/* Responsive grid */
+@media (max-width: 650px) {
+  .grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .container {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .searchContainer {
+    width: 140px;
+  }
+}
+
+@media (max-width: 380px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* App item */
+.appItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  width: 100%;
+  max-width: 90px;
+}
+
+.appItem:hover {
+  background: var(--launchpad-item-hover, rgba(255, 255, 255, 0.08));
+  transform: scale(1.05);
+}
+
+.appItem:active {
+  transform: scale(0.95);
+}
+
+.appIconWrapper {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+}
+
+.appIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 11px;
+}
+
+/* Folder icon with preview */
+.folderIconWrapper {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--launchpad-folder-bg, rgba(255, 255, 255, 0.12));
+  border-radius: 11px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+}
+
+.folderPreview {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 2px;
+  padding: 3px;
+}
+
+.folderPreviewIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 3px;
+}
+
+.appName {
+  font-size: 11px;
+  color: var(--launchpad-text, #fff);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Empty state */
+.emptyState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--launchpad-text-muted, rgba(255, 255, 255, 0.4));
+  font-size: 14px;
+  min-height: 120px;
+}
+
+/* Pagination dots */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--launchpad-divider, rgba(255, 255, 255, 0.08));
+  margin-top: 12px;
+}
+
+.pageDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  background: var(--launchpad-dot, rgba(255, 255, 255, 0.25));
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.pageDot:hover {
+  background: var(--launchpad-dot-hover, rgba(255, 255, 255, 0.4));
+}
+
+.pageDot.active {
+  background: var(--launchpad-dot-active, #fff);
+  transform: scale(1.15);
+}
+
+/* Mobile: Full-screen mode */
+@media (max-width: 480px) {
+  .overlay {
+    align-items: center;
+    padding-bottom: 0;
+    background: var(--launchpad-bg, rgba(30, 30, 35, 0.95));
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+  }
+  
+  .container {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding-top: 60px; /* Below menu bar */
+    padding-bottom: 80px; /* Above dock */
+  }
+  
+  .appIconWrapper,
+  .folderIconWrapper {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .appIcon {
+    border-radius: 13px;
+  }
+  
+  .folderIconWrapper {
+    border-radius: 13px;
+  }
+}

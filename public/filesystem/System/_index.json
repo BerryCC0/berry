@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Fonts",
+    "path": "/System/Fonts",
+    "type": "directory",
+    "size": 128,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381729817,
+    "modifiedAt": 1766383753281,
+    "isHidden": false
+  },
+  {
+    "name": "Sounds",
+    "path": "/System/Sounds",
+    "type": "directory",
+    "size": 128,
+    "icon": "/icons/folder.svg",
+    "createdAt": 1766381734894,
+    "modifiedAt": 1766383753281,
+    "isHidden": false
+  }
+]

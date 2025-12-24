@@ -1,0 +1,79 @@
+/**
+ * ActivityItem Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.item {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+}
+
+.item:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+  font-family: var(--berry-font-system);
+}
+
+.actor {
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+}
+
+.actor:hover {
+  text-decoration: underline;
+  color: var(--berry-accent);
+}
+
+.action {
+  color: var(--berry-text-secondary);
+}
+
+.support {
+  font-weight: bold;
+}
+
+.votes {
+  color: var(--berry-text-muted);
+  font-size: 11px;
+}
+
+.proposal {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.proposal:hover {
+  text-decoration: underline;
+  color: var(--berry-accent);
+}
+
+.reason {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: var(--berry-bg-secondary);
+  border-left: 2px solid var(--berry-border);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.time {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--berry-text-muted);
+}

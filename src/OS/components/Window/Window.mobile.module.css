@@ -2,10 +2,11 @@
 
 .window {
   position: fixed;
-  top: var(--berry-menubar-height);
+  /* Account for safe areas (notch, home indicator) */
+  top: calc(var(--berry-menubar-height) + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
-  bottom: var(--berry-dock-size);
+  bottom: calc(var(--berry-dock-size) + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   background: var(--berry-bg);

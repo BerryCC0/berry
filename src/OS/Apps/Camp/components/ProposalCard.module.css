@@ -1,0 +1,114 @@
+/**
+ * ProposalCard Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.card {
+  padding: 12px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.card:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.id {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  font-weight: bold;
+}
+
+.status {
+  font-family: var(--berry-font-system);
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-primary);
+}
+
+.status.active,
+.status.objection_period {
+  background: color-mix(in srgb, var(--berry-accent) 20%, transparent);
+  color: var(--berry-accent);
+}
+
+.status.pending,
+.status.updatable {
+  background: color-mix(in srgb, var(--berry-warning) 20%, transparent);
+  color: var(--berry-warning);
+}
+
+.status.succeeded,
+.status.queued {
+  background: color-mix(in srgb, var(--berry-success) 20%, transparent);
+  color: var(--berry-success);
+}
+
+.status.executed {
+  background: var(--berry-success);
+  color: white;
+}
+
+.status.defeated,
+.status.cancelled,
+.status.vetoed,
+.status.expired {
+  background: color-mix(in srgb, var(--berry-error) 20%, transparent);
+  color: var(--berry-error);
+}
+
+.title {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.votes {
+  margin-top: 8px;
+}
+
+.voteBar {
+  height: 6px;
+  background: color-mix(in srgb, var(--berry-error) 30%, transparent);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.forBar {
+  height: 100%;
+  background: var(--berry-success);
+  border-radius: 3px;
+}
+
+.voteLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  font-family: var(--berry-font-system);
+}
+
+.forLabel {
+  color: var(--berry-success);
+}
+
+.againstLabel {
+  color: var(--berry-error);
+}

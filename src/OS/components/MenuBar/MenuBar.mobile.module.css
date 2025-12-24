@@ -5,10 +5,13 @@
   top: 0;
   left: 0;
   right: 0;
-  height: var(--berry-menubar-height);
+  /* Account for device notch/safe area */
+  height: calc(var(--berry-menubar-height) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
   background: linear-gradient(
     to bottom,
     #ffffff 0%,

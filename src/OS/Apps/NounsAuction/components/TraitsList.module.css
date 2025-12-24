@@ -1,0 +1,35 @@
+/**
+ * TraitsList Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.traitsList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid var(--berry-border);
+}
+
+.traitItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+}
+
+.traitLabel {
+  color: var(--berry-text-secondary);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.traitValue {
+  color: var(--berry-text-primary);
+  text-align: right;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

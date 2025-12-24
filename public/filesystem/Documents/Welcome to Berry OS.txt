@@ -1,0 +1,22 @@
+Welcome to Berry OS!
+====================
+
+Berry OS is a Mac OS 8 recreation built for the modern web.
+
+Getting Started
+---------------
+• Click the desktop icons to launch applications
+• Use the Dock at the bottom to quickly access your favorite apps
+• The Menu Bar at the top provides system controls
+
+Features
+--------
+• Classic Mac OS 8 aesthetics with modern functionality
+• Web3 integration for saving your preferences
+• Works on desktop, mobile, and Farcaster
+
+Explore the filesystem using Finder to discover more files!
+
+---
+Berry OS Team
+
