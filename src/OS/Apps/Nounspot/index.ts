@@ -1,0 +1,2 @@
+export { Nounspot } from './Nounspot';
+

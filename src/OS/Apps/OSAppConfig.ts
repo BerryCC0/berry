@@ -22,6 +22,7 @@ const PDFViewer = lazy(() => import("./PDFViewer/PDFViewer").then(m => ({ defaul
 const NounsAuction = lazy(() => import("./NounsAuction/NounsAuction").then(m => ({ default: m.NounsAuction })));
 const Camp = lazy(() => import("./Camp/Camp").then(m => ({ default: m.Camp })));
 const Treasury = lazy(() => import("./Treasury/Treasury").then(m => ({ default: m.Treasury })));
+const Nounspot = lazy(() => import("./Nounspot/Nounspot").then(m => ({ default: m.Nounspot })));
 
 /**
  * Finder - File browser
@@ -278,6 +279,28 @@ const treasuryConfig: AppConfig = {
 };
 
 /**
+ * Nounspot - World map of Nouns spots
+ * Displays people, places, and things around the world
+ */
+const nounspotConfig: AppConfig = {
+  id: "nounspot",
+  name: "Nounspot",
+  icon: getIcon("nounspot"),
+  category: "nouns",
+  singleton: true,
+  showInDock: false, // Not pinned to dock
+  window: {
+    width: 900,
+    height: 600,
+    minWidth: 700,
+    minHeight: 450,
+    isResizable: true,
+  },
+  permissions: ["network"],
+  component: Nounspot,
+};
+
+/**
  * All OS app configurations
  * 
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -295,6 +318,7 @@ export const osAppConfigs: AppConfig[] = [
   nounsAuctionConfig,
   campConfig,
   treasuryConfig,
+  nounspotConfig,
 ];
 
 /**

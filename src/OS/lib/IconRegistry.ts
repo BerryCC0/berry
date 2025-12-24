@@ -40,7 +40,8 @@ export type AppIconId =
   | "pdf-viewer"
   | "nouns-auction"
   | "camp"
-  | "treasury";
+  | "treasury"
+  | "nounspot";
 
 /**
  * File type icon IDs
@@ -87,6 +88,7 @@ const iconRegistry: Record<IconId, string> = {
   "nouns-auction": `${ICONS_BASE_PATH}/nouns-auction.svg`,
   "camp": `${ICONS_BASE_PATH}/camp.svg`,
   "treasury": `${ICONS_BASE_PATH}/treasury.png`,
+  "nounspot": `${ICONS_BASE_PATH}/nounspot.svg`,
 
   // File type icons
   "file-text": `${ICONS_BASE_PATH}/file-text.svg`,
