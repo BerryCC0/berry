@@ -21,6 +21,7 @@ const MoviePlayer = lazy(() => import("./MoviePlayer/MoviePlayer").then(m => ({ 
 const PDFViewer = lazy(() => import("./PDFViewer/PDFViewer").then(m => ({ default: m.PDFViewer })));
 const NounsAuction = lazy(() => import("./NounsAuction/NounsAuction").then(m => ({ default: m.NounsAuction })));
 const Camp = lazy(() => import("./Camp/Camp").then(m => ({ default: m.Camp })));
+const Treasury = lazy(() => import("./Treasury/Treasury").then(m => ({ default: m.Treasury })));
 
 /**
  * Finder - File browser
@@ -255,6 +256,28 @@ const campConfig: AppConfig = {
 };
 
 /**
+ * Treasury - DAO treasury dashboard
+ * Displays balances, tokens, and owned Nouns
+ */
+const treasuryConfig: AppConfig = {
+  id: "treasury",
+  name: "Treasury",
+  icon: getIcon("treasury"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 700,
+    height: 600,
+    minWidth: 500,
+    minHeight: 450,
+    isResizable: true,
+  },
+  permissions: ["network"],
+  component: Treasury,
+};
+
+/**
  * All OS app configurations
  * 
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -271,6 +294,7 @@ export const osAppConfigs: AppConfig[] = [
   pdfViewerConfig,
   nounsAuctionConfig,
   campConfig,
+  treasuryConfig,
 ];
 
 /**

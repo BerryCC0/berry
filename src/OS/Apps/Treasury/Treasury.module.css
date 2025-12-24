@@ -1,0 +1,232 @@
+/**
+ * Treasury Dashboard Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.treasury {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--berry-bg);
+  font-family: var(--berry-font-system);
+}
+
+/* Header */
+.header {
+  margin-bottom: 20px;
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.subtitle {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  margin: 0;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin-bottom: 4px;
+}
+
+.statSubtext {
+  font-size: 9px;
+  color: var(--berry-text-muted);
+}
+
+/* Sections */
+.section {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin: 0 0 12px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+/* Token Grid */
+.tokenGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.tokenCategory {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.categoryTitle {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--berry-text-secondary);
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tokenList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tokenItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.tokenSymbol {
+  color: var(--berry-text-primary);
+  font-weight: 500;
+}
+
+.tokenBalance {
+  color: var(--berry-text-secondary);
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 11px;
+}
+
+/* Nouns Grid */
+.nounsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 12px;
+}
+
+.nounCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nounCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nounImage {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.nounId {
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--berry-text-secondary);
+}
+
+/* Loading / Empty States */
+.loading,
+.empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+/* Address List */
+.addressList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addressItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  gap: 12px;
+}
+
+.addressLabel {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  white-space: nowrap;
+}
+
+.address {
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  background: var(--berry-bg-tertiary);
+  padding: 4px 8px;
+  border-radius: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Scrollbar styling */
+.treasury::-webkit-scrollbar {
+  width: 8px;
+}
+
+.treasury::-webkit-scrollbar-track {
+  background: var(--berry-bg-secondary);
+}
+
+.treasury::-webkit-scrollbar-thumb {
+  background: var(--berry-border);
+  border-radius: 4px;
+}
+
+.treasury::-webkit-scrollbar-thumb:hover {
+  background: var(--berry-text-muted);
+}
+

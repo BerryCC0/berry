@@ -10,6 +10,7 @@ import { mainnet } from 'wagmi/chains';
 import { useVoter } from '../hooks';
 import { getSupportLabel, getSupportColor } from '../types';
 import { ShareButton } from '../components/ShareButton';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import styles from './VoterDetailView.module.css';
 
 interface VoterDetailViewProps {
@@ -120,7 +121,10 @@ export function VoterDetailView({ address, onNavigate, onBack }: VoterDetailView
                   <div className={styles.proposalTitle}>{vote.proposalTitle}</div>
                 )}
                 {vote.reason && (
-                  <div className={styles.voteReason}>"{vote.reason}"</div>
+                  <MarkdownRenderer 
+                    content={vote.reason} 
+                    className={styles.voteReason}
+                  />
                 )}
               </div>
             ))}

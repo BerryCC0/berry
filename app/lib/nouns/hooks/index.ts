@@ -9,6 +9,7 @@ export { useVote, type VoteSupport } from './useVote';
 export { useBid } from './useBid';
 export { useDelegate } from './useDelegate';
 export { useTreasuryBalances, useTreasuryV1Balances, type TreasuryBalances } from './useTreasuryBalances';
+export { useTreasuryNouns, useTreasuryV1Nouns, type TreasuryNoun } from './useTreasuryNouns';
 export { 
   useProposals, 
   useProposal, 

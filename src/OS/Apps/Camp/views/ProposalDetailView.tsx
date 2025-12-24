@@ -11,6 +11,7 @@ import { useProposal } from '../hooks';
 import { useVote } from '@/app/lib/nouns/hooks';
 import { getSupportLabel, getSupportColor } from '../types';
 import { ShareButton } from '../components/ShareButton';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import styles from './ProposalDetailView.module.css';
 
 interface ProposalDetailViewProps {
@@ -132,9 +133,10 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
       {/* Description */}
       <div className={styles.description}>
         <h2 className={styles.sectionTitle}>Description</h2>
-        <div className={styles.descriptionContent}>
-          {proposal.description}
-        </div>
+        <MarkdownRenderer 
+          content={proposal.description} 
+          className={styles.descriptionContent}
+        />
       </div>
 
       {/* Votes List */}
@@ -161,7 +163,10 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
                   <span className={styles.voteVotes}>{v.votes} votes</span>
                 </div>
                 {v.reason && (
-                  <div className={styles.voteReason}>"{v.reason}"</div>
+                  <MarkdownRenderer 
+                    content={v.reason} 
+                    className={styles.voteReason}
+                  />
                 )}
               </div>
             ))}

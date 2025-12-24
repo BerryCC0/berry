@@ -9,6 +9,7 @@ import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useCandidate } from '../hooks/useCandidates';
 import { ShareButton } from '../components/ShareButton';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import styles from './CandidateDetailView.module.css';
 
 interface CandidateDetailViewProps {
@@ -88,9 +89,10 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
       {/* Description */}
       <div className={styles.description}>
         <h2 className={styles.sectionTitle}>Description</h2>
-        <div className={styles.descriptionContent}>
-          {candidate.description}
-        </div>
+        <MarkdownRenderer 
+          content={candidate.description} 
+          className={styles.descriptionContent}
+        />
       </div>
     </div>
   );

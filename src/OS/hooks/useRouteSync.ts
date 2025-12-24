@@ -20,6 +20,14 @@ export function useRouteSync() {
   const windows = useWindowStore((state) => state.windows);
   const focusedWindowId = useWindowStore((state) => state.focusedWindowId);
   const focusWindow = useWindowStore((state) => state.focusWindow);
+  
+  // Track the focused window's appState directly to trigger re-renders
+  // when internal navigation happens (e.g., clicking a proposal in Camp)
+  const focusedWindowAppState = useWindowStore((state) => {
+    if (!state.focusedWindowId) return null;
+    const win = state.windows.get(state.focusedWindowId);
+    return win?.appState ?? null;
+  });
 
   /**
    * Build URL for a window's current state
@@ -77,14 +85,9 @@ export function useRouteSync() {
   }, []);
 
   /**
-   * Update URL when focused window changes
+   * Update URL when focused window changes or app state changes
    */
   useEffect(() => {
-    // Don't sync during initial load or on non-root pages
-    if (pathname !== "/") {
-      return;
-    }
-
     if (!focusedWindowId) {
       // No windows focused - stay at root
       return;
@@ -95,20 +98,30 @@ export function useRouteSync() {
       return;
     }
 
+    // Only sync if we're on root or on an app route for this window
+    // This allows internal navigation (e.g., Camp proposal clicks) to update URL
+    const isOnRoot = pathname === "/";
+    const isOnThisAppRoute = pathname.startsWith(`/app/${focusedWindow.appId}`);
+    
+    if (!isOnRoot && !isOnThisAppRoute) {
+      // We're on some other page (shouldn't happen normally)
+      return;
+    }
+
     // Build URL for current state
     const url = buildUrlForWindow(focusedWindow);
+    const currentUrl = window.location.pathname;
 
     // Update URL without navigation (replace, not push)
-    // This updates the address bar without adding to history
-    if (url !== pathname && url !== "/") {
-      // Use history.replaceState to update URL without triggering navigation
+    // Compare against actual browser URL
+    if (url !== currentUrl) {
       window.history.replaceState(
         { windowId: focusedWindowId, appId: focusedWindow.appId },
         "",
         url
       );
     }
-  }, [focusedWindowId, windows, pathname, buildUrlForWindow]);
+  }, [focusedWindowId, focusedWindowAppState, windows, pathname, buildUrlForWindow]);
 
   /**
    * Handle browser back/forward navigation

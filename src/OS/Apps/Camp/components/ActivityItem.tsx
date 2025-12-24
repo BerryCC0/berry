@@ -8,6 +8,7 @@
 import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { getSupportLabel, getSupportColor, type ActivityItem as ActivityItemType } from '../types';
+import { MarkdownRenderer } from './MarkdownRenderer';
 import styles from './ActivityItem.module.css';
 
 interface ActivityItemProps {
@@ -77,9 +78,10 @@ export function ActivityItem({ item, onClickProposal, onClickVoter }: ActivityIt
       )}
 
       {item.reason && (
-        <div className={styles.reason}>
-          "{item.reason}"
-        </div>
+        <MarkdownRenderer 
+          content={item.reason} 
+          className={styles.reason}
+        />
       )}
 
       <div className={styles.time}>{timeAgo}</div>
