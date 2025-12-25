@@ -420,10 +420,12 @@ export function CreateProposalView({ onNavigate, onBack, editProposalId }: Creat
 
       setState('pending');
       
+      // Use proposeOnTimelockV1 for TimelockV1 proposals, standard propose otherwise
+      // Both include BERRY_CLIENT_ID (11) for client rewards
       await writeContractAsync({
         address: NOUNS_ADDRESSES.governor as `0x${string}`,
         abi: NounsDAOABI,
-        functionName: 'propose',
+        functionName: isTimelockV1 ? 'proposeOnTimelockV1' : 'propose',
         args: [targets, values, signatures, calldatas, fullDescription, BERRY_CLIENT_ID],
       });
 

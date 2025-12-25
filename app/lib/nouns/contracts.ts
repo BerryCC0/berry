@@ -346,6 +346,20 @@ export const NounsDAOABI = [
     type: 'function',
   },
   {
+    inputs: [
+      { name: 'targets', type: 'address[]' },
+      { name: 'values', type: 'uint256[]' },
+      { name: 'signatures', type: 'string[]' },
+      { name: 'calldatas', type: 'bytes[]' },
+      { name: 'description', type: 'string' },
+      { name: 'clientId', type: 'uint32' },
+    ],
+    name: 'proposeOnTimelockV1',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
     inputs: [{ name: 'proposalId', type: 'uint256' }],
     name: 'queue',
     outputs: [],
