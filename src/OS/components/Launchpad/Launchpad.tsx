@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { appLauncher } from "@/OS/lib/AppLauncher";
 import { useLaunchpadStore } from "@/OS/store/launchpadStore";
+import { useDockStore } from "@/OS/store/dockStore";
 import { systemBus } from "@/OS/lib/EventBus";
 import { getIcon } from "@/OS/lib/IconRegistry";
 import type { AppConfig } from "@/OS/types/app";
@@ -45,6 +46,23 @@ export function Launchpad() {
   
   // Track app registry version - increments when apps are registered
   const [appRegistryVersion, setAppRegistryVersion] = useState(0);
+
+  // Get icon overrides from dock store (e.g., dynamic Nouns Auction icon)
+  const pinnedApps = useDockStore((state) => state.pinnedApps);
+  const iconOverrides = useMemo(() => {
+    const overrides: Record<string, string> = {};
+    pinnedApps.forEach((app) => {
+      if (app.icon) {
+        overrides[app.appId] = app.icon;
+      }
+    });
+    return overrides;
+  }, [pinnedApps]);
+
+  // Get effective icon for an app (uses override if available)
+  const getAppIcon = useCallback((app: AppConfig) => {
+    return iconOverrides[app.id] || app.icon;
+  }, [iconOverrides]);
 
   // Listen for boot:apps-registered event to refresh app list
   useEffect(() => {
@@ -215,36 +233,47 @@ export function Launchpad() {
       <div className={styles.container}>
         {/* Header with title and search */}
         <div className={styles.header}>
-          <h1 className={styles.title}>
-            {openFolder ? openFolder.name : "Applications"}
-          </h1>
-          {!openFolder && (
-            <div className={styles.searchContainer}>
-              <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  className={styles.clearSearch}
-                  onClick={() => setSearchQuery("")}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          )}
-          {openFolder && (
+          <div className={styles.headerLeft}>
+            {openFolder && (
+              <button
+                className={styles.backButton}
+                onClick={() => setOpenFolder(null)}
+              >
+                ← Back
+              </button>
+            )}
+            <h1 className={styles.title}>
+              {openFolder ? openFolder.name : "Applications"}
+            </h1>
+          </div>
+          <div className={styles.headerRight}>
+            {!openFolder && (
+              <div className={styles.searchContainer}>
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    className={styles.clearSearch}
+                    onClick={() => setSearchQuery("")}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
             <button
-              className={styles.backButton}
-              onClick={() => setOpenFolder(null)}
+              className={styles.closeButton}
+              onClick={close}
+              aria-label="Close Launchpad"
             >
-              ← Back
+              ✕
             </button>
-          )}
+          </div>
         </div>
 
         {/* Apps/Folders grid */}
@@ -260,7 +289,7 @@ export function Launchpad() {
                 <div className={styles.appIconWrapper}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={app.icon}
+                    src={getAppIcon(app)}
                     alt={app.name}
                     className={styles.appIcon}
                     draggable={false}
@@ -281,7 +310,7 @@ export function Launchpad() {
                   <div className={styles.appIconWrapper}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={item.app.icon}
+                      src={getAppIcon(item.app)}
                       alt={item.app.name}
                       className={styles.appIcon}
                       draggable={false}
@@ -302,7 +331,7 @@ export function Launchpad() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           key={app.id}
-                          src={app.icon}
+                          src={getAppIcon(app)}
                           alt=""
                           className={styles.folderPreviewIcon}
                           draggable={false}

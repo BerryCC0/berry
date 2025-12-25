@@ -18,7 +18,6 @@
 .dockContainer {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 2px;
   padding: 8px 14px;
   background: rgba(255, 255, 255, 0.3);
@@ -29,6 +28,17 @@
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  /* Prevent dock from overflowing screen - allow horizontal scroll */
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Hide scrollbar but keep scroll functionality */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.dockContainer::-webkit-scrollbar {
+  display: none;
 }
 
 /* Dock Section - groups of icons */
@@ -36,6 +46,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 /* Divider between sections (simpler on mobile, no resize) */
@@ -57,6 +68,7 @@
   padding: 6px;
   cursor: pointer;
   border-radius: 12px;
+  flex-shrink: 0;
 }
 
 .dockIcon:active {
@@ -74,6 +86,7 @@
   image-rendering: auto;
   pointer-events: none;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  border-radius: 22%;
 }
 
 /* Labels hidden on mobile */

@@ -28,7 +28,6 @@ const DEFAULT_PINNED_APPS: PinnedApp[] = [
   { appId: "nouns-auction", title: "Nouns Auction", icon: getIcon("nouns-auction") },
   { appId: "camp", title: "Camp", icon: getIcon("camp") },
   { appId: "treasury", title: "Treasury", icon: getIcon("treasury") },
-  { appId: "calculator", title: "Calculator", icon: getIcon("calculator") },
   { appId: "settings", title: "Settings", icon: getIcon("settings") },
 ];
 

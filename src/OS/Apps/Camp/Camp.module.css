@@ -67,3 +67,33 @@
   flex: 1;
   overflow: hidden;
 }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .tabs {
+    width: 100%;
+    order: 2;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 12px;
+    text-align: center;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo {
+    width: 28px;
+    height: 28px;
+  }
+}

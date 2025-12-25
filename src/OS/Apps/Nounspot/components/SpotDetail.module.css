@@ -176,3 +176,32 @@
   background: var(--berry-bg-tertiary);
 }
 
+/* Mobile: Larger touch targets */
+@media (max-width: 768px) {
+  .backButton {
+    padding: 12px 16px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .header {
+    padding: 24px 16px;
+  }
+
+  .name {
+    font-size: 22px;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    padding: 14px 18px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+
+  .communityTag {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+

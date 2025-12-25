@@ -51,3 +51,23 @@
   color: var(--berry-error);
   margin-top: 4px;
 }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .controls {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .select {
+    flex: 1;
+    min-width: 120px;
+    font-size: 14px;
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .list {
+    padding: 12px;
+  }
+}

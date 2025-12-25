@@ -230,3 +230,46 @@
   background: var(--berry-text-muted);
 }
 
+/* Mobile styles */
+@media (max-width: 768px) {
+  .treasury {
+    padding: 12px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .statCard {
+    padding: 10px;
+  }
+
+  .statValue {
+    font-size: 18px;
+  }
+
+  .tokenGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .nounsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
+  }
+
+  .nounCard {
+    padding: 6px;
+  }
+
+  .addressItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .address {
+    width: 100%;
+  }
+}
+

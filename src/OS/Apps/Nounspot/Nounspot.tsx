@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { usePlatform } from '@/OS/lib/PlatformDetection';
 import { useSpots } from './hooks';
 import { SpotCard, SpotDetail, GlobeView } from './components';
 import { parseRoute, routeToPath, type NounspotRoute, type SpotCategory, type Spot } from './types';
@@ -11,8 +12,13 @@ interface NounspotState {
   path?: string;
 }
 
+type MobileView = 'list' | 'map';
+
 export function Nounspot({ windowId, initialState, onStateChange }: AppComponentProps) {
   const typedInitialState = initialState as NounspotState | undefined;
+  const platform = usePlatform();
+  const isMobile = platform.type === 'mobile' || platform.type === 'farcaster' || platform.screenWidth < 768;
+  
   const { spots, isLoading, error } = useSpots();
   const [route, setRoute] = useState<NounspotRoute>(() => {
     if (typedInitialState?.path) {
@@ -23,6 +29,7 @@ export function Nounspot({ windowId, initialState, onStateChange }: AppComponent
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<SpotCategory>('All');
   const [history, setHistory] = useState<NounspotRoute[]>([]);
+  const [mobileView, setMobileView] = useState<MobileView>('list');
 
   // Sync with initialState changes
   useEffect(() => {
@@ -113,13 +120,16 @@ export function Nounspot({ windowId, initialState, onStateChange }: AppComponent
         <div className={styles.detailPane}>
           <SpotDetail spot={selectedSpot} onBack={goBack} />
         </div>
-        <div className={styles.globePane}>
-          <GlobeView 
-            spots={spots} 
-            selectedSpotId={selectedSpot.id}
-            onSpotClick={handleSpotClick}
-          />
-        </div>
+        {/* Only show globe on desktop in detail view */}
+        {!isMobile && (
+          <div className={styles.globePane}>
+            <GlobeView 
+              spots={spots} 
+              selectedSpotId={selectedSpot.id}
+              onSpotClick={handleSpotClick}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -128,7 +138,7 @@ export function Nounspot({ windowId, initialState, onStateChange }: AppComponent
   return (
     <div className={styles.container}>
       {/* Sidebar */}
-      <div className={styles.sidebar}>
+      <div className={`${styles.sidebar} ${!isMobile || mobileView === 'list' ? styles.showSidebar : ''}`}>
         {/* Header */}
         <div className={styles.header}>
           <h1 className={styles.title}>
@@ -197,13 +207,31 @@ export function Nounspot({ windowId, initialState, onStateChange }: AppComponent
       </div>
 
       {/* Globe */}
-      <div className={styles.globePane}>
+      <div className={`${styles.globePane} ${!isMobile || mobileView === 'map' ? styles.showGlobe : ''}`}>
         <GlobeView 
           spots={filteredSpots} 
           selectedSpotId={null}
           onSpotClick={handleSpotClick}
         />
       </div>
+
+      {/* Mobile View Toggle */}
+      {isMobile && (
+        <div className={styles.mobileViewToggle}>
+          <button
+            className={`${styles.viewToggleButton} ${mobileView === 'list' ? styles.active : ''}`}
+            onClick={() => setMobileView('list')}
+          >
+            📋 List
+          </button>
+          <button
+            className={`${styles.viewToggleButton} ${mobileView === 'map' ? styles.active : ''}`}
+            onClick={() => setMobileView('map')}
+          >
+            🌍 Globe
+          </button>
+        </div>
+      )}
     </div>
   );
 }

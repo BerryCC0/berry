@@ -4,6 +4,7 @@
   overflow: hidden;
   background: var(--berry-bg);
   font-family: var(--berry-font-system);
+  position: relative;
 }
 
 .sidebar {
@@ -14,6 +15,42 @@
   flex-direction: column;
   background: var(--berry-bg);
   border-right: 1px solid var(--berry-border);
+}
+
+/* Mobile: Stack layout with view toggle */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+    height: 100%;
+    border-right: none;
+    display: none;
+  }
+
+  .sidebar.showSidebar {
+    display: flex;
+  }
+
+  .globePane {
+    display: none;
+  }
+
+  .globePane.showGlobe {
+    display: flex;
+    flex: 1;
+  }
+
+  .detailPane {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+    border-right: none;
+  }
 }
 
 .header {
@@ -155,6 +192,53 @@
 
 .footerCount {
   color: var(--berry-text-tertiary);
+}
+
+/* Mobile View Toggle */
+.mobileViewToggle {
+  display: none;
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 20px;
+  padding: 4px;
+  gap: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .mobileViewToggle {
+    display: flex;
+  }
+}
+
+.viewToggleButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--berry-text-secondary);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.viewToggleButton.active {
+  background: #e4497a;
+  color: white;
+}
+
+.viewToggleButton:hover:not(.active) {
+  background: var(--berry-bg);
 }
 
 .globePane {

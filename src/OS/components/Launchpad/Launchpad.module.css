@@ -68,6 +68,18 @@
   border-bottom: 1px solid var(--launchpad-divider, rgba(255, 255, 255, 0.08));
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .title {
   font-size: 15px;
   font-weight: 600;
@@ -132,6 +144,35 @@
 
 .backButton:hover {
   background: var(--launchpad-button-bg-hover, rgba(255, 255, 255, 0.18));
+}
+
+.closeButton {
+  background: var(--launchpad-button-bg, rgba(255, 255, 255, 0.1));
+  border: none;
+  color: var(--launchpad-text-muted, rgba(255, 255, 255, 0.5));
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  background: var(--launchpad-button-bg-hover, rgba(255, 255, 255, 0.18));
+  color: var(--launchpad-text, #fff);
+}
+
+/* Mobile: Larger touch target for close button */
+@media (max-width: 480px) {
+  .closeButton {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
 }
 
 /* Apps grid */
