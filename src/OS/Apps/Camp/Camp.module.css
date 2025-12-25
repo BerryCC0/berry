@@ -14,10 +14,17 @@
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--berry-border);
   background: var(--berry-bg-secondary);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .logo {
@@ -26,7 +33,8 @@
   image-rendering: pixelated;
 }
 
-.tabs {
+.tabs,
+.tabsRight {
   display: flex;
   gap: 0;
 }
@@ -76,9 +84,19 @@
     padding: 12px;
   }
 
-  .tabs {
+  .headerLeft {
     width: 100%;
-    order: 2;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tabs,
+  .tabsRight {
+    width: 100%;
+  }
+
+  .tabsRight {
+    order: 3;
   }
 
   .tab {

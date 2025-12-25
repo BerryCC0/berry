@@ -17,9 +17,10 @@ interface VoterDetailViewProps {
   address: string;
   onNavigate: (path: string) => void;
   onBack: () => void;
+  showBackButton?: boolean;
 }
 
-export function VoterDetailView({ address, onNavigate, onBack }: VoterDetailViewProps) {
+export function VoterDetailView({ address, onNavigate, onBack, showBackButton = true }: VoterDetailViewProps) {
   const { data: voter, isLoading, error } = useVoter(address);
   const { data: ensName } = useEnsName({
     address: address as `0x${string}`,
@@ -34,7 +35,9 @@ export function VoterDetailView({ address, onNavigate, onBack }: VoterDetailView
   if (error) {
     return (
       <div className={styles.error}>
-        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        {showBackButton && (
+          <button className={styles.backButton} onClick={onBack}>← Back</button>
+        )}
         <p>Failed to load voter</p>
       </div>
     );
@@ -43,7 +46,9 @@ export function VoterDetailView({ address, onNavigate, onBack }: VoterDetailView
   if (isLoading || !voter) {
     return (
       <div className={styles.loading}>
-        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        {showBackButton && (
+          <button className={styles.backButton} onClick={onBack}>← Back</button>
+        )}
         <p>Loading voter...</p>
       </div>
     );
@@ -52,7 +57,9 @@ export function VoterDetailView({ address, onNavigate, onBack }: VoterDetailView
   return (
     <div className={styles.container}>
       <div className={styles.navBar}>
-        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        {showBackButton && (
+          <button className={styles.backButton} onClick={onBack}>← Back</button>
+        )}
         <ShareButton path={`voter/${address}`} />
       </div>
 

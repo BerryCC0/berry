@@ -1,0 +1,128 @@
+/**
+ * MarkdownEditor Styles
+ */
+
+.container {
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--berry-bg);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--berry-bg-secondary);
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+}
+
+.tab {
+  padding: 6px 16px;
+  background: none;
+  border: 1px solid var(--berry-border);
+  color: var(--berry-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.tab:last-child {
+  border-radius: 0 4px 4px 0;
+  border-left: none;
+}
+
+.tab:hover:not(.active) {
+  background: var(--berry-bg-tertiary);
+}
+
+.tab.active {
+  background: var(--berry-primary);
+  border-color: var(--berry-primary);
+  color: white;
+}
+
+.formatButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.formatButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.formatButton:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-primary);
+}
+
+.formatButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editor {
+  width: 100%;
+  min-height: 200px;
+  padding: 12px;
+  background: var(--berry-bg);
+  border: none;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+
+.editor::placeholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+}
+
+.editor:focus {
+  box-shadow: inset 0 0 0 2px var(--berry-primary);
+}
+
+.editor:disabled {
+  background: var(--berry-bg-secondary);
+  cursor: not-allowed;
+}
+
+.preview {
+  min-height: 200px;
+  padding: 12px;
+  background: var(--berry-bg);
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.previewEmpty {
+  color: var(--berry-text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 40px 20px;
+}
+

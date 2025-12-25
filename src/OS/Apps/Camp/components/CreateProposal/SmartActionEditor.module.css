@@ -1,0 +1,90 @@
+/**
+ * SmartActionEditor Styles
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.input {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.input:disabled {
+  background: var(--berry-bg-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.input::placeholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+}
+
+.textarea {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.15s;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.textarea:disabled {
+  background: var(--berry-bg-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.textarea::placeholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+}
+
+.helpText {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+

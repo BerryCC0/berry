@@ -5,3 +5,6 @@ export { CandidateCard } from './CandidateCard';
 export { ShareButton } from './ShareButton';
 export { MarkdownRenderer } from './MarkdownRenderer';
 
+// CreateProposal components
+export * from './CreateProposal';
+

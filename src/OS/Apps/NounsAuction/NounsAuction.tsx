@@ -176,7 +176,10 @@ export function NounsAuction({ windowId }: NounsAuctionProps) {
               className={styles.nounImage}
             />
           ) : (
-            <div className={styles.placeholder}>⌐◨-◨</div>
+            <div className={styles.placeholder}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/loading.gif" alt="Loading..." className={styles.placeholderImage} />
+            </div>
           )}
           <TraitsList seed={displayAuction?.noun?.seed || null} loading={loading} />
         </div>

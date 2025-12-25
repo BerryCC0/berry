@@ -16,7 +16,8 @@ export type CampRoute =
   | { view: 'voters' }
   | { view: 'voter'; address: string }
   | { view: 'vote'; proposalId: string; voter: string }
-  | { view: 'account' };
+  | { view: 'account' }
+  | { view: 'create' };
 
 export function parseRoute(path?: string): CampRoute {
   if (!path) return { view: 'activity' };
@@ -50,6 +51,8 @@ export function parseRoute(path?: string): CampRoute {
       return { view: 'activity' };
     case 'account':
       return { view: 'account' };
+    case 'create':
+      return { view: 'create' };
     default:
       return { view: 'activity' };
   }
@@ -75,6 +78,8 @@ export function routeToPath(route: CampRoute): string {
       return `vote/${route.proposalId}/${route.voter}`;
     case 'account':
       return 'account';
+    case 'create':
+      return 'create';
   }
 }
 

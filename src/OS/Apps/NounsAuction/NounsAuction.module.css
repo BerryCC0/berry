@@ -47,9 +47,13 @@
   justify-content: center;
   background: var(--berry-bg-tertiary);
   border: 1px solid var(--berry-border);
-  font-size: 48px;
-  font-family: monospace;
-  color: var(--berry-text-muted);
+}
+
+.placeholderImage {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  opacity: 0.6;
 }
 
 /* Right column: Auction details */
@@ -134,6 +138,11 @@
   .placeholder {
     width: 200px;
     height: 200px;
+  }
+
+  .placeholderImage {
+    width: 48px;
+    height: 48px;
   }
 
   .statusGrid {

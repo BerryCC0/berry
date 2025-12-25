@@ -8,11 +8,14 @@
  * - /app/camp/proposal/{id}      → Single proposal
  * - /app/camp/voters             → Voters list
  * - /app/camp/voter/{address}    → Single voter
+ * - /app/camp/account            → Connected user's profile
+ * - /app/camp/create             → Create proposal (requires wallet)
  */
 
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { parseRoute, routeToPath, type CampRoute } from './types';
 import {
   ActivityView,
@@ -22,6 +25,8 @@ import {
   VoterDetailView,
   CandidateListView,
   CandidateDetailView,
+  AccountView,
+  CreateProposalView,
 } from './views';
 import styles from './Camp.module.css';
 
@@ -31,11 +36,14 @@ interface CampInitialState {
   path?: string;
 }
 
-type TabId = 'activity' | 'proposals' | 'candidates' | 'voters';
+type TabId = 'activity' | 'proposals' | 'candidates' | 'voters' | 'account' | 'create';
 
 export function Camp({ windowId, initialState, onStateChange }: AppComponentProps) {
   // Cast initialState to our expected shape
   const campState = initialState as CampInitialState | undefined;
+  
+  // Wallet connection state
+  const { isConnected } = useAccount();
   
   // Parse initial route from initialState
   const [route, setRoute] = useState<CampRoute>(() => parseRoute(campState?.path));
@@ -93,6 +101,10 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
       case 'voter':
       case 'vote':
         return 'voters';
+      case 'account':
+        return 'account';
+      case 'create':
+        return 'create';
       default:
         return 'activity';
     }
@@ -114,6 +126,12 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
         break;
       case 'voters':
         navigate({ view: 'voters' });
+        break;
+      case 'account':
+        navigate({ view: 'account' });
+        break;
+      case 'create':
+        navigate({ view: 'create' });
         break;
     }
     setHistory([]); // Clear history on tab change
@@ -162,6 +180,17 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
           />
         );
       
+      case 'account':
+        return <AccountView onNavigate={navigate} />;
+      
+      case 'create':
+        return (
+          <CreateProposalView 
+            onNavigate={navigate}
+            onBack={goBack}
+          />
+        );
+      
       default:
         return <ActivityView onNavigate={navigate} />;
     }
@@ -171,13 +200,15 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
     <div className={styles.camp}>
       {/* Header with logo and tabs */}
       <div className={styles.header}>
-        <img 
-          src="/icons/camp.svg" 
-          alt="Camp" 
-          className={styles.logo}
-        />
-        
-        <div className={styles.tabs}>
+        <div className={styles.headerLeft}>
+          <img 
+            src="/icons/camp.svg" 
+            alt="Camp" 
+            className={styles.logo}
+          />
+          
+          {/* Left tabs - public */}
+          <div className={styles.tabs}>
           <button
             className={`${styles.tab} ${currentTab === 'activity' ? styles.active : ''}`}
             onClick={() => handleTabChange('activity')}
@@ -202,7 +233,26 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
           >
             Voters
           </button>
+          </div>
         </div>
+
+        {/* Right tabs - wallet-only */}
+        {isConnected && (
+          <div className={styles.tabsRight}>
+            <button
+              className={`${styles.tab} ${currentTab === 'create' ? styles.active : ''}`}
+              onClick={() => handleTabChange('create')}
+            >
+              Create
+            </button>
+            <button
+              className={`${styles.tab} ${currentTab === 'account' ? styles.active : ''}`}
+              onClick={() => handleTabChange('account')}
+            >
+              Account
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content area */}

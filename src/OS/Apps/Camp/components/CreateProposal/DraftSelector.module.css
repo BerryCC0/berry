@@ -1,0 +1,259 @@
+/**
+ * DraftSelector Styles
+ */
+
+.container {
+  margin-bottom: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.count {
+  color: var(--berry-text-secondary);
+  font-weight: normal;
+}
+
+.newButton {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--berry-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.newButton:hover:not(:disabled) {
+  background: var(--berry-primary-hover, #0051a3);
+}
+
+.newButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.noDrafts {
+  padding: 16px;
+  background: var(--berry-bg-tertiary);
+  border: 1px dashed var(--berry-border);
+  border-radius: 8px;
+  color: var(--berry-text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.draftsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdownButton {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdownButton:hover:not(:disabled) {
+  border-color: var(--berry-primary);
+}
+
+.dropdownButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropdownLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.dropdownTitle {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdownDate {
+  color: var(--berry-text-secondary);
+  font-size: 11px;
+}
+
+.dropdownArrow {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+}
+
+.kycBadge {
+  background: #22c55e;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.draftItem {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.draftItem:last-child {
+  border-bottom: none;
+}
+
+.draftInfo {
+  flex: 1;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.draftInfo:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.draftInfo.active {
+  background: var(--berry-bg-tertiary);
+}
+
+.draftName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.draftTitleText {
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  font-size: 13px;
+}
+
+.renameButton {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 12px;
+}
+
+.renameButton:hover {
+  opacity: 1;
+}
+
+.draftMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.proposalTitleSmall {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.draftDate {
+  flex-shrink: 0;
+}
+
+.draftType {
+  padding: 2px 6px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.draftTitleInput {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--berry-bg);
+  border: 2px solid var(--berry-primary);
+  border-radius: 4px;
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.deleteButton {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--berry-border);
+  color: var(--berry-text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+}
+
+.deleteButton:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.autoSaveIndicator {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  text-align: right;
+}
+
