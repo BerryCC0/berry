@@ -96,6 +96,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
         return 'proposals';
       case 'candidates':
       case 'candidate':
+      case 'edit-candidate':
         return 'candidates';
       case 'voters':
       case 'voter':
@@ -188,6 +189,16 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
           <CreateProposalView 
             onNavigate={navigate}
             onBack={goBack}
+          />
+        );
+      
+      case 'edit-candidate':
+        return (
+          <CreateProposalView 
+            onNavigate={navigate}
+            onBack={goBack}
+            editCandidateProposer={route.proposer}
+            editCandidateSlug={route.slug}
           />
         );
       

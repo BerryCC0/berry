@@ -115,21 +115,30 @@ export function GlobeView({ spots, selectedSpotId, onSpotClick }: GlobeViewProps
         el.innerHTML = createMarkerSvg(d.color);
         el.style.cursor = 'pointer';
         el.style.pointerEvents = 'auto';
-        el.style.transition = 'transform 0.2s ease';
+        el.style.transition = 'transform 0.2s ease, opacity 0.3s ease';
         el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))';
         
-        if (d.id === selectedSpotId) {
+        const isSelected = d.id === selectedSpotId;
+        const hasSelection = selectedSpotId !== null;
+        
+        if (isSelected) {
           el.style.transform = 'scale(1.5)';
           el.style.zIndex = '100';
+          el.style.opacity = '1';
+        } else if (hasSelection) {
+          // Dim non-selected markers when something is selected
+          el.style.opacity = '0.25';
         }
         
         el.onclick = () => onSpotClickRef.current(d);
         el.onmouseenter = () => {
-          el.style.transform = d.id === selectedSpotId ? 'scale(1.8)' : 'scale(1.3)';
+          el.style.transform = isSelected ? 'scale(1.8)' : 'scale(1.3)';
+          el.style.opacity = '1';
           setHoveredSpot(d);
         };
         el.onmouseleave = () => {
-          el.style.transform = d.id === selectedSpotId ? 'scale(1.5)' : 'scale(1)';
+          el.style.transform = isSelected ? 'scale(1.5)' : 'scale(1)';
+          el.style.opacity = isSelected ? '1' : (hasSelection ? '0.25' : '1');
           setHoveredSpot(null);
         };
         
@@ -155,10 +164,15 @@ export function GlobeView({ spots, selectedSpotId, onSpotClick }: GlobeViewProps
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Focus on selected spot
+  // Focus on selected spot and stop rotation
   useEffect(() => {
     const globe = globeInstanceRef.current;
-    if (globe && selectedSpotId) {
+    if (!globe) return;
+    
+    // Stop rotation when a spot is selected, resume when deselected
+    globe.controls().autoRotate = !selectedSpotId;
+    
+    if (selectedSpotId) {
       const spot = spots.find(s => s.id === selectedSpotId);
       if (spot) {
         globe.pointOfView(

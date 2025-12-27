@@ -1066,6 +1066,31 @@ export function generateActionsFromTemplate(
       }];
     }
 
+    // Treasury Swaps via TokenBuyer
+    case 'swap-buy-eth': {
+      // TokenBuyer contract buys ETH from market using USDC
+      const TOKEN_BUYER_ADDRESS = '0x4f2aCdc74f6941390d9b1804faBc3E780388cfe5' as Address;
+      const ethAmount = parseEther(fieldValues.ethAmount || '0');
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'buyETH(uint256)',
+        calldata: encodeAdminUint256(ethAmount)
+      }];
+    }
+
+    case 'swap-sell-eth': {
+      // Payer contract can sell ETH for USDC
+      const PAYER_ADDRESS = '0xd97Bcd9f47cEe35c0a9ec1dc40C1269afc9E8E1D' as Address;
+      const ethAmount = parseEther(fieldValues.ethAmount || '0');
+      return [{
+        target: PAYER_ADDRESS,
+        value: ethAmount.toString(),
+        signature: 'payBackDebt(uint256)',
+        calldata: encodeAdminUint256(ethAmount)
+      }];
+    }
+
     // Nouns Operations
     case 'noun-transfer':
       return [{
@@ -1224,6 +1249,18 @@ export function generateActionsFromTemplate(
       return actions;
     }
 
+    // One-time Payment via Payer
+    case 'payment-once': {
+      const PAYER_ADDRESS = '0xd97Bcd9f47cEe35c0a9ec1dc40C1269afc9E8E1D' as Address;
+      const amount = parseUnits(fieldValues.amount || '0', 6); // USDC has 6 decimals
+      return [{
+        target: PAYER_ADDRESS,
+        value: '0',
+        signature: 'sendOrRegisterDebt(address,uint256)',
+        calldata: encodeSendETH(fieldValues.recipient as Address, amount) // Same encoding format
+      }];
+    }
+
     // Admin Functions - Voting
     case 'admin-voting-delay':
       return [{
@@ -1342,6 +1379,32 @@ export function generateActionsFromTemplate(
         signature: '_setForkEscrow(address)',
         calldata: encodeAdminAddress(fieldValues.address as Address)
       }];
+
+    case 'admin-fork-tokens': {
+      // Parse comma-separated token addresses
+      const tokenAddresses = (fieldValues.tokens || '')
+        .split(',')
+        .map(addr => addr.trim())
+        .filter(addr => addr.length === 42 && addr.startsWith('0x'));
+      
+      // Encode array of addresses for _setErc20TokensToIncludeInFork(address[])
+      // ABI encoding for dynamic array:
+      // - offset to array data (32 bytes)
+      // - array length (32 bytes)
+      // - array elements (32 bytes each, left-padded)
+      const offsetHex = (32).toString(16).padStart(64, '0'); // offset is 32 (0x20)
+      const lengthHex = tokenAddresses.length.toString(16).padStart(64, '0');
+      const elementsHex = tokenAddresses
+        .map(addr => addr.slice(2).padStart(64, '0'))
+        .join('');
+      
+      return [{
+        target: DAO_PROXY_ADDRESS,
+        value: '0',
+        signature: '_setErc20TokensToIncludeInFork(address[])',
+        calldata: `0x${offsetHex}${lengthHex}${elementsHex}` as `0x${string}`
+      }];
+    }
 
     // Admin Functions - Admin
     case 'admin-pending-admin':

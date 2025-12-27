@@ -335,6 +335,72 @@
   color: var(--berry-text-secondary);
 }
 
+/* Edit mode styles */
+.editIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.editSlug {
+  font-family: monospace;
+  color: var(--berry-text-secondary);
+  background: var(--berry-bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.backButton {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  padding: 6px 12px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-button-bg);
+  color: var(--berry-button-text);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.backButton:hover {
+  background: var(--berry-accent);
+  color: white;
+  border-color: var(--berry-accent);
+}
+
+.cancelButton {
+  font-family: var(--berry-font-system);
+  font-size: 14px;
+  padding: 12px 24px;
+  border: 1px solid var(--berry-border);
+  background: transparent;
+  color: var(--berry-text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cancelButton:hover:not(:disabled) {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-family: var(--berry-font-system);
+  font-size: 14px;
+  color: var(--berry-text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .twoColumnLayout {

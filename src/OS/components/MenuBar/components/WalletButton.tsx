@@ -9,7 +9,11 @@
 
 import { useWallet } from "@/OS/hooks/useWallet";
 import { useENS } from "@/OS/hooks/useENS";
-import { appLauncher } from "@/OS/lib/AppLauncher";
+import { appLauncher, getAppConfig } from "@/OS/lib/AppLauncher";
+import { detectPlatform } from "@/OS/lib/PlatformDetection";
+
+/** Menu bar height constant */
+const MENU_BAR_HEIGHT = 24;
 
 interface WalletButtonProps {
   styles: Record<string, string>;
@@ -20,8 +24,21 @@ export function WalletButton({ styles }: WalletButtonProps) {
   const { displayName, avatar, isLoading } = useENS(address);
 
   const handleClick = () => {
-    // Open the Wallet Panel app
-    appLauncher.launch("wallet-panel");
+    const platform = detectPlatform();
+    
+    // On desktop, position in top-right corner
+    if (platform.type === "desktop") {
+      const config = getAppConfig("wallet-panel");
+      const windowWidth = config?.window.width ?? 360;
+      
+      const x = platform.screenWidth - windowWidth;
+      const y = MENU_BAR_HEIGHT;
+      
+      appLauncher.launch("wallet-panel", { x, y });
+    } else {
+      // On mobile/tablet, use default positioning
+      appLauncher.launch("wallet-panel");
+    }
   };
 
   return (

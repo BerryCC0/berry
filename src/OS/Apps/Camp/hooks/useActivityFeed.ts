@@ -1,6 +1,16 @@
 /**
  * useActivityFeed Hook
  * Fetches unified activity feed from Goldsky
+ * 
+ * Includes:
+ * - Votes on proposals
+ * - Proposal feedback (signals)
+ * - Proposal creation
+ * - Candidate creation
+ * - Noun transfers
+ * - Noun delegations
+ * - Auction settlements (with winner + bid)
+ * - Auction starts
  */
 
 'use client';
@@ -49,6 +59,93 @@ const ACTIVITY_QUERY = `
       reason
       createdTimestamp
     }
+    
+    proposals(
+      first: $first
+      skip: $skip
+      orderBy: createdTimestamp
+      orderDirection: desc
+    ) {
+      id
+      title
+      proposer {
+        id
+      }
+      createdTimestamp
+    }
+    
+    proposalCandidates(
+      first: $first
+      skip: $skip
+      orderBy: createdTimestamp
+      orderDirection: desc
+      where: { canceled: false }
+    ) {
+      id
+      proposer
+      slug
+      createdTimestamp
+    }
+    
+    transferEvents(
+      first: $first
+      skip: $skip
+      orderBy: blockTimestamp
+      orderDirection: desc
+    ) {
+      id
+      noun {
+        id
+      }
+      previousHolder {
+        id
+      }
+      newHolder {
+        id
+      }
+      blockTimestamp
+    }
+    
+    delegationEvents(
+      first: $first
+      skip: $skip
+      orderBy: blockTimestamp
+      orderDirection: desc
+    ) {
+      id
+      noun {
+        id
+      }
+      delegator {
+        id
+      }
+      previousDelegate {
+        id
+      }
+      newDelegate {
+        id
+      }
+      blockTimestamp
+    }
+    
+    auctions(
+      first: $first
+      skip: $skip
+      orderBy: startTime
+      orderDirection: desc
+    ) {
+      id
+      noun {
+        id
+      }
+      amount
+      bidder {
+        id
+      }
+      settled
+      startTime
+      endTime
+    }
   }
 `;
 
@@ -70,7 +167,48 @@ interface ActivityQueryResult {
     reason: string | null;
     createdTimestamp: string;
   }>;
+  proposals: Array<{
+    id: string;
+    title: string;
+    proposer: { id: string };
+    createdTimestamp: string;
+  }>;
+  proposalCandidates: Array<{
+    id: string;
+    proposer: string;
+    slug: string;
+    createdTimestamp: string;
+  }>;
+  transferEvents: Array<{
+    id: string;
+    noun: { id: string };
+    previousHolder: { id: string };
+    newHolder: { id: string };
+    blockTimestamp: string;
+  }>;
+  delegationEvents: Array<{
+    id: string;
+    noun: { id: string };
+    delegator: { id: string };
+    previousDelegate: { id: string };
+    newDelegate: { id: string };
+    blockTimestamp: string;
+  }>;
+  auctions: Array<{
+    id: string;
+    noun: { id: string };
+    amount: string;
+    bidder: { id: string } | null;
+    settled: boolean;
+    startTime: string;
+    endTime: string;
+  }>;
 }
+
+// Nouns Auction House and Treasury addresses (for filtering mints/burns)
+const AUCTION_HOUSE = '0x830bd73e4184cef73443c15111a1df14e495c706';
+const NOUNS_DAO = '0x0bc3807ec262cb779b38d65b38158acc3bfede10';
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 async function fetchActivity(first: number, skip: number): Promise<ActivityItem[]> {
   const response = await fetch(GOLDSKY_ENDPOINT, {
@@ -117,6 +255,137 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     });
   }
 
+  // Convert proposal creations to activity items
+  for (const proposal of data.proposals) {
+    items.push({
+      id: `proposal-created-${proposal.id}`,
+      type: 'proposal_created',
+      timestamp: proposal.createdTimestamp,
+      actor: proposal.proposer.id,
+      proposalId: proposal.id,
+      proposalTitle: proposal.title,
+    });
+  }
+
+  // Convert candidate creations to activity items
+  for (const candidate of data.proposalCandidates) {
+    items.push({
+      id: `candidate-created-${candidate.id}`,
+      type: 'candidate_created',
+      timestamp: candidate.createdTimestamp,
+      actor: candidate.proposer,
+      candidateSlug: candidate.slug,
+      candidateProposer: candidate.proposer,
+    });
+  }
+
+  // Build a set of transfer keys (nounId + timestamp) to filter out auto-delegations
+  // When a noun is transferred, delegation automatically follows - we only show the transfer
+  const transferKeys = new Set<string>();
+  
+  // Convert transfers to activity items (filter out auction-related transfers)
+  for (const transfer of data.transferEvents) {
+    const fromLower = transfer.previousHolder.id.toLowerCase();
+    const toLower = transfer.newHolder.id.toLowerCase();
+    
+    // Skip:
+    // - Mints from zero address
+    // - Transfers from auction house (noun won at auction - shown via auction_settled)
+    // - Transfers TO auction house (noun going up for auction - shown via auction_started)
+    // - Burns to zero address
+    // - Transfers to treasury
+    if (
+      fromLower === ZERO_ADDRESS ||
+      fromLower === AUCTION_HOUSE.toLowerCase() ||
+      toLower === ZERO_ADDRESS ||
+      toLower === AUCTION_HOUSE.toLowerCase() ||
+      toLower === NOUNS_DAO.toLowerCase()
+    ) {
+      continue;
+    }
+
+    // Track this transfer to filter out the accompanying delegation
+    transferKeys.add(`${transfer.noun.id}-${transfer.blockTimestamp}`);
+
+    items.push({
+      id: `transfer-${transfer.id}`,
+      type: 'noun_transfer',
+      timestamp: transfer.blockTimestamp,
+      actor: transfer.previousHolder.id,
+      nounId: transfer.noun.id,
+      fromAddress: transfer.previousHolder.id,
+      toAddress: transfer.newHolder.id,
+    });
+  }
+
+  // Convert delegations to activity items
+  for (const delegation of data.delegationEvents) {
+    const delegatorLower = delegation.delegator.id.toLowerCase();
+    const previousDelegateLower = delegation.previousDelegate.id.toLowerCase();
+    const newDelegateLower = delegation.newDelegate.id.toLowerCase();
+    const auctionHouseLower = AUCTION_HOUSE.toLowerCase();
+    
+    // Skip any delegation involving the auction house (in any role)
+    // These are implied by auction start/settlement events
+    if (
+      delegatorLower === auctionHouseLower ||
+      previousDelegateLower === auctionHouseLower ||
+      newDelegateLower === auctionHouseLower
+    ) {
+      continue;
+    }
+    
+    // Skip self-delegations and delegations to/from zero address
+    if (
+      newDelegateLower === delegatorLower ||
+      newDelegateLower === ZERO_ADDRESS ||
+      previousDelegateLower === ZERO_ADDRESS
+    ) {
+      continue;
+    }
+
+    // Skip delegations that occurred alongside a transfer (auto-delegation on transfer)
+    const transferKey = `${delegation.noun.id}-${delegation.blockTimestamp}`;
+    if (transferKeys.has(transferKey)) {
+      continue;
+    }
+
+    items.push({
+      id: `delegation-${delegation.id}`,
+      type: 'noun_delegation',
+      timestamp: delegation.blockTimestamp,
+      actor: delegation.delegator.id,
+      nounId: delegation.noun.id,
+      fromAddress: delegation.previousDelegate.id,
+      toAddress: delegation.newDelegate.id,
+    });
+  }
+
+  // Convert auctions to activity items
+  for (const auction of data.auctions) {
+    if (auction.settled && auction.bidder) {
+      // Auction ended/settled
+      items.push({
+        id: `auction-settled-${auction.id}`,
+        type: 'auction_settled',
+        timestamp: auction.endTime,
+        actor: auction.bidder.id,
+        nounId: auction.noun.id,
+        winningBid: auction.amount,
+        winner: auction.bidder.id,
+      });
+    } else if (!auction.settled) {
+      // Auction started (use start time)
+      items.push({
+        id: `auction-started-${auction.id}`,
+        type: 'auction_started',
+        timestamp: auction.startTime,
+        actor: AUCTION_HOUSE, // The auction house starts auctions
+        nounId: auction.noun.id,
+      });
+    }
+  }
+
   // Sort by timestamp descending
   items.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
 
@@ -130,4 +399,3 @@ export function useActivityFeed(first: number = 50) {
     staleTime: 30000, // 30 seconds
   });
 }
-

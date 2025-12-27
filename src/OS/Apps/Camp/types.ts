@@ -17,7 +17,8 @@ export type CampRoute =
   | { view: 'voter'; address: string }
   | { view: 'vote'; proposalId: string; voter: string }
   | { view: 'account' }
-  | { view: 'create' };
+  | { view: 'create' }
+  | { view: 'edit-candidate'; proposer: string; slug: string };
 
 export function parseRoute(path?: string): CampRoute {
   if (!path) return { view: 'activity' };
@@ -52,6 +53,10 @@ export function parseRoute(path?: string): CampRoute {
     case 'account':
       return { view: 'account' };
     case 'create':
+      // Check for edit mode: create/edit/{proposer}/{slug}
+      if (parts[1] === 'edit' && parts[2] && parts[3]) {
+        return { view: 'edit-candidate', proposer: parts[2], slug: parts.slice(3).join('/') };
+      }
       return { view: 'create' };
     default:
       return { view: 'activity' };
@@ -80,6 +85,8 @@ export function routeToPath(route: CampRoute): string {
       return 'account';
     case 'create':
       return 'create';
+    case 'edit-candidate':
+      return `create/edit/${route.proposer}/${route.slug}`;
   }
 }
 
@@ -198,8 +205,13 @@ export type ActivityType =
   | 'proposal_feedback'
   | 'candidate_feedback'
   | 'proposal_created'
+  | 'candidate_created'
   | 'proposal_queued'
-  | 'proposal_executed';
+  | 'proposal_executed'
+  | 'noun_transfer'
+  | 'noun_delegation'
+  | 'auction_settled'
+  | 'auction_started';
 
 export interface ActivityItem {
   id: string;
@@ -217,6 +229,15 @@ export interface ActivityItem {
   support?: number;
   votes?: string;
   reason?: string;
+  
+  // Noun transfer/delegation specific
+  nounId?: string;
+  fromAddress?: string;
+  toAddress?: string;
+  
+  // Auction specific
+  winningBid?: string;
+  winner?: string;
 }
 
 // ============================================================================

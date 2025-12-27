@@ -99,7 +99,7 @@ const walletPanelConfig: AppConfig = {
   showInDock: false, // Accessed via MenuBar
   window: {
     width: 360,
-    height: 480,
+    height: 600,
     minWidth: 320,
     minHeight: 400,
     isResizable: true,
