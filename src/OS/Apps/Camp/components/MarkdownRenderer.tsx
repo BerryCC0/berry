@@ -174,19 +174,22 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
     },
 
     // Images - click to zoom
-    img: ({ src, alt }) => (
-      <span className={styles.imageContainer}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
-          src={src} 
-          alt={alt || ''} 
-          className={styles.image} 
-          loading="lazy"
-          onClick={() => src && onImageClick(src, alt || '')}
-        />
-        {alt && <span className={styles.imageCaption}>{alt}</span>}
-      </span>
-    ),
+    img: ({ src, alt }) => {
+      const imgSrc = typeof src === 'string' ? src : '';
+      return (
+        <span className={styles.imageContainer}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src={imgSrc} 
+            alt={alt || ''} 
+            className={styles.image} 
+            loading="lazy"
+            onClick={() => imgSrc && onImageClick(imgSrc, alt || '')}
+          />
+          {alt && <span className={styles.imageCaption}>{alt}</span>}
+        </span>
+      );
+    },
 
     // Lists
     ul: ({ children }) => <ul className={styles.ul}>{children}</ul>,
