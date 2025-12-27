@@ -6,7 +6,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
@@ -15,6 +15,43 @@ import styles from './MarkdownRenderer.module.css';
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+}
+
+/**
+ * Image Lightbox Component
+ */
+function ImageLightbox({ 
+  src, 
+  alt, 
+  onClose 
+}: { 
+  src: string; 
+  alt: string; 
+  onClose: () => void;
+}) {
+  // Close on Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className={styles.lightboxOverlay} onClick={onClose}>
+      <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} className={styles.lightboxImage} />
+        {alt && <div className={styles.lightboxCaption}>{alt}</div>}
+        <button className={styles.lightboxClose} onClick={onClose} aria-label="Close">
+          ×
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -100,116 +137,144 @@ function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vim
 }
 
 /**
- * Custom components for react-markdown
+ * Create markdown components with image click handler
  */
-const markdownComponents: Components = {
-  // Headings
-  h1: ({ children }) => <h1 className={styles.h1}>{children}</h1>,
-  h2: ({ children }) => <h2 className={styles.h2}>{children}</h2>,
-  h3: ({ children }) => <h3 className={styles.h3}>{children}</h3>,
-  h4: ({ children }) => <h4 className={styles.h4}>{children}</h4>,
-  h5: ({ children }) => <h5 className={styles.h5}>{children}</h5>,
-  h6: ({ children }) => <h6 className={styles.h6}>{children}</h6>,
+function createMarkdownComponents(onImageClick: (src: string, alt: string) => void): Components {
+  return {
+    // Headings
+    h1: ({ children }) => <h1 className={styles.h1}>{children}</h1>,
+    h2: ({ children }) => <h2 className={styles.h2}>{children}</h2>,
+    h3: ({ children }) => <h3 className={styles.h3}>{children}</h3>,
+    h4: ({ children }) => <h4 className={styles.h4}>{children}</h4>,
+    h5: ({ children }) => <h5 className={styles.h5}>{children}</h5>,
+    h6: ({ children }) => <h6 className={styles.h6}>{children}</h6>,
 
-  // Paragraphs - check for standalone video links
-  p: ({ children }) => {
-    // Check if this paragraph contains only a video link
-    const video = getSingleVideoLink(children);
-    if (video) {
-      return <VideoEmbed type={video.type} id={video.id} />;
-    }
-    return <p className={styles.p}>{children}</p>;
-  },
+    // Paragraphs - check for standalone video links
+    p: ({ children }) => {
+      // Check if this paragraph contains only a video link
+      const video = getSingleVideoLink(children);
+      if (video) {
+        return <VideoEmbed type={video.type} id={video.id} />;
+      }
+      return <p className={styles.p}>{children}</p>;
+    },
 
-  // Links - always render as links (video detection happens at paragraph level)
-  a: ({ href, children }) => {
-    return (
-      <a 
-        href={href} 
-        className={styles.link}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {children}
-      </a>
-    );
-  },
+    // Links - always render as links (video detection happens at paragraph level)
+    a: ({ href, children }) => {
+      return (
+        <a 
+          href={href} 
+          className={styles.link}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {children}
+        </a>
+      );
+    },
 
-  // Images - constrained size
-  img: ({ src, alt }) => (
-    <span className={styles.imageContainer}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img 
-        src={src} 
-        alt={alt || ''} 
-        className={styles.image} 
-        loading="lazy"
-      />
-      {alt && <span className={styles.imageCaption}>{alt}</span>}
-    </span>
-  ),
+    // Images - click to zoom
+    img: ({ src, alt }) => (
+      <span className={styles.imageContainer}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img 
+          src={src} 
+          alt={alt || ''} 
+          className={styles.image} 
+          loading="lazy"
+          onClick={() => src && onImageClick(src, alt || '')}
+        />
+        {alt && <span className={styles.imageCaption}>{alt}</span>}
+      </span>
+    ),
 
-  // Lists
-  ul: ({ children }) => <ul className={styles.ul}>{children}</ul>,
-  ol: ({ children }) => <ol className={styles.ol}>{children}</ol>,
-  li: ({ children }) => <li className={styles.li}>{children}</li>,
+    // Lists
+    ul: ({ children }) => <ul className={styles.ul}>{children}</ul>,
+    ol: ({ children }) => <ol className={styles.ol}>{children}</ol>,
+    li: ({ children }) => <li className={styles.li}>{children}</li>,
 
-  // Blockquotes
-  blockquote: ({ children }) => (
-    <blockquote className={styles.blockquote}>{children}</blockquote>
-  ),
+    // Blockquotes
+    blockquote: ({ children }) => (
+      <blockquote className={styles.blockquote}>{children}</blockquote>
+    ),
 
-  // Code
-  code: ({ className, children }) => {
-    const isInline = !className;
-    if (isInline) {
-      return <code className={styles.inlineCode}>{children}</code>;
-    }
-    return (
-      <code className={`${styles.codeBlock} ${className || ''}`}>
-        {children}
-      </code>
-    );
-  },
-  pre: ({ children }) => <pre className={styles.pre}>{children}</pre>,
+    // Code
+    code: ({ className, children }) => {
+      const isInline = !className;
+      if (isInline) {
+        return <code className={styles.inlineCode}>{children}</code>;
+      }
+      return (
+        <code className={`${styles.codeBlock} ${className || ''}`}>
+          {children}
+        </code>
+      );
+    },
+    pre: ({ children }) => <pre className={styles.pre}>{children}</pre>,
 
-  // Tables (GFM)
-  table: ({ children }) => (
-    <div className={styles.tableWrapper}>
-      <table className={styles.table}>{children}</table>
-    </div>
-  ),
-  thead: ({ children }) => <thead className={styles.thead}>{children}</thead>,
-  tbody: ({ children }) => <tbody className={styles.tbody}>{children}</tbody>,
-  tr: ({ children }) => <tr className={styles.tr}>{children}</tr>,
-  th: ({ children }) => <th className={styles.th}>{children}</th>,
-  td: ({ children }) => <td className={styles.td}>{children}</td>,
+    // Tables (GFM)
+    table: ({ children }) => (
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>{children}</table>
+      </div>
+    ),
+    thead: ({ children }) => <thead className={styles.thead}>{children}</thead>,
+    tbody: ({ children }) => <tbody className={styles.tbody}>{children}</tbody>,
+    tr: ({ children }) => <tr className={styles.tr}>{children}</tr>,
+    th: ({ children }) => <th className={styles.th}>{children}</th>,
+    td: ({ children }) => <td className={styles.td}>{children}</td>,
 
-  // Horizontal rule
-  hr: () => <hr className={styles.hr} />,
+    // Horizontal rule
+    hr: () => <hr className={styles.hr} />,
 
-  // Strong and emphasis
-  strong: ({ children }) => <strong className={styles.strong}>{children}</strong>,
-  em: ({ children }) => <em className={styles.em}>{children}</em>,
+    // Strong and emphasis
+    strong: ({ children }) => <strong className={styles.strong}>{children}</strong>,
+    em: ({ children }) => <em className={styles.em}>{children}</em>,
 
-  // Strikethrough (GFM)
-  del: ({ children }) => <del className={styles.del}>{children}</del>,
-};
+    // Strikethrough (GFM)
+    del: ({ children }) => <del className={styles.del}>{children}</del>,
+  };
+}
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
+
+  const handleImageClick = useCallback((src: string, alt: string) => {
+    setLightboxImage({ src, alt });
+  }, []);
+
+  const handleCloseLightbox = useCallback(() => {
+    setLightboxImage(null);
+  }, []);
+
+  const markdownComponents = useMemo(
+    () => createMarkdownComponents(handleImageClick),
+    [handleImageClick]
+  );
+
   if (!content) {
     return null;
   }
 
   return (
-    <div className={`${styles.markdown} ${className || ''}`}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={markdownComponents}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+    <>
+      <div className={`${styles.markdown} ${className || ''}`}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={markdownComponents}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+      
+      {lightboxImage && (
+        <ImageLightbox
+          src={lightboxImage.src}
+          alt={lightboxImage.alt}
+          onClose={handleCloseLightbox}
+        />
+      )}
+    </>
   );
 }
 
