@@ -135,12 +135,16 @@ const markdownComponents: Components = {
     );
   },
 
-  // Images - click to open full size in new tab
+  // Images - constrained size
   img: ({ src, alt }) => (
     <span className={styles.imageContainer}>
-      <a href={src} target="_blank" rel="noopener noreferrer" title="Click to view full size">
-        <img src={src} alt={alt || ''} className={styles.image} loading="lazy" />
-      </a>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img 
+        src={src} 
+        alt={alt || ''} 
+        className={styles.image} 
+        loading="lazy"
+      />
       {alt && <span className={styles.imageCaption}>{alt}</span>}
     </span>
   ),
