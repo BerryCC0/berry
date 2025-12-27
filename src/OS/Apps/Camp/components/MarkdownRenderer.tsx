@@ -135,10 +135,12 @@ const markdownComponents: Components = {
     );
   },
 
-  // Images
+  // Images - click to open full size in new tab
   img: ({ src, alt }) => (
     <span className={styles.imageContainer}>
-      <img src={src} alt={alt || ''} className={styles.image} loading="lazy" />
+      <a href={src} target="_blank" rel="noopener noreferrer" title="Click to view full size">
+        <img src={src} alt={alt || ''} className={styles.image} loading="lazy" />
+      </a>
       {alt && <span className={styles.imageCaption}>{alt}</span>}
     </span>
   ),
