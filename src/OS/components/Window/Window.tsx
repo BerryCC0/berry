@@ -148,7 +148,6 @@ function WindowRenderer({
     >
       <TitleBar
         title={window.title}
-        icon={window.icon}
         isFocused={window.isFocused}
         onDragStart={onDragStart}
         onClose={onClose}

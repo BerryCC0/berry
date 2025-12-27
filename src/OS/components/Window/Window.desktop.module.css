@@ -130,12 +130,6 @@
 }
 
 /* Title Text */
-.titleIcon {
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
-  image-rendering: pixelated;
-}
 
 .titleText {
   flex: 1;

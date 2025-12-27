@@ -238,6 +238,7 @@ export interface ActivityItem {
   // Auction specific
   winningBid?: string;
   winner?: string;
+  settler?: string; // Who started the auction by settling the previous one
 }
 
 // ============================================================================

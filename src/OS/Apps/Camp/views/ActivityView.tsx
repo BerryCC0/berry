@@ -5,6 +5,8 @@
 
 'use client';
 
+import { useCallback } from 'react';
+import { appLauncher } from '@/OS/lib/AppLauncher';
 import { useActivityFeed } from '../hooks';
 import { ActivityItem } from '../components';
 import styles from './ActivityView.module.css';
@@ -15,6 +17,16 @@ interface ActivityViewProps {
 
 export function ActivityView({ onNavigate }: ActivityViewProps) {
   const { data: activities, isLoading, error } = useActivityFeed(50);
+
+  /**
+   * Open the Nouns Auction app with a specific noun
+   * Uses appLauncher per ARCHITECTURE.md guidelines
+   */
+  const handleClickAuction = useCallback((nounId: string) => {
+    appLauncher.launch('nouns-auction', {
+      initialState: { nounId },
+    });
+  }, []);
 
   if (error) {
     return (
@@ -50,6 +62,7 @@ export function ActivityView({ onNavigate }: ActivityViewProps) {
           onClickProposal={(id) => onNavigate(`proposal/${id}`)}
           onClickVoter={(address) => onNavigate(`voter/${address}`)}
           onClickCandidate={(proposer, slug) => onNavigate(`candidate/${proposer}/${slug}`)}
+          onClickAuction={handleClickAuction}
         />
       ))}
     </div>

@@ -7,7 +7,6 @@
 
 interface TitleBarProps {
   title: string;
-  icon: string;
   isFocused: boolean;
   onDragStart: (e: React.MouseEvent | React.TouchEvent) => void;
   onClose: () => void;
@@ -19,7 +18,6 @@ interface TitleBarProps {
 
 export function TitleBar({
   title,
-  icon,
   isFocused,
   onDragStart,
   onClose,
@@ -74,11 +72,6 @@ export function TitleBar({
           {isMobile ? "+" : ""}
         </button>
       </div>
-
-      {icon && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={icon} alt="" className={styles.titleIcon} />
-      )}
 
       <span className={titleTextClassName}>{title}</span>
     </div>

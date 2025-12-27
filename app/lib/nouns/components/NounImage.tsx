@@ -49,13 +49,16 @@ interface NounImageByIdProps {
   className?: string;
   style?: React.CSSProperties;
   fallback?: React.ReactNode;
+  onClick?: () => void;
 }
 
 /**
  * Render a Noun by ID (fetches from cache)
  */
-export function NounImageById({ id, size = 320, className, style, fallback }: NounImageByIdProps) {
+export function NounImageById({ id, size = 320, className, style, fallback, onClick }: NounImageByIdProps) {
   const { data: noun, isLoading, error } = useNoun(id);
+
+  const cursorStyle = onClick ? { cursor: 'pointer' } : {};
 
   if (isLoading) {
     return (
@@ -68,8 +71,12 @@ export function NounImageById({ id, size = 320, className, style, fallback }: No
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          ...cursorStyle,
           ...style,
         }}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
       >
         {fallback || '...'}
       </div>
@@ -87,8 +94,12 @@ export function NounImageById({ id, size = 320, className, style, fallback }: No
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          ...cursorStyle,
           ...style,
         }}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
       >
         {fallback || '?'}
       </div>
@@ -107,14 +118,18 @@ export function NounImageById({ id, size = 320, className, style, fallback }: No
         className={className}
         style={{
           imageRendering: 'pixelated',
+          ...cursorStyle,
           ...style,
         }}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
       />
     );
   }
 
-  // Otherwise render from seed
-  return (
+  // Otherwise render from seed - wrap in clickable container if onClick provided
+  const nounImage = (
     <NounImage
       seed={{
         background: noun.background,
@@ -124,10 +139,26 @@ export function NounImageById({ id, size = 320, className, style, fallback }: No
         glasses: noun.glasses,
       }}
       size={size}
-      className={className}
-      style={style}
+      className={onClick ? undefined : className}
+      style={onClick ? undefined : style}
     />
   );
+
+  if (onClick) {
+    return (
+      <div
+        className={className}
+        style={{ ...cursorStyle, ...style }}
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+      >
+        {nounImage}
+      </div>
+    );
+  }
+
+  return nounImage;
 }
 
 /**

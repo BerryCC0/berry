@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { NounImage } from '@/app/lib/nouns/components';
+import type { AppComponentProps } from '@/OS/types/app';
 import { useCurrentAuction, useAuctionById, useNounById } from './hooks/useAuctionData';
 import { AuctionNavigation, BidButton, BidHistory, TraitsList } from './components';
 import {
@@ -21,12 +22,30 @@ import {
 } from './utils/auctionHelpers';
 import styles from './NounsAuction.module.css';
 
-interface NounsAuctionProps {
-  windowId: string;
+/**
+ * Initial state for launching auction app with a specific noun
+ */
+interface NounsAuctionInitialState {
+  nounId?: string;
 }
 
-export function NounsAuction({ windowId }: NounsAuctionProps) {
-  const [viewingNounId, setViewingNounId] = useState<string | null>(null);
+/**
+ * Type guard for NounsAuctionInitialState
+ */
+function isNounsAuctionInitialState(state: unknown): state is NounsAuctionInitialState {
+  if (!state || typeof state !== 'object') return false;
+  const s = state as Record<string, unknown>;
+  return s.nounId === undefined || typeof s.nounId === 'string';
+}
+
+export function NounsAuction({ windowId, initialState }: AppComponentProps) {
+  // Safely extract nounId from initialState
+  const initialNounId = isNounsAuctionInitialState(initialState) 
+    ? initialState.nounId ?? null 
+    : null;
+
+  // Initialize viewingNounId from initialState if provided
+  const [viewingNounId, setViewingNounId] = useState<string | null>(initialNounId);
   const [countdown, setCountdown] = useState<string>('');
 
   // Determine if viewing current auction or historical

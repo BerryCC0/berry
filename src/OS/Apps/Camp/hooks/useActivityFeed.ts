@@ -362,6 +362,9 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
   }
 
   // Convert auctions to activity items
+  // Collect noun IDs that need settler info
+  const auctionStartedItems: ActivityItem[] = [];
+  
   for (const auction of data.auctions) {
     if (auction.settled && auction.bidder) {
       // Auction ended/settled
@@ -375,16 +378,35 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
         winner: auction.bidder.id,
       });
     } else if (!auction.settled) {
-      // Auction started (use start time)
-      items.push({
+      // Auction started - settler will be fetched below
+      const item: ActivityItem = {
         id: `auction-started-${auction.id}`,
         type: 'auction_started',
         timestamp: auction.startTime,
-        actor: AUCTION_HOUSE, // The auction house starts auctions
+        actor: AUCTION_HOUSE,
         nounId: auction.noun.id,
-      });
+      };
+      items.push(item);
+      auctionStartedItems.push(item);
     }
   }
+
+  // Fetch settler info for auction_started events from our database
+  // The settler is who created this noun by settling the previous auction
+  await Promise.all(auctionStartedItems.map(async (item) => {
+    try {
+      const response = await fetch(`/api/nouns/${item.nounId}`);
+      if (response.ok) {
+        const noun = await response.json();
+        if (noun.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
+          item.settler = noun.settled_by_address;
+          item.actor = noun.settled_by_address; // Update actor to be the settler
+        }
+      }
+    } catch (error) {
+      // Settler info not available, leave as auction house
+    }
+  }));
 
   // Sort by timestamp descending
   items.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));

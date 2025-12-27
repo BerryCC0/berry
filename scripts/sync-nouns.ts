@@ -1,7 +1,15 @@
 /**
  * Sync Nouns Script
- * Fetches all settled auctions from Goldsky and populates the nouns table
+ * Fetches all nouns from Goldsky and populates the nouns table
  * Uses Etherscan to find who settled each auction (called settleCurrentAndCreateNewAuction)
+ * 
+ * SETTLER SEMANTICS:
+ * When someone settles auction N, they create noun N+1 (and N+2 if N+1 is a Nounder).
+ * So the settler of auction N is attributed to noun N+1, because they "chose" what N+1 looks like.
+ * 
+ * - Noun 0: Genesis mint (no settler)
+ * - Noun 1: First auction, kicked off by genesis (no settler)
+ * - Noun 2+: Settler = person who settled the previous auction
  * 
  * Usage: npx tsx scripts/sync-nouns.ts
  */
@@ -18,6 +26,8 @@ const AUCTION_HOUSE_ADDRESS = '0x830BD73E4184ceF73443C15111a1DF14e495C706';
 
 // AuctionSettled event signature: AuctionSettled(uint256 indexed nounId, address winner, uint256 amount)
 const AUCTION_SETTLED_TOPIC = '0xc9f72b276a388619c6d185d146697036241880c36654b1a3ffdad07c24038d99';
+
+const NOUNDERS_MULTISIG = '0x2573C60a6D127755aA2DC85e342F7da2378a0Cc5';
 
 // Import image data and SVG builder
 import { ImageData } from '../app/lib/nouns/utils/image-data';
@@ -63,15 +73,9 @@ interface EtherscanLogResult {
   data: string;
 }
 
-interface EtherscanTxResult {
-  hash: string;
-  from: string;
-  blockNumber: string;
-  timeStamp: string;
-}
-
 interface SettlementInfo {
-  nounId: number;
+  settledNounId: number;  // The noun whose auction was settled
+  createdNounId: number;  // The noun that was created (settledNounId + 1)
   txHash: string;
   settlerAddress: string;
   timestamp: number;
@@ -223,21 +227,19 @@ async function fetchAllNouns(): Promise<NounData[]> {
 // Nounder nouns are every 10th noun for the first 5 years (IDs 0, 10, 20, ... up to ~1820)
 // They are minted directly to Nounders and not auctioned
 function isNounderNoun(nounId: number): boolean {
-  // Every 10th noun during the first 5 years goes to Nounders
-  // After noun 1820, this stops
   return nounId <= 1820 && nounId % 10 === 0;
 }
 
 async function fetchSettlementEventsFromEtherscan(apiKey: string): Promise<Map<number, SettlementInfo>> {
   console.log('Fetching AuctionSettled events from Etherscan V2 API...');
   
+  // Map from CREATED noun ID to settlement info
+  // When auction N is settled, noun N+1 is created
   const settlementMap = new Map<number, SettlementInfo>();
   let page = 1;
   const pageSize = 1000;
   
   while (true) {
-    // Fetch AuctionSettled event logs using V2 API
-    // Ref: https://docs.etherscan.io/api-reference/endpoint/getlogs-address-topics
     const url = new URL('https://api.etherscan.io/v2/api');
     url.searchParams.set('chainid', '1');
     url.searchParams.set('module', 'logs');
@@ -256,7 +258,7 @@ async function fetchSettlementEventsFromEtherscan(apiKey: string): Promise<Map<n
     if (data.status !== '1' || !data.result || data.result.length === 0) {
       if (data.message === 'No records found') break;
       if (page === 1) {
-        console.error('Etherscan API error:', data.message);
+        console.error('Etherscan API error:', data.message, data.result);
         break;
       }
       break;
@@ -264,73 +266,90 @@ async function fetchSettlementEventsFromEtherscan(apiKey: string): Promise<Map<n
     
     const logs: EtherscanLogResult[] = data.result;
     
-    // For each log, we need to get the transaction to find who called settleCurrentAndCreateNewAuction
-    // The nounId is in topics[1] (indexed parameter)
     for (const log of logs) {
-      const nounId = parseInt(log.topics[1], 16);
+      const settledNounId = parseInt(log.topics[1], 16);
+      const createdNounId = settledNounId + 1;
       
-      // We'll batch the transaction lookups after collecting all logs
-      settlementMap.set(nounId, {
-        nounId,
+      // Store by the CREATED noun ID (the one that was "chosen" by this settler)
+      settlementMap.set(createdNounId, {
+        settledNounId,
+        createdNounId,
         txHash: log.transactionHash,
         settlerAddress: '', // Will fill in later
         timestamp: parseInt(log.timeStamp, 16),
       });
+      
+      // If the created noun is a Nounder noun, the settler also "chose" the next one
+      if (isNounderNoun(createdNounId)) {
+        settlementMap.set(createdNounId + 1, {
+          settledNounId,
+          createdNounId: createdNounId + 1,
+          txHash: log.transactionHash,
+          settlerAddress: '',
+          timestamp: parseInt(log.timeStamp, 16),
+        });
+      }
     }
     
-    console.log(`  Fetched ${settlementMap.size} settlement events (page ${page})...`);
+    console.log(`  Fetched events for page ${page}, mapped ${settlementMap.size} created nouns...`);
     
     if (logs.length < pageSize) break;
     page++;
     
-    // Rate limit: Etherscan free tier is 5 calls/sec
     await new Promise(resolve => setTimeout(resolve, 250));
   }
   
   // Now fetch transaction details to get the sender (settler)
   console.log('Fetching transaction senders from Etherscan...');
   
-  const entries = Array.from(settlementMap.entries());
-  const batchSize = 20; // Process in batches to respect rate limits
+  // Get unique transaction hashes
+  const txHashes = new Set<string>();
+  for (const info of settlementMap.values()) {
+    txHashes.add(info.txHash);
+  }
   
-  for (let i = 0; i < entries.length; i += batchSize) {
-    const batch = entries.slice(i, i + batchSize);
+  const txToSender = new Map<string, string>();
+  const txHashArray = Array.from(txHashes);
+  const batchSize = 20;
+  
+  for (let i = 0; i < txHashArray.length; i += batchSize) {
+    const batch = txHashArray.slice(i, i + batchSize);
     
-    await Promise.all(batch.map(async ([nounId, info]) => {
+    await Promise.all(batch.map(async (txHash) => {
       try {
-        // Use V2 API for transaction lookup
         const url = new URL('https://api.etherscan.io/v2/api');
         url.searchParams.set('chainid', '1');
         url.searchParams.set('module', 'proxy');
         url.searchParams.set('action', 'eth_getTransactionByHash');
-        url.searchParams.set('txhash', info.txHash);
+        url.searchParams.set('txhash', txHash);
         url.searchParams.set('apikey', apiKey);
         
         const response = await fetch(url.toString());
         const data = await response.json();
         
         if (data.result && data.result.from) {
-          info.settlerAddress = data.result.from.toLowerCase();
+          txToSender.set(txHash, data.result.from.toLowerCase());
         }
       } catch (error) {
-        console.error(`Error fetching tx ${info.txHash}:`, error);
+        console.error(`Error fetching tx ${txHash}:`, error);
       }
     }));
     
-    if (i + batchSize < entries.length) {
-      console.log(`  Processed ${Math.min(i + batchSize, entries.length)}/${entries.length} transactions...`);
-      // Rate limit
+    if (i + batchSize < txHashArray.length) {
+      console.log(`  Processed ${Math.min(i + batchSize, txHashArray.length)}/${txHashArray.length} transactions...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
   
+  // Fill in settler addresses
+  for (const info of settlementMap.values()) {
+    const sender = txToSender.get(info.txHash);
+    if (sender) {
+      info.settlerAddress = sender;
+    }
+  }
+  
   return settlementMap;
-}
-
-async function resolveENS(address: string, apiKey: string): Promise<string | null> {
-  // Use Etherscan's ENS lookup (or skip for now to speed up)
-  // This could be enhanced with a proper ENS resolution service
-  return null;
 }
 
 async function syncNouns() {
@@ -367,24 +386,21 @@ async function syncNouns() {
   }
   
   // Fetch settlement events from Etherscan
+  // This map is keyed by the CREATED noun ID
   const settlementEvents = await fetchSettlementEventsFromEtherscan(etherscanApiKey);
   console.log(`Found ${settlementEvents.size} settlement events with settler info`);
   
+  // Clear existing data and re-insert with correct settler attribution
+  console.log('\nClearing existing nouns table for fresh sync with correct settler attribution...');
+  await sql`TRUNCATE TABLE nouns`;
+  
   // Process and insert nouns
   let inserted = 0;
-  let skipped = 0;
   let errors = 0;
   let nounderCount = 0;
   
   for (const noun of allNouns) {
     const nounId = parseInt(noun.id);
-    
-    // Check if already exists
-    const existing = await sql`SELECT id FROM nouns WHERE id = ${nounId}`;
-    if (existing.length > 0) {
-      skipped++;
-      continue;
-    }
     
     try {
       const seed: NounSeed = {
@@ -398,9 +414,9 @@ async function syncNouns() {
       // Render SVG
       const svg = renderNounSVG(seed);
       
-      // Check if this is a Nounder noun (not auctioned)
-      const isNounder = isNounderNoun(nounId);
-      const auction = auctionMap.get(nounId);
+      // Determine settler info
+      // Noun 0 and 1 have no settler (genesis)
+      // Noun 2+ has settler = person who settled auction (nounId - 1) or (nounId - 2) if previous was Nounder
       
       let settledAt: string;
       let settledByAddress: string;
@@ -408,33 +424,44 @@ async function syncNouns() {
       let winnerAddress: string | null;
       let winningBid: string | null;
       
-      if (isNounder && !auction) {
-        // Nounder noun - minted directly, not auctioned
-        nounderCount++;
-        settledAt = new Date(0).toISOString(); // Genesis
-        settledByAddress = '0x2573C60a6D127755aA2DC85e342F7da2378a0Cc5'; // Nounders multisig
-        settledTxHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
-        winnerAddress = '0x2573C60a6D127755aA2DC85e342F7da2378a0Cc5'; // Nounders
-        winningBid = null; // No auction
-      } else if (auction) {
-        // Regular auctioned noun
-        const settlement = settlementEvents.get(nounId);
-        settledAt = settlement 
-          ? new Date(settlement.timestamp * 1000).toISOString()
-          : new Date(parseInt(auction.endTime) * 1000).toISOString();
-        settledByAddress = settlement?.settlerAddress || '0x0000000000000000000000000000000000000000';
-        settledTxHash = settlement?.txHash || '0x0000000000000000000000000000000000000000000000000000000000000000';
-        winnerAddress = auction.bidder?.id || null;
-        winningBid = auction.amount !== '0' ? auction.amount : null;
-      } else {
-        // Edge case - noun exists but no auction data
-        console.warn(`Noun ${nounId} has no auction data and is not a Nounder noun`);
-        settledAt = new Date().toISOString();
+      const isNounder = isNounderNoun(nounId);
+      const auction = auctionMap.get(nounId);
+      
+      // Get settlement info for this noun (who created/chose this noun)
+      const settlement = settlementEvents.get(nounId);
+      
+      if (nounId === 0 || nounId === 1) {
+        // Genesis nouns - no settler
+        settledAt = new Date(0).toISOString();
         settledByAddress = '0x0000000000000000000000000000000000000000';
-        settledTxHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
-        winnerAddress = noun.owner.id;
+        settledTxHash = '0x' + '0'.repeat(64);
+        winnerAddress = isNounder ? NOUNDERS_MULTISIG : (auction?.bidder?.id || null);
+        winningBid = auction ? (auction.amount !== '0' ? auction.amount : null) : null;
+      } else if (settlement) {
+        // We have settler info for this noun
+        settledAt = new Date(settlement.timestamp * 1000).toISOString();
+        settledByAddress = settlement.settlerAddress || '0x0000000000000000000000000000000000000000';
+        settledTxHash = settlement.txHash;
+        winnerAddress = isNounder ? NOUNDERS_MULTISIG : (auction?.bidder?.id || null);
+        winningBid = auction ? (auction.amount !== '0' ? auction.amount : null) : null;
+      } else if (isNounder) {
+        // Nounder noun without settlement info
+        nounderCount++;
+        settledAt = new Date(0).toISOString();
+        settledByAddress = '0x0000000000000000000000000000000000000000';
+        settledTxHash = '0x' + '0'.repeat(64);
+        winnerAddress = NOUNDERS_MULTISIG;
         winningBid = null;
+      } else {
+        // Fallback for nouns without settlement info
+        settledAt = auction ? new Date(parseInt(auction.endTime) * 1000).toISOString() : new Date().toISOString();
+        settledByAddress = '0x0000000000000000000000000000000000000000';
+        settledTxHash = '0x' + '0'.repeat(64);
+        winnerAddress = auction?.bidder?.id || noun.owner.id;
+        winningBid = auction ? (auction.amount !== '0' ? auction.amount : null) : null;
       }
+      
+      if (isNounder) nounderCount++;
       
       // Insert
       await sql`
@@ -460,7 +487,7 @@ async function syncNouns() {
       `;
       
       inserted++;
-      if (inserted % 50 === 0) {
+      if (inserted % 100 === 0) {
         console.log(`  Inserted ${inserted} nouns...`);
       }
     } catch (error) {
@@ -471,12 +498,26 @@ async function syncNouns() {
   
   console.log('\n=== Sync Complete ===');
   console.log(`Inserted: ${inserted} (including ${nounderCount} Nounder nouns)`);
-  console.log(`Skipped (already exists): ${skipped}`);
   console.log(`Errors: ${errors}`);
   
   // Final count
   const countResult = await sql`SELECT COUNT(*) as count FROM nouns`;
   console.log(`Total nouns in database: ${countResult[0]?.count}`);
+  
+  // Show sample of settler attribution
+  console.log('\nSample settler attribution (noun -> settler):');
+  const samples = await sql`
+    SELECT id, settled_by_address, winner_address 
+    FROM nouns 
+    WHERE id IN (1, 2, 10, 11, 100, 1000, 1760, 1761)
+    ORDER BY id
+  `;
+  for (const s of samples) {
+    const settlerDisplay = s.settled_by_address === '0x0000000000000000000000000000000000000000' 
+      ? '(none/genesis)' 
+      : `${s.settled_by_address.slice(0, 10)}...`;
+    console.log(`  Noun ${s.id}: settler=${settlerDisplay}`);
+  }
 }
 
 // Run
