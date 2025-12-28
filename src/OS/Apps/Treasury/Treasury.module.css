@@ -164,6 +164,38 @@
   font-size: 11px;
 }
 
+/* Filter Container */
+.filterContainer {
+  margin-bottom: 16px;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.clearFilters {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-family: var(--berry-font-system);
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  color: var(--berry-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  height: 32px;
+  align-self: flex-start;
+}
+
+.clearFilters:hover {
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  border-color: var(--berry-text-muted);
+}
+
 /* Nouns Grid */
 .nounsGrid {
   display: grid;
@@ -308,6 +340,16 @@
 
   .nounCard {
     padding: 6px;
+  }
+
+  .filterRow {
+    gap: 6px;
+  }
+
+  .clearFilters {
+    font-size: 10px;
+    padding: 5px 8px;
+    height: 28px;
   }
 
   .addressItem {

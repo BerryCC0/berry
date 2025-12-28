@@ -5,6 +5,7 @@
 
 'use client';
 
+import { useState, useMemo } from 'react';
 import { formatEther } from 'viem';
 import { 
   useTreasuryBalances, 
@@ -14,8 +15,31 @@ import {
   useEthPrice,
 } from '@/app/lib/nouns/hooks';
 import { NounImage } from '@/app/lib/nouns/components';
+import { getTraitName, type TraitType } from '@/app/lib/nouns/utils/trait-name-utils';
 import type { AppComponentProps } from '@/OS/types/app';
+import { TraitDropdown } from './components';
 import styles from './Treasury.module.css';
+
+// Type for noun with seed
+interface TreasuryNoun {
+  id: string;
+  seed: {
+    background: number;
+    body: number;
+    accessory: number;
+    head: number;
+    glasses: number;
+  };
+}
+
+// Filter state type
+interface TraitFilters {
+  background: number | null;
+  body: number | null;
+  accessory: number | null;
+  head: number | null;
+  glasses: number | null;
+}
 
 // Format large numbers with commas
 function formatNumber(value: string, decimals = 2): string {
@@ -39,13 +63,92 @@ export function Treasury({ windowId }: AppComponentProps) {
   const { data: v1NounsData, isLoading: v1NounsLoading } = useTreasuryV1Nouns();
   const { price: ethPrice, isLoading: priceLoading } = useEthPrice();
 
+  // Filter state
+  const [filters, setFilters] = useState<TraitFilters>({
+    background: null,
+    body: null,
+    accessory: null,
+    head: null,
+    glasses: null,
+  });
+
   const isLoading = balances.isLoading || v1Balances.isLoading;
-  const treasuryNouns = nounsData?.nouns ?? [];
-  const v1TreasuryNouns = v1NounsData?.nouns ?? [];
+  const treasuryNouns = (nounsData?.nouns ?? []) as TreasuryNoun[];
+  const v1TreasuryNouns = (v1NounsData?.nouns ?? []) as TreasuryNoun[];
   
   // Combine and sort numerically by ID (GraphQL sorts as strings)
-  const allTreasuryNouns = [...treasuryNouns, ...v1TreasuryNouns]
-    .sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10));
+  const allTreasuryNouns = useMemo(() => 
+    [...treasuryNouns, ...v1TreasuryNouns]
+      .sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10)),
+    [treasuryNouns, v1TreasuryNouns]
+  );
+
+  // Get unique trait values from all nouns
+  const uniqueTraits = useMemo(() => {
+    const traits: Record<TraitType, Set<number>> = {
+      background: new Set(),
+      body: new Set(),
+      accessory: new Set(),
+      head: new Set(),
+      glasses: new Set(),
+    };
+
+    allTreasuryNouns.forEach(noun => {
+      traits.background.add(noun.seed.background);
+      traits.body.add(noun.seed.body);
+      traits.accessory.add(noun.seed.accessory);
+      traits.head.add(noun.seed.head);
+      traits.glasses.add(noun.seed.glasses);
+    });
+
+    // Convert sets to sorted arrays with names
+    const traitOptions: Record<TraitType, { value: number; name: string }[]> = {
+      background: [],
+      body: [],
+      accessory: [],
+      head: [],
+      glasses: [],
+    };
+
+    (Object.keys(traits) as TraitType[]).forEach(type => {
+      traitOptions[type] = Array.from(traits[type])
+        .map(value => ({ value, name: getTraitName(type, value) }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    return traitOptions;
+  }, [allTreasuryNouns]);
+
+  // Filter nouns based on selected traits
+  const filteredNouns = useMemo(() => {
+    return allTreasuryNouns.filter(noun => {
+      if (filters.background !== null && noun.seed.background !== filters.background) return false;
+      if (filters.body !== null && noun.seed.body !== filters.body) return false;
+      if (filters.accessory !== null && noun.seed.accessory !== filters.accessory) return false;
+      if (filters.head !== null && noun.seed.head !== filters.head) return false;
+      if (filters.glasses !== null && noun.seed.glasses !== filters.glasses) return false;
+      return true;
+    });
+  }, [allTreasuryNouns, filters]);
+
+  // Check if any filters are active
+  const hasActiveFilters = Object.values(filters).some(v => v !== null);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({
+      background: null,
+      body: null,
+      accessory: null,
+      head: null,
+      glasses: null,
+    });
+  };
+
+  // Update a specific filter
+  const updateFilter = (type: TraitType, value: number | null) => {
+    setFilters(prev => ({ ...prev, [type]: value }));
+  };
 
   // Calculate combined ETH balance
   const combinedEthRaw = balances.eth.raw + v1Balances.eth.raw;
@@ -235,15 +338,40 @@ export function Treasury({ windowId }: AppComponentProps) {
       {/* Treasury Nouns */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>
-          Treasury Nouns ({allTreasuryNouns.length})
+          Treasury Nouns ({filteredNouns.length}{hasActiveFilters ? ` of ${allTreasuryNouns.length}` : ''})
         </h2>
+
+        {/* Trait Filters */}
+        {!nounsLoading && !v1NounsLoading && allTreasuryNouns.length > 0 && (
+          <div className={styles.filterContainer}>
+            <div className={styles.filterRow}>
+              {(['background', 'body', 'accessory', 'head', 'glasses'] as TraitType[]).map(type => (
+                <TraitDropdown
+                  key={type}
+                  type={type}
+                  options={uniqueTraits[type]}
+                  value={filters[type]}
+                  onChange={(value) => updateFilter(type, value)}
+                />
+              ))}
+              {hasActiveFilters && (
+                <button className={styles.clearFilters} onClick={clearFilters}>
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {nounsLoading || v1NounsLoading ? (
           <div className={styles.loading}>Loading Nouns...</div>
-        ) : allTreasuryNouns.length === 0 ? (
-          <div className={styles.empty}>No Nouns in treasury</div>
+        ) : filteredNouns.length === 0 ? (
+          <div className={styles.empty}>
+            {hasActiveFilters ? 'No Nouns match the selected filters' : 'No Nouns in treasury'}
+          </div>
         ) : (
           <div className={styles.nounsGrid}>
-            {allTreasuryNouns.map((noun) => (
+            {filteredNouns.map((noun) => (
               <div key={noun.id} className={styles.nounCard}>
                 <NounImage
                   seed={{
