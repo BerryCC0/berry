@@ -193,6 +193,14 @@
   font-family: var(--berry-font-mono, monospace);
 }
 
+.settlerInfo {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 11px;
+  font-family: var(--berry-font-system);
+}
+
 /* Type-specific styling */
 .type-auction-settled {
   border-left: 3px solid #7b1fa2;

@@ -233,6 +233,12 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
         );
 
       case 'auction_settled':
+        const handleSettledSettlerClick = () => {
+          if (item.settler) {
+            onClickVoter?.(item.settler);
+          }
+        };
+
         return (
           <div className={styles.nounActivity}>
             {nounId !== undefined && (
@@ -246,13 +252,21 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
                   {item.winner && formatAddress(item.winner, winnerEns)}
                 </span>
               </div>
-              {item.winningBid && (
-                <div className={styles.auctionDetails}>
+              <div className={styles.auctionDetails}>
+                {item.winningBid && (
                   <span className={styles.bidAmount}>
                     Ξ {parseFloat(formatEther(BigInt(item.winningBid))).toFixed(2)}
                   </span>
-                </div>
-              )}
+                )}
+                {item.settler && (
+                  <span className={styles.settlerInfo}>
+                    <span className={styles.action}>Settled by</span>
+                    <span className={styles.actor} onClick={handleSettledSettlerClick} role="button" tabIndex={0}>
+                      {formatAddress(item.settler, settlerEns)}
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         );

@@ -362,13 +362,14 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
   }
 
   // Convert auctions to activity items
-  // Collect noun IDs that need settler info
+  // Collect items that need settler info
   const auctionStartedItems: ActivityItem[] = [];
+  const auctionSettledItems: ActivityItem[] = [];
   
   for (const auction of data.auctions) {
     if (auction.settled && auction.bidder) {
-      // Auction ended/settled
-      items.push({
+      // Auction ended/settled - settler will be fetched from next noun
+      const item: ActivityItem = {
         id: `auction-settled-${auction.id}`,
         type: 'auction_settled',
         timestamp: auction.endTime,
@@ -376,7 +377,9 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
         nounId: auction.noun.id,
         winningBid: auction.amount,
         winner: auction.bidder.id,
-      });
+      };
+      items.push(item);
+      auctionSettledItems.push(item);
     } else if (!auction.settled) {
       // Auction started - settler will be fetched below
       const item: ActivityItem = {
@@ -405,6 +408,24 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
       }
     } catch (error) {
       // Settler info not available, leave as auction house
+    }
+  }));
+
+  // Fetch settler info for auction_settled events
+  // The settler of auction N is stored on noun N+1 (the noun created by settling)
+  await Promise.all(auctionSettledItems.map(async (item) => {
+    try {
+      const nounId = parseInt(item.nounId!, 10);
+      const nextNounId = nounId + 1;
+      const response = await fetch(`/api/nouns/${nextNounId}`);
+      if (response.ok) {
+        const noun = await response.json();
+        if (noun.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
+          item.settler = noun.settled_by_address;
+        }
+      }
+    } catch (error) {
+      // Settler info not available
     }
   }));
 

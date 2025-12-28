@@ -11,6 +11,7 @@ import {
   useTreasuryV1Balances,
   useTreasuryNouns,
   useTreasuryV1Nouns,
+  useEthPrice,
 } from '@/app/lib/nouns/hooks';
 import { NounImage } from '@/app/lib/nouns/components';
 import type { AppComponentProps } from '@/OS/types/app';
@@ -36,6 +37,7 @@ export function Treasury({ windowId }: AppComponentProps) {
   const v1Balances = useTreasuryV1Balances();
   const { data: nounsData, isLoading: nounsLoading } = useTreasuryNouns();
   const { data: v1NounsData, isLoading: v1NounsLoading } = useTreasuryV1Nouns();
+  const { price: ethPrice, isLoading: priceLoading } = useEthPrice();
 
   const isLoading = balances.isLoading || v1Balances.isLoading;
   const treasuryNouns = nounsData?.nouns ?? [];
@@ -53,12 +55,37 @@ export function Treasury({ windowId }: AppComponentProps) {
   const totalEthEquivalentRaw = balances.ethEquivalent.raw + v1Balances.eth.raw;
   const totalEthEquivalentFormatted = formatEther(totalEthEquivalentRaw);
 
+  // Calculate immediately spendable USD value (ETH + WETH + USDC)
+  const spendableEth = parseFloat(formatEther(
+    combinedEthRaw + (balances.tokens.WETH?.raw ?? BigInt(0))
+  ));
+  const spendableUsdc = parseFloat(balances.tokens.USDC?.formatted ?? '0');
+  const spendableUsd = (spendableEth * ethPrice) + spendableUsdc;
+
+  // Calculate staked tokens USD value (wstETH + stETH + rETH + mETH)
+  const stakedEth = parseFloat(formatEther(
+    (balances.tokens.wstETH?.raw ?? BigInt(0)) +
+    (balances.tokens.stETH?.raw ?? BigInt(0)) +
+    (balances.tokens.rETH?.raw ?? BigInt(0)) +
+    (balances.tokens.mETH?.raw ?? BigInt(0))
+  ));
+  const stakedUsd = stakedEth * ethPrice;
+
   return (
     <div className={styles.treasury}>
-      {/* Header */}
-      <div className={styles.header}>
-        <h1 className={styles.title}>Treasury Dashboard</h1>
-        <p className={styles.subtitle}>Nouns DAO Treasury Overview</p>
+
+      {/* Contract Addresses */}
+      <div className={styles.section}>
+        <div className={styles.addressList}>
+          <div className={styles.addressItem}>
+            <span className={styles.addressLabel}>Treasury V2</span>
+            <code className={styles.address}>0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71</code>
+          </div>
+          <div className={styles.addressItem}>
+            <span className={styles.addressLabel}>Treasury V1</span>
+            <code className={styles.address}>0x0BC3807Ec262cB779b38D65b38158acC3bfedE10</code>
+          </div>
+        </div>
       </div>
 
       {/* Main Stats */}
@@ -80,19 +107,47 @@ export function Treasury({ windowId }: AppComponentProps) {
         </div>
 
         <div className={styles.statCard}>
-          <div className={styles.statLabel}>Nouns Held</div>
-          <div className={styles.statValue}>
-            {nounsLoading || v1NounsLoading ? '...' : allTreasuryNouns.length}
-          </div>
-          <div className={styles.statSubtext}>NFTs in treasury</div>
-        </div>
-
-        <div className={styles.statCard}>
           <div className={styles.statLabel}>USDC</div>
           <div className={styles.statValue}>
             {isLoading ? '...' : `$${formatNumber(balances.tokens.USDC?.formatted ?? '0', 0)}`}
           </div>
-          <div className={styles.statSubtext}>Stablecoin reserves</div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>Nouns Held</div>
+          <div className={styles.statValue}>
+            {nounsLoading || v1NounsLoading ? '...' : allTreasuryNouns.length}
+          </div>
+        </div>
+
+      </div>
+
+      {/* USD Value Summary Cards */}
+      <div className={styles.summaryCards}>
+        <div className={styles.summaryCard} data-type="spendable">
+          <div className={styles.summaryIcon}>💰</div>
+          <div className={styles.summaryContent}>
+            <div className={styles.summaryLabel}>Immediately Spendable</div>
+            <div className={styles.summaryValue}>
+              {isLoading || priceLoading ? '...' : `$${formatNumber(spendableUsd.toString(), 0)}`}
+            </div>
+            <div className={styles.summaryBreakdown}>
+              ETH + WETH + USDC
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.summaryCard} data-type="staked">
+          <div className={styles.summaryIcon}>🔒</div>
+          <div className={styles.summaryContent}>
+            <div className={styles.summaryLabel}>Staked Assets</div>
+            <div className={styles.summaryValue}>
+              {isLoading || priceLoading ? '...' : `$${formatNumber(stakedUsd.toString(), 0)}`}
+            </div>
+            <div className={styles.summaryBreakdown}>
+              wstETH + stETH + rETH + mETH
+            </div>
+          </div>
         </div>
       </div>
 
@@ -212,21 +267,6 @@ export function Treasury({ windowId }: AppComponentProps) {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Contract Addresses */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Contract Addresses</h2>
-        <div className={styles.addressList}>
-          <div className={styles.addressItem}>
-            <span className={styles.addressLabel}>Treasury V2</span>
-            <code className={styles.address}>0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71</code>
-          </div>
-          <div className={styles.addressItem}>
-            <span className={styles.addressLabel}>Treasury V1</span>
-            <code className={styles.address}>0x0BC3807Ec262cB779b38D65b38158acC3bfedE10</code>
-          </div>
-        </div>
       </div>
     </div>
   );

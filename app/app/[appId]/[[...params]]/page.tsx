@@ -77,8 +77,19 @@ export default function AppRoute() {
     // Build initial state from URL
     const initialState = buildInitialState(appId, pathParams, searchParams);
 
-    // Launch app with state
-    appLauncher.launch(appId, { initialState });
+    // Build launch options
+    const launchOptions: { initialState?: Record<string, unknown>; x?: number; y?: number } = { initialState };
+
+    // Special positioning for wallet-panel: always top-right on desktop
+    if (appId === "wallet-panel" && typeof window !== "undefined") {
+      const MENU_BAR_HEIGHT = 24;
+      const windowWidth = app.window.width;
+      launchOptions.x = window.innerWidth - windowWidth;
+      launchOptions.y = MENU_BAR_HEIGHT;
+    }
+
+    // Launch app with state and position
+    appLauncher.launch(appId, launchOptions);
 
     // Navigate to root (app is now open as window)
     router.push("/");

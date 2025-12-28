@@ -31,3 +31,4 @@ export {
   type NounListItem,
 } from './useNoun';
 
+export { useEthPrice } from './useEthPrice';

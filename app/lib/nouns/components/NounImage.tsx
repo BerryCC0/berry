@@ -147,7 +147,7 @@ export function NounImageById({ id, size = 320, className, style, fallback, onCl
   if (onClick) {
     return (
       <div
-        className={className}
+      className={className}
         style={{ ...cursorStyle, ...style }}
         onClick={onClick}
         role="button"
@@ -155,7 +155,7 @@ export function NounImageById({ id, size = 320, className, style, fallback, onCl
       >
         {nounImage}
       </div>
-    );
+  );
   }
 
   return nounImage;
