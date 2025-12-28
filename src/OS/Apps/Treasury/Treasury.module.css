@@ -77,32 +77,10 @@
 }
 
 .summaryCard {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   padding: 16px;
   background: var(--berry-bg-secondary);
   border: 1px solid var(--berry-border);
   border-radius: 8px;
-  border-left: 4px solid var(--berry-border);
-}
-
-.summaryCard[data-type="spendable"] {
-  border-left-color: #22c55e;
-}
-
-.summaryCard[data-type="staked"] {
-  border-left-color: #3b82f6;
-}
-
-.summaryIcon {
-  font-size: 28px;
-  flex-shrink: 0;
-}
-
-.summaryContent {
-  flex: 1;
-  min-width: 0;
 }
 
 .summaryLabel {

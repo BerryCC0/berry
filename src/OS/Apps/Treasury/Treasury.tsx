@@ -124,29 +124,23 @@ export function Treasury({ windowId }: AppComponentProps) {
 
       {/* USD Value Summary Cards */}
       <div className={styles.summaryCards}>
-        <div className={styles.summaryCard} data-type="spendable">
-          <div className={styles.summaryIcon}>💰</div>
-          <div className={styles.summaryContent}>
-            <div className={styles.summaryLabel}>Immediately Spendable</div>
-            <div className={styles.summaryValue}>
-              {isLoading || priceLoading ? '...' : `$${formatNumber(spendableUsd.toString(), 0)}`}
-            </div>
-            <div className={styles.summaryBreakdown}>
-              ETH + WETH + USDC
-            </div>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Immediately Spendable</div>
+          <div className={styles.summaryValue}>
+            {isLoading || priceLoading ? '...' : `$${formatNumber(spendableUsd.toString(), 0)}`}
+          </div>
+          <div className={styles.summaryBreakdown}>
+            ETH + WETH + USDC
           </div>
         </div>
 
-        <div className={styles.summaryCard} data-type="staked">
-          <div className={styles.summaryIcon}>🔒</div>
-          <div className={styles.summaryContent}>
-            <div className={styles.summaryLabel}>Staked Assets</div>
-            <div className={styles.summaryValue}>
-              {isLoading || priceLoading ? '...' : `$${formatNumber(stakedUsd.toString(), 0)}`}
-            </div>
-            <div className={styles.summaryBreakdown}>
-              wstETH + stETH + rETH + mETH
-            </div>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Staked Assets</div>
+          <div className={styles.summaryValue}>
+            {isLoading || priceLoading ? '...' : `$${formatNumber(stakedUsd.toString(), 0)}`}
+          </div>
+          <div className={styles.summaryBreakdown}>
+            wstETH + stETH + rETH + mETH
           </div>
         </div>
       </div>
