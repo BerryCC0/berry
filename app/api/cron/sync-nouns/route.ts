@@ -84,12 +84,23 @@ export async function GET(request: NextRequest) {
 
     // Get highest noun ID in database
     const highestResult = await sql`SELECT MAX(id) as max_id FROM nouns`;
-    const highestId = highestResult[0]?.max_id ?? -1;
+    const highestId = highestResult[0]?.max_id ?? 0;
 
-    // Fetch recent nouns from Goldsky (last 50 to catch any we missed)
+    // Fetch nouns from Goldsky
+    // Note: The subgraph uses string IDs, so we can't rely on numeric sorting
+    // Instead, we fetch all nouns from a numeric range by using multiple targeted queries
+    const minIdToFetch = Math.max(0, highestId - 5); // Small buffer for safety
+    const maxIdToFetch = highestId + 20; // Look ahead for new nouns
+    
+    // Build a list of IDs to query for
+    const idsToCheck: string[] = [];
+    for (let i = minIdToFetch; i <= maxIdToFetch; i++) {
+      idsToCheck.push(i.toString());
+    }
+    
     const nounsQuery = `
-      query GetRecentNouns($first: Int!) {
-        nouns(first: $first, orderBy: id, orderDirection: desc) {
+      query GetNounsByIds($ids: [ID!]!) {
+        nouns(where: { id_in: $ids }) {
           id
           seed { background, body, accessory, head, glasses }
           owner { id }
@@ -100,7 +111,7 @@ export async function GET(request: NextRequest) {
       id: string;
       seed: { background: string; body: string; accessory: string; head: string; glasses: string };
       owner: { id: string };
-    }> }>(nounsQuery, { first: 50 });
+    }> }>(nounsQuery, { ids: idsToCheck });
 
     // Fetch recent auctions
     const auctionsQuery = `
@@ -259,7 +270,8 @@ export async function GET(request: NextRequest) {
           const txData = await txRes.json();
 
           if (txData.result?.from) {
-            const timestamp = parseInt(log.timeStamp, 16);
+            // Etherscan returns timestamp in decimal (seconds since epoch)
+            const timestamp = parseInt(log.timeStamp, 10);
             await sql`
               UPDATE nouns 
               SET settled_by_address = ${txData.result.from.toLowerCase()},

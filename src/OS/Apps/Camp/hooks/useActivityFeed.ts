@@ -412,12 +412,10 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
   }));
 
   // Fetch settler info for auction_settled events
-  // The settler of auction N is stored on noun N+1 (the noun created by settling)
+  // The settler is who "chose" this noun by settling the previous auction
   await Promise.all(auctionSettledItems.map(async (item) => {
     try {
-      const nounId = parseInt(item.nounId!, 10);
-      const nextNounId = nounId + 1;
-      const response = await fetch(`/api/nouns/${nextNounId}`);
+      const response = await fetch(`/api/nouns/${item.nounId}`);
       if (response.ok) {
         const noun = await response.json();
         if (noun.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
