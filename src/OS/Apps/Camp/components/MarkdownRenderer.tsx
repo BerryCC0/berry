@@ -67,10 +67,39 @@ function isDirectVideoUrl(url: string): boolean {
  * Check if URL is a GIF (for special handling)
  */
 function isGifUrl(url: string): boolean {
-  const lowerUrl = url.toLowerCase().split('?')[0];
+  const lowerUrl = url.toLowerCase();
   return lowerUrl.endsWith('.gif') || 
          lowerUrl.includes('giphy.com') ||
-         lowerUrl.includes('imgur.com') && lowerUrl.includes('.gif');
+         (lowerUrl.includes('imgur.com') && lowerUrl.includes('.gif'));
+}
+
+/**
+ * Check if URL is an image (including GIFs from common hosts)
+ */
+function isImageUrl(url: string): boolean {
+  const lowerUrl = url.toLowerCase();
+  const baseUrl = lowerUrl.split('?')[0];
+  
+  // Common image extensions
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+  if (imageExtensions.some(ext => baseUrl.endsWith(ext))) {
+    return true;
+  }
+  
+  // Known image hosts (even without extension)
+  if (lowerUrl.includes('giphy.com/media') || 
+      lowerUrl.includes('media.giphy.com') ||
+      lowerUrl.includes('media0.giphy.com') ||
+      lowerUrl.includes('media1.giphy.com') ||
+      lowerUrl.includes('media2.giphy.com') ||
+      lowerUrl.includes('media3.giphy.com') ||
+      lowerUrl.includes('media4.giphy.com') ||
+      lowerUrl.includes('i.imgur.com') ||
+      lowerUrl.includes('imgur.com') && (baseUrl.endsWith('.gifv') || baseUrl.endsWith('.gif'))) {
+    return true;
+  }
+  
+  return false;
 }
 
 /**
@@ -179,6 +208,29 @@ function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vim
 }
 
 /**
+ * Check if children is a single link element with an image URL
+ */
+function getSingleImageLink(children: React.ReactNode): string | null {
+  // Check if children is a single React element
+  if (!React.isValidElement(children)) return null;
+  
+  // Check if it's an anchor with href
+  const child = children as React.ReactElement<{ href?: string; children?: React.ReactNode }>;
+  if (child.type !== 'a' || !child.props.href) return null;
+  
+  // Check if the link text matches the href (standalone link, not [text](url))
+  const linkText = typeof child.props.children === 'string' ? child.props.children : '';
+  if (linkText !== child.props.href) return null;
+  
+  // Check if it's an image URL
+  if (isImageUrl(child.props.href)) {
+    return child.props.href;
+  }
+  
+  return null;
+}
+
+/**
  * Create markdown components with image click handler
  */
 function createMarkdownComponents(onImageClick: (src: string, alt: string) => void): Components {
@@ -191,13 +243,32 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
   h5: ({ children }) => <h5 className={styles.h5}>{children}</h5>,
   h6: ({ children }) => <h6 className={styles.h6}>{children}</h6>,
 
-  // Paragraphs - check for standalone video links
+  // Paragraphs - check for standalone video/image links
   p: ({ children }) => {
     // Check if this paragraph contains only a video link
     const video = getSingleVideoLink(children);
     if (video) {
       return <VideoEmbed type={video.type} id={video.id} url={video.url} />;
     }
+    
+    // Check if this paragraph contains only an image link
+    const imageUrl = getSingleImageLink(children);
+    if (imageUrl) {
+      const isGif = isGifUrl(imageUrl);
+      return (
+        <span className={styles.imageContainer}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src={imageUrl} 
+            alt="" 
+            className={isGif ? styles.gifImage : styles.image} 
+            loading="lazy"
+            onClick={() => onImageClick(imageUrl, '')}
+          />
+        </span>
+      );
+    }
+    
     return <p className={styles.p}>{children}</p>;
   },
 
