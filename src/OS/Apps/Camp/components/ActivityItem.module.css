@@ -73,15 +73,16 @@
 
 .reason {
   margin-top: 6px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   background: var(--berry-bg-secondary);
   border-left: 2px solid var(--berry-border);
   font-size: 11px;
-  font-style: italic;
   color: var(--berry-text-secondary);
   line-height: 1.4;
-  white-space: pre-wrap;
   word-break: break-word;
+  /* Reset styles that would interfere with MarkdownRenderer */
+  font-style: normal;
+  white-space: normal;
 }
 
 .time {

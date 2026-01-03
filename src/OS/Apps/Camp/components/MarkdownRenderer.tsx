@@ -55,9 +55,28 @@ function ImageLightbox({
 }
 
 /**
+ * Check if URL is a direct video file
+ */
+function isDirectVideoUrl(url: string): boolean {
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
+  const lowerUrl = url.toLowerCase().split('?')[0]; // Remove query params
+  return videoExtensions.some(ext => lowerUrl.endsWith(ext));
+}
+
+/**
+ * Check if URL is a GIF (for special handling)
+ */
+function isGifUrl(url: string): boolean {
+  const lowerUrl = url.toLowerCase().split('?')[0];
+  return lowerUrl.endsWith('.gif') || 
+         lowerUrl.includes('giphy.com') ||
+         lowerUrl.includes('imgur.com') && lowerUrl.includes('.gif');
+}
+
+/**
  * Extract video embed info from URL
  */
-function getVideoEmbed(url: string): { type: 'youtube' | 'vimeo' | 'loom' | null; id: string | null } {
+function getVideoEmbed(url: string): { type: 'youtube' | 'vimeo' | 'loom' | 'direct' | null; id: string | null; url?: string } {
   // YouTube
   const youtubeMatch = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
@@ -78,13 +97,36 @@ function getVideoEmbed(url: string): { type: 'youtube' | 'vimeo' | 'loom' | null
     return { type: 'loom', id: loomMatch[1] };
   }
 
+  // Direct video file
+  if (isDirectVideoUrl(url)) {
+    return { type: 'direct', id: 'direct', url };
+  }
+
   return { type: null, id: null };
 }
 
 /**
  * Video embed component
  */
-function VideoEmbed({ type, id }: { type: 'youtube' | 'vimeo' | 'loom'; id: string }) {
+function VideoEmbed({ type, id, url }: { type: 'youtube' | 'vimeo' | 'loom' | 'direct'; id: string; url?: string }) {
+  // Direct video file - use native video element
+  if (type === 'direct' && url) {
+    return (
+      <div className={styles.videoContainer}>
+        <video
+          src={url}
+          className={styles.videoEmbed}
+          controls
+          playsInline
+          preload="metadata"
+        >
+          Your browser does not support video playback.
+        </video>
+      </div>
+    );
+  }
+
+  // iframe embeds
   let src = '';
   
   switch (type) {
@@ -115,7 +157,7 @@ function VideoEmbed({ type, id }: { type: 'youtube' | 'vimeo' | 'loom'; id: stri
 /**
  * Check if children is a single link element with a video URL
  */
-function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vimeo' | 'loom'; id: string } | null {
+function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vimeo' | 'loom' | 'direct'; id: string; url?: string } | null {
   // Check if children is a single React element
   if (!React.isValidElement(children)) return null;
   
@@ -130,7 +172,7 @@ function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vim
   // Check for video
   const video = getVideoEmbed(child.props.href);
   if (video.type && video.id) {
-    return { type: video.type, id: video.id };
+    return { type: video.type, id: video.id, url: video.url };
   }
   
   return null;
@@ -154,7 +196,7 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
     // Check if this paragraph contains only a video link
     const video = getSingleVideoLink(children);
     if (video) {
-      return <VideoEmbed type={video.type} id={video.id} />;
+      return <VideoEmbed type={video.type} id={video.id} url={video.url} />;
     }
     return <p className={styles.p}>{children}</p>;
   },
@@ -173,21 +215,23 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
     );
   },
 
-    // Images - click to zoom
+    // Images - click to zoom (GIFs get larger allowance)
     img: ({ src, alt }) => {
       const imgSrc = typeof src === 'string' ? src : '';
+      const isGif = isGifUrl(imgSrc);
+      
       return (
-    <span className={styles.imageContainer}>
+        <span className={styles.imageContainer}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src={imgSrc} 
             alt={alt || ''} 
-            className={styles.image} 
+            className={isGif ? styles.gifImage : styles.image} 
             loading="lazy"
             onClick={() => imgSrc && onImageClick(imgSrc, alt || '')}
           />
-      {alt && <span className={styles.imageCaption}>{alt}</span>}
-    </span>
+          {alt && <span className={styles.imageCaption}>{alt}</span>}
+        </span>
       );
     },
 
