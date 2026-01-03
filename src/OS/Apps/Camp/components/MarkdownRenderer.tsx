@@ -64,13 +64,24 @@ function isDirectVideoUrl(url: string): boolean {
 }
 
 /**
- * Check if URL is a GIF (for special handling)
+ * Check if URL is a GIF (for special handling - gets larger size allowance)
  */
 function isGifUrl(url: string): boolean {
   const lowerUrl = url.toLowerCase();
-  return lowerUrl.endsWith('.gif') || 
-         lowerUrl.includes('giphy.com') ||
-         (lowerUrl.includes('imgur.com') && lowerUrl.includes('.gif'));
+  
+  // Direct .gif extension
+  if (lowerUrl.endsWith('.gif') || lowerUrl.endsWith('.gifv')) {
+    return true;
+  }
+  
+  // Known GIF services (even without extension)
+  if (lowerUrl.includes('giphy.com') ||
+      lowerUrl.includes('tenor.com') ||
+      lowerUrl.includes('gfycat.com')) {
+    return true;
+  }
+  
+  return false;
 }
 
 /**
@@ -81,21 +92,71 @@ function isImageUrl(url: string): boolean {
   const baseUrl = lowerUrl.split('?')[0];
   
   // Common image extensions
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.avif'];
   if (imageExtensions.some(ext => baseUrl.endsWith(ext))) {
     return true;
   }
   
-  // Known image hosts (even without extension)
-  if (lowerUrl.includes('giphy.com/media') || 
-      lowerUrl.includes('media.giphy.com') ||
-      lowerUrl.includes('media0.giphy.com') ||
-      lowerUrl.includes('media1.giphy.com') ||
-      lowerUrl.includes('media2.giphy.com') ||
-      lowerUrl.includes('media3.giphy.com') ||
-      lowerUrl.includes('media4.giphy.com') ||
-      lowerUrl.includes('i.imgur.com') ||
-      lowerUrl.includes('imgur.com') && (baseUrl.endsWith('.gifv') || baseUrl.endsWith('.gif'))) {
+  // Imgur special case for .gifv (HTML5 video, but we can try to load as gif)
+  if (lowerUrl.includes('imgur.com') && baseUrl.endsWith('.gifv')) {
+    return true;
+  }
+  
+  // Known image/GIF hosts
+  const imageHosts = [
+    // Giphy (all CDN subdomains)
+    'media.giphy.com',
+    'media0.giphy.com',
+    'media1.giphy.com',
+    'media2.giphy.com',
+    'media3.giphy.com',
+    'media4.giphy.com',
+    'giphy.com/media',
+    
+    // Tenor (Google's GIF service)
+    'tenor.com/view',
+    'media.tenor.com',
+    'c.tenor.com',
+    
+    // Imgur
+    'i.imgur.com',
+    
+    // Reddit
+    'i.redd.it',
+    'preview.redd.it',
+    
+    // Discord CDN
+    'cdn.discordapp.com',
+    'media.discordapp.net',
+    
+    // Twitter/X
+    'pbs.twimg.com',
+    
+    // IPFS gateways (common in web3)
+    'ipfs.io/ipfs',
+    'gateway.pinata.cloud',
+    'cloudflare-ipfs.com',
+    'dweb.link',
+    'nftstorage.link',
+    'w3s.link',
+    
+    // Arweave (permanent storage, popular in web3)
+    'arweave.net',
+    
+    // imgbb
+    'i.ibb.co',
+    
+    // Postimg
+    'i.postimg.cc',
+    
+    // Cloudinary
+    'res.cloudinary.com',
+    
+    // Nouns ecosystem
+    'noun.pics',
+  ];
+  
+  if (imageHosts.some(host => lowerUrl.includes(host))) {
     return true;
   }
   
