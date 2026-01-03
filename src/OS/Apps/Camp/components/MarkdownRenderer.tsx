@@ -245,22 +245,34 @@ function VideoEmbed({ type, id, url }: { type: 'youtube' | 'vimeo' | 'loom' | 'd
 }
 
 /**
- * Check if children is a single link element with a video URL
+ * Extract href from a single link element
+ * Works with both native 'a' elements and react-markdown custom components
  */
-function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vimeo' | 'loom' | 'direct'; id: string; url?: string } | null {
+function extractSingleLinkHref(children: React.ReactNode): string | null {
   // Check if children is a single React element
   if (!React.isValidElement(children)) return null;
   
-  // Check if it's an anchor with href
+  // Check if it has an href prop (it's a link-like element)
   const child = children as React.ReactElement<{ href?: string; children?: React.ReactNode }>;
-  if (child.type !== 'a' || !child.props.href) return null;
+  if (!child.props.href) return null;
   
   // Check if the link text matches the href (standalone link, not [text](url))
+  // This ensures we only auto-embed raw URLs, not markdown links like [click here](url)
   const linkText = typeof child.props.children === 'string' ? child.props.children : '';
   if (linkText !== child.props.href) return null;
   
+  return child.props.href;
+}
+
+/**
+ * Check if children is a single link element with a video URL
+ */
+function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vimeo' | 'loom' | 'direct'; id: string; url?: string } | null {
+  const href = extractSingleLinkHref(children);
+  if (!href) return null;
+  
   // Check for video
-  const video = getVideoEmbed(child.props.href);
+  const video = getVideoEmbed(href);
   if (video.type && video.id) {
     return { type: video.type, id: video.id, url: video.url };
   }
@@ -272,20 +284,12 @@ function getSingleVideoLink(children: React.ReactNode): { type: 'youtube' | 'vim
  * Check if children is a single link element with an image URL
  */
 function getSingleImageLink(children: React.ReactNode): string | null {
-  // Check if children is a single React element
-  if (!React.isValidElement(children)) return null;
-  
-  // Check if it's an anchor with href
-  const child = children as React.ReactElement<{ href?: string; children?: React.ReactNode }>;
-  if (child.type !== 'a' || !child.props.href) return null;
-  
-  // Check if the link text matches the href (standalone link, not [text](url))
-  const linkText = typeof child.props.children === 'string' ? child.props.children : '';
-  if (linkText !== child.props.href) return null;
+  const href = extractSingleLinkHref(children);
+  if (!href) return null;
   
   // Check if it's an image URL
-  if (isImageUrl(child.props.href)) {
-    return child.props.href;
+  if (isImageUrl(href)) {
+    return href;
   }
   
   return null;
