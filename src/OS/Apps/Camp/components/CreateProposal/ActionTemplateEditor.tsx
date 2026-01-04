@@ -14,6 +14,7 @@ import {
 import type { ActionTemplateState } from '../../utils/types';
 import { useActionTemplate } from '../../utils/hooks/useActionTemplate';
 import { SmartActionEditor } from './SmartActionEditor';
+import { ActionTemplateDropdown } from './ActionTemplateDropdown';
 import styles from './ActionTemplateEditor.module.css';
 
 interface ActionTemplateEditorProps {
@@ -23,10 +24,10 @@ interface ActionTemplateEditorProps {
   disabled?: boolean;
 }
 
-// Option group for select
-interface SelectOptionGroup {
+// Option group for dropdown
+interface TemplateGroup {
   label: string;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; description?: string }[];
 }
 
 export function ActionTemplateEditor({
@@ -88,9 +89,7 @@ export function ActionTemplateEditor({
     }
   }, [fieldValues, generatedActions, selectedTemplate]);
 
-  const handleTemplateSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const templateId = e.target.value;
-    
+  const handleTemplateSelect = (templateId: string) => {
     if (templateId === '') {
       setSelectedTemplate(null);
       setSelectedCategory('');
@@ -117,14 +116,14 @@ export function ActionTemplateEditor({
   const paymentTemplates = getTemplatesByCategory('payments');
   const adminTemplates = getTemplatesByCategory('admin');
 
-  // Build option groups
-  const optionGroups: SelectOptionGroup[] = [
-    { label: 'Treasury Transfers', options: treasuryTemplates.map(t => ({ value: t.id, label: t.name })) },
-    { label: 'Streams', options: paymentTemplates.map(t => ({ value: t.id, label: t.name })) },
-    { label: 'Token Buyer', options: swapTemplates.map(t => ({ value: t.id, label: t.name })) },
-    { label: 'Nouns Token', options: nounTemplates.map(t => ({ value: t.id, label: t.name })) },
-    { label: 'Custom', options: [{ value: 'custom', label: 'Custom Transaction' }] },
-    { label: 'DAO Admin Functions', options: adminTemplates.map(t => ({ value: t.id, label: t.name })) }
+  // Build option groups with descriptions
+  const optionGroups: TemplateGroup[] = [
+    { label: 'Treasury Transfers', options: treasuryTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Streams', options: paymentTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Token Buyer', options: swapTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Nouns Token', options: nounTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Custom', options: [{ value: 'custom', label: 'Custom Transaction', description: 'Build a custom contract call' }] },
+    { label: 'DAO Admin Functions', options: adminTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) }
   ];
 
   // Render template-specific form
@@ -233,30 +232,19 @@ export function ActionTemplateEditor({
       {/* Template Selection Dropdown */}
       <div className={styles.inputGroup}>
         <label className={styles.label}>Action Type *</label>
-        <select
-          className={styles.select}
+        <ActionTemplateDropdown
+          groups={optionGroups}
           value={selectedTemplate?.id || ''}
           onChange={handleTemplateSelect}
+          placeholder="Select action type..."
           disabled={disabled}
-        >
-          <option value="">Select action type...</option>
-          {optionGroups.map(group => (
-            <optgroup key={group.label} label={group.label}>
-              {group.options.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        />
 
-        {selectedTemplate && selectedTemplate.id !== 'custom' && (
+        {selectedTemplate && selectedTemplate.id !== 'custom' && selectedTemplate.isMultiAction && (
           <div className={styles.templateDescription}>
-            {selectedTemplate.description}
-            {selectedTemplate.isMultiAction && (
-              <span className={styles.multiActionBadge}>
-                {' '}• Multi-action template{generatedActions.length > 0 ? ` (${generatedActions.length} actions)` : ''}
-              </span>
-            )}
+            <span className={styles.multiActionBadge}>
+              Multi-action template{generatedActions.length > 0 ? ` (${generatedActions.length} actions)` : ''}
+            </span>
           </div>
         )}
       </div>
