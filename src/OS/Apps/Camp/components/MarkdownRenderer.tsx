@@ -357,7 +357,7 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
       const isGif = isGifUrl(imgSrc);
       
       return (
-        <span className={styles.imageContainer}>
+    <span className={styles.imageContainer}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src={imgSrc} 
@@ -366,8 +366,8 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
             loading="lazy"
             onClick={() => imgSrc && onImageClick(imgSrc, alt || '')}
           />
-          {alt && <span className={styles.imageCaption}>{alt}</span>}
-        </span>
+      {alt && <span className={styles.imageCaption}>{alt}</span>}
+    </span>
       );
     },
 

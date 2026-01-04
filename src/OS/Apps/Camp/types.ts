@@ -94,6 +94,13 @@ export function routeToPath(route: CampRoute): string {
 // Proposal Types
 // ============================================================================
 
+export interface ProposalAction {
+  target: string;
+  value: string;
+  signature: string;
+  calldata: string;
+}
+
 export interface Proposal {
   id: string;
   title: string;
@@ -110,6 +117,8 @@ export interface Proposal {
   createdBlock: string;
   executionETA?: string;
   totalSupply?: string;
+  // Actions (for simulation)
+  actions?: ProposalAction[];
 }
 
 export type ProposalStatus =
@@ -186,6 +195,8 @@ export interface Candidate {
   lastUpdatedTimestamp: string;
   canceled: boolean;
   proposalIdToUpdate?: string;
+  // Actions (for simulation)
+  actions?: ProposalAction[];
 }
 
 export interface CandidateFeedback {

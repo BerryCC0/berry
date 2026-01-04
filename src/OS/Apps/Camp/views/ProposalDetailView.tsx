@@ -8,10 +8,12 @@
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useProposal } from '../hooks';
+import { useSimulation } from '../hooks/useSimulation';
 import { useVote } from '@/app/lib/nouns/hooks';
 import { getSupportLabel, getSupportColor } from '../types';
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
+import { SimulationStatus } from '../components/SimulationStatus';
 import styles from './ProposalDetailView.module.css';
 
 interface ProposalDetailViewProps {
@@ -20,11 +22,18 @@ interface ProposalDetailViewProps {
   onBack: () => void;
 }
 
+// Statuses where simulation doesn't make sense (already finalized)
+const SKIP_SIMULATION_STATUSES = ['EXECUTED', 'DEFEATED', 'VETOED', 'CANCELLED', 'EXPIRED'];
+
 export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalDetailViewProps) {
   const { data: proposal, isLoading, error } = useProposal(proposalId);
   const { isConnected } = useAccount();
   const { voteRefundable, isPending } = useVote();
   const [reason, setReason] = useState('');
+  
+  // Only simulate for proposals that could still be executed
+  const shouldSkipSimulation = proposal ? SKIP_SIMULATION_STATUSES.includes(proposal.status) : false;
+  const simulation = useSimulation(shouldSkipSimulation ? undefined : proposal?.actions);
 
   if (error) {
     return (
@@ -73,106 +82,124 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
 
       <h1 className={styles.title}>{proposal.title}</h1>
 
-      {/* Vote Counts */}
-      <div className={styles.voteSection}>
-        <div className={styles.voteCounts}>
-          <div className={styles.voteCount}>
-            <span className={styles.voteValue} style={{ color: '#43a047' }}>{forVotes}</span>
-            <span className={styles.voteLabel}>For</span>
-          </div>
-          <div className={styles.voteCount}>
-            <span className={styles.voteValue} style={{ color: '#e53935' }}>{againstVotes}</span>
-            <span className={styles.voteLabel}>Against</span>
-          </div>
-          <div className={styles.voteCount}>
-            <span className={styles.voteValue} style={{ color: '#757575' }}>{abstainVotes}</span>
-            <span className={styles.voteLabel}>Abstain</span>
+      {/* Two-column layout on desktop */}
+      <div className={styles.columns}>
+        {/* Left Column: Description */}
+        <div className={styles.leftColumn}>
+          <div className={styles.description}>
+            <h2 className={styles.sectionTitle}>Description</h2>
+            <MarkdownRenderer 
+              content={proposal.description} 
+              className={styles.descriptionContent}
+            />
           </div>
         </div>
-        
-        <div className={styles.quorum}>
-          Quorum: {totalVotes} / {quorum}
-        </div>
-      </div>
 
-      {/* Vote Actions */}
-      {isConnected && isActive && (
-        <div className={styles.voteActions}>
-          <textarea
-            className={styles.reasonInput}
-            placeholder="Optional: Add a reason for your vote..."
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
+        {/* Right Column: Simulation, Votes, Actions */}
+        <div className={styles.rightColumn}>
+          {/* Simulation Status / Transaction List */}
+          <SimulationStatus
+            result={simulation.result}
+            isLoading={simulation.isLoading}
+            error={simulation.error}
+            hasActions={simulation.hasActions}
+            actions={proposal.actions}
+            skipSimulation={shouldSkipSimulation}
           />
-          <div className={styles.voteButtons}>
-            <button 
-              className={`${styles.voteButton} ${styles.voteFor}`}
-              onClick={() => handleVote(1)}
-              disabled={isPending}
-            >
-              Vote For
-            </button>
-            <button 
-              className={`${styles.voteButton} ${styles.voteAgainst}`}
-              onClick={() => handleVote(0)}
-              disabled={isPending}
-            >
-              Vote Against
-            </button>
-            <button 
-              className={`${styles.voteButton} ${styles.voteAbstain}`}
-              onClick={() => handleVote(2)}
-              disabled={isPending}
-            >
-              Abstain
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Description */}
-      <div className={styles.description}>
-        <h2 className={styles.sectionTitle}>Description</h2>
-        <MarkdownRenderer 
-          content={proposal.description} 
-          className={styles.descriptionContent}
-        />
-      </div>
-
-      {/* Votes List */}
-      {proposal.votes && proposal.votes.length > 0 && (
-        <div className={styles.votesSection}>
-          <h2 className={styles.sectionTitle}>Votes ({proposal.votes.length})</h2>
-          <div className={styles.votesList}>
-            {proposal.votes.map((v: any) => (
-              <div 
-                key={v.id} 
-                className={styles.voteItem}
-                onClick={() => onNavigate(`voter/${v.voter}`)}
-              >
-                <div className={styles.voteItemHeader}>
-                  <span className={styles.voterAddress}>
-                    {v.voter.slice(0, 6)}...{v.voter.slice(-4)}
-                  </span>
-                  <span 
-                    className={styles.voteSupport}
-                    style={{ color: getSupportColor(v.support) }}
-                  >
-                    {getSupportLabel(v.support)}
-                  </span>
-                  <span className={styles.voteVotes}>{v.votes} votes</span>
-                </div>
-                {v.reason && (
-                  <MarkdownRenderer 
-                    content={v.reason} 
-                    className={styles.voteReason}
-                  />
-                )}
+          {/* Vote Counts */}
+          <div className={styles.voteSection}>
+            <div className={styles.voteCounts}>
+              <div className={styles.voteCount}>
+                <span className={styles.voteValue} style={{ color: '#43a047' }}>{forVotes}</span>
+                <span className={styles.voteLabel}>For</span>
               </div>
-            ))}
+              <div className={styles.voteCount}>
+                <span className={styles.voteValue} style={{ color: '#e53935' }}>{againstVotes}</span>
+                <span className={styles.voteLabel}>Against</span>
+              </div>
+              <div className={styles.voteCount}>
+                <span className={styles.voteValue} style={{ color: '#757575' }}>{abstainVotes}</span>
+                <span className={styles.voteLabel}>Abstain</span>
+              </div>
+            </div>
+            
+            <div className={styles.quorum}>
+              Quorum: {totalVotes} / {quorum}
+            </div>
           </div>
+
+          {/* Vote Actions */}
+          {isConnected && isActive && (
+            <div className={styles.voteActions}>
+              <textarea
+                className={styles.reasonInput}
+                placeholder="Optional: Add a reason for your vote..."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+              <div className={styles.voteButtons}>
+                <button 
+                  className={`${styles.voteButton} ${styles.voteFor}`}
+                  onClick={() => handleVote(1)}
+                  disabled={isPending}
+                >
+                  Vote For
+                </button>
+                <button 
+                  className={`${styles.voteButton} ${styles.voteAgainst}`}
+                  onClick={() => handleVote(0)}
+                  disabled={isPending}
+                >
+                  Vote Against
+                </button>
+                <button 
+                  className={`${styles.voteButton} ${styles.voteAbstain}`}
+                  onClick={() => handleVote(2)}
+                  disabled={isPending}
+                >
+                  Abstain
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Votes List */}
+          {proposal.votes && proposal.votes.length > 0 && (
+            <div className={styles.votesSection}>
+              <h2 className={styles.sectionTitle}>Votes ({proposal.votes.length})</h2>
+              <div className={styles.votesList}>
+                {proposal.votes.map((v: any) => (
+                  <div 
+                    key={v.id} 
+                    className={styles.voteItem}
+                    onClick={() => onNavigate(`voter/${v.voter}`)}
+                  >
+                    <div className={styles.voteItemHeader}>
+                      <span className={styles.voterAddress}>
+                        {v.voter.slice(0, 6)}...{v.voter.slice(-4)}
+                      </span>
+                      <span 
+                        className={styles.voteSupport}
+                        style={{ color: getSupportColor(v.support) }}
+                      >
+                        {getSupportLabel(v.support)}
+                      </span>
+                      <span className={styles.voteVotes}>{v.votes} votes</span>
+                    </div>
+                    {v.reason && (
+                      <MarkdownRenderer 
+                        content={v.reason} 
+                        className={styles.voteReason}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -58,6 +58,10 @@ const PROPOSAL_QUERY = `
       createdBlock
       executionETA
       totalSupply
+      targets
+      values
+      signatures
+      calldatas
       votes(orderBy: votes, orderDirection: desc, first: 100) {
         id
         voter {
@@ -152,10 +156,20 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: any[] }> {
   if (!json.data?.proposal) throw new Error('Proposal not found');
 
   const p = json.data.proposal;
+  
+  // Build actions array from parallel arrays
+  const actions = p.targets?.map((target: string, i: number) => ({
+    target,
+    value: p.values?.[i] || '0',
+    signature: p.signatures?.[i] || '',
+    calldata: p.calldatas?.[i] || '0x',
+  })) || [];
+  
   return {
     ...p,
     proposer: p.proposer.id,
     status: p.status as Proposal['status'],
+    actions,
     votes: p.votes.map((v: any) => ({
       id: v.id,
       voter: v.voter.id,

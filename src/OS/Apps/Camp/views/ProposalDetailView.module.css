@@ -89,6 +89,37 @@
   line-height: 1.3;
 }
 
+/* Two-column layout for desktop */
+.columns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .columns {
+    flex-direction: row;
+    gap: 24px;
+  }
+  
+  .leftColumn {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .rightColumn {
+    width: 320px;
+    flex-shrink: 0;
+  }
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .voteSection {
   padding: 12px;
   background: var(--berry-bg-secondary);
@@ -198,7 +229,7 @@
 }
 
 .description {
-  margin-bottom: 16px;
+  flex: 1;
 }
 
 .sectionTitle {
@@ -218,8 +249,13 @@
   color: var(--berry-text-primary);
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 300px;
   overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .descriptionContent {
+    max-height: none;
+  }
 }
 
 .votesSection {

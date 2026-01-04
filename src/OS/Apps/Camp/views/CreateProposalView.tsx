@@ -20,6 +20,8 @@ import type { ActionTemplateState, ProposalDraft } from '../utils/types';
 import { generateSlugFromTitle, makeSlugUnique, generateUniqueSlug, generateSlug } from '../utils/slugGenerator';
 import { useNounHolderStatus } from '../utils/hooks/useNounHolderStatus';
 import { useCandidate } from '../hooks/useCandidates';
+import { useSimulation } from '../hooks/useSimulation';
+import { SimulationStatus } from '../components/SimulationStatus';
 import styles from './CreateProposalView.module.css';
 
 interface CreateProposalViewProps {
@@ -125,6 +127,16 @@ export function CreateProposalView({
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('unsaved');
   const [updateReason, setUpdateReason] = useState(''); // Reason for updating candidate
   const [editDataLoaded, setEditDataLoaded] = useState(false);
+
+  // Simulation - memoize actions to avoid re-simulating on every render
+  const simulationActions = useMemo(() => {
+    const actions = flattenActionTemplates(actionTemplateStates);
+    // Only simulate if we have valid actions with non-empty targets
+    const validActions = actions.filter(a => a.target && a.target !== '');
+    return validActions.length > 0 ? validActions : null;
+  }, [actionTemplateStates]);
+  
+  const simulation = useSimulation(simulationActions);
 
   // Populate form with candidate data when editing
   useEffect(() => {
@@ -780,6 +792,15 @@ export function CreateProposalView({
                   />
                 </div>
               ))}
+              
+              {/* Simulation Status */}
+              <SimulationStatus
+                result={simulation.result}
+                isLoading={simulation.isLoading}
+                error={simulation.error}
+                hasActions={simulation.hasActions}
+                actions={simulationActions || undefined}
+              />
             </div>
 
             {/* KYC Verification - Only show for standard and timelock proposals */}

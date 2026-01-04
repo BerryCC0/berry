@@ -117,15 +117,26 @@ async function fetchCandidate(proposer: string, slug: string): Promise<Candidate
   if (!json.data?.proposalCandidate) throw new Error('Candidate not found');
 
   const c = json.data.proposalCandidate;
+  const content = c.latestVersion?.content;
+  
+  // Build actions array from parallel arrays
+  const actions = content?.targets?.map((target: string, i: number) => ({
+    target,
+    value: content?.values?.[i] || '0',
+    signature: content?.signatures?.[i] || '',
+    calldata: content?.calldatas?.[i] || '0x',
+  })) || [];
+  
   return {
     id: c.id,
     proposer: c.proposer,
     slug: c.slug,
-    description: c.latestVersion?.content?.description || '',
-    title: c.latestVersion?.content?.title,
+    description: content?.description || '',
+    title: content?.title,
     createdTimestamp: c.createdTimestamp,
     lastUpdatedTimestamp: c.lastUpdatedTimestamp,
     canceled: c.canceled,
+    actions,
   };
 }
 

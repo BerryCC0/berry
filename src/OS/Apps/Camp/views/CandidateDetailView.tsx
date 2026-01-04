@@ -9,9 +9,11 @@ import { useState } from 'react';
 import { useAccount, useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useCandidate } from '../hooks/useCandidates';
+import { useSimulation } from '../hooks/useSimulation';
 import { useCandidateActions } from '../utils/hooks/useCandidateActions';
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
+import { SimulationStatus } from '../components/SimulationStatus';
 import styles from './CandidateDetailView.module.css';
 
 interface CandidateDetailViewProps {
@@ -40,6 +42,9 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  
+  // Automatic simulation
+  const simulation = useSimulation(candidate?.actions);
 
   const proposerDisplay = ensName || `${proposer.slice(0, 6)}...${proposer.slice(-4)}`;
   
@@ -134,57 +139,75 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
         </div>
       )}
 
-      {/* Owner Actions */}
-      {isOwner && !isCanceled && (
-        <div className={styles.ownerActions}>
-          <span className={styles.ownerActionsLabel}>Owner</span>
-          <button
-            className={styles.editButton}
-            onClick={handleEdit}
-            disabled={isPending || isConfirming}
-          >
-            Edit Candidate
-          </button>
-          <button
-            className={styles.cancelButton}
-            onClick={handleCancelClick}
-            disabled={isPending || isConfirming}
-          >
-            Cancel Candidate
-          </button>
+      {/* Two-column layout on desktop */}
+      <div className={styles.columns}>
+        {/* Left Column: Description */}
+        <div className={styles.leftColumn}>
+          <div className={styles.description}>
+            <h2 className={styles.sectionTitle}>Description</h2>
+            <MarkdownRenderer 
+              content={candidate.description} 
+              className={styles.descriptionContent}
+            />
+          </div>
         </div>
-      )}
 
-      <div className={styles.meta}>
-        <div className={styles.metaItem}>
-          <span className={styles.metaLabel}>Proposer</span>
-          <span 
-            className={styles.metaValue}
-            onClick={() => onNavigate(`voter/${proposer}`)}
-            style={{ cursor: 'pointer' }}
-          >
-            {proposerDisplay}
-          </span>
-        </div>
-        <div className={styles.metaItem}>
-          <span className={styles.metaLabel}>Created</span>
-          <span className={styles.metaValue}>
-            {createdDate.toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric', 
-              year: 'numeric' 
-            })}
-          </span>
-        </div>
-      </div>
+        {/* Right Column: Simulation, Meta, Actions */}
+        <div className={styles.rightColumn}>
+          {/* Simulation Status */}
+          <SimulationStatus
+            result={simulation.result}
+            isLoading={simulation.isLoading}
+            error={simulation.error}
+            hasActions={simulation.hasActions}
+            actions={candidate.actions}
+          />
 
-      {/* Description */}
-      <div className={styles.description}>
-        <h2 className={styles.sectionTitle}>Description</h2>
-        <MarkdownRenderer 
-          content={candidate.description} 
-          className={styles.descriptionContent}
-        />
+          {/* Meta */}
+          <div className={styles.meta}>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Proposer</span>
+              <span 
+                className={styles.metaValue}
+                onClick={() => onNavigate(`voter/${proposer}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                {proposerDisplay}
+              </span>
+            </div>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Created</span>
+              <span className={styles.metaValue}>
+                {createdDate.toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
+              </span>
+            </div>
+          </div>
+
+          {/* Owner Actions */}
+          {isOwner && !isCanceled && (
+            <div className={styles.ownerActions}>
+              <span className={styles.ownerActionsLabel}>Owner</span>
+              <button
+                className={styles.editButton}
+                onClick={handleEdit}
+                disabled={isPending || isConfirming}
+              >
+                Edit Candidate
+              </button>
+              <button
+                className={styles.cancelButton}
+                onClick={handleCancelClick}
+                disabled={isPending || isConfirming}
+              >
+                Cancel Candidate
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Cancel Confirmation Dialog */}

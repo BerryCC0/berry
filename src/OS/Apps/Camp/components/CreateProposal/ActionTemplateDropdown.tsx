@@ -27,20 +27,6 @@ interface ActionTemplateDropdownProps {
   disabled?: boolean;
 }
 
-// Icon components for categories
-function CategoryIcon({ category }: { category: string }) {
-  const iconMap: Record<string, string> = {
-    'Treasury Transfers': '💰',
-    'Streams': '💸',
-    'Token Buyer': '🔄',
-    'Nouns Token': '⌐◨-◨',
-    'Custom': '⚙️',
-    'DAO Admin Functions': '🔐',
-  };
-  
-  return <span className={styles.categoryIcon}>{iconMap[category] || '📋'}</span>;
-}
-
 export function ActionTemplateDropdown({
   groups,
   value,
@@ -129,10 +115,7 @@ export function ActionTemplateDropdown({
       >
         <span className={styles.triggerContent}>
           {selectedOption ? (
-            <>
-              <CategoryIcon category={selectedOption.group} />
-              <span className={styles.triggerLabel}>{selectedOption.label}</span>
-            </>
+            <span className={styles.triggerLabel}>{selectedOption.label}</span>
           ) : (
             <span className={styles.triggerPlaceholder}>{placeholder}</span>
           )}
@@ -171,7 +154,6 @@ export function ActionTemplateDropdown({
             {filteredGroups.map((group) => (
               <div key={group.label} className={styles.group}>
                 <div className={styles.groupHeader}>
-                  <CategoryIcon category={group.label} />
                   <span className={styles.groupLabel}>{group.label}</span>
                 </div>
                 

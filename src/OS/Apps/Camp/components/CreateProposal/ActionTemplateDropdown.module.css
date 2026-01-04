@@ -143,11 +143,6 @@
   flex: 1;
 }
 
-.categoryIcon {
-  font-size: 12px;
-  line-height: 1;
-}
-
 .option {
   display: flex;
   flex-direction: column;
