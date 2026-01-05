@@ -15,6 +15,7 @@ import type { ActionTemplateState } from '../../utils/types';
 import { useActionTemplate } from '../../utils/hooks/useActionTemplate';
 import { SmartActionEditor } from './SmartActionEditor';
 import { ActionTemplateDropdown } from './ActionTemplateDropdown';
+import { AddressInput } from './AddressInput';
 import styles from './ActionTemplateEditor.module.css';
 
 interface ActionTemplateEditorProps {
@@ -197,6 +198,14 @@ export function ActionTemplateEditor({
                 <option value='{"symbol":"wstETH","address":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0","decimals":18}'>wstETH</option>
                 <option value='{"symbol":"rETH","address":"0xae78736Cd615f374D3085123A210448E74Fc6393","decimals":18}'>rETH</option>
               </select>
+            ) : field.type === 'address' ? (
+              <AddressInput
+                value={fieldValues[field.name] || ''}
+                onChange={(value) => updateField(field.name, value)}
+                placeholder={field.placeholder || '0x... or name.eth'}
+                disabled={disabled}
+                helpText={field.helpText}
+              />
             ) : (
               <input
                 type={field.type === 'number' ? 'number' : 'text'}
@@ -208,7 +217,7 @@ export function ActionTemplateEditor({
               />
             )}
             
-            {field.helpText && (
+            {field.helpText && field.type !== 'address' && (
               <div className={styles.helpText}>{field.helpText}</div>
             )}
             

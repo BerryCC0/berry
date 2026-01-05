@@ -6,6 +6,7 @@
 'use client';
 
 import React from 'react';
+import { AddressInput } from './AddressInput';
 import styles from './SmartActionEditor.module.css';
 
 interface SmartActionEditorProps {
@@ -34,17 +35,13 @@ export function SmartActionEditor({
           Target Contract Address
           <span className={styles.required}>*</span>
         </label>
-        <input
-          type="text"
-          className={styles.input}
+        <AddressInput
           value={target}
-          onChange={(e) => onUpdate('target', e.target.value)}
-          placeholder="0x..."
+          onChange={(value) => onUpdate('target', value)}
+          placeholder="0x... or name.eth"
           disabled={disabled}
+          helpText="The contract address that will be called"
         />
-        <div className={styles.helpText}>
-          The contract address that will be called
-        </div>
       </div>
 
       <div className={styles.inputGroup}>
