@@ -38,9 +38,7 @@ export type ActionTemplateType =
   | 'admin-fork-escrow'
   | 'admin-fork-tokens'
   | 'admin-pending-admin'
-  | 'admin-vetoer'
   | 'admin-pending-vetoer'
-  | 'admin-burn-vetoer'
   | 'admin-timelock-delay'
   | 'admin-timelock-admin'
   | 'custom';
@@ -758,7 +756,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-pending-admin',
     category: 'admin',
     name: 'Set Pending Admin',
-    description: 'Propose new admin address',
+    description: 'Propose a new DAO admin. Uses safe two-step transfer pattern.',
     isMultiAction: false,
     fields: [
       {
@@ -766,24 +764,8 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         label: 'Pending Admin Address',
         type: 'address',
         placeholder: '0x...',
-        required: true
-      }
-    ]
-  },
-
-  'admin-vetoer': {
-    id: 'admin-vetoer',
-    category: 'admin',
-    name: 'Set Vetoer',
-    description: 'Update vetoer address',
-    isMultiAction: false,
-    fields: [
-      {
-        name: 'address',
-        label: 'Vetoer Address',
-        type: 'address',
-        placeholder: '0x...',
-        required: true
+        required: true,
+        helpText: 'New admin must call acceptAdmin() to complete transfer'
       }
     ]
   },
@@ -792,7 +774,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-pending-vetoer',
     category: 'admin',
     name: 'Set Pending Vetoer',
-    description: 'Propose new vetoer address',
+    description: 'Propose a new vetoer via governance. New vetoer must accept the role.',
     isMultiAction: false,
     fields: [
       {
@@ -800,18 +782,10 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         label: 'Pending Vetoer Address',
         type: 'address',
         placeholder: '0x...',
-        required: true
+        required: true,
+        helpText: 'New vetoer must call acceptVetoer() to complete the transfer'
       }
     ]
-  },
-
-  'admin-burn-vetoer': {
-    id: 'admin-burn-vetoer',
-    category: 'admin',
-    name: 'Burn Veto Power',
-    description: 'IRREVERSIBLE: Permanently remove veto power',
-    isMultiAction: false,
-    fields: []
   },
 
   'admin-timelock-delay': {
@@ -1415,28 +1389,12 @@ export function generateActionsFromTemplate(
         calldata: encodeAdminAddress(fieldValues.address as Address)
       }];
 
-    case 'admin-vetoer':
-      return [{
-        target: DAO_PROXY_ADDRESS,
-        value: '0',
-        signature: '_setVetoer(address)',
-        calldata: encodeAdminAddress(fieldValues.address as Address)
-      }];
-
     case 'admin-pending-vetoer':
       return [{
         target: DAO_PROXY_ADDRESS,
         value: '0',
         signature: '_setPendingVetoer(address)',
         calldata: encodeAdminAddress(fieldValues.address as Address)
-      }];
-
-    case 'admin-burn-vetoer':
-      return [{
-        target: DAO_PROXY_ADDRESS,
-        value: '0',
-        signature: '_burnVetoPower()',
-        calldata: encodeBurnVetoPower()
       }];
 
     case 'admin-timelock-delay':
