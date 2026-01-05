@@ -38,7 +38,6 @@ export type ActionTemplateType =
   | 'admin-fork-escrow'
   | 'admin-fork-tokens'
   | 'admin-pending-admin'
-  | 'admin-pending-vetoer'
   | 'admin-timelock-delay'
   | 'admin-timelock-admin'
   | 'custom';
@@ -770,23 +769,8 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
-  'admin-pending-vetoer': {
-    id: 'admin-pending-vetoer',
-    category: 'admin',
-    name: 'Set Pending Vetoer',
-    description: 'Propose a new vetoer via governance. New vetoer must accept the role.',
-    isMultiAction: false,
-    fields: [
-      {
-        name: 'address',
-        label: 'Pending Vetoer Address',
-        type: 'address',
-        placeholder: '0x...',
-        required: true,
-        helpText: 'New vetoer must call acceptVetoer() to complete the transfer'
-      }
-    ]
-  },
+  // NOTE: Vetoer-related functions (_setVetoer, _setPendingVetoer, _burnVetoPower)
+  // cannot be called via DAO proposal - they require direct call from current vetoer
 
   'admin-timelock-delay': {
     id: 'admin-timelock-delay',
@@ -1386,14 +1370,6 @@ export function generateActionsFromTemplate(
         target: DAO_PROXY_ADDRESS,
         value: '0',
         signature: '_setPendingAdmin(address)',
-        calldata: encodeAdminAddress(fieldValues.address as Address)
-      }];
-
-    case 'admin-pending-vetoer':
-      return [{
-        target: DAO_PROXY_ADDRESS,
-        value: '0',
-        signature: '_setPendingVetoer(address)',
         calldata: encodeAdminAddress(fieldValues.address as Address)
       }];
 
