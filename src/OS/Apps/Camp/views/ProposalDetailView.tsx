@@ -103,7 +103,23 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const forVotes = Number(proposal.forVotes);
   const againstVotes = Number(proposal.againstVotes);
   const abstainVotes = Number(proposal.abstainVotes);
-  const quorum = Number(proposal.quorumVotes);
+  const quorum = Number(proposal.quorumVotes) || 1;
+
+  // Calculate scale: the max extent we need to show
+  // Left side is max of forVotes or quorum (to show gap if needed)
+  const leftExtent = Math.max(forVotes, quorum);
+  const rightExtent = abstainVotes + againstVotes;
+  const totalScale = leftExtent + rightExtent;
+
+  // Calculate widths as percentages of total scale
+  const forWidth = totalScale > 0 ? (forVotes / totalScale) * 100 : 0;
+  const quorumPosition = totalScale > 0 ? (quorum / totalScale) * 100 : 50;
+  const abstainWidth = totalScale > 0 ? (abstainVotes / totalScale) * 100 : 0;
+  const againstWidth = totalScale > 0 ? (againstVotes / totalScale) * 100 : 0;
+  
+  // Gap between For and quorum marker (only if For < quorum)
+  const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
+  const quorumMet = forVotes >= quorum;
 
   const handleVote = (support: number) => {
     // Use voteRefundable which includes reason and gas refund
@@ -174,7 +190,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
               {/* For votes (left aligned) - each voter is a block */}
               <div 
                 className={styles.forSection}
-                style={{ width: `${Math.min(50, (forVotes / quorum) * 50)}%` }}
+                style={{ width: `${forWidth}%` }}
               >
                 {(proposal.votes || [])
                   .filter((v: { support: number }) => v.support === 1)
@@ -191,17 +207,25 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
                   ))}
               </div>
               
-              {/* Gray space (remaining to quorum) - fills remaining space */}
-              <div className={styles.quorumSpace} />
+              {/* Gap to quorum (only if For < quorum) */}
+              {gapWidth > 0 && (
+                <div 
+                  className={styles.quorumSpace} 
+                  style={{ width: `${gapWidth}%` }}
+                />
+              )}
 
-              {/* Quorum marker - vertical yellow/orange line - directly against abstain/against */}
-              <div className={styles.quorumMarker} />
+              {/* Quorum marker - absolutely positioned */}
+              <div 
+                className={styles.quorumMarker} 
+                style={{ left: `${quorumPosition}%` }}
+              />
 
               {/* Abstain votes (gray) */}
               {abstainVotes > 0 && (
                 <div 
                   className={styles.abstainSection}
-                  style={{ width: `${(abstainVotes / quorum) * 50}%` }}
+                  style={{ width: `${abstainWidth}%` }}
                 >
                   {(proposal.votes || [])
                     .filter((v: { support: number }) => v.support === 2)
@@ -222,7 +246,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
               {againstVotes > 0 && (
                 <div 
                   className={styles.againstSection}
-                  style={{ width: `${(againstVotes / quorum) * 50}%` }}
+                  style={{ width: `${againstWidth}%` }}
                 >
                   {(proposal.votes || [])
                     .filter((v: { support: number }) => v.support === 0)
@@ -244,7 +268,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
             {/* Quorum row */}
             <div className={styles.quorumRow}>
               <span className={styles.quorumLabel}>
-                Quorum {quorum} {forVotes >= quorum ? '(met)' : ''}
+                Quorum {quorum} {quorumMet ? '(met)' : ''}
               </span>
             </div>
           </div>

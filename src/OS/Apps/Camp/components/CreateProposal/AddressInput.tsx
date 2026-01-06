@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useEnsAddress, useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { isAddress } from 'viem';
@@ -29,6 +29,11 @@ export function AddressInput({
 }: AddressInputProps) {
   const [inputValue, setInputValue] = useState(value);
   const [isResolving, setIsResolving] = useState(false);
+  
+  // Track what we've already reported to parent to avoid infinite loops
+  const lastReportedAddress = useRef<string>('');
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   
   // Check if input looks like an ENS name
   const isEnsName = inputValue && 
@@ -57,10 +62,11 @@ export function AddressInput({
   
   // When ENS resolves, update the parent with the resolved address
   useEffect(() => {
-    if (isEnsName && resolvedAddress) {
-      onChange(resolvedAddress);
+    if (isEnsName && resolvedAddress && lastReportedAddress.current !== resolvedAddress) {
+      lastReportedAddress.current = resolvedAddress;
+      onChangeRef.current(resolvedAddress);
     }
-  }, [resolvedAddress, isEnsName, onChange]);
+  }, [resolvedAddress, isEnsName]);
   
   // Handle input change
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,12 +75,14 @@ export function AddressInput({
     
     // If it's a valid address, update parent immediately
     if (isAddress(newValue)) {
-      onChange(newValue);
+      lastReportedAddress.current = newValue;
+      onChangeRef.current(newValue);
     } else if (!newValue) {
-      onChange('');
+      lastReportedAddress.current = '';
+      onChangeRef.current('');
     }
     // If it's an ENS name, wait for resolution (handled by useEffect above)
-  }, [onChange]);
+  }, []);
   
   // Sync with external value changes
   useEffect(() => {

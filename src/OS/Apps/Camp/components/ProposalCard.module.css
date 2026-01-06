@@ -84,31 +84,83 @@
   margin-top: 8px;
 }
 
-.voteBar {
-  height: 6px;
-  background: color-mix(in srgb, var(--berry-error) 30%, transparent);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.forBar {
-  height: 100%;
-  background: var(--berry-success);
-  border-radius: 3px;
-}
-
-.voteLabels {
+.voteLabelsRow {
   display: flex;
   justify-content: space-between;
-  margin-top: 4px;
+  align-items: center;
+  margin-bottom: 4px;
   font-size: 10px;
   font-family: var(--berry-font-system);
 }
 
+.rightLabels {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .forLabel {
-  color: var(--berry-success);
+  color: #43a047;
+  font-weight: 600;
+}
+
+.abstainLabel {
+  color: #757575;
+}
+
+.labelSeparator {
+  color: var(--berry-text-secondary);
 }
 
 .againstLabel {
-  color: var(--berry-error);
+  color: #e53935;
+}
+
+.voteBarContainer {
+  position: relative;
+  display: flex;
+  height: 8px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 2px;
+  overflow: visible;
+}
+
+.forSection {
+  background: #43a047;
+  border-radius: 2px 0 0 2px;
+  flex-shrink: 0;
+}
+
+.quorumSpace {
+  background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
+}
+
+.quorumMarker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 3px;
+  background: #ffc107;
+  border-radius: 1px;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.abstainSection {
+  background: #757575;
+  flex-shrink: 0;
+}
+
+.againstSection {
+  background: #e53935;
+  border-radius: 0 2px 2px 0;
+  flex-shrink: 0;
+}
+
+.quorumLabel {
+  font-size: 9px;
+  font-family: var(--berry-font-system);
+  color: var(--berry-text-secondary);
+  margin-top: 3px;
 }

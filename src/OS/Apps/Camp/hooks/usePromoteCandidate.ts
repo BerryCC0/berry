@@ -7,11 +7,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
+import { NOUNS_CONTRACTS, BERRY_CLIENT_ID } from '@/app/lib/nouns';
 import type { Candidate, CandidateSignature } from '../types';
-
-// Berry client ID for Nouns rewards
-const CLIENT_ID = 12;
 
 interface PromoteState {
   isSuccess: boolean;
@@ -98,10 +95,10 @@ export function usePromoteCandidate() {
         return (a.calldata.startsWith('0x') ? a.calldata : `0x${a.calldata}`) as `0x${string}`;
       });
 
-      // Build description from title and description
-      const description = candidate.title 
-        ? `# ${candidate.title}\n\n${candidate.description}`
-        : candidate.description;
+      // Use the EXACT description that was signed by sponsors
+      // The description from the subgraph already includes the title
+      // Modifying it would invalidate the signatures
+      const description = candidate.description;
 
       // Call the contract
       writeContract({
@@ -115,7 +112,7 @@ export function usePromoteCandidate() {
           signatures,
           calldatas,
           description,
-          CLIENT_ID,
+          BERRY_CLIENT_ID,
         ],
       });
 

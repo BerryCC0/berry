@@ -16,8 +16,24 @@ interface ProposalCardProps {
 export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
   const forVotes = Number(proposal.forVotes);
   const againstVotes = Number(proposal.againstVotes);
-  const totalVotes = forVotes + againstVotes;
-  const forPercent = totalVotes > 0 ? (forVotes / totalVotes) * 100 : 50;
+  const abstainVotes = Number(proposal.abstainVotes || 0);
+  const quorum = Number(proposal.quorumVotes) || 1;
+
+  // Calculate scale: the max extent we need to show
+  // Left side is max of forVotes or quorum (to show gap if needed)
+  const leftExtent = Math.max(forVotes, quorum);
+  const rightExtent = abstainVotes + againstVotes;
+  const totalScale = leftExtent + rightExtent;
+
+  // Calculate widths as percentages of total scale
+  const forWidth = totalScale > 0 ? (forVotes / totalScale) * 100 : 0;
+  const quorumPosition = totalScale > 0 ? (quorum / totalScale) * 100 : 50;
+  const abstainWidth = totalScale > 0 ? (abstainVotes / totalScale) * 100 : 0;
+  const againstWidth = totalScale > 0 ? (againstVotes / totalScale) * 100 : 0;
+  
+  // Gap between For and quorum marker (only if For < quorum)
+  const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
+  const quorumMet = forVotes >= quorum;
 
   return (
     <div className={styles.card} onClick={onClick} role="button" tabIndex={0}>
@@ -31,15 +47,61 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
       <div className={styles.title}>{proposal.title}</div>
       
       <div className={styles.votes}>
-        <div className={styles.voteBar}>
-          <div 
-            className={styles.forBar} 
-            style={{ width: `${forPercent}%` }}
-          />
+        <div className={styles.voteLabelsRow}>
+          <span className={styles.forLabel}>For {forVotes}</span>
+          <div className={styles.rightLabels}>
+            {abstainVotes > 0 && (
+              <span className={styles.abstainLabel}>Abstain {abstainVotes}</span>
+            )}
+            {abstainVotes > 0 && againstVotes > 0 && (
+              <span className={styles.labelSeparator}>·</span>
+            )}
+            {againstVotes > 0 && (
+              <span className={styles.againstLabel}>Against {againstVotes}</span>
+            )}
+          </div>
         </div>
-        <div className={styles.voteLabels}>
-          <span className={styles.forLabel}>{forVotes} For</span>
-          <span className={styles.againstLabel}>{againstVotes} Against</span>
+        
+        <div className={styles.voteBarContainer}>
+          {/* For votes (green) */}
+          <div 
+            className={styles.forSection} 
+            style={{ width: `${forWidth}%` }}
+          />
+          
+          {/* Gap to quorum (only if For < quorum) */}
+          {gapWidth > 0 && (
+            <div 
+              className={styles.quorumSpace} 
+              style={{ width: `${gapWidth}%` }}
+            />
+          )}
+          
+          {/* Quorum marker - absolutely positioned */}
+          <div 
+            className={styles.quorumMarker} 
+            style={{ left: `${quorumPosition}%` }}
+          />
+          
+          {/* Abstain votes (gray) */}
+          {abstainVotes > 0 && (
+            <div 
+              className={styles.abstainSection} 
+              style={{ width: `${abstainWidth}%` }}
+            />
+          )}
+          
+          {/* Against votes (red) */}
+          {againstVotes > 0 && (
+            <div 
+              className={styles.againstSection} 
+              style={{ width: `${againstWidth}%` }}
+            />
+          )}
+        </div>
+        
+        <div className={styles.quorumLabel}>
+          Quorum {quorum}{quorumMet ? ' (met)' : ''}
         </div>
       </div>
     </div>

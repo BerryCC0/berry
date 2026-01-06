@@ -166,11 +166,12 @@
 
 /* Vote bar container */
 .voteBarContainer {
+  position: relative;
   display: flex;
   height: 14px;
   background: var(--berry-bg-tertiary);
   border-radius: 2px;
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 8px;
 }
 
@@ -182,14 +183,19 @@
 }
 
 .quorumSpace {
-  flex: 1;
   background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
 }
 
 .quorumMarker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
   width: 3px;
   background: #ffc107;
-  flex-shrink: 0;
+  border-radius: 1px;
+  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .abstainSection {

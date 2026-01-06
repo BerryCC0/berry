@@ -981,25 +981,25 @@ export function generateActionsFromTemplate(
       }];
 
     case 'treasury-usdc':
+      // Call transfer() directly on USDC contract - treasury is the caller
       return [{
-        target: TREASURY_ADDRESS,
+        target: EXTERNAL_CONTRACTS.USDC.address,
         value: '0',
-        signature: 'sendERC20(address,address,uint256)',
-        calldata: encodeSendERC20(
+        signature: 'transfer(address,uint256)',
+        calldata: encodeTransfer(
           fieldValues.recipient as Address,
-          EXTERNAL_CONTRACTS.USDC.address,
           parseUnits(fieldValues.amount || '0', 6)
         )
       }];
 
     case 'treasury-weth':
+      // Call transfer() directly on WETH contract - treasury is the caller
       return [{
-        target: TREASURY_ADDRESS,
+        target: EXTERNAL_CONTRACTS.WETH.address,
         value: '0',
-        signature: 'sendERC20(address,address,uint256)',
-        calldata: encodeSendERC20(
+        signature: 'transfer(address,uint256)',
+        calldata: encodeTransfer(
           fieldValues.recipient as Address,
-          EXTERNAL_CONTRACTS.WETH.address,
           parseEther(fieldValues.amount || '0')
         )
       }];
@@ -1012,13 +1012,13 @@ export function generateActionsFromTemplate(
         decimals: parsed.decimals,
         balance: parsed.balance ? BigInt(parsed.balance) : undefined
       };
+      // Call transfer() directly on token contract - treasury is the caller
       return [{
-        target: TREASURY_ADDRESS,
+        target: tokenInfo.address,
         value: '0',
-        signature: 'sendERC20(address,address,uint256)',
-        calldata: encodeSendERC20(
+        signature: 'transfer(address,uint256)',
+        calldata: encodeTransfer(
           fieldValues.recipient as Address,
-          tokenInfo.address,
           parseUnits(fieldValues.amount || '0', tokenInfo.decimals)
         )
       }];
