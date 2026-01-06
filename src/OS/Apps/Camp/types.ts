@@ -173,12 +173,25 @@ export function getSupportColor(support: number): string {
 // Voter/Delegate Types
 // ============================================================================
 
+export interface NounSeed {
+  background: number;
+  body: number;
+  accessory: number;
+  head: number;
+  glasses: number;
+}
+
+export interface NounWithSeed {
+  id: string;
+  seed?: NounSeed;
+}
+
 export interface Voter {
   id: string; // Address
   delegatedVotes: string;
   tokenHoldersRepresentedAmount: number;
-  nounsRepresented: { id: string }[]; // Nouns whose voting power is delegated TO this address
-  nounsOwned?: { id: string }[]; // Nouns this address actually OWNS
+  nounsRepresented: NounWithSeed[]; // Nouns whose voting power is delegated TO this address
+  nounsOwned?: NounWithSeed[]; // Nouns this address actually OWNS
   votes: Vote[];
 }
 

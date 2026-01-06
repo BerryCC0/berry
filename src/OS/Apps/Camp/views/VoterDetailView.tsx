@@ -67,8 +67,12 @@ export function VoterDetailView({ address, onNavigate, onBack, showBackButton = 
   // Get owned Nouns
   const nounsOwned = voter?.nounsOwned || [];
   
+  // Get Nouns delegated TO this address (for voting power display)
+  const nounsRepresented = voter?.nounsRepresented || [];
+  
   // Get delegation info
-  const delegatingTo = voter?.delegatingTo;
+  // Only show "delegating to" if this account actually owns Nouns
+  const delegatingTo = nounsOwned.length > 0 ? voter?.delegatingTo : null;
   const delegators = voter?.delegators || [];
   const isSelfDelegated = delegatingTo?.toLowerCase() === address.toLowerCase();
   
@@ -145,6 +149,25 @@ export function VoterDetailView({ address, onNavigate, onBack, showBackButton = 
           <h2 className={styles.sectionTitle}>Nouns Owned</h2>
           <div className={styles.nounsGrid}>
             {nounsOwned.map((noun) => (
+              <div key={noun.id} className={styles.nounCard}>
+                {noun.seed ? (
+                  <NounImage seed={noun.seed} size={64} className={styles.nounImage} />
+                ) : (
+                  <div className={styles.nounImagePlaceholder} />
+                )}
+                <span className={styles.nounId}>#{noun.id}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Nouns Delegated to this address (voting power) */}
+      {nounsRepresented.length > 0 && nounsOwned.length === 0 && (
+        <div className={styles.nounsSection}>
+          <h2 className={styles.sectionTitle}>Voting Power From</h2>
+          <div className={styles.nounsGrid}>
+            {nounsRepresented.map((noun) => (
               <div key={noun.id} className={styles.nounCard}>
                 {noun.seed ? (
                   <NounImage seed={noun.seed} size={64} className={styles.nounImage} />

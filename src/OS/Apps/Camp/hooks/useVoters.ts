@@ -7,7 +7,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
-import type { Voter, VoterSort } from '../types';
+import type { Voter, VoterSort, NounWithSeed } from '../types';
 
 const VOTERS_QUERY = `
   query Voters($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
@@ -36,6 +36,13 @@ const VOTER_QUERY = `
       tokenHoldersRepresentedAmount
       nounsRepresented {
         id
+        seed {
+          background
+          body
+          accessory
+          head
+          glasses
+        }
       }
       tokenHoldersRepresented(first: 20) {
         id
@@ -114,17 +121,6 @@ async function fetchVoters(
     ...d,
     votes: [],
   }));
-}
-
-interface NounWithSeed {
-  id: string;
-  seed?: {
-    background: number;
-    body: number;
-    accessory: number;
-    head: number;
-    glasses: number;
-  };
 }
 
 interface VoterResult extends Voter {
