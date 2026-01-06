@@ -318,6 +318,23 @@
   cursor: not-allowed;
 }
 
+.confirmDialogPromote {
+  background: #4caf50;
+  color: white;
+  border-color: #4caf50;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.confirmDialogPromote:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Success/Error messages */
 .successMessage {
   background: #e8f5e9;
@@ -339,4 +356,47 @@
   font-family: var(--berry-font-system);
   font-size: 11px;
   margin-bottom: 16px;
+}
+
+/* Promote button */
+.promoteButton {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 6px 12px;
+  border: 1px solid #4caf50;
+  background: #4caf50;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.promoteButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.promoteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Sponsors ready indicator */
+.sponsorsReady {
+  color: #4caf50 !important;
+}
+
+/* Link button in success message */
+.linkButton {
+  background: none;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+}
+
+.linkButton:hover {
+  opacity: 0.8;
 }

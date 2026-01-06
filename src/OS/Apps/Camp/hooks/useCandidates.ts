@@ -7,7 +7,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
-import type { Candidate } from '../types';
+import type { Candidate, CandidateSignature } from '../types';
 
 const CANDIDATES_QUERY = `
   query Candidates($first: Int!, $skip: Int!) {
@@ -51,6 +51,17 @@ const CANDIDATE_QUERY = `
           values
           signatures
           calldatas
+          contentSignatures(where: { canceled: false }) {
+            id
+            signer {
+              id
+            }
+            sig
+            expirationTimestamp
+            reason
+            canceled
+            createdTimestamp
+          }
         }
       }
     }
@@ -100,6 +111,16 @@ async function fetchCandidates(first: number, skip: number): Promise<Candidate[]
   }));
 }
 
+interface SignatureResult {
+  id: string;
+  signer: { id: string };
+  sig: string;
+  expirationTimestamp: string;
+  reason: string;
+  canceled: boolean;
+  createdTimestamp: string;
+}
+
 async function fetchCandidate(proposer: string, slug: string): Promise<Candidate> {
   const id = `${proposer.toLowerCase()}-${slug}`;
   
@@ -126,6 +147,20 @@ async function fetchCandidate(proposer: string, slug: string): Promise<Candidate
     signature: content?.signatures?.[i] || '',
     calldata: content?.calldatas?.[i] || '0x',
   })) || [];
+
+  // Build signatures array (active, non-expired sponsors)
+  const now = Math.floor(Date.now() / 1000);
+  const signatures: CandidateSignature[] = (content?.contentSignatures || [])
+    .filter((sig: SignatureResult) => !sig.canceled && Number(sig.expirationTimestamp) > now)
+    .map((sig: SignatureResult) => ({
+      id: sig.id,
+      signer: sig.signer.id,
+      sig: sig.sig,
+      expirationTimestamp: sig.expirationTimestamp,
+      reason: sig.reason,
+      canceled: sig.canceled,
+      createdTimestamp: sig.createdTimestamp,
+    }));
   
   return {
     id: c.id,
@@ -137,6 +172,7 @@ async function fetchCandidate(proposer: string, slug: string): Promise<Candidate
     lastUpdatedTimestamp: c.lastUpdatedTimestamp,
     canceled: c.canceled,
     actions,
+    signatures,
   };
 }
 

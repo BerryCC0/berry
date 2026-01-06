@@ -1,19 +1,21 @@
 /**
  * CandidateDetailView
- * Full candidate detail view with edit/cancel functionality for owners
+ * Full candidate detail view with edit/cancel/promote functionality for owners
  */
 
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useEnsName } from 'wagmi';
+import { useAccount, useEnsName, useReadContract } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useCandidate } from '../hooks/useCandidates';
 import { useSimulation } from '../hooks/useSimulation';
+import { usePromoteCandidate } from '../hooks/usePromoteCandidate';
 import { useCandidateActions } from '../utils/hooks/useCandidateActions';
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
+import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import styles from './CandidateDetailView.module.css';
 
 interface CandidateDetailViewProps {
@@ -39,7 +41,25 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
     error: actionError,
   } = useCandidateActions();
 
+  const {
+    promoteCandidate,
+    isLoading: isPromoting,
+    isSuccess: promoteSuccess,
+    isError: promoteIsError,
+    error: promoteError,
+    proposalId: promotedProposalId,
+    reset: resetPromote,
+  } = usePromoteCandidate();
+
+  // Get proposal threshold from the DAO contract
+  const { data: proposalThreshold } = useReadContract({
+    address: NOUNS_CONTRACTS.governor.address,
+    abi: NOUNS_CONTRACTS.governor.abi,
+    functionName: 'proposalThreshold',
+  });
+
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showPromoteConfirm, setShowPromoteConfirm] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   
@@ -51,6 +71,12 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
   // Check if connected user is the candidate owner
   const isOwner = isConnected && address?.toLowerCase() === proposer.toLowerCase();
   const isCanceled = candidate?.canceled === true;
+
+  // Signature/sponsor info
+  const signatureCount = candidate?.signatures?.length || 0;
+  const threshold = proposalThreshold ? Number(proposalThreshold) : 0;
+  const hasEnoughSignatures = signatureCount >= threshold;
+  const canPromote = isOwner && !isCanceled && hasEnoughSignatures && signatureCount > 0;
 
   const handleEdit = () => {
     // Navigate to create view with edit mode
@@ -80,6 +106,15 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
         setCancelError('Failed to cancel candidate');
       }
     }
+  };
+
+  const handlePromoteClick = () => {
+    setShowPromoteConfirm(true);
+  };
+
+  const handleConfirmPromote = async () => {
+    if (!candidate) return;
+    await promoteCandidate(candidate);
   };
 
   if (error) {
@@ -138,6 +173,24 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
           {cancelError}
         </div>
       )}
+      {promoteSuccess && promotedProposalId && (
+        <div className={styles.successMessage}>
+          Candidate promoted to Proposal #{promotedProposalId}!{' '}
+          <button 
+            className={styles.linkButton}
+            onClick={() => onNavigate(`proposal/${promotedProposalId}`)}
+          >
+            View Proposal
+          </button>
+        </div>
+      )}
+      {promoteIsError && promoteError && (
+        <div className={styles.errorMessage}>
+          {promoteError.message.includes('user rejected') 
+            ? 'Transaction was rejected' 
+            : promoteError.message}
+        </div>
+      )}
 
       {/* Two-column layout on desktop */}
       <div className={styles.columns}>
@@ -185,23 +238,39 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
                 })}
               </span>
             </div>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Sponsors</span>
+              <span className={`${styles.metaValue} ${hasEnoughSignatures ? styles.sponsorsReady : ''}`}>
+                {signatureCount} / {threshold || '?'}
+                {hasEnoughSignatures && signatureCount > 0 && ' (Ready)'}
+              </span>
+            </div>
           </div>
 
           {/* Owner Actions */}
           {isOwner && !isCanceled && (
             <div className={styles.ownerActions}>
               <span className={styles.ownerActionsLabel}>Owner</span>
+              {canPromote && (
+                <button
+                  className={styles.promoteButton}
+                  onClick={handlePromoteClick}
+                  disabled={isPending || isConfirming || isPromoting}
+                >
+                  {isPromoting ? 'Promoting...' : 'Promote to Proposal'}
+                </button>
+              )}
               <button
                 className={styles.editButton}
                 onClick={handleEdit}
-                disabled={isPending || isConfirming}
+                disabled={isPending || isConfirming || isPromoting}
               >
                 Edit Candidate
               </button>
               <button
                 className={styles.cancelButton}
                 onClick={handleCancelClick}
-                disabled={isPending || isConfirming}
+                disabled={isPending || isConfirming || isPromoting}
               >
                 Cancel Candidate
               </button>
@@ -233,6 +302,38 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
                 disabled={isPending || isConfirming}
               >
                 {isPending ? 'Canceling...' : isConfirming ? 'Confirming...' : 'Cancel Candidate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Promote Confirmation Dialog */}
+      {showPromoteConfirm && (
+        <div className={styles.confirmDialog}>
+          <div className={styles.confirmDialogContent}>
+            <h3 className={styles.confirmDialogTitle}>Promote to Proposal?</h3>
+            <p className={styles.confirmDialogMessage}>
+              This will submit the candidate as a full proposal using {signatureCount} sponsor signature{signatureCount !== 1 ? 's' : ''}.
+              Once promoted, the proposal will enter the voting period.
+            </p>
+            <div className={styles.confirmDialogButtons}>
+              <button
+                className={styles.confirmDialogCancel}
+                onClick={() => {
+                  setShowPromoteConfirm(false);
+                  resetPromote();
+                }}
+                disabled={isPromoting}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.confirmDialogPromote}
+                onClick={handleConfirmPromote}
+                disabled={isPromoting}
+              >
+                {isPromoting ? 'Promoting...' : 'Promote to Proposal'}
               </button>
             </div>
           </div>

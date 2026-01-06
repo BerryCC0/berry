@@ -345,6 +345,30 @@ export const NounsDAOABI = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  // proposeBySigs - Promote a candidate with sponsor signatures
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'sig', type: 'bytes' },
+          { name: 'signer', type: 'address' },
+          { name: 'expirationTimestamp', type: 'uint256' },
+        ],
+        name: 'proposerSignatures',
+        type: 'tuple[]',
+      },
+      { name: 'targets', type: 'address[]' },
+      { name: 'values', type: 'uint256[]' },
+      { name: 'signatures', type: 'string[]' },
+      { name: 'calldatas', type: 'bytes[]' },
+      { name: 'description', type: 'string' },
+      { name: 'clientId', type: 'uint32' },
+    ],
+    name: 'proposeBySigs',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
   {
     inputs: [
       { name: 'targets', type: 'address[]' },

@@ -199,6 +199,16 @@ export interface Voter {
 // Candidate Types
 // ============================================================================
 
+export interface CandidateSignature {
+  id: string;
+  signer: string;
+  sig: string;
+  expirationTimestamp: string;
+  reason: string;
+  canceled: boolean;
+  createdTimestamp: string;
+}
+
 export interface Candidate {
   id: string;
   proposer: string;
@@ -211,6 +221,8 @@ export interface Candidate {
   proposalIdToUpdate?: string;
   // Actions (for simulation)
   actions?: ProposalAction[];
+  // Signatures (sponsors)
+  signatures?: CandidateSignature[];
 }
 
 export interface CandidateFeedback {
