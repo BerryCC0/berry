@@ -88,6 +88,44 @@ export function parseRepost(reason: string | undefined | null): RepostInfo | nul
 }
 
 /**
+ * Clean up reply body text by removing:
+ * - Trailing separators like "|"
+ * - Trailing empty lines
+ * - Trailing blockquotes (since we show them separately)
+ */
+function cleanReplyBody(text: string): string {
+  let cleaned = text;
+  
+  // Split into lines for processing
+  const lines = cleaned.split('\n');
+  
+  // Remove trailing lines that are:
+  // - Empty or whitespace only
+  // - Just a separator character like "|"
+  // - Blockquotes (lines starting with ">")
+  while (lines.length > 0) {
+    const lastLine = lines[lines.length - 1].trim();
+    if (lastLine === '' || lastLine === '|' || lastLine.startsWith('>')) {
+      lines.pop();
+    } else {
+      break;
+    }
+  }
+  
+  // Also remove any trailing blockquote sections from the middle
+  // (users sometimes quote inline, we only want the main reply text)
+  let lastNonQuoteIndex = lines.length - 1;
+  while (lastNonQuoteIndex >= 0 && lines[lastNonQuoteIndex].trim().startsWith('>')) {
+    lastNonQuoteIndex--;
+  }
+  
+  // Keep everything up to and including the last non-quote line
+  cleaned = lines.slice(0, lastNonQuoteIndex + 1).join('\n').trim();
+  
+  return cleaned;
+}
+
+/**
  * Check if a reason is a reply (@address followed by content and quote)
  */
 export function parseReply(reason: string | undefined | null): ReplyInfo | null {
@@ -120,9 +158,12 @@ export function parseReply(reason: string | undefined | null): ReplyInfo | null 
   const quoteLines = lines.slice(quoteStartIndex);
   const quotedText = unquote(quoteLines.join('\n'));
   
-  // The reply body is everything between the @mention and the quote
+  // The reply body is everything between the @mention and the final quote
   const afterMention = reason.slice(authorMatch[0].length).trim();
-  const replyBody = afterMention.slice(0, afterMention.lastIndexOf(quoteLines[0])).trim();
+  const rawReplyBody = afterMention.slice(0, afterMention.lastIndexOf(quoteLines[0])).trim();
+  
+  // Clean up the reply body
+  const replyBody = cleanReplyBody(rawReplyBody);
   
   return {
     isReply: true,

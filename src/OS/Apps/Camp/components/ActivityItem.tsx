@@ -91,9 +91,36 @@ function findOriginalPosterAddress(
   return undefined;
 }
 
+// Helper to find the original poster from a repost
+function findRepostOriginalPosterAddress(
+  reason: string | undefined,
+  allItems: ActivityItemType[] | undefined
+): string | undefined {
+  if (!reason || !allItems) return undefined;
+  
+  const repostInfo = parseRepost(reason);
+  if (!repostInfo) return undefined;
+  
+  // Find a post where the reason matches the quoted text
+  for (const otherItem of allItems) {
+    if (!otherItem.reason) continue;
+    
+    // Check if the reason matches the quoted text
+    const normalizedOther = otherItem.reason.trim().toLowerCase();
+    const normalizedQuote = repostInfo.originalReason.trim().toLowerCase();
+    
+    if (normalizedOther === normalizedQuote || normalizedOther.includes(normalizedQuote)) {
+      return otherItem.actor;
+    }
+  }
+  
+  return undefined;
+}
+
 export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, onClickCandidate, onClickAuction }: ActivityItemProps) {
-  // Find original poster address BEFORE calling hooks (so hooks are always called in same order)
-  const originalPosterAddress = findOriginalPosterAddress(item.reason, allItems);
+  // Find original poster addresses BEFORE calling hooks (so hooks are always called in same order)
+  const replyOriginalPosterAddress = findOriginalPosterAddress(item.reason, allItems);
+  const repostOriginalPosterAddress = findRepostOriginalPosterAddress(item.reason, allItems);
 
   const { data: actorEns } = useEnsName({
     address: item.actor as `0x${string}`,
@@ -116,8 +143,14 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
   });
 
   // Resolve ENS for the original poster (if this is a reply)
-  const { data: originalPosterEns } = useEnsName({
-    address: originalPosterAddress as `0x${string}` | undefined,
+  const { data: replyOriginalPosterEns } = useEnsName({
+    address: replyOriginalPosterAddress as `0x${string}` | undefined,
+    chainId: mainnet.id,
+  });
+
+  // Resolve ENS for the original poster (if this is a repost)
+  const { data: repostOriginalPosterEns } = useEnsName({
+    address: repostOriginalPosterAddress as `0x${string}` | undefined,
     chainId: mainnet.id,
   });
 
@@ -166,14 +199,23 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
 
   // Render the reason content - handles reposts and replies specially
   const renderReason = () => {
-    if (!item.reason) return null;
+    // Don't render anything if there's no reason or it's just whitespace
+    if (!item.reason || !item.reason.trim()) return null;
 
-    // If it's a repost (+1 with quote), just show the quoted content
-    // The header already says "reposted a [support] vote/signal"
+    // If it's a repost (+1 with quote), show who they're reposting and the content
     if (repostInfo) {
+      // Use resolved ENS name if available, otherwise use the address
+      const repostAuthorDisplay = repostOriginalPosterEns 
+        || (repostOriginalPosterAddress ? formatAddress(repostOriginalPosterAddress, null) : null);
+      
       return (
-        <div className={styles.quotedReason}>
-          <MarkdownRenderer content={repostInfo.originalReason} className={styles.reason} />
+        <div className={styles.quotedReply}>
+          {repostAuthorDisplay && (
+            <div className={styles.quoteAttribution}>
+              reposting {repostAuthorDisplay}
+            </div>
+          )}
+          <MarkdownRenderer content={repostInfo.originalReason} className={styles.quotedText} />
         </div>
       );
     }
@@ -181,8 +223,8 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
     // If it's a reply, show the reply body first, then quoted original
     if (replyInfo) {
       // Use resolved ENS name if available, otherwise use the original poster address, or fall back to truncated
-      const originalPosterDisplay = originalPosterEns 
-        || (originalPosterAddress ? formatAddress(originalPosterAddress, null) : replyInfo.targetAuthor);
+      const originalPosterDisplay = replyOriginalPosterEns 
+        || (replyOriginalPosterAddress ? formatAddress(replyOriginalPosterAddress, null) : replyInfo.targetAuthor);
       
       return (
         <div className={styles.replyContainer}>
