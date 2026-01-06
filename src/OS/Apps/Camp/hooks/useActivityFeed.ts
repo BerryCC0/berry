@@ -146,6 +146,28 @@ const ACTIVITY_QUERY = `
       startTime
       endTime
     }
+    
+    proposalCandidateSignatures(
+      first: $first
+      skip: $skip
+      orderBy: createdTimestamp
+      orderDirection: desc
+      where: { canceled: false }
+    ) {
+      id
+      signer {
+        id
+      }
+      content {
+        id
+        proposalIdToUpdate
+        proposer
+        title
+      }
+      reason
+      canceled
+      createdTimestamp
+    }
   }
 `;
 
@@ -202,6 +224,19 @@ interface ActivityQueryResult {
     settled: boolean;
     startTime: string;
     endTime: string;
+  }>;
+  proposalCandidateSignatures: Array<{
+    id: string;
+    signer: { id: string };
+    content: {
+      id: string;
+      proposalIdToUpdate: string;
+      proposer: string;
+      title: string;
+    };
+    reason: string;
+    canceled: boolean;
+    createdTimestamp: string;
   }>;
 }
 
@@ -426,6 +461,23 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
       // Settler info not available
     }
   }));
+
+  // Convert candidate sponsorships to activity items
+  for (const signature of data.proposalCandidateSignatures) {
+    // Skip canceled signatures
+    if (signature.canceled) continue;
+    
+    items.push({
+      id: `candidate-sponsored-${signature.id}`,
+      type: 'candidate_sponsored',
+      timestamp: signature.createdTimestamp,
+      actor: signature.signer.id,
+      candidateTitle: signature.content.title,
+      candidateProposer: signature.content.proposer,
+      reason: signature.reason || undefined,
+      sponsorCanceled: signature.canceled,
+    });
+  }
 
   // Sort by timestamp descending
   items.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));

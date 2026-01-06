@@ -113,6 +113,11 @@
   color: #e65100;
 }
 
+.badge[data-type="sponsor"] {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
 .badge[data-type="auction"] {
   background: #e8f5e9;
   color: #2e7d32;

@@ -196,6 +196,26 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
           </div>
         );
 
+      case 'candidate_sponsored':
+        return (
+          <>
+            <div className={styles.header}>
+              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
+                {displayName}
+              </span>
+              <span className={styles.action}>sponsored</span>
+              {item.candidateTitle && (
+                <span className={styles.titleLink}>
+                  {item.candidateTitle}
+                </span>
+              )}
+            </div>
+            {item.reason && (
+              <MarkdownRenderer content={item.reason} className={styles.reason} />
+            )}
+          </>
+        );
+
       case 'noun_transfer':
         return (
           <div className={styles.header}>

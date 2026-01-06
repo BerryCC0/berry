@@ -217,6 +217,7 @@ export type ActivityType =
   | 'candidate_feedback'
   | 'proposal_created'
   | 'candidate_created'
+  | 'candidate_sponsored'
   | 'proposal_queued'
   | 'proposal_executed'
   | 'noun_transfer'
@@ -250,6 +251,10 @@ export interface ActivityItem {
   winningBid?: string;
   winner?: string;
   settler?: string; // Who started the auction by settling the previous one
+  
+  // Candidate sponsorship specific
+  candidateTitle?: string;
+  sponsorCanceled?: boolean;
 }
 
 // ============================================================================
