@@ -196,6 +196,31 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
           </div>
         );
 
+      case 'candidate_feedback':
+        return (
+          <>
+            <div className={styles.header}>
+              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
+                {displayName}
+              </span>
+              <span className={styles.action}>signaled</span>
+              {item.support !== undefined && (
+                <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+                  {getSupportLabel(item.support)}
+                </span>
+              )}
+            </div>
+            {(item.candidateTitle || item.candidateSlug) && (
+              <div className={styles.proposal} onClick={handleCandidateClick} role="button" tabIndex={0}>
+                {item.candidateTitle || formatSlugToTitle(item.candidateSlug!)}
+              </div>
+            )}
+            {item.reason && (
+              <MarkdownRenderer content={item.reason} className={styles.reason} />
+            )}
+          </>
+        );
+
       case 'candidate_sponsored':
         return (
           <>

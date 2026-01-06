@@ -87,6 +87,32 @@ const ACTIVITY_QUERY = `
       createdTimestamp
     }
     
+    candidateFeedbacks(
+      first: $first
+      skip: $skip
+      orderBy: createdTimestamp
+      orderDirection: desc
+    ) {
+      id
+      voter {
+        id
+      }
+      candidate {
+        id
+        slug
+        proposer
+        latestVersion {
+          content {
+            title
+          }
+        }
+      }
+      supportDetailed
+      votes
+      reason
+      createdTimestamp
+    }
+    
     transferEvents(
       first: $first
       skip: $skip
@@ -201,6 +227,24 @@ interface ActivityQueryResult {
     slug: string;
     createdTimestamp: string;
   }>;
+  candidateFeedbacks: Array<{
+    id: string;
+    voter: { id: string };
+    candidate: {
+      id: string;
+      slug: string;
+      proposer: string;
+      latestVersion: {
+        content: {
+          title: string;
+        };
+      } | null;
+    };
+    supportDetailed: number;
+    votes: string;
+    reason: string | null;
+    createdTimestamp: string;
+  }>;
   transferEvents: Array<{
     id: string;
     noun: { id: string };
@@ -286,6 +330,22 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
       proposalId: feedback.proposal.id,
       proposalTitle: feedback.proposal.title,
       support: feedback.supportDetailed,
+      reason: feedback.reason || undefined,
+    });
+  }
+
+  // Convert candidate feedbacks to activity items
+  for (const feedback of data.candidateFeedbacks) {
+    items.push({
+      id: `candidate-feedback-${feedback.id}`,
+      type: 'candidate_feedback',
+      timestamp: feedback.createdTimestamp,
+      actor: feedback.voter.id,
+      candidateSlug: feedback.candidate.slug,
+      candidateProposer: feedback.candidate.proposer,
+      candidateTitle: feedback.candidate.latestVersion?.content?.title,
+      support: feedback.supportDetailed,
+      votes: feedback.votes,
       reason: feedback.reason || undefined,
     });
   }
