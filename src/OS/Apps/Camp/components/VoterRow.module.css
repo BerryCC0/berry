@@ -1,0 +1,72 @@
+/**
+ * VoterRow Styles
+ */
+
+.row {
+  padding: 10px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: var(--berry-bg-tertiary);
+}
+
+.feedback {
+  border-left: 3px solid var(--berry-accent);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.name {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+}
+
+.support {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.votes {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.date {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  margin-left: auto;
+}
+
+.badge {
+  font-family: var(--berry-font-system);
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 2px 4px;
+  background: var(--berry-accent);
+  color: white;
+  border-radius: 3px;
+}
+
+.reason {
+  margin-top: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--berry-text-primary);
+}

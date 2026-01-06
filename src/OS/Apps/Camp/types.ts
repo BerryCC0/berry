@@ -223,13 +223,16 @@ export interface Candidate {
   actions?: ProposalAction[];
   // Signatures (sponsors)
   signatures?: CandidateSignature[];
+  // Feedback signals
+  feedback?: CandidateFeedback[];
 }
 
 export interface CandidateFeedback {
   id: string;
   voter: string;
   support: number;
-  reason: string;
+  votes: string;
+  reason: string | null;
   createdTimestamp: string;
 }
 

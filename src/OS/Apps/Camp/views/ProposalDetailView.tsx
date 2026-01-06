@@ -5,15 +5,15 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { useProposal } from '../hooks';
 import { useSimulation } from '../hooks/useSimulation';
 import { useVote } from '@/app/lib/nouns/hooks';
-import { getSupportLabel, getSupportColor } from '../types';
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
+import { VoterRow } from '../components/VoterRow';
 import styles from './ProposalDetailView.module.css';
 
 interface ProposalDetailViewProps {
@@ -34,6 +34,53 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   // Only simulate for proposals that could still be executed
   const shouldSkipSimulation = proposal ? SKIP_SIMULATION_STATUSES.includes(proposal.status) : false;
   const simulation = useSimulation(shouldSkipSimulation ? undefined : proposal?.actions);
+
+  // Combine votes and feedback into one sorted activity feed
+  // Must be called before any early returns to maintain hook order
+  const activity = useMemo(() => {
+    if (!proposal) return [];
+    
+    const items: Array<{
+      id: string;
+      type: 'vote' | 'feedback';
+      address: string;
+      support: number;
+      votes: string;
+      reason: string | null;
+      timestamp: string;
+    }> = [];
+
+    // Add votes
+    for (const v of proposal.votes || []) {
+      items.push({
+        id: `vote-${v.id}`,
+        type: 'vote',
+        address: v.voter,
+        support: v.support,
+        votes: v.votes,
+        reason: v.reason,
+        timestamp: v.blockTimestamp,
+      });
+    }
+
+    // Add feedback
+    for (const f of proposal.feedback || []) {
+      items.push({
+        id: `feedback-${f.id}`,
+        type: 'feedback',
+        address: f.voter,
+        support: f.support,
+        votes: f.votes,
+        reason: f.reason,
+        timestamp: f.createdTimestamp,
+      });
+    }
+
+    // Sort by timestamp descending (newest first)
+    items.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+
+    return items;
+  }, [proposal]);
 
   if (error) {
     return (
@@ -56,7 +103,6 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const forVotes = Number(proposal.forVotes);
   const againstVotes = Number(proposal.againstVotes);
   const abstainVotes = Number(proposal.abstainVotes);
-  const totalVotes = forVotes + againstVotes + abstainVotes;
   const quorum = Number(proposal.quorumVotes);
 
   const handleVote = (support: number) => {
@@ -109,23 +155,97 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
 
           {/* Vote Counts */}
           <div className={styles.voteSection}>
-            <div className={styles.voteCounts}>
-              <div className={styles.voteCount}>
-                <span className={styles.voteValue} style={{ color: '#43a047' }}>{forVotes}</span>
-                <span className={styles.voteLabel}>For</span>
-              </div>
-              <div className={styles.voteCount}>
-                <span className={styles.voteValue} style={{ color: '#e53935' }}>{againstVotes}</span>
-                <span className={styles.voteLabel}>Against</span>
-              </div>
-              <div className={styles.voteCount}>
-                <span className={styles.voteValue} style={{ color: '#757575' }}>{abstainVotes}</span>
-                <span className={styles.voteLabel}>Abstain</span>
-              </div>
+            {/* Vote labels row */}
+            <div className={styles.voteLabelsRow}>
+              <span className={styles.forLabel}>For {forVotes}</span>
+              <span className={styles.rightLabels}>
+                {abstainVotes > 0 && (
+                  <span className={styles.abstainLabel}>Abstain {abstainVotes}</span>
+                )}
+                {abstainVotes > 0 && againstVotes > 0 && <span className={styles.labelSeparator}>·</span>}
+                {againstVotes > 0 && (
+                  <span className={styles.againstLabel}>Against {againstVotes}</span>
+                )}
+              </span>
             </div>
-            
-            <div className={styles.quorum}>
-              Quorum: {totalVotes} / {quorum}
+
+            {/* Vote bar with individual blocks */}
+            <div className={styles.voteBarContainer}>
+              {/* For votes (left aligned) - each voter is a block */}
+              <div 
+                className={styles.forSection}
+                style={{ width: `${Math.min(50, (forVotes / quorum) * 50)}%` }}
+              >
+                {(proposal.votes || [])
+                  .filter((v: { support: number }) => v.support === 1)
+                  .sort((a: { votes: string }, b: { votes: string }) => Number(b.votes) - Number(a.votes))
+                  .map((v: { id: string; votes: string }) => (
+                    <div 
+                      key={`for-${v.id}`}
+                      className={styles.voteBlock}
+                      style={{ 
+                        flex: Number(v.votes),
+                        backgroundColor: '#43a047',
+                      }}
+                    />
+                  ))}
+              </div>
+              
+              {/* Gray space (remaining to quorum) - fills remaining space */}
+              <div className={styles.quorumSpace} />
+
+              {/* Quorum marker - vertical yellow/orange line - directly against abstain/against */}
+              <div className={styles.quorumMarker} />
+
+              {/* Abstain votes (gray) */}
+              {abstainVotes > 0 && (
+                <div 
+                  className={styles.abstainSection}
+                  style={{ width: `${(abstainVotes / quorum) * 50}%` }}
+                >
+                  {(proposal.votes || [])
+                    .filter((v: { support: number }) => v.support === 2)
+                    .map((v: { id: string; votes: string }) => (
+                      <div 
+                        key={`abstain-${v.id}`}
+                        className={styles.voteBlock}
+                        style={{ 
+                          flex: Number(v.votes),
+                          backgroundColor: '#757575',
+                        }}
+                      />
+                    ))}
+                </div>
+              )}
+
+              {/* Against votes (red) */}
+              {againstVotes > 0 && (
+                <div 
+                  className={styles.againstSection}
+                  style={{ width: `${(againstVotes / quorum) * 50}%` }}
+                >
+                  {(proposal.votes || [])
+                    .filter((v: { support: number }) => v.support === 0)
+                    .sort((a: { votes: string }, b: { votes: string }) => Number(b.votes) - Number(a.votes))
+                    .map((v: { id: string; votes: string }) => (
+                      <div 
+                        key={`against-${v.id}`}
+                        className={styles.voteBlock}
+                        style={{ 
+                          flex: Number(v.votes),
+                          backgroundColor: '#e53935',
+                        }}
+                      />
+                    ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quorum row */}
+            <div className={styles.quorumRow}>
+              <span className={styles.quorumLabel}>
+                Quorum {quorum} {forVotes >= quorum ? '(met)' : ''}
+              </span>
             </div>
           </div>
 
@@ -164,36 +284,24 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
             </div>
           )}
 
-          {/* Votes List */}
-          {proposal.votes && proposal.votes.length > 0 && (
-            <div className={styles.votesSection}>
-              <h2 className={styles.sectionTitle}>Votes ({proposal.votes.length})</h2>
-              <div className={styles.votesList}>
-                {proposal.votes.map((v: any) => (
-                  <div 
-                    key={v.id} 
-                    className={styles.voteItem}
-                    onClick={() => onNavigate(`voter/${v.voter}`)}
-                  >
-                    <div className={styles.voteItemHeader}>
-                      <span className={styles.voterAddress}>
-                        {v.voter.slice(0, 6)}...{v.voter.slice(-4)}
-                      </span>
-                      <span 
-                        className={styles.voteSupport}
-                        style={{ color: getSupportColor(v.support) }}
-                      >
-                        {getSupportLabel(v.support)}
-                      </span>
-                      <span className={styles.voteVotes}>{v.votes} votes</span>
-                    </div>
-                    {v.reason && (
-                      <MarkdownRenderer 
-                        content={v.reason} 
-                        className={styles.voteReason}
-                      />
-                    )}
-                  </div>
+          {/* Activity (Votes + Feedback combined) */}
+          {activity.length > 0 && (
+            <div className={styles.activitySection}>
+              <h2 className={styles.sectionTitle}>
+                Activity ({activity.length})
+              </h2>
+              <div className={styles.activityList}>
+                {activity.map((item) => (
+                  <VoterRow
+                    key={item.id}
+                    address={item.address}
+                    support={item.support}
+                    votes={item.votes}
+                    reason={item.reason}
+                    timestamp={item.timestamp}
+                    isFeedback={item.type === 'feedback'}
+                    onNavigate={onNavigate}
+                  />
                 ))}
               </div>
             </div>

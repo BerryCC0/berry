@@ -162,6 +162,17 @@
   }
 }
 
+/* Feedback Section */
+.feedbackSection {
+  margin-bottom: 16px;
+}
+
+.feedbackList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 /* Owner Actions */
 .ownerActions {
   display: flex;

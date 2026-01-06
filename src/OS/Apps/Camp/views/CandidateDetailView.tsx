@@ -16,6 +16,7 @@ import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
 import { SponsorsPanel } from '../components/SponsorsPanel';
+import { VoterRow } from '../components/VoterRow';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import styles from './CandidateDetailView.module.css';
 
@@ -177,7 +178,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
       {promoteSuccess && promotedProposalId && (
         <div className={styles.successMessage}>
           Candidate promoted to Proposal #{promotedProposalId}!{' '}
-          <button 
+          <button
             className={styles.linkButton}
             onClick={() => onNavigate(`proposal/${promotedProposalId}`)}
           >
@@ -218,28 +219,28 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
           />
 
           {/* Meta */}
-          <div className={styles.meta}>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Proposer</span>
-              <span 
-                className={styles.metaValue}
-                onClick={() => onNavigate(`voter/${proposer}`)}
-                style={{ cursor: 'pointer' }}
-              >
-                {proposerDisplay}
-              </span>
-            </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Created</span>
-              <span className={styles.metaValue}>
-                {createdDate.toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  year: 'numeric' 
-                })}
-              </span>
-            </div>
-          </div>
+      <div className={styles.meta}>
+        <div className={styles.metaItem}>
+          <span className={styles.metaLabel}>Proposer</span>
+          <span 
+            className={styles.metaValue}
+            onClick={() => onNavigate(`voter/${proposer}`)}
+            style={{ cursor: 'pointer' }}
+          >
+            {proposerDisplay}
+          </span>
+        </div>
+        <div className={styles.metaItem}>
+          <span className={styles.metaLabel}>Created</span>
+          <span className={styles.metaValue}>
+            {createdDate.toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })}
+          </span>
+        </div>
+      </div>
 
           {/* Sponsors Panel */}
           <SponsorsPanel
@@ -248,6 +249,27 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
             threshold={threshold}
             onNavigate={onNavigate}
           />
+
+          {/* Feedback Signals */}
+          {candidate.feedback && candidate.feedback.length > 0 && (
+            <div className={styles.feedbackSection}>
+              <h2 className={styles.sectionTitle}>Feedback ({candidate.feedback.length})</h2>
+              <div className={styles.feedbackList}>
+                {candidate.feedback.map((f) => (
+                  <VoterRow
+                    key={f.id}
+                    address={f.voter}
+                    support={f.support}
+                    votes={f.votes}
+                    reason={f.reason}
+                    timestamp={f.createdTimestamp}
+                    isFeedback={false}
+                    onNavigate={onNavigate}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Owner Actions */}
           {isOwner && !isCanceled && (

@@ -7,7 +7,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
-import type { Candidate, CandidateSignature } from '../types';
+import type { Candidate, CandidateSignature, CandidateFeedback } from '../types';
 
 const CANDIDATES_QUERY = `
   query Candidates($first: Int!, $skip: Int!) {
@@ -64,6 +64,21 @@ const CANDIDATE_QUERY = `
           }
         }
       }
+    }
+    candidateFeedbacks(
+      where: { candidate_: { id: $id } }
+      orderBy: createdTimestamp
+      orderDirection: desc
+      first: 100
+    ) {
+      id
+      voter {
+        id
+      }
+      supportDetailed
+      votes
+      reason
+      createdTimestamp
     }
   }
 `;
@@ -161,6 +176,16 @@ async function fetchCandidate(proposer: string, slug: string): Promise<Candidate
       canceled: sig.canceled,
       createdTimestamp: sig.createdTimestamp,
     }));
+
+  // Build feedback array
+  const feedback: CandidateFeedback[] = (json.data.candidateFeedbacks || []).map((f: any) => ({
+    id: f.id,
+    voter: f.voter.id,
+    support: f.supportDetailed,
+    votes: f.votes,
+    reason: f.reason,
+    createdTimestamp: f.createdTimestamp,
+  }));
   
   return {
     id: c.id,
@@ -173,6 +198,7 @@ async function fetchCandidate(proposer: string, slug: string): Promise<Candidate
     canceled: c.canceled,
     actions,
     signatures,
+    feedback,
   };
 }
 
