@@ -15,6 +15,7 @@ import { useCandidateActions } from '../utils/hooks/useCandidateActions';
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
+import { SponsorsPanel } from '../components/SponsorsPanel';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import styles from './CandidateDetailView.module.css';
 
@@ -238,14 +239,15 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
                 })}
               </span>
             </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Sponsors</span>
-              <span className={`${styles.metaValue} ${hasEnoughSignatures ? styles.sponsorsReady : ''}`}>
-                {signatureCount} / {threshold || '?'}
-                {hasEnoughSignatures && signatureCount > 0 && ' (Ready)'}
-              </span>
-            </div>
           </div>
+
+          {/* Sponsors Panel */}
+          <SponsorsPanel
+            signatures={candidate.signatures || []}
+            proposer={proposer}
+            threshold={threshold}
+            onNavigate={onNavigate}
+          />
 
           {/* Owner Actions */}
           {isOwner && !isCanceled && (

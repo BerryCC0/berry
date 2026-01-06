@@ -1,0 +1,144 @@
+/**
+ * SponsorsPanel Styles
+ */
+
+.container {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.sectionTitle {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+/* Summary stats */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.summaryItem {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.summaryValue {
+  font-family: var(--berry-font-system);
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+}
+
+.summaryLabel {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+/* Threshold messages */
+.thresholdMet {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: #4caf50;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.thresholdNotMet {
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: #ff9800;
+  margin-bottom: 12px;
+}
+
+/* Sponsors list */
+.sponsorsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sponsorItem {
+  padding: 10px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+}
+
+.sponsorHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sponsorName {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+}
+
+.sponsorName:hover {
+  color: var(--berry-accent);
+  text-decoration: underline;
+}
+
+.sponsorVotes {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.sponsorDate {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  margin-left: auto;
+}
+
+.sponsorReason {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-primary);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.sponsorExpiry {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  margin-top: 6px;
+}
+
+/* No sponsors state */
+.noSponsors {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  padding: 16px;
+  text-align: center;
+  background: var(--berry-bg-tertiary);
+  border-radius: 4px;
+}
