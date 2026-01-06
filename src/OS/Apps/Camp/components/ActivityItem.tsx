@@ -11,12 +11,14 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { formatEther } from 'viem';
 import { NounImageById } from '@/app/lib/nouns/components';
 import { getSupportLabel, getSupportColor, type ActivityItem as ActivityItemType } from '../types';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { parseRepost, parseReply } from '../utils/repostParser';
 import styles from './ActivityItem.module.css';
 
 interface ActivityItemProps {
@@ -106,36 +108,98 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
     }
   };
 
+  // Detect repost pattern in reason
+  const repostInfo = useMemo(() => {
+    if (!item.reason) return null;
+    return parseRepost(item.reason);
+  }, [item.reason]);
+
+  // Detect reply pattern in reason  
+  const replyInfo = useMemo(() => {
+    if (!item.reason) return null;
+    return parseReply(item.reason);
+  }, [item.reason]);
+
+  // Render the reason content - handles reposts and replies specially
+  const renderReason = () => {
+    if (!item.reason) return null;
+
+    // If it's a repost, show the quoted content with a repost indicator
+    if (repostInfo) {
+      return (
+        <div className={styles.repostContainer}>
+          <div className={styles.repostIndicator}>reposted</div>
+          <div className={styles.quotedReason}>
+            <MarkdownRenderer content={repostInfo.originalReason} className={styles.reason} />
+          </div>
+        </div>
+      );
+    }
+
+    // If it's a reply, show the reply body and quoted content
+    if (replyInfo) {
+      return (
+        <div className={styles.replyContainer}>
+          <div className={styles.replyHeader}>
+            <span className={styles.replyIndicator}>replied to</span>
+            <span className={styles.replyTarget}>{replyInfo.targetAuthor}</span>
+          </div>
+          {replyInfo.replyBody && (
+            <MarkdownRenderer content={replyInfo.replyBody} className={styles.reason} />
+          )}
+          <div className={styles.quotedReason}>
+            <MarkdownRenderer content={replyInfo.quotedText} className={styles.reason} />
+          </div>
+        </div>
+      );
+    }
+
+    // Regular reason
+    return <MarkdownRenderer content={item.reason} className={styles.reason} />;
+  };
+
   // Render based on activity type
   const renderContent = () => {
     switch (item.type) {
       case 'vote':
-  return (
+        return (
           <>
-      <div className={styles.header}>
+            <div className={styles.header}>
               <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-          {displayName}
-        </span>
-              <span className={styles.action}>voted</span>
-        {item.support !== undefined && (
-                <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
-            {getSupportLabel(item.support)}
-          </span>
-        )}
-        {item.votes && (
-          <span className={styles.votes}>
-            ({item.votes} {item.votes === '1' ? 'vote' : 'votes'})
-          </span>
-        )}
-      </div>
+                {displayName}
+              </span>
+              {repostInfo ? (
+                <>
+                  <span className={styles.action}>reposted a</span>
+                  {item.support !== undefined && (
+                    <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+                      {getSupportLabel(item.support)}
+                    </span>
+                  )}
+                  <span className={styles.action}>vote</span>
+                </>
+              ) : (
+                <>
+                  <span className={styles.action}>voted</span>
+                  {item.support !== undefined && (
+                    <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+                      {getSupportLabel(item.support)}
+                    </span>
+                  )}
+                </>
+              )}
+              {item.votes && (
+                <span className={styles.votes}>
+                  ({item.votes} {item.votes === '1' ? 'vote' : 'votes'})
+                </span>
+              )}
+            </div>
             {item.proposalTitle && (
               <div className={styles.proposal} onClick={handleProposalClick} role="button" tabIndex={0}>
                 Prop {item.proposalId}: {item.proposalTitle}
               </div>
             )}
-            {item.reason && (
-              <MarkdownRenderer content={item.reason} className={styles.reason} />
-            )}
+            {renderReason()}
           </>
         );
 
@@ -146,21 +210,33 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
               <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
                 {displayName}
               </span>
-              <span className={styles.action}>signaled</span>
-              {item.support !== undefined && (
-                <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
-                  {getSupportLabel(item.support)}
-                </span>
+              {repostInfo ? (
+                <>
+                  <span className={styles.action}>reposted a</span>
+                  {item.support !== undefined && (
+                    <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+                      {getSupportLabel(item.support)}
+                    </span>
+                  )}
+                  <span className={styles.action}>signal</span>
+                </>
+              ) : (
+                <>
+                  <span className={styles.action}>signaled</span>
+                  {item.support !== undefined && (
+                    <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+                      {getSupportLabel(item.support)}
+                    </span>
+                  )}
+                </>
               )}
             </div>
-      {item.proposalTitle && (
+            {item.proposalTitle && (
               <div className={styles.proposal} onClick={handleProposalClick} role="button" tabIndex={0}>
-          Prop {item.proposalId}: {item.proposalTitle}
-        </div>
-      )}
-      {item.reason && (
-              <MarkdownRenderer content={item.reason} className={styles.reason} />
+                Prop {item.proposalId}: {item.proposalTitle}
+              </div>
             )}
+            {renderReason()}
           </>
         );
 
@@ -203,11 +279,25 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
               <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
                 {displayName}
               </span>
-              <span className={styles.action}>signaled</span>
-              {item.support !== undefined && (
-                <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
-                  {getSupportLabel(item.support)}
-                </span>
+              {repostInfo ? (
+                <>
+                  <span className={styles.action}>reposted a</span>
+                  {item.support !== undefined && (
+                    <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+                      {getSupportLabel(item.support)}
+                    </span>
+                  )}
+                  <span className={styles.action}>signal</span>
+                </>
+              ) : (
+                <>
+                  <span className={styles.action}>signaled</span>
+                  {item.support !== undefined && (
+                    <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+                      {getSupportLabel(item.support)}
+                    </span>
+                  )}
+                </>
               )}
             </div>
             {(item.candidateTitle || item.candidateSlug) && (
@@ -215,9 +305,7 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
                 {item.candidateTitle || formatSlugToTitle(item.candidateSlug!)}
               </div>
             )}
-            {item.reason && (
-              <MarkdownRenderer content={item.reason} className={styles.reason} />
-            )}
+            {renderReason()}
           </>
         );
 

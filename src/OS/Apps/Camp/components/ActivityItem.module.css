@@ -231,3 +231,45 @@
 .type-noun-delegation {
   border-left: 3px solid #00897b;
 }
+
+/* Repost styles */
+.repostContainer {
+  margin-top: 6px;
+}
+
+.repostIndicator {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+.quotedReason {
+  padding-left: 10px;
+  border-left: 2px solid var(--color-border);
+  opacity: 0.85;
+}
+
+/* Reply styles */
+.replyContainer {
+  margin-top: 6px;
+}
+
+.replyHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.replyIndicator {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.replyTarget {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  color: var(--color-accent);
+}
