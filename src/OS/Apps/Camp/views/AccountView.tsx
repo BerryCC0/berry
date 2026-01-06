@@ -47,6 +47,7 @@ export function AccountView({ onNavigate }: AccountViewProps) {
       onNavigate={onNavigate}
       onBack={() => {}} // No back button for account view
       showBackButton={false}
+      isOwnAccount={true}
     />
   );
 }

@@ -177,7 +177,8 @@ export interface Voter {
   id: string; // Address
   delegatedVotes: string;
   tokenHoldersRepresentedAmount: number;
-  nounsRepresented: { id: string }[];
+  nounsRepresented: { id: string }[]; // Nouns whose voting power is delegated TO this address
+  nounsOwned?: { id: string }[]; // Nouns this address actually OWNS
   votes: Vote[];
 }
 

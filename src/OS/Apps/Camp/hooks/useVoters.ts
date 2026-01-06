@@ -37,6 +37,9 @@ const VOTER_QUERY = `
       nounsRepresented {
         id
       }
+      tokenHoldersRepresented(first: 20) {
+        id
+      }
       votes(orderBy: blockTimestamp, orderDirection: desc, first: 50) {
         id
         proposal {
@@ -47,6 +50,23 @@ const VOTER_QUERY = `
         votes
         reason
         blockTimestamp
+      }
+    }
+    account(id: $id) {
+      id
+      tokenBalance
+      nouns {
+        id
+        seed {
+          background
+          body
+          accessory
+          head
+          glasses
+        }
+      }
+      delegate {
+        id
       }
     }
   }
@@ -96,7 +116,25 @@ async function fetchVoters(
   }));
 }
 
-async function fetchVoter(address: string): Promise<Voter & { recentVotes: any[] }> {
+interface NounWithSeed {
+  id: string;
+  seed?: {
+    background: number;
+    body: number;
+    accessory: number;
+    head: number;
+    glasses: number;
+  };
+}
+
+interface VoterResult extends Voter {
+  recentVotes: any[];
+  nounsOwned: NounWithSeed[];
+  delegatingTo: string | null; // Address this account is delegating to
+  delegators: string[]; // Addresses delegating to this account
+}
+
+async function fetchVoter(address: string): Promise<VoterResult> {
   const response = await fetch(GOLDSKY_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -108,15 +146,32 @@ async function fetchVoter(address: string): Promise<Voter & { recentVotes: any[]
 
   const json = await response.json();
   if (json.errors) throw new Error(json.errors[0].message);
-  if (!json.data?.delegate) throw new Error('Voter not found');
-
-  const d = json.data.delegate;
+  
+  // Handle case where delegate doesn't exist (user has never voted/delegated)
+  const d = json.data?.delegate;
+  const account = json.data?.account;
+  
+  // If neither delegate nor account exists, throw error
+  if (!d && !account) throw new Error('Voter not found');
+  
+  // Get owned Nouns from account entity (with seeds for images)
+  const nounsOwned: NounWithSeed[] = account?.nouns || [];
+  
+  // Get who this account is delegating to
+  const delegatingTo = account?.delegate?.id || null;
+  
+  // Get who is delegating to this account
+  const delegators: string[] = (d?.tokenHoldersRepresented || []).map((h: { id: string }) => h.id);
+  
   return {
-    ...d,
+    id: d?.id || address.toLowerCase(),
+    delegatedVotes: d?.delegatedVotes || '0',
+    tokenHoldersRepresentedAmount: d?.tokenHoldersRepresentedAmount || 0,
+    nounsRepresented: d?.nounsRepresented || [],
     votes: [],
-    recentVotes: d.votes.map((v: any) => ({
+    recentVotes: (d?.votes || []).map((v: any) => ({
       id: v.id,
-      voter: d.id,
+      voter: d?.id || address.toLowerCase(),
       proposalId: v.proposal.id,
       proposalTitle: v.proposal.title,
       support: v.supportDetailed,
@@ -124,6 +179,9 @@ async function fetchVoter(address: string): Promise<Voter & { recentVotes: any[]
       reason: v.reason,
       blockTimestamp: v.blockTimestamp,
     })),
+    nounsOwned,
+    delegatingTo,
+    delegators,
   };
 }
 

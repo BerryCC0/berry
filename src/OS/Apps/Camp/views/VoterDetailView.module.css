@@ -82,32 +82,47 @@
   color: var(--berry-text-secondary);
 }
 
-.stats {
+.delegateButton {
+  margin-left: auto;
+  padding: 8px 14px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--berry-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.delegateButton:hover {
+  opacity: 0.9;
+}
+
+/* Voting Power - prominent display */
+.votingPower {
   display: flex;
-  gap: 24px;
-  padding: 12px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px 16px;
   background: var(--berry-bg-secondary);
   border: 1px solid var(--berry-border);
+  border-radius: 8px;
   margin-bottom: 16px;
 }
 
-.stat {
-  display: flex;
-  flex-direction: column;
-}
-
-.statValue {
+.votingPowerValue {
   font-family: var(--berry-font-system);
-  font-size: 18px;
+  font-size: 24px;
   font-weight: bold;
   color: var(--berry-text-primary);
 }
 
-.statLabel {
+.votingPowerLabel {
   font-family: var(--berry-font-system);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--berry-text-secondary);
-  text-transform: uppercase;
 }
 
 .sectionTitle {
@@ -124,20 +139,95 @@
   margin-bottom: 16px;
 }
 
-.nounsList {
+.nounsGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 12px;
+}
+
+.nounCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nounImage {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid var(--berry-border);
+}
+
+.nounImagePlaceholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
 }
 
 .nounId {
   font-family: var(--berry-font-system);
   font-size: 11px;
-  padding: 2px 8px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+/* Delegation Section */
+.delegationSection {
+  margin-bottom: 16px;
+  padding: 12px;
   background: var(--berry-bg-secondary);
   border: 1px solid var(--berry-border);
-  border-radius: 4px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.delegationRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.delegationLabel {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.addressLink {
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 11px;
+  color: var(--berry-accent);
+  cursor: pointer;
+}
+
+.addressLink:hover {
+  text-decoration: underline;
+}
+
+.selfDelegated {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
   color: var(--berry-text-primary);
+  font-style: italic;
+}
+
+.delegatorsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.moreCount {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
 }
 
 .votesSection {
