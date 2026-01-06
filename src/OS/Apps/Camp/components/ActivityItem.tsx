@@ -23,6 +23,7 @@ import styles from './ActivityItem.module.css';
 
 interface ActivityItemProps {
   item: ActivityItemType;
+  allItems?: ActivityItemType[];
   onClickProposal?: (id: string) => void;
   onClickVoter?: (address: string) => void;
   onClickCandidate?: (proposer: string, slug: string) => void;
@@ -56,7 +57,44 @@ function formatSlugToTitle(slug: string): string {
     .replace(/^./, c => c.toUpperCase());
 }
 
-export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandidate, onClickAuction }: ActivityItemProps) {
+// Helper to find the original poster from a reply
+function findOriginalPosterAddress(
+  reason: string | undefined,
+  allItems: ActivityItemType[] | undefined
+): string | undefined {
+  if (!reason || !allItems) return undefined;
+  
+  const replyInfo = parseReply(reason);
+  if (!replyInfo) return undefined;
+  
+  const truncatedTarget = replyInfo.targetAuthor.toLowerCase();
+  
+  // Find a post where:
+  // 1. The actor matches the truncated address
+  // 2. The reason matches the quoted text
+  for (const otherItem of allItems) {
+    if (!otherItem.reason) continue;
+    
+    // Check if actor matches the truncated pattern
+    const truncatedActor = `${otherItem.actor.slice(0, 6)}...${otherItem.actor.slice(-4)}`.toLowerCase();
+    if (truncatedActor !== truncatedTarget) continue;
+    
+    // Check if the reason contains the quoted text (or matches exactly)
+    const normalizedOther = otherItem.reason.trim().toLowerCase();
+    const normalizedQuote = replyInfo.quotedText.trim().toLowerCase();
+    
+    if (normalizedOther === normalizedQuote || normalizedOther.includes(normalizedQuote)) {
+      return otherItem.actor;
+    }
+  }
+  
+  return undefined;
+}
+
+export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, onClickCandidate, onClickAuction }: ActivityItemProps) {
+  // Find original poster address BEFORE calling hooks (so hooks are always called in same order)
+  const originalPosterAddress = findOriginalPosterAddress(item.reason, allItems);
+
   const { data: actorEns } = useEnsName({
     address: item.actor as `0x${string}`,
     chainId: mainnet.id,
@@ -74,6 +112,12 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
 
   const { data: settlerEns } = useEnsName({
     address: item.settler as `0x${string}` | undefined,
+    chainId: mainnet.id,
+  });
+
+  // Resolve ENS for the original poster (if this is a reply)
+  const { data: originalPosterEns } = useEnsName({
+    address: originalPosterAddress as `0x${string}` | undefined,
     chainId: mainnet.id,
   });
 
@@ -124,31 +168,34 @@ export function ActivityItem({ item, onClickProposal, onClickVoter, onClickCandi
   const renderReason = () => {
     if (!item.reason) return null;
 
-    // If it's a repost, show the quoted content with a repost indicator
+    // If it's a repost (+1 with quote), just show the quoted content
+    // The header already says "reposted a [support] vote/signal"
     if (repostInfo) {
       return (
-        <div className={styles.repostContainer}>
-          <div className={styles.repostIndicator}>reposted</div>
-          <div className={styles.quotedReason}>
-            <MarkdownRenderer content={repostInfo.originalReason} className={styles.reason} />
-          </div>
+        <div className={styles.quotedReason}>
+          <MarkdownRenderer content={repostInfo.originalReason} className={styles.reason} />
         </div>
       );
     }
 
-    // If it's a reply, show the reply body and quoted content
+    // If it's a reply, show the reply body first, then quoted original
     if (replyInfo) {
+      // Use resolved ENS name if available, otherwise use the original poster address, or fall back to truncated
+      const originalPosterDisplay = originalPosterEns 
+        || (originalPosterAddress ? formatAddress(originalPosterAddress, null) : replyInfo.targetAuthor);
+      
       return (
         <div className={styles.replyContainer}>
-          <div className={styles.replyHeader}>
-            <span className={styles.replyIndicator}>replied to</span>
-            <span className={styles.replyTarget}>{replyInfo.targetAuthor}</span>
-          </div>
+          {/* Show the reply content first */}
           {replyInfo.replyBody && (
             <MarkdownRenderer content={replyInfo.replyBody} className={styles.reason} />
           )}
-          <div className={styles.quotedReason}>
-            <MarkdownRenderer content={replyInfo.quotedText} className={styles.reason} />
+          {/* Show the quoted original with attribution */}
+          <div className={styles.quotedReply}>
+            <div className={styles.quoteAttribution}>
+              replying to {originalPosterDisplay}
+            </div>
+            <MarkdownRenderer content={replyInfo.quotedText} className={styles.quotedText} />
           </div>
         </div>
       );

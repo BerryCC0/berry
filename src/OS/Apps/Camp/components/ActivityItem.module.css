@@ -232,19 +232,9 @@
   border-left: 3px solid #00897b;
 }
 
-/* Repost styles */
-.repostContainer {
-  margin-top: 6px;
-}
-
-.repostIndicator {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  font-style: italic;
-  margin-bottom: 4px;
-}
-
+/* Quoted content (for reposts) */
 .quotedReason {
+  margin-top: 6px;
   padding-left: 10px;
   border-left: 2px solid var(--color-border);
   opacity: 0.85;
@@ -253,23 +243,31 @@
 /* Reply styles */
 .replyContainer {
   margin-top: 6px;
-}
-
-.replyHeader {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.replyIndicator {
+.quotedReply {
+  padding: 8px 10px;
+  background: var(--color-bg-tertiary, rgba(0, 0, 0, 0.1));
+  border-radius: 6px;
+  border-left: 3px solid var(--color-border);
+}
+
+.quoteAttribution {
   font-size: 10px;
   color: var(--color-text-tertiary);
   font-style: italic;
+  margin-bottom: 4px;
 }
 
-.replyTarget {
-  font-size: 10px;
-  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-  color: var(--color-accent);
+.quoteAttribution::before {
+  content: '↩ ';
+}
+
+.quotedText {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  opacity: 0.9;
 }

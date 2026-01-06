@@ -59,6 +59,7 @@ export function ActivityView({ onNavigate }: ActivityViewProps) {
         <ActivityItem
           key={item.id}
           item={item}
+          allItems={activities}
           onClickProposal={(id) => onNavigate(`proposal/${id}`)}
           onClickVoter={(address) => onNavigate(`voter/${address}`)}
           onClickCandidate={(proposer, slug) => onNavigate(`candidate/${proposer}/${slug}`)}
