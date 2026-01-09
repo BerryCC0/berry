@@ -5,9 +5,19 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Berry OS",
-  description: "A Mac OS 8 recreation for the web",
-  keywords: ["Berry OS", "Mac OS 8", "Nouns", "Web3", "Desktop"],
+  description: "A Nounish OS",
+  keywords: ["Berry OS", "Nouns", "Web3", "Desktop", "Mobile"],
   authors: [{ name: "Berry OS" }],
+  icons: {
+    icon: '/icons/berry.svg',
+    shortcut: '/icons/berry.svg',
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Berry OS',
+  },
 };
 
 export const viewport: Viewport = {
