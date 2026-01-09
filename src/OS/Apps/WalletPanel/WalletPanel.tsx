@@ -45,7 +45,7 @@ export function WalletPanel({ windowId }: AppComponentProps) {
     return (
       <div className={styles.container}>
         <div className={styles.disconnected}>
-          <div className={styles.iconLarge}>🔓</div>
+          <img src="/icons/wallet.svg" alt="Wallet" className={styles.iconLarge} />
           <h2 className={styles.title}>Connect Wallet</h2>
           <p className={styles.description}>
             Connect your wallet to save your Berry OS customizations 

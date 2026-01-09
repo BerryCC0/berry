@@ -20,9 +20,10 @@
 }
 
 .iconLarge {
-  font-size: 64px;
+  width: 64px;
+  height: 64px;
   margin-bottom: 16px;
-  filter: grayscale(0.3);
+  opacity: 0.85;
 }
 
 .title {
