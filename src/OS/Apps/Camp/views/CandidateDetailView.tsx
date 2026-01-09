@@ -60,10 +60,20 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
     functionName: 'proposalThreshold',
   });
 
+  // Get proposer's voting power
+  const { data: proposerVotingPower } = useReadContract({
+    address: NOUNS_CONTRACTS.token.address,
+    abi: NOUNS_CONTRACTS.token.abi,
+    functionName: 'getCurrentVotes',
+    args: [proposer as `0x${string}`],
+  });
+
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showPromoteConfirm, setShowPromoteConfirm] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  // Track sponsor voting power from SponsorsPanel
+  const [totalSponsorVotes, setTotalSponsorVotes] = useState(0);
   
   // Automatic simulation
   const simulation = useSimulation(candidate?.actions);
@@ -74,11 +84,17 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
   const isOwner = isConnected && address?.toLowerCase() === proposer.toLowerCase();
   const isCanceled = candidate?.canceled === true;
 
-  // Signature/sponsor info
+  // Calculate voting power for promotion eligibility
   const signatureCount = candidate?.signatures?.length || 0;
   const threshold = proposalThreshold ? Number(proposalThreshold) : 0;
-  const hasEnoughSignatures = signatureCount >= threshold;
-  const canPromote = isOwner && !isCanceled && hasEnoughSignatures && signatureCount > 0;
+  const proposerVotes = proposerVotingPower ? Number(proposerVotingPower) : 0;
+  
+  // Total voting power = proposer's nouns + sponsor nouns
+  // The actual requirement is > threshold, so we need threshold + 1 nouns
+  const requiredNouns = threshold + 1;
+  const totalVotingPower = proposerVotes + totalSponsorVotes;
+  const hasEnoughVotingPower = totalVotingPower >= requiredNouns;
+  const canPromote = isOwner && !isCanceled && hasEnoughVotingPower;
 
   const handleEdit = () => {
     // Navigate to create view with edit mode
@@ -248,6 +264,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
             proposer={proposer}
             threshold={threshold}
             onNavigate={onNavigate}
+            onSponsorVotesChange={setTotalSponsorVotes}
           />
 
           {/* Feedback Signals */}

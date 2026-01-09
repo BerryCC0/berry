@@ -17,6 +17,7 @@ interface SponsorsPanelProps {
   proposer: string;
   threshold: number; // This is proposalThreshold from Goldsky - actual requirement is > threshold
   onNavigate: (path: string) => void;
+  onSponsorVotesChange?: (totalSponsorVotes: number) => void;
 }
 
 interface SponsorItemProps {
@@ -86,7 +87,7 @@ function SponsorItem({ signature, onNavigate, onVotesLoaded }: SponsorItemProps)
   );
 }
 
-export function SponsorsPanel({ signatures, proposer, threshold, onNavigate }: SponsorsPanelProps) {
+export function SponsorsPanel({ signatures, proposer, threshold, onNavigate, onSponsorVotesChange }: SponsorsPanelProps) {
   // Track voting power for each unique signer
   const [sponsorVotes, setSponsorVotes] = useState<Record<string, number>>({});
   
@@ -118,6 +119,11 @@ export function SponsorsPanel({ signatures, proposer, threshold, onNavigate }: S
   const sponsorNouns = useMemo(() => {
     return uniqueSigners.reduce((sum, signer) => sum + (sponsorVotes[signer] || 0), 0);
   }, [uniqueSigners, sponsorVotes]);
+
+  // Report sponsor votes to parent when it changes
+  useEffect(() => {
+    onSponsorVotesChange?.(sponsorNouns);
+  }, [sponsorNouns, onSponsorVotesChange]);
 
   // Total nouns available = proposer's nouns + sponsor nouns
   const totalNouns = proposerVotes + sponsorNouns;
