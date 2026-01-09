@@ -171,12 +171,14 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
       </div>
 
       <div className={styles.header}>
-        <span className={styles.id}>Proposal #{proposal.id}</span>
-        {proposal.clientId !== undefined && proposal.clientId !== 0 && (
-          <span className={styles.clientBadge}>
-            via {getClientName(proposal.clientId)}
-          </span>
-        )}
+        <div className={styles.headerLeft}>
+          <span className={styles.id}>Proposal #{proposal.id}</span>
+          {proposal.clientId !== undefined && proposal.clientId !== 0 && (
+            <span className={styles.clientBadge}>
+              via {getClientName(proposal.clientId)}
+            </span>
+          )}
+        </div>
         <span className={`${styles.status} ${styles[proposal.status.toLowerCase()]}`}>
           {proposal.status}
         </span>

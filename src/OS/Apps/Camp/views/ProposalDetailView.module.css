@@ -47,6 +47,12 @@
   margin-bottom: 8px;
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
 .id {
   font-family: var(--berry-font-system);
   font-size: 11px;
@@ -56,6 +62,7 @@
 .clientBadge {
   font-family: var(--berry-font-system);
   font-size: 10px;
+  margin-left: 8px;
   color: var(--berry-text-tertiary);
   font-style: italic;
 }
