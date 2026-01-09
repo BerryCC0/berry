@@ -284,7 +284,7 @@ interface ActivityQueryResult {
     createdTimestamp: string;
   }>;
   transferEvents: Array<{
-    id: string;
+    id: string; // This is the tx hash
     noun: { id: string };
     previousHolder: { id: string };
     newHolder: { id: string };
@@ -442,6 +442,9 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
   // When a noun is transferred, delegation automatically follows - we only show the transfer
   const transferKeys = new Set<string>();
   
+  // Collect transfer items to check for sales
+  const transferItems: ActivityItem[] = [];
+  
   // Convert transfers to activity items (filter out auction-related transfers)
   for (const transfer of data.transferEvents) {
     const fromLower = transfer.previousHolder.id.toLowerCase();
@@ -466,7 +469,12 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     // Track this transfer to filter out the accompanying delegation
     transferKeys.add(`${transfer.noun.id}-${transfer.blockTimestamp}`);
 
-    items.push({
+    // The id field is in format "{txHash}_{nounId}" - extract just the tx hash
+    const txHash = transfer.id.includes('_') 
+      ? transfer.id.split('_')[0] 
+      : transfer.id;
+    
+    const item: ActivityItem = {
       id: `transfer-${transfer.id}`,
       type: 'noun_transfer',
       timestamp: transfer.blockTimestamp,
@@ -474,8 +482,30 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
       nounId: transfer.noun.id,
       fromAddress: transfer.previousHolder.id,
       toAddress: transfer.newHolder.id,
-    });
+      txHash,
+    };
+    items.push(item);
+    transferItems.push(item);
   }
+
+  // Check transfers for sale info (in parallel, limit to avoid rate limiting)
+  const saleChecks = transferItems.slice(0, 10).map(async (item) => {
+    if (!item.txHash) return;
+    try {
+      const response = await fetch(
+        `/api/nouns/sale?txHash=${item.txHash}&seller=${item.fromAddress}`
+      );
+      if (response.ok) {
+        const saleInfo = await response.json();
+        if (saleInfo.isSale && saleInfo.price) {
+          item.salePrice = saleInfo.price;
+        }
+      }
+    } catch {
+      // Sale info not available, leave as regular transfer
+    }
+  });
+  await Promise.all(saleChecks);
 
   // Convert delegations to activity items
   for (const delegation of data.delegationEvents) {

@@ -461,6 +461,30 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         );
 
       case 'noun_transfer':
+        // Check if this was a sale (has salePrice)
+        if (item.salePrice) {
+          const priceInEth = Number(formatEther(BigInt(item.salePrice))).toFixed(3);
+          return (
+            <div className={styles.header}>
+              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
+                {displayName}
+              </span>
+              <span className={styles.action}>sold</span>
+              {nounId !== undefined && (
+                <NounImageById id={nounId} size={18} className={styles.nounImageInline} />
+              )}
+              <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
+              <span className={styles.action}>for</span>
+              <span className={styles.salePrice}>{priceInEth} ETH</span>
+              <span className={styles.action}>to</span>
+              <span className={styles.actor} onClick={handleToAddressClick} role="button" tabIndex={0}>
+                {item.toAddress && formatAddress(item.toAddress, toAddressEns)}
+              </span>
+            </div>
+          );
+        }
+        
+        // Regular transfer (not a sale)
         return (
           <div className={styles.header}>
             <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>

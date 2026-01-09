@@ -279,6 +279,8 @@ export interface ActivityItem {
   nounId?: string;
   fromAddress?: string;
   toAddress?: string;
+  txHash?: string;
+  salePrice?: string; // ETH amount if this was a sale
   
   // Auction specific
   winningBid?: string;

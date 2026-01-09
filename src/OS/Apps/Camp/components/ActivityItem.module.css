@@ -184,6 +184,12 @@
   color: var(--berry-text-primary);
 }
 
+.salePrice {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-success);
+}
+
 /* Auction details */
 .auctionDetails {
   display: flex;
