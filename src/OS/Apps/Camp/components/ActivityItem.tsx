@@ -345,6 +345,27 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
           </div>
         );
 
+      case 'proposal_updated':
+        return (
+          <>
+            <div className={styles.header}>
+              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
+                {displayName}
+              </span>
+              <span className={styles.action}>updated</span>
+              <span className={styles.badge} data-type="proposal">Proposal</span>
+              {item.proposalTitle && (
+                <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
+                  {item.proposalTitle}
+                </span>
+              )}
+            </div>
+            {item.updateMessage && (
+              <MarkdownRenderer content={item.updateMessage} className={styles.reason} />
+            )}
+          </>
+        );
+
       case 'candidate_created':
         return (
           <div className={styles.header}>
@@ -414,6 +435,27 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             </div>
             {item.reason && (
               <MarkdownRenderer content={item.reason} className={styles.reason} />
+            )}
+          </>
+        );
+
+      case 'candidate_updated':
+        return (
+          <>
+            <div className={styles.header}>
+              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
+                {displayName}
+              </span>
+              <span className={styles.action}>updated</span>
+              <span className={styles.badge} data-type="candidate">Candidate</span>
+              {item.candidateSlug && (
+                <span className={styles.titleLink} onClick={handleCandidateClick} role="button" tabIndex={0}>
+                  {item.candidateTitle || formatSlugToTitle(item.candidateSlug)}
+                </span>
+              )}
+            </div>
+            {item.updateMessage && (
+              <MarkdownRenderer content={item.updateMessage} className={styles.reason} />
             )}
           </>
         );

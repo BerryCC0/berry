@@ -176,6 +176,7 @@
 /* Owner Actions */
 .ownerActions {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 12px;
   background: var(--berry-bg-tertiary);
@@ -189,15 +190,14 @@
   font-size: 10px;
   color: var(--berry-text-secondary);
   text-transform: uppercase;
-  margin-right: 8px;
-  align-self: center;
+  margin-bottom: 4px;
 }
 
 .editButton,
 .cancelButton {
   font-family: var(--berry-font-system);
   font-size: 11px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--berry-border);
   cursor: pointer;
   border-radius: 4px;
@@ -205,13 +205,13 @@
 }
 
 .editButton {
-  background: var(--berry-accent);
-  color: white;
-  border-color: var(--berry-accent);
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  border-color: var(--berry-border);
 }
 
-.editButton:hover {
-  filter: brightness(1.1);
+.editButton:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
 }
 
 .editButton:disabled,
@@ -221,14 +221,14 @@
 }
 
 .cancelButton {
-  background: transparent;
-  color: var(--berry-text-secondary);
-}
-
-.cancelButton:hover:not(:disabled) {
   background: #d32f2f;
   color: white;
   border-color: #d32f2f;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #b71c1c;
+  border-color: #b71c1c;
 }
 
 /* Status badges */
@@ -272,7 +272,7 @@
 }
 
 .confirmDialogContent {
-  background: var(--berry-bg-primary);
+  background: var(--berry-bg);
   border: 1px solid var(--berry-border);
   border-radius: 8px;
   padding: 20px;
@@ -373,17 +373,19 @@
 .promoteButton {
   font-family: var(--berry-font-system);
   font-size: 11px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: 1px solid #4caf50;
   background: #4caf50;
   color: white;
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.15s ease;
+  font-weight: 600;
 }
 
 .promoteButton:hover:not(:disabled) {
-  filter: brightness(1.1);
+  background: #388e3c;
+  border-color: #388e3c;
 }
 
 .promoteButton:disabled {

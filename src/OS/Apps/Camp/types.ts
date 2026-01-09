@@ -119,6 +119,8 @@ export interface Proposal {
   totalSupply?: string;
   // Actions (for simulation)
   actions?: ProposalAction[];
+  // Client that facilitated this proposal
+  clientId?: number;
 }
 
 export type ProposalStatus =
@@ -245,7 +247,9 @@ export type ActivityType =
   | 'proposal_feedback'
   | 'candidate_feedback'
   | 'proposal_created'
+  | 'proposal_updated'
   | 'candidate_created'
+  | 'candidate_updated'
   | 'candidate_sponsored'
   | 'proposal_queued'
   | 'proposal_executed'
@@ -284,6 +288,9 @@ export interface ActivityItem {
   // Candidate sponsorship specific
   candidateTitle?: string;
   sponsorCanceled?: boolean;
+  
+  // Candidate update specific
+  updateMessage?: string;
 }
 
 // ============================================================================

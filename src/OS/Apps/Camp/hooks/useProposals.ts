@@ -123,6 +123,7 @@ const PROPOSAL_QUERY = `
       createdBlock
       executionETA
       totalSupply
+      clientId
       targets
       values
       signatures
@@ -288,6 +289,7 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVo
       currentBlock
     ),
     actions,
+    clientId: p.clientId ?? undefined,
     votes: (p.votes || []).map((v: any) => ({
       id: v.id,
       voter: v.voter.id,

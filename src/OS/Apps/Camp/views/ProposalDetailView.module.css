@@ -53,6 +53,13 @@
   color: var(--berry-text-secondary);
 }
 
+.clientBadge {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-tertiary);
+  font-style: italic;
+}
+
 .status {
   font-family: var(--berry-font-system);
   font-size: 10px;

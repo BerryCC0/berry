@@ -27,6 +27,32 @@ interface CandidateDetailViewProps {
   onBack: () => void;
 }
 
+/**
+ * Strip the title from the description
+ * Goldsky returns description with title at the start (e.g., "# Title\n\nDescription...")
+ */
+function stripTitleFromDescription(description: string, title: string): string {
+  let stripped = description;
+  
+  // Try to remove markdown heading version first
+  const markdownTitlePattern = new RegExp(`^#\\s*${escapeRegex(title)}\\s*\\n+`, 'i');
+  if (markdownTitlePattern.test(stripped)) {
+    stripped = stripped.replace(markdownTitlePattern, '');
+  } else {
+    // Try plain text title at start
+    const plainTitlePattern = new RegExp(`^${escapeRegex(title)}\\s*\\n+`, 'i');
+    if (plainTitlePattern.test(stripped)) {
+      stripped = stripped.replace(plainTitlePattern, '');
+    }
+  }
+  
+  return stripped.trim();
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: CandidateDetailViewProps) {
   const { address, isConnected } = useAccount();
   const { data: candidate, isLoading, error, refetch } = useCandidate(proposer, slug);
@@ -217,7 +243,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
           <div className={styles.description}>
             <h2 className={styles.sectionTitle}>Description</h2>
             <MarkdownRenderer 
-              content={candidate.description} 
+              content={stripTitleFromDescription(candidate.description, candidate.title || '')} 
               className={styles.descriptionContent}
             />
           </div>

@@ -194,6 +194,44 @@ const ACTIVITY_QUERY = `
       canceled
       createdTimestamp
     }
+    
+    proposalCandidateVersions(
+      first: $first
+      skip: $skip
+      orderBy: createdTimestamp
+      orderDirection: desc
+    ) {
+      id
+      proposal {
+        id
+        slug
+        proposer
+      }
+      createdTimestamp
+      updateMessage
+      content {
+        title
+      }
+    }
+    
+    proposalVersions(
+      first: $first
+      skip: $skip
+      orderBy: createdAt
+      orderDirection: desc
+    ) {
+      id
+      proposal {
+        id
+        title
+        proposer {
+          id
+        }
+      }
+      createdAt
+      updateMessage
+      title
+    }
   }
 `;
 
@@ -281,6 +319,32 @@ interface ActivityQueryResult {
     reason: string;
     canceled: boolean;
     createdTimestamp: string;
+  }>;
+  proposalCandidateVersions: Array<{
+    id: string;
+    proposal: {
+      id: string;
+      slug: string;
+      proposer: string;
+    };
+    createdTimestamp: string;
+    updateMessage: string;
+    content: {
+      title: string;
+    };
+  }>;
+  proposalVersions: Array<{
+    id: string;
+    proposal: {
+      id: string;
+      title: string;
+      proposer: {
+        id: string;
+      };
+    };
+    createdAt: string;
+    updateMessage: string;
+    title: string;
   }>;
 }
 
@@ -536,6 +600,77 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
       candidateProposer: signature.content.proposer,
       reason: signature.reason || undefined,
       sponsorCanceled: signature.canceled,
+    });
+  }
+
+  // Convert candidate version updates to activity items
+  // Track which candidates we've seen to identify the first version (which is creation, not update)
+  const candidateFirstVersions = new Map<string, string>();
+  
+  // First pass: find the earliest version for each candidate
+  for (const version of data.proposalCandidateVersions) {
+    const candidateId = version.proposal.id;
+    const existingTime = candidateFirstVersions.get(candidateId);
+    if (!existingTime || version.createdTimestamp < existingTime) {
+      candidateFirstVersions.set(candidateId, version.createdTimestamp);
+    }
+  }
+  
+  // Second pass: only add non-first versions (actual updates)
+  for (const version of data.proposalCandidateVersions) {
+    const candidateId = version.proposal.id;
+    const firstVersionTime = candidateFirstVersions.get(candidateId);
+    
+    // Skip the first version (that's the creation, not an update)
+    if (version.createdTimestamp === firstVersionTime) continue;
+    
+    // Only show updates that have an update message
+    if (!version.updateMessage || version.updateMessage.trim() === '') continue;
+    
+    items.push({
+      id: `candidate-updated-${version.id}`,
+      type: 'candidate_updated',
+      timestamp: version.createdTimestamp,
+      actor: version.proposal.proposer,
+      candidateSlug: version.proposal.slug,
+      candidateProposer: version.proposal.proposer,
+      candidateTitle: version.content.title,
+      updateMessage: version.updateMessage,
+    });
+  }
+
+  // Convert proposal version updates to activity items
+  // Track which proposals we've seen to identify the first version (which is creation, not update)
+  const proposalFirstVersions = new Map<string, string>();
+  
+  // First pass: find the earliest version for each proposal
+  for (const version of data.proposalVersions) {
+    const proposalId = version.proposal.id;
+    const existingTime = proposalFirstVersions.get(proposalId);
+    if (!existingTime || version.createdAt < existingTime) {
+      proposalFirstVersions.set(proposalId, version.createdAt);
+    }
+  }
+  
+  // Second pass: only add non-first versions (actual updates)
+  for (const version of data.proposalVersions) {
+    const proposalId = version.proposal.id;
+    const firstVersionTime = proposalFirstVersions.get(proposalId);
+    
+    // Skip the first version (that's the creation, not an update)
+    if (version.createdAt === firstVersionTime) continue;
+    
+    // Only show updates that have an update message
+    if (!version.updateMessage || version.updateMessage.trim() === '') continue;
+    
+    items.push({
+      id: `proposal-updated-${version.id}`,
+      type: 'proposal_updated',
+      timestamp: version.createdAt,
+      actor: version.proposal.proposer.id,
+      proposalId: version.proposal.id,
+      proposalTitle: version.title || version.proposal.title,
+      updateMessage: version.updateMessage,
     });
   }
 

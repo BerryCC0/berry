@@ -14,12 +14,47 @@ import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
 import { VoterRow } from '../components/VoterRow';
+import { getClientName } from '@/src/OS/Apps/NounsAuction/utils/clientNames';
 import styles from './ProposalDetailView.module.css';
 
 interface ProposalDetailViewProps {
   proposalId: string;
   onNavigate: (path: string) => void;
   onBack: () => void;
+}
+
+/**
+ * Strip the title from the description
+ * Goldsky returns description with title at the start (e.g., "# Title\n\nDescription...")
+ */
+function stripTitleFromDescription(description: string, title: string): string {
+  // Common patterns for title in description:
+  // 1. "# Title\n\n" (markdown heading)
+  // 2. "Title\n\n" (plain text at start)
+  // 3. "# Title\n" (markdown heading with single newline)
+  
+  let stripped = description;
+  
+  // Try to remove markdown heading version first
+  const markdownTitlePattern = new RegExp(`^#\\s*${escapeRegex(title)}\\s*\\n+`, 'i');
+  if (markdownTitlePattern.test(stripped)) {
+    stripped = stripped.replace(markdownTitlePattern, '');
+  } else {
+    // Try plain text title at start
+    const plainTitlePattern = new RegExp(`^${escapeRegex(title)}\\s*\\n+`, 'i');
+    if (plainTitlePattern.test(stripped)) {
+      stripped = stripped.replace(plainTitlePattern, '');
+    }
+  }
+  
+  return stripped.trim();
+}
+
+/**
+ * Escape special regex characters in a string
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // Statuses where simulation doesn't make sense (already finalized)
@@ -137,6 +172,11 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
 
       <div className={styles.header}>
         <span className={styles.id}>Proposal #{proposal.id}</span>
+        {proposal.clientId !== undefined && proposal.clientId !== 0 && (
+          <span className={styles.clientBadge}>
+            via {getClientName(proposal.clientId)}
+          </span>
+        )}
         <span className={`${styles.status} ${styles[proposal.status.toLowerCase()]}`}>
           {proposal.status}
         </span>
@@ -151,7 +191,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
           <div className={styles.description}>
             <h2 className={styles.sectionTitle}>Description</h2>
             <MarkdownRenderer 
-              content={proposal.description} 
+              content={stripTitleFromDescription(proposal.description, proposal.title)} 
               className={styles.descriptionContent}
             />
           </div>
