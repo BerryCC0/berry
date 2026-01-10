@@ -93,6 +93,10 @@
   background: color-mix(in srgb, var(--berry-error) 20%, transparent); 
   color: var(--berry-error); 
 }
+.status.pending, .status.updatable {
+  background: color-mix(in srgb, var(--berry-warning) 20%, transparent);
+  color: var(--berry-warning);
+}
 
 .title {
   font-family: var(--berry-font-system);

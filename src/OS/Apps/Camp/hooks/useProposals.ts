@@ -1,16 +1,38 @@
 /**
  * useProposals Hook
- * Fetches proposals from Goldsky
+ * Fetches proposals from Goldsky with on-chain status verification
  */
 
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
+import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import type { Proposal, ProposalStatus, ProposalFilter, ProposalSort } from '../types';
 
-// Ethereum mainnet RPC for getting current block
+// Ethereum mainnet RPC for getting current block and contract calls
 const ETH_RPC = 'https://eth.llamarpc.com';
+
+// Nouns DAO Governor proxy address
+const NOUNS_DAO_PROXY = NOUNS_ADDRESSES.governor;
+
+// state() function selector: keccak256("state(uint256)") = 0x3e4f49e6
+const STATE_FUNCTION_SELECTOR = '0x3e4f49e6';
+
+// ProposalState enum from contract
+const PROPOSAL_STATE_MAP: Record<number, ProposalStatus> = {
+  0: 'PENDING',
+  1: 'ACTIVE',
+  2: 'CANCELLED',
+  3: 'DEFEATED',
+  4: 'SUCCEEDED',
+  5: 'QUEUED',
+  6: 'EXPIRED',
+  7: 'EXECUTED',
+  8: 'VETOED',
+  9: 'OBJECTION_PERIOD',
+  10: 'UPDATABLE',
+};
 
 /**
  * Get the current Ethereum block number
@@ -36,39 +58,101 @@ async function getCurrentBlock(): Promise<number> {
 }
 
 /**
- * Calculate the correct proposal status
- * Goldsky doesn't properly return DEFEATED status, so we calculate it manually
+ * Get proposal state directly from the Nouns DAO contract
+ * This is the authoritative source for proposal status
  */
-function calculateStatus(
+async function getOnChainState(proposalId: string): Promise<ProposalStatus | null> {
+  try {
+    // Encode the call: state(uint256 proposalId)
+    const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
+    const callData = STATE_FUNCTION_SELECTOR + paddedId;
+
+    const response = await fetch(ETH_RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{ to: NOUNS_DAO_PROXY, data: callData }, 'latest'],
+        id: 1,
+      }),
+    });
+
+    const json = await response.json();
+    if (json.result) {
+      const stateValue = parseInt(json.result, 16);
+      return PROPOSAL_STATE_MAP[stateValue] || null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Batch get proposal states from the contract
+ */
+async function getOnChainStates(proposalIds: string[]): Promise<Map<string, ProposalStatus>> {
+  const results = new Map<string, ProposalStatus>();
+  
+  // Batch calls using Promise.all (limit concurrency)
+  const batchSize = 10;
+  for (let i = 0; i < proposalIds.length; i += batchSize) {
+    const batch = proposalIds.slice(i, i + batchSize);
+    const states = await Promise.all(batch.map(id => getOnChainState(id)));
+    batch.forEach((id, idx) => {
+      if (states[idx]) {
+        results.set(id, states[idx]!);
+      }
+    });
+  }
+  
+  return results;
+}
+
+/**
+ * Calculate status as fallback when contract call fails
+ * Uses block numbers to determine status
+ */
+function calculateStatusFallback(
   goldskyStatus: string,
+  startBlock: string,
+  endBlock: string,
   forVotes: string,
   againstVotes: string,
   quorumVotes: string,
-  endBlock: string,
   currentBlock: number
 ): ProposalStatus {
   const status = goldskyStatus as ProposalStatus;
+  const start = Number(startBlock);
+  const end = Number(endBlock);
   
-  // If already in a final state, trust it
+  // Final states are trusted
   if (['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'].includes(status)) {
     return status;
   }
   
-  // If voting has ended
-  if (currentBlock > Number(endBlock)) {
+  // Calculate based on block numbers
+  if (currentBlock < start) {
+    return 'PENDING';
+  }
+  
+  if (currentBlock >= start && currentBlock <= end) {
+    return 'ACTIVE';
+  }
+  
+  // After voting ended
+  if (currentBlock > end) {
     const forVotesNum = Number(forVotes);
     const againstVotesNum = Number(againstVotes);
     const quorumNum = Number(quorumVotes);
     
-    // Defeated if: not enough For votes OR more Against than For
     if (forVotesNum < quorumNum || againstVotesNum > forVotesNum) {
       return 'DEFEATED';
     }
     
-    // If it passed but hasn't been queued/executed yet
-    if (status === 'ACTIVE' || status === 'OBJECTION_PERIOD') {
-      return 'SUCCEEDED';
-    }
+    if (status === 'QUEUED') return 'QUEUED';
+    return 'SUCCEEDED';
   }
   
   return status;
@@ -199,19 +283,32 @@ async function fetchProposals(
 
   const data = json.data as ProposalQueryResult;
   
-  let proposals = data.proposals.map(p => ({
-    ...p,
-    proposer: p.proposer.id,
-    // Calculate correct status (Goldsky doesn't return DEFEATED properly)
-    status: calculateStatus(
+  // Get on-chain states for all proposals (non-final ones only to reduce calls)
+  const proposalIds = data.proposals
+    .filter(p => !['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'].includes(p.status))
+    .map(p => p.id);
+  
+  const onChainStates = await getOnChainStates(proposalIds);
+  
+  let proposals = data.proposals.map(p => {
+    // Use on-chain state if available, otherwise fallback to calculation
+    const onChainStatus = onChainStates.get(p.id);
+    const status = onChainStatus || calculateStatusFallback(
       p.status,
+      p.startBlock,
+      p.endBlock,
       p.forVotes,
       p.againstVotes,
       p.quorumVotes,
-      p.endBlock,
       currentBlock
-    ),
-  }));
+    );
+    
+    return {
+      ...p,
+      proposer: p.proposer.id,
+      status,
+    };
+  });
 
   // Client-side filtering
   if (filter !== 'all') {
@@ -249,8 +346,8 @@ interface ProposalVote {
 }
 
 async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVote[]; feedback: ProposalFeedback[] }> {
-  // Fetch proposal and current block in parallel
-  const [proposalResponse, currentBlock] = await Promise.all([
+  // Fetch proposal, current block, and on-chain state in parallel
+  const [proposalResponse, currentBlock, onChainStatus] = await Promise.all([
     fetch(GOLDSKY_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -260,6 +357,7 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVo
       }),
     }),
     getCurrentBlock(),
+    getOnChainState(id),
   ]);
 
   const json = await proposalResponse.json();
@@ -276,18 +374,21 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVo
     calldata: p.calldatas?.[i] || '0x',
   })) || [];
   
+  // Use on-chain state if available, otherwise fallback to calculation
+  const status = onChainStatus || calculateStatusFallback(
+    p.status,
+    p.startBlock,
+    p.endBlock,
+    p.forVotes,
+    p.againstVotes,
+    p.quorumVotes,
+    currentBlock
+  );
+  
   return {
     ...p,
     proposer: p.proposer.id,
-    // Calculate correct status (Goldsky doesn't return DEFEATED properly)
-    status: calculateStatus(
-      p.status,
-      p.forVotes,
-      p.againstVotes,
-      p.quorumVotes,
-      p.endBlock,
-      currentBlock
-    ),
+    status,
     actions,
     clientId: p.clientId ?? undefined,
     votes: (p.votes || []).map((v: any) => ({
