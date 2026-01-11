@@ -1,0 +1,380 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "retry": "再試行",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "close": "閉じる",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "submit": "送信",
+    "confirm": "確認",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "search": "検索",
+    "filter": "フィルター",
+    "all": "すべて",
+    "none": "なし",
+    "yes": "はい",
+    "no": "いいえ",
+    "or": "または",
+    "and": "と",
+    "of": "の",
+    "to": "へ",
+    "from": "から",
+    "by": "による",
+    "via": "経由",
+    "at": "に",
+    "in": "で",
+    "for": "のため",
+    "with": "と",
+    "share": "共有",
+    "copy": "コピー",
+    "copied": "コピーしました！",
+    "connect": "接続",
+    "disconnect": "切断",
+    "wallet": "ウォレット",
+    "address": "アドレス",
+    "balance": "残高",
+    "amount": "金額",
+    "total": "合計",
+    "date": "日付",
+    "time": "時間",
+    "status": "ステータス",
+    "actions": "アクション",
+    "details": "詳細",
+    "description": "説明",
+    "title": "タイトル",
+    "name": "名前",
+    "type": "タイプ",
+    "value": "値",
+    "owner": "所有者"
+  },
+  "time": {
+    "seconds": "{count}秒",
+    "minutes": "{count}分",
+    "hours": "{count}時間",
+    "days": "{count}日",
+    "weeks": "{count}週間",
+    "months": "{count}ヶ月",
+    "years": "{count}年",
+    "ago": "{time}前",
+    "remaining": "残り{time}",
+    "ended": "終了",
+    "endsIn": "終了まで"
+  },
+  "wallet": {
+    "connectWallet": "ウォレットを接続",
+    "disconnectWallet": "切断",
+    "connectedAs": "接続中：",
+    "noWallet": "ウォレット未接続",
+    "switchNetwork": "ネットワークを切り替え",
+    "wrongNetwork": "ネットワークが違います",
+    "viewOnEtherscan": "Etherscanで見る"
+  },
+  "auction": {
+    "title": "Noun {id}",
+    "loading": "読み込み中...",
+    "noData": "オークションデータなし",
+    "currentBid": "現在の入札",
+    "winningBid": "落札価格",
+    "minBid": "最低入札額",
+    "endsIn": "終了まで",
+    "ended": "終了",
+    "status": "ステータス",
+    "notAuctioned": "オークション対象外",
+    "owner": "所有者",
+    "settled": "精算済み",
+    "settledBy": "{address}が精算",
+    "placeBid": "入札する",
+    "bidAmount": "入札額",
+    "bidHistory": "入札履歴",
+    "noBids": "まだ入札がありません",
+    "bidPlaced": "{address}が入札",
+    "nounderNoun": "このNounはNoundersに割り当てられました",
+    "traits": {
+      "title": "特徴",
+      "background": "背景",
+      "body": "ボディ",
+      "accessory": "アクセサリー",
+      "head": "ヘッド",
+      "glasses": "メガネ"
+    },
+    "navigation": {
+      "previous": "前のNoun",
+      "next": "次のNoun",
+      "current": "現在のオークション",
+      "goTo": "Nounへ移動"
+    }
+  },
+  "treasury": {
+    "title": "トレジャリー",
+    "totalValue": "総額",
+    "immediatelySpendable": "即時使用可能",
+    "stakedAssets": "ステーキング中の資産",
+    "tokenBalances": "トークン残高",
+    "treasuryNouns": "トレジャリーのNouns",
+    "nounsCount": "{count} Nouns",
+    "filters": {
+      "title": "特徴でフィルター",
+      "clear": "フィルターをクリア",
+      "noMatch": "該当するNounsがありません",
+      "background": "背景",
+      "body": "ボディ",
+      "accessory": "アクセサリー",
+      "head": "ヘッド",
+      "glasses": "メガネ",
+      "any": "すべての{trait}"
+    }
+  },
+  "camp": {
+    "title": "Camp",
+    "tabs": {
+      "activity": "アクティビティ",
+      "proposals": "提案",
+      "candidates": "候補",
+      "voters": "投票者",
+      "account": "アカウント"
+    },
+    "proposals": {
+      "title": "提案",
+      "new": "新しい提案",
+      "noProposals": "提案が見つかりません",
+      "status": {
+        "pending": "保留中",
+        "updatable": "更新可能",
+        "active": "投票中",
+        "objectionPeriod": "異議申立期間",
+        "succeeded": "可決",
+        "defeated": "否決",
+        "queued": "キュー待ち",
+        "executed": "実行済み",
+        "cancelled": "キャンセル",
+        "vetoed": "拒否権行使",
+        "expired": "期限切れ"
+      },
+      "voting": {
+        "for": "賛成",
+        "against": "反対",
+        "abstain": "棄権",
+        "quorum": "定足数",
+        "quorumMet": "定足数達成",
+        "votesNeeded": "賛成票があと{count}票必要",
+        "castVote": "投票する",
+        "voteCast": "投票完了",
+        "yourVote": "あなたの投票",
+        "addReason": "理由を追加（任意）",
+        "votes": "{count}票"
+      },
+      "simulation": {
+        "title": "トランザクションシミュレーション",
+        "passed": "シミュレーション成功",
+        "failed": "シミュレーション失敗",
+        "loading": "シミュレーション中...",
+        "transactions": "トランザクション",
+        "gasUsed": "Gas: {gas}",
+        "error": "エラー: {message}"
+      },
+      "transactions": {
+        "title": "トランザクション",
+        "noTransactions": "トランザクションなし",
+        "transferEth": "{recipient}に{amount} ETHを送金",
+        "transferToken": "{recipient}に{amount} {token}を送金",
+        "transferNoun": "{recipient}にNoun {id}を送信",
+        "functionCall": "{contract}の{function}を呼び出し"
+      }
+    },
+    "candidates": {
+      "title": "候補",
+      "new": "新しい候補",
+      "noCandidates": "候補が見つかりません",
+      "sponsors": "スポンサー",
+      "sponsorCount": "{count}スポンサー",
+      "sponsor": "スポンサーになる",
+      "promote": "提案に昇格",
+      "promoting": "昇格中...",
+      "threshold": "しきい値",
+      "nounsNeeded": "あと{count} Nounsが必要",
+      "readyToPromote": "昇格準備完了！",
+      "cancelCandidate": "候補をキャンセル",
+      "editCandidate": "候補を編集"
+    },
+    "vote": {
+      "for": "賛成",
+      "against": "反対",
+      "abstain": "棄権",
+      "vote": "票",
+      "signal": "シグナル"
+    },
+    "activity": {
+      "title": "アクティビティ",
+      "noActivity": "最近のアクティビティはありません",
+      "vote": {
+        "voted": "投票しました",
+        "reposted": "リポストしました",
+        "vote": "投票"
+      },
+      "proposal": {
+        "created": "提案を作成",
+        "updated": "提案を更新",
+        "votingStarted": "投票開始：",
+        "started": "開始",
+        "succeeded": "可決されました",
+        "defeated": "否決されました"
+      },
+      "candidate": {
+        "created": "候補を作成",
+        "updated": "候補を更新",
+        "sponsored": "候補をスポンサー"
+      },
+      "feedback": {
+        "signaled": "シグナル",
+        "on": "について"
+      },
+      "auction": {
+        "started": "オークション開始：",
+        "live": "ライブ",
+        "settled": "精算者："
+      },
+      "noun": {
+        "transferred": "Nounを転送",
+        "sold": "Nounを売却",
+        "soldFor": "価格",
+        "to": "へ"
+      },
+      "reply": {
+        "replyingTo": "への返信",
+        "reposting": "リポスト"
+      }
+    },
+    "voters": {
+      "title": "投票者",
+      "noVoters": "投票者が見つかりません",
+      "votingPower": "投票力",
+      "nounsOwned": "所有Nouns",
+      "nounsRepresented": "代表Nouns",
+      "delegatingTo": "委任先",
+      "delegators": "委任者",
+      "selfDelegated": "自己委任",
+      "noDelegators": "委任者なし",
+      "recentVotes": "最近の投票",
+      "delegate": "委任",
+      "delegateTo": "委任先",
+      "changeDelegation": "委任を変更",
+      "enterAddress": "アドレスまたはENSを入力"
+    },
+    "account": {
+      "title": "アカウント",
+      "notConnected": "ウォレットを接続してアカウントを表示",
+      "activity": "あなたのアクティビティ",
+      "noActivity": "まだアクティビティはありません"
+    },
+    "create": {
+      "title": "作成",
+      "proposalTitle": "提案タイトル",
+      "candidateTitle": "候補タイトル",
+      "description": "説明",
+      "descriptionPlaceholder": "提案を説明してください...",
+      "actions": "アクション",
+      "addAction": "アクションを追加",
+      "removeAction": "削除",
+      "selectTemplate": "テンプレートを選択",
+      "searchTemplates": "テンプレートを検索...",
+      "categories": {
+        "treasury": "トレジャリー",
+        "admin": "DAO管理",
+        "custom": "カスタム"
+      },
+      "fields": {
+        "recipient": "受取人",
+        "amount": "金額",
+        "target": "対象コントラクト",
+        "signature": "関数シグネチャ",
+        "calldata": "コールデータ",
+        "value": "ETH値"
+      },
+      "submit": "提案を送信",
+      "submitCandidate": "候補を送信",
+      "submitting": "送信中..."
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "sections": {
+      "appearance": "外観",
+      "desktop": "デスクトップとDock",
+      "windows": "ウィンドウ",
+      "language": "言語",
+      "notifications": "通知",
+      "privacy": "プライバシーとデータ",
+      "accessibility": "アクセシビリティ",
+      "about": "このアプリについて"
+    },
+    "appearance": {
+      "title": "外観",
+      "theme": "テーマ",
+      "themeDescription": "カラースキームを選択",
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "システム",
+      "accentColor": "アクセントカラー",
+      "accentColorDescription": "主要なハイライト色",
+      "wallpaper": "壁紙",
+      "wallpaperDescription": "デスクトップの背景色または画像URL",
+      "windowStyle": "ウィンドウスタイル",
+      "classic": "クラシック",
+      "modern": "モダン",
+      "createCustomTheme": "カスタムテーマを作成",
+      "createCustomThemeDescription": "プレビュー付きでテーマをデザイン",
+      "openEditor": "エディタを開く",
+      "desktop": "デスクトップ",
+      "desktopIconSize": "アイコンサイズ",
+      "small": "小",
+      "medium": "中",
+      "large": "大",
+      "default": "デフォルト",
+      "display": "表示",
+      "fontSize": "フォントサイズ",
+      "fontSizeDescription": "システム全体のテキストサイズ",
+      "effects": "エフェクト",
+      "reduceMotion": "視差効果を減らす",
+      "reduceMotionDescription": "システム全体のアニメーションを最小化",
+      "reduceTransparency": "透明度を減らす",
+      "reduceTransparencyDescription": "ぼかしの代わりに不透明な背景を使用",
+      "resetToDefaults": "デフォルトに戻す"
+    },
+    "language": {
+      "title": "言語",
+      "selectLanguage": "言語を選択",
+      "autoTranslate": "コンテンツを自動翻訳",
+      "autoTranslateDescription": "提案やその他のコンテンツを自動的にあなたの言語に翻訳"
+    },
+    "notifications": {
+      "title": "通知",
+      "enabled": "通知を有効化",
+      "proposals": "新しい提案",
+      "auctions": "オークション更新",
+      "votes": "投票リマインダー"
+    },
+    "about": {
+      "title": "About",
+      "version": "バージョン",
+      "credits": "クレジット",
+      "github": "GitHub"
+    }
+  },
+  "errors": {
+    "generic": "エラーが発生しました",
+    "networkError": "ネットワークエラー。再試行してください。",
+    "notFound": "見つかりません",
+    "unauthorized": "ウォレットを接続してください",
+    "insufficientFunds": "残高不足",
+    "transactionFailed": "トランザクション失敗",
+    "walletRejected": "トランザクションが拒否されました",
+    "invalidInput": "無効な入力",
+    "loadingFailed": "データの読み込みに失敗"
+  }
+}

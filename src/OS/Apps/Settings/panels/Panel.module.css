@@ -285,3 +285,17 @@
   gap: 8px;
 }
 
+/* Language Panel */
+.languageInfo {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--berry-bg-secondary);
+  border-radius: 8px;
+}
+
+.infoText {
+  font-size: 13px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}

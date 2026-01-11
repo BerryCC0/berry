@@ -1,0 +1,380 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "retry": "Tentar novamente",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "close": "Fechar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "create": "Criar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "all": "Todos",
+    "none": "Nenhum",
+    "yes": "Sim",
+    "no": "Não",
+    "or": "ou",
+    "and": "e",
+    "of": "de",
+    "to": "para",
+    "from": "de",
+    "by": "por",
+    "via": "via",
+    "at": "às",
+    "in": "em",
+    "for": "para",
+    "with": "com",
+    "share": "Compartilhar",
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "wallet": "Carteira",
+    "address": "Endereço",
+    "balance": "Saldo",
+    "amount": "Quantidade",
+    "total": "Total",
+    "date": "Data",
+    "time": "Hora",
+    "status": "Status",
+    "actions": "Ações",
+    "details": "Detalhes",
+    "description": "Descrição",
+    "title": "Título",
+    "name": "Nome",
+    "type": "Tipo",
+    "value": "Valor",
+    "owner": "Proprietário"
+  },
+  "time": {
+    "seconds": "{count} segundos",
+    "minutes": "{count} minutos",
+    "hours": "{count} horas",
+    "days": "{count} dias",
+    "weeks": "{count} semanas",
+    "months": "{count} meses",
+    "years": "{count} anos",
+    "ago": "há {time}",
+    "remaining": "{time} restante",
+    "ended": "Encerrado",
+    "endsIn": "Termina em"
+  },
+  "wallet": {
+    "connectWallet": "Conectar Carteira",
+    "disconnectWallet": "Desconectar",
+    "connectedAs": "Conectado como",
+    "noWallet": "Nenhuma carteira conectada",
+    "switchNetwork": "Mudar Rede",
+    "wrongNetwork": "Rede Incorreta",
+    "viewOnEtherscan": "Ver no Etherscan"
+  },
+  "auction": {
+    "title": "Noun {id}",
+    "loading": "Carregando...",
+    "noData": "Sem dados do leilão",
+    "currentBid": "Lance Atual",
+    "winningBid": "Lance Vencedor",
+    "minBid": "Lance Mínimo",
+    "endsIn": "Termina em",
+    "ended": "Encerrado",
+    "status": "Status",
+    "notAuctioned": "Não Leiloado",
+    "owner": "Proprietário",
+    "settled": "Liquidado",
+    "settledBy": "Liquidado por {address}",
+    "placeBid": "Fazer Lance",
+    "bidAmount": "Valor do Lance",
+    "bidHistory": "Histórico de Lances",
+    "noBids": "Sem lances ainda",
+    "bidPlaced": "Lance feito por {address}",
+    "nounderNoun": "Este Noun foi alocado para os Nounders",
+    "traits": {
+      "title": "Características",
+      "background": "Fundo",
+      "body": "Corpo",
+      "accessory": "Acessório",
+      "head": "Cabeça",
+      "glasses": "Óculos"
+    },
+    "navigation": {
+      "previous": "Noun Anterior",
+      "next": "Próximo Noun",
+      "current": "Leilão Atual",
+      "goTo": "Ir para Noun"
+    }
+  },
+  "treasury": {
+    "title": "Tesouro",
+    "totalValue": "Valor Total",
+    "immediatelySpendable": "Imediatamente Disponível",
+    "stakedAssets": "Ativos em Stake",
+    "tokenBalances": "Saldos de Tokens",
+    "treasuryNouns": "Nouns do Tesouro",
+    "nounsCount": "{count} Nouns",
+    "filters": {
+      "title": "Filtrar por Características",
+      "clear": "Limpar Filtros",
+      "noMatch": "Nenhum Noun corresponde aos filtros",
+      "background": "Fundo",
+      "body": "Corpo",
+      "accessory": "Acessório",
+      "head": "Cabeça",
+      "glasses": "Óculos",
+      "any": "Qualquer {trait}"
+    }
+  },
+  "camp": {
+    "title": "Camp",
+    "tabs": {
+      "activity": "Atividade",
+      "proposals": "Propostas",
+      "candidates": "Candidatos",
+      "voters": "Votantes",
+      "account": "Conta"
+    },
+    "proposals": {
+      "title": "Propostas",
+      "new": "Nova Proposta",
+      "noProposals": "Nenhuma proposta encontrada",
+      "status": {
+        "pending": "Pendente",
+        "updatable": "Atualizável",
+        "active": "Ativa",
+        "objectionPeriod": "Período de Objeção",
+        "succeeded": "Aprovada",
+        "defeated": "Rejeitada",
+        "queued": "Na Fila",
+        "executed": "Executada",
+        "cancelled": "Cancelada",
+        "vetoed": "Vetada",
+        "expired": "Expirada"
+      },
+      "voting": {
+        "for": "A Favor",
+        "against": "Contra",
+        "abstain": "Abstenção",
+        "quorum": "Quórum",
+        "quorumMet": "Quórum atingido",
+        "votesNeeded": "{count} votos a favor necessários",
+        "castVote": "Votar",
+        "voteCast": "Voto registrado com sucesso",
+        "yourVote": "Seu Voto",
+        "addReason": "Adicionar razão (opcional)",
+        "votes": "{count} {count, plural, one {voto} other {votos}}"
+      },
+      "simulation": {
+        "title": "Simulação de Transação",
+        "passed": "Simulação Aprovada",
+        "failed": "Simulação Falhou",
+        "loading": "Simulando...",
+        "transactions": "Transações",
+        "gasUsed": "Gas: {gas}",
+        "error": "Erro: {message}"
+      },
+      "transactions": {
+        "title": "Transações",
+        "noTransactions": "Sem transações",
+        "transferEth": "Transferir {amount} ETH para {recipient}",
+        "transferToken": "Transferir {amount} {token} para {recipient}",
+        "transferNoun": "Transferir Noun {id} para {recipient}",
+        "functionCall": "Chamar {function} em {contract}"
+      }
+    },
+    "candidates": {
+      "title": "Candidatos",
+      "new": "Novo Candidato",
+      "noCandidates": "Nenhum candidato encontrado",
+      "sponsors": "Patrocinadores",
+      "sponsorCount": "{count} patrocinadores",
+      "sponsor": "Patrocinar",
+      "promote": "Promover para Proposta",
+      "promoting": "Promovendo...",
+      "threshold": "Limite",
+      "nounsNeeded": "Mais {count} Nouns necessários",
+      "readyToPromote": "Pronto para promover!",
+      "cancelCandidate": "Cancelar Candidato",
+      "editCandidate": "Editar Candidato"
+    },
+    "vote": {
+      "for": "A Favor",
+      "against": "Contra",
+      "abstain": "Abstenção",
+      "vote": "voto",
+      "signal": "sinal"
+    },
+    "activity": {
+      "title": "Atividade",
+      "noActivity": "Sem atividade recente",
+      "vote": {
+        "voted": "votou",
+        "reposted": "repostou um",
+        "vote": "voto"
+      },
+      "proposal": {
+        "created": "criou proposta",
+        "updated": "atualizou proposta",
+        "votingStarted": "Votação para",
+        "started": "começou",
+        "succeeded": "foi aprovada",
+        "defeated": "foi rejeitada"
+      },
+      "candidate": {
+        "created": "criou candidato",
+        "updated": "atualizou candidato",
+        "sponsored": "patrocinou candidato"
+      },
+      "feedback": {
+        "signaled": "sinalizou",
+        "on": "sobre"
+      },
+      "auction": {
+        "started": "Leilão de",
+        "live": "Ao Vivo",
+        "settled": "Liquidado por"
+      },
+      "noun": {
+        "transferred": "transferiu Noun",
+        "sold": "vendeu Noun",
+        "soldFor": "por",
+        "to": "para"
+      },
+      "reply": {
+        "replyingTo": "respondendo a",
+        "reposting": "repostando"
+      }
+    },
+    "voters": {
+      "title": "Votantes",
+      "noVoters": "Nenhum votante encontrado",
+      "votingPower": "Poder de Voto",
+      "nounsOwned": "Nouns Próprios",
+      "nounsRepresented": "Nouns Representados",
+      "delegatingTo": "Delegando para",
+      "delegators": "Delegadores",
+      "selfDelegated": "Auto-delegado",
+      "noDelegators": "Sem delegadores",
+      "recentVotes": "Votos Recentes",
+      "delegate": "Delegar",
+      "delegateTo": "Delegar para",
+      "changeDelegation": "Mudar Delegação",
+      "enterAddress": "Digite endereço ou ENS"
+    },
+    "account": {
+      "title": "Conta",
+      "notConnected": "Conecte carteira para ver conta",
+      "activity": "Sua Atividade",
+      "noActivity": "Sem atividade ainda"
+    },
+    "create": {
+      "title": "Criar",
+      "proposalTitle": "Título da Proposta",
+      "candidateTitle": "Título do Candidato",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Descreva sua proposta...",
+      "actions": "Ações",
+      "addAction": "Adicionar Ação",
+      "removeAction": "Remover",
+      "selectTemplate": "Selecionar Modelo",
+      "searchTemplates": "Buscar modelos...",
+      "categories": {
+        "treasury": "Tesouro",
+        "admin": "Admin do DAO",
+        "custom": "Personalizado"
+      },
+      "fields": {
+        "recipient": "Destinatário",
+        "amount": "Quantidade",
+        "target": "Contrato Alvo",
+        "signature": "Assinatura da Função",
+        "calldata": "Calldata",
+        "value": "Valor ETH"
+      },
+      "submit": "Enviar Proposta",
+      "submitCandidate": "Enviar Candidato",
+      "submitting": "Enviando..."
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "sections": {
+      "appearance": "Aparência",
+      "desktop": "Área de Trabalho e Dock",
+      "windows": "Janelas",
+      "language": "Idioma",
+      "notifications": "Notificações",
+      "privacy": "Privacidade e Dados",
+      "accessibility": "Acessibilidade",
+      "about": "Sobre"
+    },
+    "appearance": {
+      "title": "Aparência",
+      "theme": "Tema",
+      "themeDescription": "Escolha seu esquema de cores",
+      "light": "Claro",
+      "dark": "Escuro",
+      "system": "Sistema",
+      "accentColor": "Cor de Destaque",
+      "accentColorDescription": "Cor de destaque principal",
+      "wallpaper": "Papel de Parede",
+      "wallpaperDescription": "Cor ou URL de imagem de fundo",
+      "windowStyle": "Estilo de Janela",
+      "classic": "Clássico",
+      "modern": "Moderno",
+      "createCustomTheme": "Criar Tema Personalizado",
+      "createCustomThemeDescription": "Crie seu próprio tema com visualização",
+      "openEditor": "Abrir Editor",
+      "desktop": "Área de Trabalho",
+      "desktopIconSize": "Tamanho dos Ícones",
+      "small": "Pequeno",
+      "medium": "Médio",
+      "large": "Grande",
+      "default": "Padrão",
+      "display": "Tela",
+      "fontSize": "Tamanho da Fonte",
+      "fontSizeDescription": "Tamanho do texto do sistema",
+      "effects": "Efeitos",
+      "reduceMotion": "Reduzir Movimento",
+      "reduceMotionDescription": "Minimizar animações no sistema",
+      "reduceTransparency": "Reduzir Transparência",
+      "reduceTransparencyDescription": "Usar fundos sólidos em vez de desfocados",
+      "resetToDefaults": "Restaurar Padrões"
+    },
+    "language": {
+      "title": "Idioma",
+      "selectLanguage": "Selecionar Idioma",
+      "autoTranslate": "Traduzir conteúdo automaticamente",
+      "autoTranslateDescription": "Traduzir automaticamente propostas e outro conteúdo para seu idioma"
+    },
+    "notifications": {
+      "title": "Notificações",
+      "enabled": "Ativar Notificações",
+      "proposals": "Novas Propostas",
+      "auctions": "Atualizações de Leilão",
+      "votes": "Lembretes de Voto"
+    },
+    "about": {
+      "title": "Sobre",
+      "version": "Versão",
+      "credits": "Créditos",
+      "github": "GitHub"
+    }
+  },
+  "errors": {
+    "generic": "Algo deu errado",
+    "networkError": "Erro de rede. Por favor tente novamente.",
+    "notFound": "Não encontrado",
+    "unauthorized": "Por favor conecte sua carteira",
+    "insufficientFunds": "Fundos insuficientes",
+    "transactionFailed": "Transação falhou",
+    "walletRejected": "Transação foi rejeitada",
+    "invalidInput": "Entrada inválida",
+    "loadingFailed": "Falha ao carregar dados"
+  }
+}

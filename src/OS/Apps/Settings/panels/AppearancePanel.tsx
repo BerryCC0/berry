@@ -8,6 +8,7 @@ import { useState } from "react";
 import { SettingRow, SettingGroup } from "../components/SettingRow";
 import { Toggle, Select, ColorPicker, Button } from "../components/Controls";
 import { useSettingsStore } from "@/OS/store/settingsStore";
+import { useTranslation } from "@/OS/lib/i18n";
 import {
   BUILT_IN_THEMES,
   ACCENT_COLORS,
@@ -102,6 +103,7 @@ function WallpaperPicker({
 }
 
 export function AppearancePanel() {
+  const { t } = useTranslation();
   const [showEditor, setShowEditor] = useState(false);
   const appearance = useSettingsStore((state) => state.settings.appearance);
   const customThemes = useSettingsStore((state) => state.customThemes);
@@ -134,10 +136,10 @@ export function AppearancePanel() {
 
   return (
     <div className={styles.panel}>
-      <h2 className={styles.title}>Appearance</h2>
+      <h2 className={styles.title}>{t('settings.appearance.title')}</h2>
 
-      <SettingGroup title="Theme">
-        <SettingRow label="Theme" description="Choose your color scheme">
+      <SettingGroup title={t('settings.appearance.theme')}>
+        <SettingRow label={t('settings.appearance.theme')} description={t('settings.appearance.themeDescription')}>
           <Select
             value={appearance.themeId}
             options={themeOptions}
@@ -145,7 +147,7 @@ export function AppearancePanel() {
           />
         </SettingRow>
 
-        <SettingRow label="Accent Color" description="Primary highlight color">
+        <SettingRow label={t('settings.appearance.accentColor')} description={t('settings.appearance.accentColorDescription')}>
           <ColorPicker
             value={appearance.accentColor}
             presets={ACCENT_COLORS}
@@ -153,29 +155,29 @@ export function AppearancePanel() {
           />
         </SettingRow>
 
-        <SettingRow label="Window Style">
+        <SettingRow label={t('settings.appearance.windowStyle')}>
           <Select
             value={appearance.windowStyle}
             options={[
-              { value: "classic", label: "Classic" },
-              { value: "modern", label: "Modern" },
+              { value: "classic", label: t('settings.appearance.classic') },
+              { value: "modern", label: t('settings.appearance.modern') },
             ]}
             onChange={(value) => handleChange("windowStyle", value)}
           />
         </SettingRow>
 
         <SettingRow
-          label="Create Custom Theme"
-          description="Design your own theme with live preview"
+          label={t('settings.appearance.createCustomTheme')}
+          description={t('settings.appearance.createCustomThemeDescription')}
         >
           <Button onClick={() => setShowEditor(true)}>
-            Open Editor
+            {t('settings.appearance.openEditor')}
           </Button>
         </SettingRow>
       </SettingGroup>
 
-      <SettingGroup title="Desktop">
-        <SettingRow label="Wallpaper" description="Desktop background color or image URL">
+      <SettingGroup title={t('settings.appearance.desktop')}>
+        <SettingRow label={t('settings.appearance.wallpaper')} description={t('settings.appearance.wallpaperDescription')}>
           <WallpaperPicker
             value={appearance.wallpaper}
             presets={WALLPAPER_PRESETS}
@@ -183,37 +185,37 @@ export function AppearancePanel() {
           />
         </SettingRow>
 
-        <SettingRow label="Desktop Icon Size">
+        <SettingRow label={t('settings.appearance.desktopIconSize')}>
           <Select
             value={appearance.desktopIconSize}
             options={[
-              { value: "small", label: "Small" },
-              { value: "medium", label: "Medium" },
-              { value: "large", label: "Large" },
+              { value: "small", label: t('settings.appearance.small') },
+              { value: "medium", label: t('settings.appearance.medium') },
+              { value: "large", label: t('settings.appearance.large') },
             ]}
             onChange={(value) => handleChange("desktopIconSize", value)}
           />
         </SettingRow>
       </SettingGroup>
 
-      <SettingGroup title="Display">
-        <SettingRow label="Font Size" description="System-wide text size">
+      <SettingGroup title={t('settings.appearance.display')}>
+        <SettingRow label={t('settings.appearance.fontSize')} description={t('settings.appearance.fontSizeDescription')}>
           <Select
             value={appearance.fontSize}
             options={[
-              { value: "small", label: "Small" },
-              { value: "default", label: "Default" },
-              { value: "large", label: "Large" },
+              { value: "small", label: t('settings.appearance.small') },
+              { value: "default", label: t('settings.appearance.default') },
+              { value: "large", label: t('settings.appearance.large') },
             ]}
             onChange={(value) => handleChange("fontSize", value)}
           />
         </SettingRow>
       </SettingGroup>
 
-      <SettingGroup title="Effects">
+      <SettingGroup title={t('settings.appearance.effects')}>
         <SettingRow
-          label="Reduce Motion"
-          description="Minimize animations throughout the OS"
+          label={t('settings.appearance.reduceMotion')}
+          description={t('settings.appearance.reduceMotionDescription')}
         >
           <Toggle
             checked={appearance.reduceMotion}
@@ -222,8 +224,8 @@ export function AppearancePanel() {
         </SettingRow>
 
         <SettingRow
-          label="Reduce Transparency"
-          description="Use solid backgrounds instead of blur"
+          label={t('settings.appearance.reduceTransparency')}
+          description={t('settings.appearance.reduceTransparencyDescription')}
         >
           <Toggle
             checked={appearance.reduceTransparency}
@@ -234,7 +236,7 @@ export function AppearancePanel() {
 
       <div className={styles.actions}>
         <Button variant="secondary" onClick={() => resetCategory("appearance")}>
-          Reset to Defaults
+          {t('settings.appearance.resetToDefaults')}
         </Button>
       </div>
     </div>

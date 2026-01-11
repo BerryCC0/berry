@@ -1,0 +1,380 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "error": "Fehler",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "close": "Schließen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "submit": "Absenden",
+    "confirm": "Bestätigen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "all": "Alle",
+    "none": "Keine",
+    "yes": "Ja",
+    "no": "Nein",
+    "or": "oder",
+    "and": "und",
+    "of": "von",
+    "to": "an",
+    "from": "von",
+    "by": "von",
+    "via": "via",
+    "at": "um",
+    "in": "in",
+    "for": "für",
+    "with": "mit",
+    "share": "Teilen",
+    "copy": "Kopieren",
+    "copied": "Kopiert!",
+    "connect": "Verbinden",
+    "disconnect": "Trennen",
+    "wallet": "Wallet",
+    "address": "Adresse",
+    "balance": "Guthaben",
+    "amount": "Betrag",
+    "total": "Gesamt",
+    "date": "Datum",
+    "time": "Zeit",
+    "status": "Status",
+    "actions": "Aktionen",
+    "details": "Details",
+    "description": "Beschreibung",
+    "title": "Titel",
+    "name": "Name",
+    "type": "Typ",
+    "value": "Wert",
+    "owner": "Besitzer"
+  },
+  "time": {
+    "seconds": "{count} Sekunden",
+    "minutes": "{count} Minuten",
+    "hours": "{count} Stunden",
+    "days": "{count} Tage",
+    "weeks": "{count} Wochen",
+    "months": "{count} Monate",
+    "years": "{count} Jahre",
+    "ago": "vor {time}",
+    "remaining": "{time} verbleibend",
+    "ended": "Beendet",
+    "endsIn": "Endet in"
+  },
+  "wallet": {
+    "connectWallet": "Wallet verbinden",
+    "disconnectWallet": "Trennen",
+    "connectedAs": "Verbunden als",
+    "noWallet": "Kein Wallet verbunden",
+    "switchNetwork": "Netzwerk wechseln",
+    "wrongNetwork": "Falsches Netzwerk",
+    "viewOnEtherscan": "Auf Etherscan ansehen"
+  },
+  "auction": {
+    "title": "Noun {id}",
+    "loading": "Laden...",
+    "noData": "Keine Auktionsdaten",
+    "currentBid": "Aktuelles Gebot",
+    "winningBid": "Höchstgebot",
+    "minBid": "Mindestgebot",
+    "endsIn": "Endet in",
+    "ended": "Beendet",
+    "status": "Status",
+    "notAuctioned": "Nicht versteigert",
+    "owner": "Besitzer",
+    "settled": "Abgewickelt",
+    "settledBy": "Abgewickelt von {address}",
+    "placeBid": "Gebot abgeben",
+    "bidAmount": "Gebotsbetrag",
+    "bidHistory": "Gebotsverlauf",
+    "noBids": "Noch keine Gebote",
+    "bidPlaced": "Gebot von {address}",
+    "nounderNoun": "Dieses Noun wurde den Nounders zugeteilt",
+    "traits": {
+      "title": "Eigenschaften",
+      "background": "Hintergrund",
+      "body": "Körper",
+      "accessory": "Accessoire",
+      "head": "Kopf",
+      "glasses": "Brille"
+    },
+    "navigation": {
+      "previous": "Vorheriges Noun",
+      "next": "Nächstes Noun",
+      "current": "Aktuelle Auktion",
+      "goTo": "Gehe zu Noun"
+    }
+  },
+  "treasury": {
+    "title": "Schatzkammer",
+    "totalValue": "Gesamtwert",
+    "immediatelySpendable": "Sofort verfügbar",
+    "stakedAssets": "Gestakte Vermögenswerte",
+    "tokenBalances": "Token-Guthaben",
+    "treasuryNouns": "Schatzkammer Nouns",
+    "nounsCount": "{count} Nouns",
+    "filters": {
+      "title": "Nach Eigenschaften filtern",
+      "clear": "Filter löschen",
+      "noMatch": "Keine Nouns entsprechen den Filtern",
+      "background": "Hintergrund",
+      "body": "Körper",
+      "accessory": "Accessoire",
+      "head": "Kopf",
+      "glasses": "Brille",
+      "any": "Beliebige {trait}"
+    }
+  },
+  "camp": {
+    "title": "Camp",
+    "tabs": {
+      "activity": "Aktivität",
+      "proposals": "Anträge",
+      "candidates": "Kandidaten",
+      "voters": "Wähler",
+      "account": "Konto"
+    },
+    "proposals": {
+      "title": "Anträge",
+      "new": "Neuer Antrag",
+      "noProposals": "Keine Anträge gefunden",
+      "status": {
+        "pending": "Ausstehend",
+        "updatable": "Aktualisierbar",
+        "active": "Aktiv",
+        "objectionPeriod": "Einspruchsfrist",
+        "succeeded": "Angenommen",
+        "defeated": "Abgelehnt",
+        "queued": "In Warteschlange",
+        "executed": "Ausgeführt",
+        "cancelled": "Abgebrochen",
+        "vetoed": "Veto eingelegt",
+        "expired": "Abgelaufen"
+      },
+      "voting": {
+        "for": "Dafür",
+        "against": "Dagegen",
+        "abstain": "Enthaltung",
+        "quorum": "Quorum",
+        "quorumMet": "Quorum erreicht",
+        "votesNeeded": "{count} Für-Stimmen benötigt",
+        "castVote": "Abstimmen",
+        "voteCast": "Stimme erfolgreich abgegeben",
+        "yourVote": "Ihre Stimme",
+        "addReason": "Begründung hinzufügen (optional)",
+        "votes": "{count} {count, plural, one {Stimme} other {Stimmen}}"
+      },
+      "simulation": {
+        "title": "Transaktionssimulation",
+        "passed": "Simulation erfolgreich",
+        "failed": "Simulation fehlgeschlagen",
+        "loading": "Simuliere...",
+        "transactions": "Transaktionen",
+        "gasUsed": "Gas: {gas}",
+        "error": "Fehler: {message}"
+      },
+      "transactions": {
+        "title": "Transaktionen",
+        "noTransactions": "Keine Transaktionen",
+        "transferEth": "Übertrage {amount} ETH an {recipient}",
+        "transferToken": "Übertrage {amount} {token} an {recipient}",
+        "transferNoun": "Übertrage Noun {id} an {recipient}",
+        "functionCall": "Rufe {function} auf {contract} auf"
+      }
+    },
+    "candidates": {
+      "title": "Kandidaten",
+      "new": "Neuer Kandidat",
+      "noCandidates": "Keine Kandidaten gefunden",
+      "sponsors": "Unterstützer",
+      "sponsorCount": "{count} Unterstützer",
+      "sponsor": "Unterstützen",
+      "promote": "Zum Antrag befördern",
+      "promoting": "Befördere...",
+      "threshold": "Schwelle",
+      "nounsNeeded": "Noch {count} Nouns benötigt",
+      "readyToPromote": "Bereit zur Beförderung!",
+      "cancelCandidate": "Kandidat abbrechen",
+      "editCandidate": "Kandidat bearbeiten"
+    },
+    "vote": {
+      "for": "Dafür",
+      "against": "Dagegen",
+      "abstain": "Enthaltung",
+      "vote": "Stimme",
+      "signal": "Signal"
+    },
+    "activity": {
+      "title": "Aktivität",
+      "noActivity": "Keine aktuelle Aktivität",
+      "vote": {
+        "voted": "hat gestimmt",
+        "reposted": "hat erneut geteilt",
+        "vote": "Stimme"
+      },
+      "proposal": {
+        "created": "hat Antrag erstellt",
+        "updated": "hat Antrag aktualisiert",
+        "votingStarted": "Abstimmung für",
+        "started": "begonnen",
+        "succeeded": "wurde angenommen",
+        "defeated": "wurde abgelehnt"
+      },
+      "candidate": {
+        "created": "hat Kandidat erstellt",
+        "updated": "hat Kandidat aktualisiert",
+        "sponsored": "hat Kandidat unterstützt"
+      },
+      "feedback": {
+        "signaled": "hat signalisiert",
+        "on": "zu"
+      },
+      "auction": {
+        "started": "Auktion für",
+        "live": "Live",
+        "settled": "Abgewickelt von"
+      },
+      "noun": {
+        "transferred": "hat Noun übertragen",
+        "sold": "hat Noun verkauft",
+        "soldFor": "für",
+        "to": "an"
+      },
+      "reply": {
+        "replyingTo": "Antwort an",
+        "reposting": "teilt erneut"
+      }
+    },
+    "voters": {
+      "title": "Wähler",
+      "noVoters": "Keine Wähler gefunden",
+      "votingPower": "Stimmkraft",
+      "nounsOwned": "Eigene Nouns",
+      "nounsRepresented": "Vertretene Nouns",
+      "delegatingTo": "Delegiert an",
+      "delegators": "Delegierende",
+      "selfDelegated": "Selbst-delegiert",
+      "noDelegators": "Keine Delegierenden",
+      "recentVotes": "Letzte Abstimmungen",
+      "delegate": "Delegieren",
+      "delegateTo": "Delegieren an",
+      "changeDelegation": "Delegation ändern",
+      "enterAddress": "Adresse oder ENS eingeben"
+    },
+    "account": {
+      "title": "Konto",
+      "notConnected": "Wallet verbinden um Konto zu sehen",
+      "activity": "Ihre Aktivität",
+      "noActivity": "Noch keine Aktivität"
+    },
+    "create": {
+      "title": "Erstellen",
+      "proposalTitle": "Antragstitel",
+      "candidateTitle": "Kandidatentitel",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Beschreiben Sie Ihren Antrag...",
+      "actions": "Aktionen",
+      "addAction": "Aktion hinzufügen",
+      "removeAction": "Entfernen",
+      "selectTemplate": "Vorlage auswählen",
+      "searchTemplates": "Vorlagen suchen...",
+      "categories": {
+        "treasury": "Schatzkammer",
+        "admin": "DAO Admin",
+        "custom": "Benutzerdefiniert"
+      },
+      "fields": {
+        "recipient": "Empfänger",
+        "amount": "Betrag",
+        "target": "Zielvertrag",
+        "signature": "Funktionssignatur",
+        "calldata": "Calldata",
+        "value": "ETH-Wert"
+      },
+      "submit": "Antrag einreichen",
+      "submitCandidate": "Kandidat einreichen",
+      "submitting": "Wird eingereicht..."
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "sections": {
+      "appearance": "Erscheinungsbild",
+      "desktop": "Desktop & Dock",
+      "windows": "Fenster",
+      "language": "Sprache",
+      "notifications": "Mitteilungen",
+      "privacy": "Datenschutz",
+      "accessibility": "Bedienungshilfen",
+      "about": "Über"
+    },
+    "appearance": {
+      "title": "Erscheinungsbild",
+      "theme": "Thema",
+      "themeDescription": "Wählen Sie Ihr Farbschema",
+      "light": "Hell",
+      "dark": "Dunkel",
+      "system": "System",
+      "accentColor": "Akzentfarbe",
+      "accentColorDescription": "Primäre Hervorhebungsfarbe",
+      "wallpaper": "Hintergrundbild",
+      "wallpaperDescription": "Desktop-Hintergrundfarbe oder Bild-URL",
+      "windowStyle": "Fensterstil",
+      "classic": "Klassisch",
+      "modern": "Modern",
+      "createCustomTheme": "Benutzerdefiniertes Thema erstellen",
+      "createCustomThemeDescription": "Gestalten Sie Ihr eigenes Thema mit Vorschau",
+      "openEditor": "Editor öffnen",
+      "desktop": "Desktop",
+      "desktopIconSize": "Symbolgröße",
+      "small": "Klein",
+      "medium": "Mittel",
+      "large": "Groß",
+      "default": "Standard",
+      "display": "Anzeige",
+      "fontSize": "Schriftgröße",
+      "fontSizeDescription": "Systemweite Textgröße",
+      "effects": "Effekte",
+      "reduceMotion": "Bewegung reduzieren",
+      "reduceMotionDescription": "Animationen im gesamten System minimieren",
+      "reduceTransparency": "Transparenz reduzieren",
+      "reduceTransparencyDescription": "Solide Hintergründe anstelle von Unschärfe verwenden",
+      "resetToDefaults": "Zurücksetzen"
+    },
+    "language": {
+      "title": "Sprache",
+      "selectLanguage": "Sprache auswählen",
+      "autoTranslate": "Inhalte automatisch übersetzen",
+      "autoTranslateDescription": "Anträge und andere Inhalte automatisch in Ihre Sprache übersetzen"
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "enabled": "Benachrichtigungen aktivieren",
+      "proposals": "Neue Anträge",
+      "auctions": "Auktionsupdates",
+      "votes": "Abstimmungserinnerungen"
+    },
+    "about": {
+      "title": "Über",
+      "version": "Version",
+      "credits": "Credits",
+      "github": "GitHub"
+    }
+  },
+  "errors": {
+    "generic": "Etwas ist schief gelaufen",
+    "networkError": "Netzwerkfehler. Bitte erneut versuchen.",
+    "notFound": "Nicht gefunden",
+    "unauthorized": "Bitte verbinden Sie Ihr Wallet",
+    "insufficientFunds": "Unzureichendes Guthaben",
+    "transactionFailed": "Transaktion fehlgeschlagen",
+    "walletRejected": "Transaktion wurde abgelehnt",
+    "invalidInput": "Ungültige Eingabe",
+    "loadingFailed": "Laden fehlgeschlagen"
+  }
+}

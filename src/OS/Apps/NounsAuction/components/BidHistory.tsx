@@ -5,6 +5,7 @@
 
 'use client';
 
+import { useTranslation } from '@/OS/lib/i18n';
 import type { Bid } from '../hooks/useAuctionData';
 import { formatBidAmount } from '../utils/auctionHelpers';
 import { getClientName, isBerryOSBid } from '../utils/clientNames';
@@ -18,13 +19,15 @@ interface BidHistoryProps {
 }
 
 export function BidHistory({ bids, isNounderNoun = false, loading = false }: BidHistoryProps) {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <div className={styles.bidHistory}>
-        <h3 className={styles.title}>Bid History</h3>
+        <h3 className={styles.title}>{t('auction.bidHistory')}</h3>
         <div className={styles.bidsList}>
           <div className={styles.bidItem}>
-            <span className={styles.loadingText}>Loading...</span>
+            <span className={styles.loadingText}>{t('common.loading')}</span>
           </div>
         </div>
       </div>
@@ -35,7 +38,7 @@ export function BidHistory({ bids, isNounderNoun = false, loading = false }: Bid
   if (isNounderNoun) {
     return (
       <div className={styles.bidHistory}>
-        <h3 className={styles.title}>Bid History</h3>
+        <h3 className={styles.title}>{t('auction.bidHistory')}</h3>
         <div className={styles.bidsList}>
           <div className={styles.bidItem}>
             <BidderDisplay address="0x2573C60a6D127755aA2DC85e342F7da2378a0Cc5" />
@@ -52,9 +55,9 @@ export function BidHistory({ bids, isNounderNoun = false, loading = false }: Bid
   if (!bids || bids.length === 0) {
     return (
       <div className={styles.bidHistory}>
-        <h3 className={styles.title}>Bid History</h3>
+        <h3 className={styles.title}>{t('auction.bidHistory')}</h3>
         <div className={styles.bidsList}>
-          <p className={styles.noBids}>No bids yet</p>
+          <p className={styles.noBids}>{t('auction.noBids')}</p>
         </div>
       </div>
     );
@@ -62,7 +65,7 @@ export function BidHistory({ bids, isNounderNoun = false, loading = false }: Bid
 
   return (
     <div className={styles.bidHistory}>
-      <h3 className={styles.title}>Bid History</h3>
+      <h3 className={styles.title}>{t('auction.bidHistory')}</h3>
       <div className={styles.scrollContainer}>
         <div className={styles.bidsList}>
           {bids.map((bid) => {

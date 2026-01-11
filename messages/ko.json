@@ -1,0 +1,380 @@
+{
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "retry": "다시 시도",
+    "cancel": "취소",
+    "save": "저장",
+    "close": "닫기",
+    "back": "뒤로",
+    "next": "다음",
+    "previous": "이전",
+    "submit": "제출",
+    "confirm": "확인",
+    "delete": "삭제",
+    "edit": "편집",
+    "create": "생성",
+    "search": "검색",
+    "filter": "필터",
+    "all": "전체",
+    "none": "없음",
+    "yes": "예",
+    "no": "아니오",
+    "or": "또는",
+    "and": "및",
+    "of": "의",
+    "to": "으로",
+    "from": "에서",
+    "by": "에 의해",
+    "via": "통해",
+    "at": "에",
+    "in": "에서",
+    "for": "위해",
+    "with": "와",
+    "share": "공유",
+    "copy": "복사",
+    "copied": "복사됨!",
+    "connect": "연결",
+    "disconnect": "연결 해제",
+    "wallet": "지갑",
+    "address": "주소",
+    "balance": "잔액",
+    "amount": "금액",
+    "total": "총계",
+    "date": "날짜",
+    "time": "시간",
+    "status": "상태",
+    "actions": "작업",
+    "details": "세부사항",
+    "description": "설명",
+    "title": "제목",
+    "name": "이름",
+    "type": "유형",
+    "value": "값",
+    "owner": "소유자"
+  },
+  "time": {
+    "seconds": "{count}초",
+    "minutes": "{count}분",
+    "hours": "{count}시간",
+    "days": "{count}일",
+    "weeks": "{count}주",
+    "months": "{count}개월",
+    "years": "{count}년",
+    "ago": "{time} 전",
+    "remaining": "{time} 남음",
+    "ended": "종료됨",
+    "endsIn": "종료까지"
+  },
+  "wallet": {
+    "connectWallet": "지갑 연결",
+    "disconnectWallet": "연결 해제",
+    "connectedAs": "연결됨:",
+    "noWallet": "연결된 지갑 없음",
+    "switchNetwork": "네트워크 전환",
+    "wrongNetwork": "잘못된 네트워크",
+    "viewOnEtherscan": "Etherscan에서 보기"
+  },
+  "auction": {
+    "title": "Noun {id}",
+    "loading": "로딩 중...",
+    "noData": "경매 데이터 없음",
+    "currentBid": "현재 입찰가",
+    "winningBid": "낙찰가",
+    "minBid": "최소 입찰가",
+    "endsIn": "종료까지",
+    "ended": "종료됨",
+    "status": "상태",
+    "notAuctioned": "경매 대상 아님",
+    "owner": "소유자",
+    "settled": "정산됨",
+    "settledBy": "{address}가 정산",
+    "placeBid": "입찰하기",
+    "bidAmount": "입찰 금액",
+    "bidHistory": "입찰 내역",
+    "noBids": "아직 입찰 없음",
+    "bidPlaced": "{address}가 입찰",
+    "nounderNoun": "이 Noun은 Nounders에게 할당되었습니다",
+    "traits": {
+      "title": "특성",
+      "background": "배경",
+      "body": "몸",
+      "accessory": "악세서리",
+      "head": "머리",
+      "glasses": "안경"
+    },
+    "navigation": {
+      "previous": "이전 Noun",
+      "next": "다음 Noun",
+      "current": "현재 경매",
+      "goTo": "Noun으로 이동"
+    }
+  },
+  "treasury": {
+    "title": "재무",
+    "totalValue": "총 가치",
+    "immediatelySpendable": "즉시 사용 가능",
+    "stakedAssets": "스테이킹된 자산",
+    "tokenBalances": "토큰 잔액",
+    "treasuryNouns": "재무 Nouns",
+    "nounsCount": "{count} Nouns",
+    "filters": {
+      "title": "특성으로 필터",
+      "clear": "필터 지우기",
+      "noMatch": "조건에 맞는 Nouns 없음",
+      "background": "배경",
+      "body": "몸",
+      "accessory": "악세서리",
+      "head": "머리",
+      "glasses": "안경",
+      "any": "모든 {trait}"
+    }
+  },
+  "camp": {
+    "title": "Camp",
+    "tabs": {
+      "activity": "활동",
+      "proposals": "제안",
+      "candidates": "후보",
+      "voters": "투표자",
+      "account": "계정"
+    },
+    "proposals": {
+      "title": "제안",
+      "new": "새 제안",
+      "noProposals": "제안 없음",
+      "status": {
+        "pending": "대기 중",
+        "updatable": "업데이트 가능",
+        "active": "투표 중",
+        "objectionPeriod": "이의 제기 기간",
+        "succeeded": "승인됨",
+        "defeated": "부결됨",
+        "queued": "대기열",
+        "executed": "실행됨",
+        "cancelled": "취소됨",
+        "vetoed": "거부권 행사",
+        "expired": "만료됨"
+      },
+      "voting": {
+        "for": "찬성",
+        "against": "반대",
+        "abstain": "기권",
+        "quorum": "정족수",
+        "quorumMet": "정족수 달성",
+        "votesNeeded": "찬성 {count}표 필요",
+        "castVote": "투표하기",
+        "voteCast": "투표 완료",
+        "yourVote": "내 투표",
+        "addReason": "이유 추가 (선택)",
+        "votes": "{count}표"
+      },
+      "simulation": {
+        "title": "트랜잭션 시뮬레이션",
+        "passed": "시뮬레이션 성공",
+        "failed": "시뮬레이션 실패",
+        "loading": "시뮬레이션 중...",
+        "transactions": "트랜잭션",
+        "gasUsed": "Gas: {gas}",
+        "error": "오류: {message}"
+      },
+      "transactions": {
+        "title": "트랜잭션",
+        "noTransactions": "트랜잭션 없음",
+        "transferEth": "{recipient}에게 {amount} ETH 전송",
+        "transferToken": "{recipient}에게 {amount} {token} 전송",
+        "transferNoun": "{recipient}에게 Noun {id} 전송",
+        "functionCall": "{contract}의 {function} 호출"
+      }
+    },
+    "candidates": {
+      "title": "후보",
+      "new": "새 후보",
+      "noCandidates": "후보 없음",
+      "sponsors": "스폰서",
+      "sponsorCount": "{count}명 스폰서",
+      "sponsor": "스폰서하기",
+      "promote": "제안으로 승격",
+      "promoting": "승격 중...",
+      "threshold": "임계값",
+      "nounsNeeded": "{count} Nouns 더 필요",
+      "readyToPromote": "승격 준비 완료!",
+      "cancelCandidate": "후보 취소",
+      "editCandidate": "후보 편집"
+    },
+    "vote": {
+      "for": "찬성",
+      "against": "반대",
+      "abstain": "기권",
+      "vote": "표",
+      "signal": "시그널"
+    },
+    "activity": {
+      "title": "활동",
+      "noActivity": "최근 활동 없음",
+      "vote": {
+        "voted": "투표함",
+        "reposted": "리포스트함",
+        "vote": "투표"
+      },
+      "proposal": {
+        "created": "제안 생성",
+        "updated": "제안 업데이트",
+        "votingStarted": "투표 시작:",
+        "started": "시작됨",
+        "succeeded": "승인됨",
+        "defeated": "부결됨"
+      },
+      "candidate": {
+        "created": "후보 생성",
+        "updated": "후보 업데이트",
+        "sponsored": "후보 스폰서"
+      },
+      "feedback": {
+        "signaled": "시그널",
+        "on": "에 대해"
+      },
+      "auction": {
+        "started": "경매 시작:",
+        "live": "라이브",
+        "settled": "정산자:"
+      },
+      "noun": {
+        "transferred": "Noun 전송",
+        "sold": "Noun 판매",
+        "soldFor": "가격",
+        "to": "에게"
+      },
+      "reply": {
+        "replyingTo": "에게 답장",
+        "reposting": "리포스팅"
+      }
+    },
+    "voters": {
+      "title": "투표자",
+      "noVoters": "투표자 없음",
+      "votingPower": "투표력",
+      "nounsOwned": "보유 Nouns",
+      "nounsRepresented": "대표 Nouns",
+      "delegatingTo": "위임 대상",
+      "delegators": "위임자",
+      "selfDelegated": "자기 위임",
+      "noDelegators": "위임자 없음",
+      "recentVotes": "최근 투표",
+      "delegate": "위임",
+      "delegateTo": "위임 대상",
+      "changeDelegation": "위임 변경",
+      "enterAddress": "주소 또는 ENS 입력"
+    },
+    "account": {
+      "title": "계정",
+      "notConnected": "계정을 보려면 지갑 연결",
+      "activity": "내 활동",
+      "noActivity": "아직 활동 없음"
+    },
+    "create": {
+      "title": "생성",
+      "proposalTitle": "제안 제목",
+      "candidateTitle": "후보 제목",
+      "description": "설명",
+      "descriptionPlaceholder": "제안을 설명하세요...",
+      "actions": "작업",
+      "addAction": "작업 추가",
+      "removeAction": "제거",
+      "selectTemplate": "템플릿 선택",
+      "searchTemplates": "템플릿 검색...",
+      "categories": {
+        "treasury": "재무",
+        "admin": "DAO 관리",
+        "custom": "사용자 정의"
+      },
+      "fields": {
+        "recipient": "수신자",
+        "amount": "금액",
+        "target": "대상 컨트랙트",
+        "signature": "함수 시그니처",
+        "calldata": "콜데이터",
+        "value": "ETH 값"
+      },
+      "submit": "제안 제출",
+      "submitCandidate": "후보 제출",
+      "submitting": "제출 중..."
+    }
+  },
+  "settings": {
+    "title": "설정",
+    "sections": {
+      "appearance": "모양",
+      "desktop": "데스크톱 및 Dock",
+      "windows": "윈도우",
+      "language": "언어",
+      "notifications": "알림",
+      "privacy": "개인 정보 보호 및 데이터",
+      "accessibility": "손쉬운 사용",
+      "about": "정보"
+    },
+    "appearance": {
+      "title": "모양",
+      "theme": "테마",
+      "themeDescription": "색상 구성표 선택",
+      "light": "라이트",
+      "dark": "다크",
+      "system": "시스템",
+      "accentColor": "강조 색상",
+      "accentColorDescription": "주요 하이라이트 색상",
+      "wallpaper": "배경화면",
+      "wallpaperDescription": "데스크톱 배경 색상 또는 이미지 URL",
+      "windowStyle": "창 스타일",
+      "classic": "클래식",
+      "modern": "모던",
+      "createCustomTheme": "사용자 정의 테마 만들기",
+      "createCustomThemeDescription": "미리보기로 자신만의 테마 디자인",
+      "openEditor": "편집기 열기",
+      "desktop": "데스크톱",
+      "desktopIconSize": "아이콘 크기",
+      "small": "작게",
+      "medium": "보통",
+      "large": "크게",
+      "default": "기본",
+      "display": "디스플레이",
+      "fontSize": "글꼴 크기",
+      "fontSizeDescription": "시스템 전체 텍스트 크기",
+      "effects": "효과",
+      "reduceMotion": "동작 줄이기",
+      "reduceMotionDescription": "시스템 전체 애니메이션 최소화",
+      "reduceTransparency": "투명도 줄이기",
+      "reduceTransparencyDescription": "흐림 효과 대신 불투명 배경 사용",
+      "resetToDefaults": "기본값으로 재설정"
+    },
+    "language": {
+      "title": "언어",
+      "selectLanguage": "언어 선택",
+      "autoTranslate": "콘텐츠 자동 번역",
+      "autoTranslateDescription": "제안 및 기타 콘텐츠를 자동으로 번역"
+    },
+    "notifications": {
+      "title": "알림",
+      "enabled": "알림 활성화",
+      "proposals": "새 제안",
+      "auctions": "경매 업데이트",
+      "votes": "투표 알림"
+    },
+    "about": {
+      "title": "정보",
+      "version": "버전",
+      "credits": "크레딧",
+      "github": "GitHub"
+    }
+  },
+  "errors": {
+    "generic": "문제가 발생했습니다",
+    "networkError": "네트워크 오류. 다시 시도해주세요.",
+    "notFound": "찾을 수 없음",
+    "unauthorized": "지갑을 연결해주세요",
+    "insufficientFunds": "잔액 부족",
+    "transactionFailed": "트랜잭션 실패",
+    "walletRejected": "트랜잭션이 거부되었습니다",
+    "invalidInput": "잘못된 입력",
+    "loadingFailed": "데이터 로드 실패"
+  }
+}

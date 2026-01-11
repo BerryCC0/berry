@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
+import { useTranslation } from '@/OS/lib/i18n';
 import { useBid } from '@/app/lib/nouns/hooks';
 import styles from './BidButton.module.css';
 
@@ -23,6 +24,7 @@ export function BidButton({
   minBidETH,
   disabled = false 
 }: BidButtonProps) {
+  const { t } = useTranslation();
   const { address, isConnected } = useAccount();
   const { placeBid, isPending, isConfirming, isSuccess, error } = useBid();
   const [bidAmount, setBidAmount] = useState('');
@@ -30,18 +32,18 @@ export function BidButton({
 
   const handleBid = () => {
     if (!isConnected || !address) {
-      setValidationError('Please connect your wallet');
+      setValidationError(t('wallet.connectWallet'));
       return;
     }
 
     if (!bidAmount || parseFloat(bidAmount) <= 0) {
-      setValidationError('Please enter a valid bid amount');
+      setValidationError(t('errors.invalidInput'));
       return;
     }
 
     // Validate minimum bid
     if (parseFloat(bidAmount) < parseFloat(minBidETH)) {
-      setValidationError(`Minimum bid is Ξ ${minBidETH}`);
+      setValidationError(`${t('auction.minBid')}: Ξ ${minBidETH}`);
       return;
     }
 
@@ -51,7 +53,7 @@ export function BidButton({
       placeBid(BigInt(nounId), bidAmount);
       setBidAmount('');
     } catch (err) {
-      setValidationError('Invalid bid amount');
+      setValidationError(t('errors.invalidInput'));
     }
   };
 
@@ -59,7 +61,7 @@ export function BidButton({
     return (
       <div className={styles.bidButton}>
         <p className={styles.connectMessage}>
-          Connect wallet to bid
+          {t('wallet.connectWallet')}
         </p>
       </div>
     );
@@ -69,7 +71,7 @@ export function BidButton({
     <div className={styles.bidButton}>
       <div className={styles.bidInputGroup}>
         <label htmlFor="bid-amount" className={styles.label}>
-          Bid Amount (ETH)
+          {t('auction.bidAmount')}
         </label>
         <div className={styles.inputRow}>
           <input
@@ -77,7 +79,7 @@ export function BidButton({
             type="number"
             step="0.01"
             min="0"
-            placeholder={`Min: ${minBidETH}`}
+            placeholder={`${t('auction.minBid')}: ${minBidETH}`}
             value={bidAmount}
             onChange={(e) => setBidAmount(e.target.value)}
             disabled={isPending || isConfirming || disabled}
@@ -88,7 +90,7 @@ export function BidButton({
             disabled={isPending || isConfirming || disabled || !bidAmount}
             className={styles.button}
           >
-            {isPending ? 'Confirm...' : isConfirming ? 'Sending...' : 'Place Bid'}
+            {isPending || isConfirming ? t('common.loading') : t('auction.placeBid')}
           </button>
         </div>
       </div>
@@ -98,12 +100,12 @@ export function BidButton({
       )}
 
       {isSuccess && (
-        <div className={styles.success}>Bid placed successfully!</div>
+        <div className={styles.success}>{t('auction.bidPlaced', { address: '' })}</div>
       )}
 
       {error && (
         <div className={styles.error}>
-          {error.message || 'Transaction failed'}
+          {error.message || t('errors.transactionFailed')}
         </div>
       )}
     </div>

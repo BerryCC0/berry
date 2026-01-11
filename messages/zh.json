@@ -1,0 +1,380 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "retry": "重试",
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "submit": "提交",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "filter": "筛选",
+    "all": "全部",
+    "none": "无",
+    "yes": "是",
+    "no": "否",
+    "or": "或",
+    "and": "和",
+    "of": "的",
+    "to": "至",
+    "from": "从",
+    "by": "由",
+    "via": "通过",
+    "at": "在",
+    "in": "在",
+    "for": "为",
+    "with": "与",
+    "share": "分享",
+    "copy": "复制",
+    "copied": "已复制！",
+    "connect": "连接",
+    "disconnect": "断开",
+    "wallet": "钱包",
+    "address": "地址",
+    "balance": "余额",
+    "amount": "金额",
+    "total": "总计",
+    "date": "日期",
+    "time": "时间",
+    "status": "状态",
+    "actions": "操作",
+    "details": "详情",
+    "description": "描述",
+    "title": "标题",
+    "name": "名称",
+    "type": "类型",
+    "value": "值",
+    "owner": "所有者"
+  },
+  "time": {
+    "seconds": "{count}秒",
+    "minutes": "{count}分钟",
+    "hours": "{count}小时",
+    "days": "{count}天",
+    "weeks": "{count}周",
+    "months": "{count}个月",
+    "years": "{count}年",
+    "ago": "{time}前",
+    "remaining": "剩余{time}",
+    "ended": "已结束",
+    "endsIn": "结束于"
+  },
+  "wallet": {
+    "connectWallet": "连接钱包",
+    "disconnectWallet": "断开连接",
+    "connectedAs": "已连接：",
+    "noWallet": "未连接钱包",
+    "switchNetwork": "切换网络",
+    "wrongNetwork": "网络错误",
+    "viewOnEtherscan": "在Etherscan查看"
+  },
+  "auction": {
+    "title": "Noun {id}",
+    "loading": "加载中...",
+    "noData": "暂无拍卖数据",
+    "currentBid": "当前出价",
+    "winningBid": "成交价",
+    "minBid": "最低出价",
+    "endsIn": "结束于",
+    "ended": "已结束",
+    "status": "状态",
+    "notAuctioned": "未拍卖",
+    "owner": "所有者",
+    "settled": "已结算",
+    "settledBy": "由{address}结算",
+    "placeBid": "出价",
+    "bidAmount": "出价金额",
+    "bidHistory": "出价历史",
+    "noBids": "暂无出价",
+    "bidPlaced": "{address}出价",
+    "nounderNoun": "此Noun分配给Nounders",
+    "traits": {
+      "title": "特征",
+      "background": "背景",
+      "body": "身体",
+      "accessory": "配饰",
+      "head": "头部",
+      "glasses": "眼镜"
+    },
+    "navigation": {
+      "previous": "上一个Noun",
+      "next": "下一个Noun",
+      "current": "当前拍卖",
+      "goTo": "跳转到Noun"
+    }
+  },
+  "treasury": {
+    "title": "金库",
+    "totalValue": "总价值",
+    "immediatelySpendable": "可立即使用",
+    "stakedAssets": "质押资产",
+    "tokenBalances": "代币余额",
+    "treasuryNouns": "金库Nouns",
+    "nounsCount": "{count}个Nouns",
+    "filters": {
+      "title": "按特征筛选",
+      "clear": "清除筛选",
+      "noMatch": "没有符合条件的Nouns",
+      "background": "背景",
+      "body": "身体",
+      "accessory": "配饰",
+      "head": "头部",
+      "glasses": "眼镜",
+      "any": "任意{trait}"
+    }
+  },
+  "camp": {
+    "title": "Camp",
+    "tabs": {
+      "activity": "动态",
+      "proposals": "提案",
+      "candidates": "候选",
+      "voters": "投票者",
+      "account": "账户"
+    },
+    "proposals": {
+      "title": "提案",
+      "new": "新提案",
+      "noProposals": "暂无提案",
+      "status": {
+        "pending": "待处理",
+        "updatable": "可更新",
+        "active": "投票中",
+        "objectionPeriod": "异议期",
+        "succeeded": "已通过",
+        "defeated": "未通过",
+        "queued": "排队中",
+        "executed": "已执行",
+        "cancelled": "已取消",
+        "vetoed": "已否决",
+        "expired": "已过期"
+      },
+      "voting": {
+        "for": "赞成",
+        "against": "反对",
+        "abstain": "弃权",
+        "quorum": "法定人数",
+        "quorumMet": "已达法定人数",
+        "votesNeeded": "还需{count}票赞成",
+        "castVote": "投票",
+        "voteCast": "投票成功",
+        "yourVote": "您的投票",
+        "addReason": "添加理由（可选）",
+        "votes": "{count}票"
+      },
+      "simulation": {
+        "title": "交易模拟",
+        "passed": "模拟通过",
+        "failed": "模拟失败",
+        "loading": "模拟中...",
+        "transactions": "交易",
+        "gasUsed": "Gas: {gas}",
+        "error": "错误: {message}"
+      },
+      "transactions": {
+        "title": "交易",
+        "noTransactions": "暂无交易",
+        "transferEth": "向{recipient}转账{amount} ETH",
+        "transferToken": "向{recipient}转账{amount} {token}",
+        "transferNoun": "向{recipient}转移Noun {id}",
+        "functionCall": "调用{contract}的{function}"
+      }
+    },
+    "candidates": {
+      "title": "候选",
+      "new": "新候选",
+      "noCandidates": "暂无候选",
+      "sponsors": "赞助者",
+      "sponsorCount": "{count}位赞助者",
+      "sponsor": "赞助",
+      "promote": "升级为提案",
+      "promoting": "升级中...",
+      "threshold": "阈值",
+      "nounsNeeded": "还需{count}个Nouns",
+      "readyToPromote": "可以升级！",
+      "cancelCandidate": "取消候选",
+      "editCandidate": "编辑候选"
+    },
+    "vote": {
+      "for": "赞成",
+      "against": "反对",
+      "abstain": "弃权",
+      "vote": "票",
+      "signal": "信号"
+    },
+    "activity": {
+      "title": "动态",
+      "noActivity": "暂无最近动态",
+      "vote": {
+        "voted": "投票了",
+        "reposted": "转发了",
+        "vote": "投票"
+      },
+      "proposal": {
+        "created": "创建了提案",
+        "updated": "更新了提案",
+        "votingStarted": "投票开始：",
+        "started": "开始",
+        "succeeded": "已通过",
+        "defeated": "未通过"
+      },
+      "candidate": {
+        "created": "创建了候选",
+        "updated": "更新了候选",
+        "sponsored": "赞助了候选"
+      },
+      "feedback": {
+        "signaled": "发出信号",
+        "on": "关于"
+      },
+      "auction": {
+        "started": "拍卖开始：",
+        "live": "进行中",
+        "settled": "结算者："
+      },
+      "noun": {
+        "transferred": "转移了Noun",
+        "sold": "售出Noun",
+        "soldFor": "价格",
+        "to": "给"
+      },
+      "reply": {
+        "replyingTo": "回复",
+        "reposting": "转发"
+      }
+    },
+    "voters": {
+      "title": "投票者",
+      "noVoters": "暂无投票者",
+      "votingPower": "投票权",
+      "nounsOwned": "持有Nouns",
+      "nounsRepresented": "代表Nouns",
+      "delegatingTo": "委托给",
+      "delegators": "委托人",
+      "selfDelegated": "自我委托",
+      "noDelegators": "无委托人",
+      "recentVotes": "最近投票",
+      "delegate": "委托",
+      "delegateTo": "委托给",
+      "changeDelegation": "更改委托",
+      "enterAddress": "输入地址或ENS"
+    },
+    "account": {
+      "title": "账户",
+      "notConnected": "连接钱包查看账户",
+      "activity": "您的动态",
+      "noActivity": "暂无动态"
+    },
+    "create": {
+      "title": "创建",
+      "proposalTitle": "提案标题",
+      "candidateTitle": "候选标题",
+      "description": "描述",
+      "descriptionPlaceholder": "描述您的提案...",
+      "actions": "操作",
+      "addAction": "添加操作",
+      "removeAction": "删除",
+      "selectTemplate": "选择模板",
+      "searchTemplates": "搜索模板...",
+      "categories": {
+        "treasury": "金库",
+        "admin": "DAO管理",
+        "custom": "自定义"
+      },
+      "fields": {
+        "recipient": "接收者",
+        "amount": "金额",
+        "target": "目标合约",
+        "signature": "函数签名",
+        "calldata": "调用数据",
+        "value": "ETH值"
+      },
+      "submit": "提交提案",
+      "submitCandidate": "提交候选",
+      "submitting": "提交中..."
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "sections": {
+      "appearance": "外观",
+      "desktop": "桌面与程序坞",
+      "windows": "窗口",
+      "language": "语言",
+      "notifications": "通知",
+      "privacy": "隐私与数据",
+      "accessibility": "辅助功能",
+      "about": "关于"
+    },
+    "appearance": {
+      "title": "外观",
+      "theme": "主题",
+      "themeDescription": "选择您的配色方案",
+      "light": "浅色",
+      "dark": "深色",
+      "system": "跟随系统",
+      "accentColor": "强调色",
+      "accentColorDescription": "主要高亮颜色",
+      "wallpaper": "壁纸",
+      "wallpaperDescription": "桌面背景颜色或图片URL",
+      "windowStyle": "窗口样式",
+      "classic": "经典",
+      "modern": "现代",
+      "createCustomTheme": "创建自定义主题",
+      "createCustomThemeDescription": "设计您自己的主题并实时预览",
+      "openEditor": "打开编辑器",
+      "desktop": "桌面",
+      "desktopIconSize": "图标大小",
+      "small": "小",
+      "medium": "中",
+      "large": "大",
+      "default": "默认",
+      "display": "显示",
+      "fontSize": "字体大小",
+      "fontSizeDescription": "系统文字大小",
+      "effects": "效果",
+      "reduceMotion": "减少动态效果",
+      "reduceMotionDescription": "最小化整个系统的动画",
+      "reduceTransparency": "减少透明度",
+      "reduceTransparencyDescription": "使用不透明背景代替模糊效果",
+      "resetToDefaults": "恢复默认"
+    },
+    "language": {
+      "title": "语言",
+      "selectLanguage": "选择语言",
+      "autoTranslate": "自动翻译内容",
+      "autoTranslateDescription": "自动将提案和其他内容翻译成您的语言"
+    },
+    "notifications": {
+      "title": "通知",
+      "enabled": "启用通知",
+      "proposals": "新提案",
+      "auctions": "拍卖更新",
+      "votes": "投票提醒"
+    },
+    "about": {
+      "title": "关于",
+      "version": "版本",
+      "credits": "致谢",
+      "github": "GitHub"
+    }
+  },
+  "errors": {
+    "generic": "出错了",
+    "networkError": "网络错误，请重试",
+    "notFound": "未找到",
+    "unauthorized": "请连接钱包",
+    "insufficientFunds": "余额不足",
+    "transactionFailed": "交易失败",
+    "walletRejected": "交易被拒绝",
+    "invalidInput": "输入无效",
+    "loadingFailed": "加载失败"
+  }
+}

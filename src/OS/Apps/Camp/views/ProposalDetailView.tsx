@@ -7,6 +7,7 @@
 
 import { useState, useMemo } from 'react';
 import { useAccount } from 'wagmi';
+import { useTranslation } from '@/OS/lib/i18n';
 import { useProposal } from '../hooks';
 import { useSimulation } from '../hooks/useSimulation';
 import { useVote } from '@/app/lib/nouns/hooks';
@@ -61,6 +62,7 @@ function escapeRegex(str: string): string {
 const SKIP_SIMULATION_STATUSES = ['EXECUTED', 'DEFEATED', 'VETOED', 'CANCELLED', 'EXPIRED'];
 
 export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalDetailViewProps) {
+  const { t } = useTranslation();
   const { data: proposal, isLoading, error } = useProposal(proposalId);
   const { isConnected } = useAccount();
   const { voteRefundable, isPending } = useVote();
@@ -191,7 +193,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
         {/* Left Column: Description */}
         <div className={styles.leftColumn}>
           <div className={styles.description}>
-            <h2 className={styles.sectionTitle}>Description</h2>
+            <h2 className={styles.sectionTitle}>{t('common.description')}</h2>
             <MarkdownRenderer 
               content={stripTitleFromDescription(proposal.description, proposal.title)} 
               className={styles.descriptionContent}

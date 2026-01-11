@@ -13,6 +13,7 @@
 import { useWallet } from "@/OS/hooks/useWallet";
 import { useENS } from "@/OS/hooks/useENS";
 import { useTokenBalances } from "@/OS/hooks/useTokenBalances";
+import { useTranslation } from "@/OS/lib/i18n";
 import { WalletInfo, QuickActions, TokenList } from "./components";
 import type { AppComponentProps } from "@/OS/types/app";
 import styles from "./WalletPanel.module.css";
@@ -28,6 +29,7 @@ function getNumericChainId(chainId: number | string | undefined): number | undef
 }
 
 export function WalletPanel({ windowId }: AppComponentProps) {
+  const { t } = useTranslation();
   const { isConnected, address, chainName, chainId, connect, disconnect, forgetWallet } = useWallet();
   const { displayName, avatar, name: ensName } = useENS(address);
   
@@ -45,14 +47,14 @@ export function WalletPanel({ windowId }: AppComponentProps) {
     return (
       <div className={styles.container}>
         <div className={styles.disconnected}>
-          <img src="/icons/wallet.svg" alt="Wallet" className={styles.iconLarge} />
-          <h2 className={styles.title}>Connect Wallet</h2>
+          <img src="/icons/wallet.svg" alt={t('common.wallet')} className={styles.iconLarge} />
+          <h2 className={styles.title}>{t('wallet.connectWallet')}</h2>
           <p className={styles.description}>
             Connect your wallet to save your Berry OS customizations 
             across sessions and devices.
           </p>
           <button onClick={connect} className={styles.connectButton}>
-            Connect Wallet
+            {t('wallet.connectWallet')}
           </button>
           <p className={styles.note}>
             Your wallet is only used as a key for saving preferences.
@@ -92,7 +94,7 @@ export function WalletPanel({ windowId }: AppComponentProps) {
           Forget Session
         </button>
         <button onClick={disconnect} className={styles.disconnectButton}>
-          Disconnect
+          {t('wallet.disconnectWallet')}
         </button>
       </div>
     </div>

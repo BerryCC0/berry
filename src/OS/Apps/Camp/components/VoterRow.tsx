@@ -7,7 +7,8 @@
 
 import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
-import { getSupportLabel, getSupportColor } from '../types';
+import { useTranslation } from '@/OS/lib/i18n';
+import { getSupportColor } from '../types';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import styles from './VoterRow.module.css';
 
@@ -30,6 +31,7 @@ export function VoterRow({
   isFeedback = false,
   onNavigate 
 }: VoterRowProps) {
+  const { t } = useTranslation();
   const { data: ensName } = useEnsName({
     address: address as `0x${string}`,
     chainId: mainnet.id,
@@ -42,6 +44,16 @@ export function VoterRow({
     day: 'numeric' 
   });
 
+  // Translate support label
+  const supportLabel = support === 1 
+    ? t('camp.vote.for') 
+    : support === 0 
+      ? t('camp.vote.against') 
+      : t('camp.vote.abstain');
+  
+  // Translate vote/signal label
+  const voteLabel = isFeedback ? t('camp.vote.signal') : t('camp.vote.vote');
+
   return (
     <div 
       className={`${styles.row} ${isFeedback ? styles.feedback : ''}`}
@@ -53,11 +65,11 @@ export function VoterRow({
           className={styles.support}
           style={{ color: getSupportColor(support) }}
         >
-          {getSupportLabel(support)}
+          {supportLabel}
         </span>
-        <span className={styles.votes}>{votes} {isFeedback ? 'signal' : 'vote'}{Number(votes) !== 1 ? 's' : ''}</span>
+        <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
         <span className={styles.date}>{dateStr}</span>
-        {isFeedback && <span className={styles.badge}>Signal</span>}
+        {isFeedback && <span className={styles.badge}>{t('camp.vote.signal')}</span>}
       </div>
       {reason && (
         <MarkdownRenderer 

@@ -1,0 +1,380 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "all": "Todo",
+    "none": "Ninguno",
+    "yes": "Sí",
+    "no": "No",
+    "or": "o",
+    "and": "y",
+    "of": "de",
+    "to": "a",
+    "from": "de",
+    "by": "por",
+    "via": "vía",
+    "at": "a las",
+    "in": "en",
+    "for": "para",
+    "with": "con",
+    "share": "Compartir",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "wallet": "Billetera",
+    "address": "Dirección",
+    "balance": "Saldo",
+    "amount": "Cantidad",
+    "total": "Total",
+    "date": "Fecha",
+    "time": "Hora",
+    "status": "Estado",
+    "actions": "Acciones",
+    "details": "Detalles",
+    "description": "Descripción",
+    "title": "Título",
+    "name": "Nombre",
+    "type": "Tipo",
+    "value": "Valor",
+    "owner": "Propietario"
+  },
+  "time": {
+    "seconds": "{count} segundos",
+    "minutes": "{count} minutos",
+    "hours": "{count} horas",
+    "days": "{count} días",
+    "weeks": "{count} semanas",
+    "months": "{count} meses",
+    "years": "{count} años",
+    "ago": "hace {time}",
+    "remaining": "{time} restante",
+    "ended": "Terminado",
+    "endsIn": "Termina en"
+  },
+  "wallet": {
+    "connectWallet": "Conectar Billetera",
+    "disconnectWallet": "Desconectar",
+    "connectedAs": "Conectado como",
+    "noWallet": "Sin billetera conectada",
+    "switchNetwork": "Cambiar Red",
+    "wrongNetwork": "Red Incorrecta",
+    "viewOnEtherscan": "Ver en Etherscan"
+  },
+  "auction": {
+    "title": "Noun {id}",
+    "loading": "Cargando...",
+    "noData": "Sin datos de subasta",
+    "currentBid": "Oferta Actual",
+    "winningBid": "Oferta Ganadora",
+    "minBid": "Oferta Mínima",
+    "endsIn": "Termina en",
+    "ended": "Terminado",
+    "status": "Estado",
+    "notAuctioned": "No Subastado",
+    "owner": "Propietario",
+    "settled": "Liquidado",
+    "settledBy": "Liquidado por {address}",
+    "placeBid": "Hacer Oferta",
+    "bidAmount": "Cantidad de Oferta",
+    "bidHistory": "Historial de Ofertas",
+    "noBids": "Sin ofertas aún",
+    "bidPlaced": "Oferta hecha por {address}",
+    "nounderNoun": "Este Noun fue asignado a los Nounders",
+    "traits": {
+      "title": "Rasgos",
+      "background": "Fondo",
+      "body": "Cuerpo",
+      "accessory": "Accesorio",
+      "head": "Cabeza",
+      "glasses": "Gafas"
+    },
+    "navigation": {
+      "previous": "Noun Anterior",
+      "next": "Siguiente Noun",
+      "current": "Subasta Actual",
+      "goTo": "Ir a Noun"
+    }
+  },
+  "treasury": {
+    "title": "Tesorería",
+    "totalValue": "Valor Total",
+    "immediatelySpendable": "Inmediatamente Disponible",
+    "stakedAssets": "Activos en Stake",
+    "tokenBalances": "Saldos de Tokens",
+    "treasuryNouns": "Nouns de la Tesorería",
+    "nounsCount": "{count} Nouns",
+    "filters": {
+      "title": "Filtrar por Rasgos",
+      "clear": "Limpiar Filtros",
+      "noMatch": "Ningún Noun coincide con los filtros",
+      "background": "Fondo",
+      "body": "Cuerpo",
+      "accessory": "Accesorio",
+      "head": "Cabeza",
+      "glasses": "Gafas",
+      "any": "Cualquier {trait}"
+    }
+  },
+  "camp": {
+    "title": "Camp",
+    "tabs": {
+      "activity": "Actividad",
+      "proposals": "Propuestas",
+      "candidates": "Candidatos",
+      "voters": "Votantes",
+      "account": "Cuenta"
+    },
+    "proposals": {
+      "title": "Propuestas",
+      "new": "Nueva Propuesta",
+      "noProposals": "No se encontraron propuestas",
+      "status": {
+        "pending": "Pendiente",
+        "updatable": "Actualizable",
+        "active": "Activa",
+        "objectionPeriod": "Período de Objeción",
+        "succeeded": "Aprobada",
+        "defeated": "Rechazada",
+        "queued": "En Cola",
+        "executed": "Ejecutada",
+        "cancelled": "Cancelada",
+        "vetoed": "Vetada",
+        "expired": "Expirada"
+      },
+      "voting": {
+        "for": "A Favor",
+        "against": "En Contra",
+        "abstain": "Abstención",
+        "quorum": "Quórum",
+        "quorumMet": "Quórum alcanzado",
+        "votesNeeded": "{count} votos a favor necesarios",
+        "castVote": "Votar",
+        "voteCast": "Voto emitido exitosamente",
+        "yourVote": "Tu Voto",
+        "addReason": "Agregar razón (opcional)",
+        "votes": "{count} {count, plural, one {voto} other {votos}}"
+      },
+      "simulation": {
+        "title": "Simulación de Transacción",
+        "passed": "Simulación Exitosa",
+        "failed": "Simulación Fallida",
+        "loading": "Simulando...",
+        "transactions": "Transacciones",
+        "gasUsed": "Gas: {gas}",
+        "error": "Error: {message}"
+      },
+      "transactions": {
+        "title": "Transacciones",
+        "noTransactions": "Sin transacciones",
+        "transferEth": "Transferir {amount} ETH a {recipient}",
+        "transferToken": "Transferir {amount} {token} a {recipient}",
+        "transferNoun": "Transferir Noun {id} a {recipient}",
+        "functionCall": "Llamar {function} en {contract}"
+      }
+    },
+    "candidates": {
+      "title": "Candidatos",
+      "new": "Nuevo Candidato",
+      "noCandidates": "No se encontraron candidatos",
+      "sponsors": "Patrocinadores",
+      "sponsorCount": "{count} patrocinadores",
+      "sponsor": "Patrocinar",
+      "promote": "Promover a Propuesta",
+      "promoting": "Promoviendo...",
+      "threshold": "Umbral",
+      "nounsNeeded": "Se necesitan {count} Nouns más",
+      "readyToPromote": "¡Listo para promover!",
+      "cancelCandidate": "Cancelar Candidato",
+      "editCandidate": "Editar Candidato"
+    },
+    "vote": {
+      "for": "A Favor",
+      "against": "En Contra",
+      "abstain": "Abstención",
+      "vote": "voto",
+      "signal": "señal"
+    },
+    "activity": {
+      "title": "Actividad",
+      "noActivity": "Sin actividad reciente",
+      "vote": {
+        "voted": "votó",
+        "reposted": "reposteó un",
+        "vote": "voto"
+      },
+      "proposal": {
+        "created": "creó propuesta",
+        "updated": "actualizó propuesta",
+        "votingStarted": "Votación para",
+        "started": "comenzó",
+        "succeeded": "fue aprobada",
+        "defeated": "fue rechazada"
+      },
+      "candidate": {
+        "created": "creó candidato",
+        "updated": "actualizó candidato",
+        "sponsored": "patrocinó candidato"
+      },
+      "feedback": {
+        "signaled": "señaló",
+        "on": "sobre"
+      },
+      "auction": {
+        "started": "Subasta de",
+        "live": "En Vivo",
+        "settled": "Liquidado por"
+      },
+      "noun": {
+        "transferred": "transfirió Noun",
+        "sold": "vendió Noun",
+        "soldFor": "por",
+        "to": "a"
+      },
+      "reply": {
+        "replyingTo": "respondiendo a",
+        "reposting": "reposteando"
+      }
+    },
+    "voters": {
+      "title": "Votantes",
+      "noVoters": "No se encontraron votantes",
+      "votingPower": "Poder de Voto",
+      "nounsOwned": "Nouns Propios",
+      "nounsRepresented": "Nouns Representados",
+      "delegatingTo": "Delegando a",
+      "delegators": "Delegadores",
+      "selfDelegated": "Auto-delegado",
+      "noDelegators": "Sin delegadores",
+      "recentVotes": "Votos Recientes",
+      "delegate": "Delegar",
+      "delegateTo": "Delegar a",
+      "changeDelegation": "Cambiar Delegación",
+      "enterAddress": "Ingrese dirección o ENS"
+    },
+    "account": {
+      "title": "Cuenta",
+      "notConnected": "Conecte billetera para ver cuenta",
+      "activity": "Tu Actividad",
+      "noActivity": "Sin actividad aún"
+    },
+    "create": {
+      "title": "Crear",
+      "proposalTitle": "Título de Propuesta",
+      "candidateTitle": "Título de Candidato",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Describe tu propuesta...",
+      "actions": "Acciones",
+      "addAction": "Agregar Acción",
+      "removeAction": "Eliminar",
+      "selectTemplate": "Seleccionar Plantilla",
+      "searchTemplates": "Buscar plantillas...",
+      "categories": {
+        "treasury": "Tesorería",
+        "admin": "Admin del DAO",
+        "custom": "Personalizado"
+      },
+      "fields": {
+        "recipient": "Destinatario",
+        "amount": "Cantidad",
+        "target": "Contrato Objetivo",
+        "signature": "Firma de Función",
+        "calldata": "Calldata",
+        "value": "Valor ETH"
+      },
+      "submit": "Enviar Propuesta",
+      "submitCandidate": "Enviar Candidato",
+      "submitting": "Enviando..."
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "sections": {
+      "appearance": "Apariencia",
+      "desktop": "Escritorio y Dock",
+      "windows": "Ventanas",
+      "language": "Idioma",
+      "notifications": "Notificaciones",
+      "privacy": "Privacidad y Datos",
+      "accessibility": "Accesibilidad",
+      "about": "Acerca de"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "theme": "Tema",
+      "themeDescription": "Elige tu esquema de colores",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema",
+      "accentColor": "Color de Acento",
+      "accentColorDescription": "Color de resaltado principal",
+      "wallpaper": "Fondo de Pantalla",
+      "wallpaperDescription": "Color de fondo o URL de imagen",
+      "windowStyle": "Estilo de Ventana",
+      "classic": "Clásico",
+      "modern": "Moderno",
+      "createCustomTheme": "Crear Tema Personalizado",
+      "createCustomThemeDescription": "Diseña tu propio tema con vista previa",
+      "openEditor": "Abrir Editor",
+      "desktop": "Escritorio",
+      "desktopIconSize": "Tamaño de Iconos",
+      "small": "Pequeño",
+      "medium": "Mediano",
+      "large": "Grande",
+      "default": "Predeterminado",
+      "display": "Pantalla",
+      "fontSize": "Tamaño de Fuente",
+      "fontSizeDescription": "Tamaño de texto del sistema",
+      "effects": "Efectos",
+      "reduceMotion": "Reducir Movimiento",
+      "reduceMotionDescription": "Minimizar animaciones en el sistema",
+      "reduceTransparency": "Reducir Transparencia",
+      "reduceTransparencyDescription": "Usar fondos sólidos en lugar de difuminados",
+      "resetToDefaults": "Restablecer Valores"
+    },
+    "language": {
+      "title": "Idioma",
+      "selectLanguage": "Seleccionar Idioma",
+      "autoTranslate": "Traducir contenido automáticamente",
+      "autoTranslateDescription": "Traducir automáticamente propuestas y otro contenido a tu idioma"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "enabled": "Activar Notificaciones",
+      "proposals": "Nuevas Propuestas",
+      "auctions": "Actualizaciones de Subasta",
+      "votes": "Recordatorios de Voto"
+    },
+    "about": {
+      "title": "Acerca de",
+      "version": "Versión",
+      "credits": "Créditos",
+      "github": "GitHub"
+    }
+  },
+  "errors": {
+    "generic": "Algo salió mal",
+    "networkError": "Error de red. Por favor intente de nuevo.",
+    "notFound": "No encontrado",
+    "unauthorized": "Por favor conecte su billetera",
+    "insufficientFunds": "Fondos insuficientes",
+    "transactionFailed": "Transacción fallida",
+    "walletRejected": "Transacción fue rechazada",
+    "invalidInput": "Entrada inválida",
+    "loadingFailed": "Error al cargar datos"
+  }
+}

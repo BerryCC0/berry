@@ -8,11 +8,12 @@
 import { useState, useEffect } from "react";
 import type { AppComponentProps } from "@/OS/types/app";
 import { useSettingsStore } from "@/OS/store/settingsStore";
-import { getIcon } from "@/OS/lib/IconRegistry";
+import { useTranslation } from "@/OS/lib/i18n";
 import {
   AppearancePanel,
   DesktopPanel,
   WindowsPanel,
+  LanguagePanel,
   NotificationsPanel,
   PrivacyPanel,
   AccessibilityPanel,
@@ -24,6 +25,7 @@ type SettingsSection =
   | "appearance"
   | "desktop"
   | "windows"
+  | "language"
   | "notifications"
   | "privacy"
   | "accessibility"
@@ -31,20 +33,22 @@ type SettingsSection =
 
 interface SectionConfig {
   id: SettingsSection;
-  label: string;
+  labelKey: string;
 }
 
 const SECTIONS: SectionConfig[] = [
-  { id: "appearance", label: "Appearance" },
-  { id: "desktop", label: "Desktop & Dock" },
-  { id: "windows", label: "Windows" },
-  { id: "notifications", label: "Notifications" },
-  { id: "privacy", label: "Privacy & Data" },
-  { id: "accessibility", label: "Accessibility" },
-  { id: "about", label: "About" },
+  { id: "appearance", labelKey: "settings.sections.appearance" },
+  { id: "desktop", labelKey: "settings.sections.desktop" },
+  { id: "windows", labelKey: "settings.sections.windows" },
+  { id: "language", labelKey: "settings.sections.language" },
+  { id: "notifications", labelKey: "settings.sections.notifications" },
+  { id: "privacy", labelKey: "settings.sections.privacy" },
+  { id: "accessibility", labelKey: "settings.sections.accessibility" },
+  { id: "about", labelKey: "settings.sections.about" },
 ];
 
 export function Settings({ initialState }: AppComponentProps) {
+  const { t } = useTranslation();
   const initState = initialState as { section?: SettingsSection } | undefined;
   const [activeSection, setActiveSection] = useState<SettingsSection>(
     initState?.section || "appearance"
@@ -68,6 +72,8 @@ export function Settings({ initialState }: AppComponentProps) {
         return <DesktopPanel />;
       case "windows":
         return <WindowsPanel />;
+      case "language":
+        return <LanguagePanel />;
       case "notifications":
         return <NotificationsPanel />;
       case "privacy":
@@ -85,7 +91,7 @@ export function Settings({ initialState }: AppComponentProps) {
     <div className={styles.container}>
       <nav className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <span className={styles.headerTitle}>Settings</span>
+          <span className={styles.headerTitle}>{t('settings.title')}</span>
         </div>
         
         <div className={styles.sidebarItems}>
@@ -98,7 +104,7 @@ export function Settings({ initialState }: AppComponentProps) {
               }`}
               onClick={() => setActiveSection(section.id)}
             >
-              <span className={styles.sidebarLabel}>{section.label}</span>
+              <span className={styles.sidebarLabel}>{t(section.labelKey)}</span>
             </button>
           ))}
         </div>

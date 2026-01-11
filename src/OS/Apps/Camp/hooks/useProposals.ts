@@ -39,6 +39,9 @@ const PROPOSAL_STATE_MAP: Record<number, ProposalStatus> = {
  */
 async function getCurrentBlock(): Promise<number> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+
     const response = await fetch(ETH_RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -48,9 +51,18 @@ async function getCurrentBlock(): Promise<number> {
         params: [],
         id: 1,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
+
     const json = await response.json();
-    return parseInt(json.result, 16);
+    const block = parseInt(json.result, 16);
+    // Sanity check - block should be at least 20M as of 2024
+    if (block > 20000000) {
+      return block;
+    }
+    throw new Error('Invalid block number');
   } catch {
     // Fallback: estimate from timestamp (12 sec/block, genesis ~2015-07-30)
     return Math.floor((Date.now() / 1000 - 1438269988) / 12);
@@ -67,6 +79,9 @@ async function getOnChainState(proposalId: string): Promise<ProposalStatus | nul
     const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
     const callData = STATE_FUNCTION_SELECTOR + paddedId;
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
     const response = await fetch(ETH_RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,12 +91,17 @@ async function getOnChainState(proposalId: string): Promise<ProposalStatus | nul
         params: [{ to: NOUNS_DAO_PROXY, data: callData }, 'latest'],
         id: 1,
       }),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeout);
+
     const json = await response.json();
-    if (json.result) {
+    if (json.result && json.result !== '0x') {
       const stateValue = parseInt(json.result, 16);
-      return PROPOSAL_STATE_MAP[stateValue] || null;
+      if (!isNaN(stateValue) && PROPOSAL_STATE_MAP[stateValue]) {
+        return PROPOSAL_STATE_MAP[stateValue];
+      }
     }
     return null;
   } catch {
@@ -127,32 +147,46 @@ function calculateStatusFallback(
   const start = Number(startBlock);
   const end = Number(endBlock);
   
-  // Final states are trusted
-  if (['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'].includes(status)) {
+  // Final states are always trusted
+  if (['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED', 'QUEUED'].includes(status)) {
     return status;
   }
   
-  // Calculate based on block numbers
-  if (currentBlock < start) {
-    return 'PENDING';
+  // If Goldsky says ACTIVE, trust it (it's been indexed from chain events)
+  if (status === 'ACTIVE' || status === 'OBJECTION_PERIOD') {
+    return status;
   }
   
-  if (currentBlock >= start && currentBlock <= end) {
-    return 'ACTIVE';
+  // If we don't have a valid current block, trust Goldsky
+  if (currentBlock <= 0 || currentBlock < start) {
+    // If Goldsky says PENDING but we have votes, something is off - trust Goldsky
+    if (status === 'PENDING' || status === 'UPDATABLE') {
+      return status;
+    }
   }
   
-  // After voting ended
-  if (currentBlock > end) {
-    const forVotesNum = Number(forVotes);
-    const againstVotesNum = Number(againstVotes);
-    const quorumNum = Number(quorumVotes);
-    
-    if (forVotesNum < quorumNum || againstVotesNum > forVotesNum) {
-      return 'DEFEATED';
+  // Calculate based on block numbers only if we have valid data
+  if (currentBlock > 0) {
+    if (currentBlock < start) {
+      return 'PENDING';
     }
     
-    if (status === 'QUEUED') return 'QUEUED';
-    return 'SUCCEEDED';
+    if (currentBlock >= start && currentBlock <= end) {
+      return 'ACTIVE';
+    }
+    
+    // After voting ended
+    if (currentBlock > end) {
+      const forVotesNum = Number(forVotes);
+      const againstVotesNum = Number(againstVotes);
+      const quorumNum = Number(quorumVotes);
+      
+      if (forVotesNum < quorumNum || againstVotesNum > forVotesNum) {
+        return 'DEFEATED';
+      }
+      
+      return 'SUCCEEDED';
+    }
   }
   
   return status;
@@ -283,15 +317,19 @@ async function fetchProposals(
 
   const data = json.data as ProposalQueryResult;
   
-  // Get on-chain states for all proposals (non-final ones only to reduce calls)
+  // Only fetch on-chain state for proposals where Goldsky might be stale
+  // Skip for: final states, ACTIVE (Goldsky is reliable for this)
   const proposalIds = data.proposals
-    .filter(p => !['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'].includes(p.status))
+    .filter(p => !['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED', 'ACTIVE', 'OBJECTION_PERIOD', 'QUEUED'].includes(p.status))
     .map(p => p.id);
   
-  const onChainStates = await getOnChainStates(proposalIds);
+  // Only make on-chain calls if we have proposals that need verification
+  const onChainStates = proposalIds.length > 0 
+    ? await getOnChainStates(proposalIds.slice(0, 5)) // Limit to 5 to keep it fast
+    : new Map<string, ProposalStatus>();
   
   let proposals = data.proposals.map(p => {
-    // Use on-chain state if available, otherwise fallback to calculation
+    // Use on-chain state if available, otherwise use Goldsky + fallback calculation
     const onChainStatus = onChainStates.get(p.id);
     const status = onChainStatus || calculateStatusFallback(
       p.status,
@@ -374,16 +412,32 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVo
     calldata: p.calldatas?.[i] || '0x',
   })) || [];
   
-  // Use on-chain state if available, otherwise fallback to calculation
-  const status = onChainStatus || calculateStatusFallback(
-    p.status,
-    p.startBlock,
-    p.endBlock,
-    p.forVotes,
-    p.againstVotes,
-    p.quorumVotes,
-    currentBlock
-  );
+  // Determine status: prefer on-chain state, but sanity check against Goldsky
+  let status: ProposalStatus;
+  
+  if (onChainStatus) {
+    // Sanity check: if Goldsky says ACTIVE but on-chain says something final,
+    // verify against block numbers before trusting
+    const goldskyIsActive = p.status === 'ACTIVE' || p.status === 'OBJECTION_PERIOD';
+    const onChainIsFinal = ['SUCCEEDED', 'DEFEATED', 'EXPIRED'].includes(onChainStatus);
+    
+    if (goldskyIsActive && onChainIsFinal && currentBlock <= Number(p.endBlock)) {
+      // Voting hasn't ended yet, trust Goldsky's ACTIVE status
+      status = p.status as ProposalStatus;
+    } else {
+      status = onChainStatus;
+    }
+  } else {
+    status = calculateStatusFallback(
+      p.status,
+      p.startBlock,
+      p.endBlock,
+      p.forVotes,
+      p.againstVotes,
+      p.quorumVotes,
+      currentBlock
+    );
+  }
   
   return {
     ...p,
@@ -428,7 +482,8 @@ export function useProposal(id: string | null) {
     queryKey: ['camp', 'proposal', id],
     queryFn: () => fetchProposal(id!),
     enabled: !!id,
-    staleTime: 30000,
+    staleTime: 10000, // 10 seconds - keep fresh
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 

@@ -16,6 +16,7 @@ import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { formatEther } from 'viem';
 import { NounImageById } from '@/app/lib/nouns/components';
+import { useTranslation, useContentTranslation } from '@/OS/lib/i18n';
 import { getSupportLabel, getSupportColor, type ActivityItem as ActivityItemType } from '../types';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { parseRepost, parseReply } from '../utils/repostParser';
@@ -118,6 +119,8 @@ function findRepostOriginalPosterAddress(
 }
 
 export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, onClickCandidate, onClickAuction }: ActivityItemProps) {
+  const { t } = useTranslation();
+  
   // Find original poster addresses BEFORE calling hooks (so hooks are always called in same order)
   const replyOriginalPosterAddress = findOriginalPosterAddress(item.reason, allItems);
   const repostOriginalPosterAddress = findRepostOriginalPosterAddress(item.reason, allItems);
@@ -212,7 +215,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         <div className={styles.quotedReply}>
           {repostAuthorDisplay && (
             <div className={styles.quoteAttribution}>
-              reposting {repostAuthorDisplay}
+              {t('camp.activity.reply.reposting')} {repostAuthorDisplay}
             </div>
           )}
           <MarkdownRenderer content={repostInfo.originalReason} className={styles.quotedText} />
@@ -235,7 +238,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
           {/* Show the quoted original with attribution */}
           <div className={styles.quotedReply}>
             <div className={styles.quoteAttribution}>
-              replying to {originalPosterDisplay}
+              {t('camp.activity.reply.replyingTo')} {originalPosterDisplay}
             </div>
             <MarkdownRenderer content={replyInfo.quotedText} className={styles.quotedText} />
           </div>
@@ -342,6 +345,46 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
                 {item.proposalTitle}
               </span>
             )}
+          </div>
+        );
+
+      case 'proposal_voting_started':
+        return (
+          <div className={styles.header}>
+            <span className={styles.action}>Voting for</span>
+            <span className={styles.badge} data-type="proposal">Proposal {item.proposalId}</span>
+            {item.proposalTitle && (
+              <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
+                {item.proposalTitle}
+              </span>
+            )}
+            <span className={styles.action}>started</span>
+          </div>
+        );
+
+      case 'proposal_succeeded':
+        return (
+          <div className={styles.header}>
+            <span className={styles.badge} data-type="succeeded">Proposal {item.proposalId}</span>
+            {item.proposalTitle && (
+              <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
+                {item.proposalTitle}
+              </span>
+            )}
+            <span className={styles.action}>succeeded</span>
+          </div>
+        );
+
+      case 'proposal_defeated':
+        return (
+          <div className={styles.header}>
+            <span className={styles.badge} data-type="defeated">Proposal {item.proposalId}</span>
+            {item.proposalTitle && (
+              <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
+                {item.proposalTitle}
+              </span>
+            )}
+            <span className={styles.action}>was defeated</span>
           </div>
         );
 

@@ -1,7 +1,7 @@
 /**
  * MarkdownRenderer
  * Theme-compliant markdown renderer for proposals, candidates, and feedback
- * Supports images, video embeds, and all standard markdown features
+ * Supports images, video embeds, auto-translation, and all standard markdown features
  */
 
 'use client';
@@ -10,11 +10,14 @@ import React, { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
+import { useContentTranslation } from '@/OS/lib/i18n';
 import styles from './MarkdownRenderer.module.css';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  /** Disable auto-translation for this content */
+  skipTranslation?: boolean;
 }
 
 /**
@@ -419,8 +422,16 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
 };
 }
 
-export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, skipTranslation = false }: MarkdownRendererProps) {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
+  
+  // Auto-translate content based on user's locale
+  const { displayContent, isTranslating } = useContentTranslation(
+    skipTranslation ? undefined : content
+  );
+  
+  // Use translated content if available, otherwise original
+  const displayText = skipTranslation ? content : displayContent;
 
   const handleImageClick = useCallback((src: string, alt: string) => {
     setLightboxImage({ src, alt });
@@ -441,12 +452,12 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
 
   return (
     <>
-    <div className={`${styles.markdown} ${className || ''}`}>
+    <div className={`${styles.markdown} ${className || ''} ${isTranslating ? styles.translating : ''}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={markdownComponents}
       >
-        {content}
+        {displayText}
       </ReactMarkdown>
     </div>
       

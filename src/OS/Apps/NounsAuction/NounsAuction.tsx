@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { NounImage } from '@/app/lib/nouns/components';
 import type { AppComponentProps } from '@/OS/types/app';
+import { useTranslation } from '@/OS/lib/i18n';
 import { useCurrentAuction, useAuctionById, useNounById } from './hooks/useAuctionData';
 import { AuctionNavigation, BidButton, BidHistory, TraitsList } from './components';
 import {
@@ -39,6 +40,8 @@ function isNounsAuctionInitialState(state: unknown): state is NounsAuctionInitia
 }
 
 export function NounsAuction({ windowId, initialState }: AppComponentProps) {
+  const { t } = useTranslation();
+  
   // Safely extract nounId from initialState
   const initialNounId = isNounsAuctionInitialState(initialState) 
     ? initialState.nounId ?? null 
@@ -148,10 +151,10 @@ export function NounsAuction({ windowId, initialState }: AppComponentProps) {
 
   // Get display values
   const nounTitle = useMemo(() => {
-    if (loading) return 'Loading...';
-    if (!displayAuction) return 'No auction data';
-    return `Noun ${displayAuction.noun.id}`;
-  }, [loading, displayAuction]);
+    if (loading) return t('common.loading');
+    if (!displayAuction) return t('auction.noData');
+    return t('auction.title', { id: displayAuction.noun.id });
+  }, [loading, displayAuction, t]);
 
   const currentBidETH = displayAuction?.amount 
     ? formatBidAmount(displayAuction.amount) 
@@ -209,7 +212,7 @@ export function NounsAuction({ windowId, initialState }: AppComponentProps) {
             <h1 className={styles.title}>{nounTitle}</h1>
             {viewingNounId && !isNounder && displayAuction?.endTime && (
               <div className={styles.endDate}>
-                <span className={styles.endDateLabel}>Ended</span>
+                <span className={styles.endDateLabel}>{t('auction.ended')}</span>
                 <span>{formatTimestamp(displayAuction.endTime)}</span>
               </div>
             )}
@@ -218,23 +221,23 @@ export function NounsAuction({ windowId, initialState }: AppComponentProps) {
           <div className={styles.statusGrid}>
             <div className={styles.statusItem}>
               <div className={styles.statusLabel}>
-                {isNounder ? 'Status' : (viewingNounId ? 'Winning Bid' : 'Current Bid')}
+                {isNounder ? t('auction.status') : (viewingNounId ? t('auction.winningBid') : t('auction.currentBid'))}
               </div>
               <div className={styles.statusValue}>
-                {loading ? '...' : (isNounder ? 'Not Auctioned' : `Ξ ${currentBidETH}`)}
+                {loading ? '...' : (isNounder ? t('auction.notAuctioned') : `Ξ ${currentBidETH}`)}
               </div>
             </div>
 
             {!viewingNounId && displayAuction ? (
               <div className={styles.statusItem}>
-                <div className={styles.statusLabel}>Ends in</div>
+                <div className={styles.statusLabel}>{t('auction.endsIn')}</div>
                 <div className={styles.statusValue}>
                   {loading ? '...' : countdown}
                 </div>
               </div>
             ) : (
               <div className={styles.statusItem}>
-                <div className={styles.statusLabel}>Owner</div>
+                <div className={styles.statusLabel}>{t('auction.owner')}</div>
                 <div className={styles.statusValue}>
                   {loading ? '...' : (
                     isNounder ? 'nounders.eth' : truncateAddress(ownerAddress)

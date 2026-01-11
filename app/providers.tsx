@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { PlatformProvider } from "@/OS/lib/PlatformDetection";
 import { ThemeProvider } from "@/OS/lib/ThemeProvider";
+import { TranslationProvider } from "@/OS/lib/i18n";
 
 // Dynamically import Web3Provider to avoid SSR issues with Solana/Bitcoin adapters
 const Web3Provider = dynamic(
@@ -23,9 +24,11 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <Web3Provider>
-      <PlatformProvider>
-        <ThemeProvider>{children}</ThemeProvider>
-      </PlatformProvider>
+      <TranslationProvider>
+        <PlatformProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </PlatformProvider>
+      </TranslationProvider>
     </Web3Provider>
   );
 }

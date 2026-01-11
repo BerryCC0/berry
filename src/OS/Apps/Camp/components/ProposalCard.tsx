@@ -5,7 +5,8 @@
 
 'use client';
 
-import type { Proposal } from '../types';
+import { useTranslation } from '@/OS/lib/i18n';
+import type { Proposal, ProposalStatus } from '../types';
 import styles from './ProposalCard.module.css';
 
 interface ProposalCardProps {
@@ -13,7 +14,23 @@ interface ProposalCardProps {
   onClick?: () => void;
 }
 
+// Status translation keys
+const statusKeys: Record<ProposalStatus, string> = {
+  PENDING: 'camp.proposals.status.pending',
+  ACTIVE: 'camp.proposals.status.active',
+  CANCELLED: 'camp.proposals.status.cancelled',
+  VETOED: 'camp.proposals.status.vetoed',
+  QUEUED: 'camp.proposals.status.queued',
+  EXECUTED: 'camp.proposals.status.executed',
+  DEFEATED: 'camp.proposals.status.defeated',
+  SUCCEEDED: 'camp.proposals.status.succeeded',
+  EXPIRED: 'camp.proposals.status.expired',
+  OBJECTION_PERIOD: 'camp.proposals.status.objectionPeriod',
+  UPDATABLE: 'camp.proposals.status.updatable',
+};
+
 export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
+  const { t } = useTranslation();
   const forVotes = Number(proposal.forVotes);
   const againstVotes = Number(proposal.againstVotes);
   const abstainVotes = Number(proposal.abstainVotes || 0);
@@ -35,12 +52,14 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
   const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
   const quorumMet = forVotes >= quorum;
 
+  const statusText = t(statusKeys[proposal.status] || 'camp.proposals.status.pending');
+
   return (
     <div className={styles.card} onClick={onClick} role="button" tabIndex={0}>
       <div className={styles.header}>
         <span className={styles.id}>#{proposal.id}</span>
         <span className={`${styles.status} ${styles[proposal.status.toLowerCase()]}`}>
-          {proposal.status}
+          {statusText}
         </span>
       </div>
       

@@ -72,6 +72,12 @@ const ACTIVITY_QUERY = `
         id
       }
       createdTimestamp
+      startBlock
+      endBlock
+      status
+      forVotes
+      againstVotes
+      quorumVotes
     }
     
     proposalCandidates(
@@ -258,6 +264,12 @@ interface ActivityQueryResult {
     title: string;
     proposer: { id: string };
     createdTimestamp: string;
+    startBlock: string;
+    endBlock: string;
+    status: string;
+    forVotes: string;
+    againstVotes: string;
+    quorumVotes: string;
   }>;
   proposalCandidates: Array<{
     id: string;
@@ -424,6 +436,78 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
       proposalId: proposal.id,
       proposalTitle: proposal.title,
     });
+  }
+
+  // Get current block to detect proposals where voting just started
+  let currentBlock = 0;
+  try {
+    const blockResponse = await fetch('https://eth.llamarpc.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_blockNumber',
+        params: [],
+        id: 1,
+      }),
+    });
+    const blockJson = await blockResponse.json();
+    currentBlock = parseInt(blockJson.result, 16);
+  } catch {
+    // Fallback estimate
+    currentBlock = Math.floor((Date.now() / 1000 - 1438269988) / 12);
+  }
+
+  // Create "voting started" items for proposals where voting recently began
+  // Show if voting started within the last ~7200 blocks (~1 day)
+  const VOTING_WINDOW = 7200;
+  
+  for (const proposal of data.proposals) {
+    const startBlock = Number(proposal.startBlock);
+    const endBlock = Number(proposal.endBlock);
+    
+    // Voting has started if current block is past start block
+    // Only show if within the recent window
+    if (currentBlock >= startBlock && currentBlock < startBlock + VOTING_WINDOW) {
+      // Estimate timestamp: startBlock was ~(currentBlock - startBlock) * 12 seconds ago
+      const blocksAgo = currentBlock - startBlock;
+      const secondsAgo = blocksAgo * 12;
+      const votingStartedTimestamp = Math.floor(Date.now() / 1000) - secondsAgo;
+      
+      items.push({
+        id: `proposal-voting-started-${proposal.id}`,
+        type: 'proposal_voting_started',
+        timestamp: votingStartedTimestamp.toString(),
+        actor: proposal.proposer.id,
+        proposalId: proposal.id,
+        proposalTitle: proposal.title,
+      });
+    }
+    
+    // Voting has ended if current block is past end block
+    // Only show if within the recent window
+    if (currentBlock >= endBlock && currentBlock < endBlock + VOTING_WINDOW) {
+      // Determine outcome: succeeded if forVotes >= quorum AND forVotes > againstVotes
+      const forVotes = Number(proposal.forVotes);
+      const againstVotes = Number(proposal.againstVotes);
+      const quorum = Number(proposal.quorumVotes);
+      
+      const succeeded = forVotes >= quorum && forVotes > againstVotes;
+      
+      // Estimate timestamp
+      const blocksAgo = currentBlock - endBlock;
+      const secondsAgo = blocksAgo * 12;
+      const votingEndedTimestamp = Math.floor(Date.now() / 1000) - secondsAgo;
+      
+      items.push({
+        id: `proposal-${succeeded ? 'succeeded' : 'defeated'}-${proposal.id}`,
+        type: succeeded ? 'proposal_succeeded' : 'proposal_defeated',
+        timestamp: votingEndedTimestamp.toString(),
+        actor: proposal.proposer.id,
+        proposalId: proposal.id,
+        proposalTitle: proposal.title,
+      });
+    }
   }
 
   // Convert candidate creations to activity items

@@ -16,6 +16,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAccount } from 'wagmi';
+import { useTranslation } from '@/OS/lib/i18n';
 import { parseRoute, routeToPath, type CampRoute } from './types';
 import {
   ActivityView,
@@ -39,6 +40,8 @@ interface CampInitialState {
 type TabId = 'activity' | 'proposals' | 'candidates' | 'voters' | 'account' | 'create';
 
 export function Camp({ windowId, initialState, onStateChange }: AppComponentProps) {
+  const { t } = useTranslation();
+  
   // Cast initialState to our expected shape
   const campState = initialState as CampInitialState | undefined;
   
@@ -224,25 +227,25 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
             className={`${styles.tab} ${currentTab === 'activity' ? styles.active : ''}`}
             onClick={() => handleTabChange('activity')}
           >
-            Activity
+            {t('camp.tabs.activity')}
           </button>
           <button
             className={`${styles.tab} ${currentTab === 'proposals' ? styles.active : ''}`}
             onClick={() => handleTabChange('proposals')}
           >
-            Proposals
+            {t('camp.tabs.proposals')}
           </button>
           <button
             className={`${styles.tab} ${currentTab === 'candidates' ? styles.active : ''}`}
             onClick={() => handleTabChange('candidates')}
           >
-            Candidates
+            {t('camp.tabs.candidates')}
           </button>
           <button
             className={`${styles.tab} ${currentTab === 'voters' ? styles.active : ''}`}
             onClick={() => handleTabChange('voters')}
           >
-            Voters
+            {t('camp.tabs.voters')}
           </button>
           </div>
         </div>
@@ -254,13 +257,13 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
               className={`${styles.tab} ${currentTab === 'create' ? styles.active : ''}`}
               onClick={() => handleTabChange('create')}
             >
-              Create
+              {t('camp.create.title')}
             </button>
             <button
               className={`${styles.tab} ${currentTab === 'account' ? styles.active : ''}`}
               onClick={() => handleTabChange('account')}
             >
-              Account
+              {t('camp.tabs.account')}
             </button>
           </div>
         )}

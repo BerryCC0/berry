@@ -108,6 +108,16 @@
   color: #1565c0;
 }
 
+.badge[data-type="succeeded"] {
+  background: color-mix(in srgb, var(--berry-success) 20%, transparent);
+  color: var(--berry-success);
+}
+
+.badge[data-type="defeated"] {
+  background: color-mix(in srgb, var(--berry-error) 20%, transparent);
+  color: var(--berry-error);
+}
+
 .badge[data-type="candidate"] {
   background: #fff3e0;
   color: #e65100;

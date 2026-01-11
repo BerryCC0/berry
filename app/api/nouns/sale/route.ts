@@ -54,7 +54,7 @@ export async function GET(request: Request) {
           // If transfer is to the seller, this is likely the sale payment
           if (sellerLower && toAddress === sellerLower) {
             const amount = BigInt(log.data || '0');
-            if (amount > 0n) {
+            if (amount > BigInt(0)) {
               return NextResponse.json({ isSale: true, price: amount.toString() });
             }
           }
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       }
       
       // If no seller match, look for largest WETH transfer as fallback
-      let maxWethTransfer = 0n;
+      let maxWethTransfer = BigInt(0);
       for (const log of receiptData.result.logs) {
         const logAddress = (log.address || '').toLowerCase();
         const topics = log.topics || [];
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
         }
       }
       
-      if (maxWethTransfer > 0n) {
+      if (maxWethTransfer > BigInt(0)) {
         return NextResponse.json({ isSale: true, price: maxWethTransfer.toString() });
       }
     }
@@ -87,8 +87,8 @@ export async function GET(request: Request) {
     const internalData = await internalResponse.json();
     
     if (internalData.status === '1' && internalData.result?.length > 0) {
-      let sellerPayment = 0n;
-      let maxPayment = 0n;
+      let sellerPayment = BigInt(0);
+      let maxPayment = BigInt(0);
       
       for (const internal of internalData.result) {
         const internalTo = (internal.to || '').toLowerCase();
@@ -98,16 +98,16 @@ export async function GET(request: Request) {
           maxPayment = internalValue;
         }
         
-        if (sellerLower && internalTo === sellerLower && internalValue > 0n) {
+        if (sellerLower && internalTo === sellerLower && internalValue > BigInt(0)) {
           sellerPayment += internalValue;
         }
       }
       
-      if (sellerPayment > 0n) {
+      if (sellerPayment > BigInt(0)) {
         return NextResponse.json({ isSale: true, price: sellerPayment.toString() });
       }
       
-      if (maxPayment > 0n) {
+      if (maxPayment > BigInt(0)) {
         return NextResponse.json({ isSale: true, price: maxPayment.toString() });
       }
     }
@@ -120,7 +120,7 @@ export async function GET(request: Request) {
     
     if (txData.result) {
       const value = BigInt(txData.result.value || '0');
-      if (value > 0n) {
+      if (value > BigInt(0)) {
         return NextResponse.json({ isSale: true, price: value.toString() });
       }
     }

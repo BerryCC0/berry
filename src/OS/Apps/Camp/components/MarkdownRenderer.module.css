@@ -10,6 +10,11 @@
   color: var(--berry-text-primary);
   word-wrap: break-word;
   overflow-wrap: break-word;
+  transition: opacity 0.2s ease;
+}
+
+.markdown.translating {
+  opacity: 0.7;
 }
 
 /* Headings */

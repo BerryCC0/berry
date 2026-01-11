@@ -16,6 +16,7 @@ import {
 } from '@/app/lib/nouns/hooks';
 import { NounImage } from '@/app/lib/nouns/components';
 import { getTraitName, type TraitType } from '@/app/lib/nouns/utils/trait-name-utils';
+import { useTranslation } from '@/OS/lib/i18n';
 import type { AppComponentProps } from '@/OS/types/app';
 import { TraitDropdown } from './components';
 import styles from './Treasury.module.css';
@@ -57,6 +58,7 @@ function formatEth(value: string): string {
 }
 
 export function Treasury({ windowId }: AppComponentProps) {
+  const { t } = useTranslation();
   const balances = useTreasuryBalances();
   const v1Balances = useTreasuryV1Balances();
   const { data: nounsData, isLoading: nounsLoading } = useTreasuryNouns();
@@ -228,7 +230,7 @@ export function Treasury({ windowId }: AppComponentProps) {
       {/* USD Value Summary Cards */}
       <div className={styles.summaryCards}>
         <div className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Immediately Spendable</div>
+          <div className={styles.summaryLabel}>{t('treasury.immediatelySpendable')}</div>
           <div className={styles.summaryValue}>
             {isLoading || priceLoading ? '...' : `$${formatNumber(spendableUsd.toString(), 0)}`}
           </div>
@@ -238,7 +240,7 @@ export function Treasury({ windowId }: AppComponentProps) {
         </div>
 
         <div className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Staked Assets</div>
+          <div className={styles.summaryLabel}>{t('treasury.stakedAssets')}</div>
           <div className={styles.summaryValue}>
             {isLoading || priceLoading ? '...' : `$${formatNumber(stakedUsd.toString(), 0)}`}
           </div>
@@ -250,7 +252,7 @@ export function Treasury({ windowId }: AppComponentProps) {
 
       {/* Token Balances */}
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Token Balances</h2>
+        <h2 className={styles.sectionTitle}>{t('treasury.tokenBalances')}</h2>
         <div className={styles.tokenGrid}>
           {/* ETH Derivatives */}
           <div className={styles.tokenCategory}>
