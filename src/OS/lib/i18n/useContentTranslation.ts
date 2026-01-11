@@ -15,15 +15,13 @@ const translationCache = new Map<string, string>();
 // Track in-flight requests to prevent duplicates
 const pendingRequests = new Set<string>();
 
-// Global rate limiter - only allow N concurrent requests
-const MAX_CONCURRENT_REQUESTS = 3;
+// Global rate limiter - allow more concurrent requests for faster loading
+const MAX_CONCURRENT_REQUESTS = 8;
 let activeRequests = 0;
 let requestQueue: Array<{ fn: () => Promise<void>; priority: number }> = [];
-let lastLocaleChange = 0;
 
 // Clear queue and reset on locale change
 export function onLocaleChange() {
-  lastLocaleChange = Date.now();
   requestQueue = [];
   pendingRequests.clear();
 }
@@ -33,21 +31,20 @@ if (typeof window !== 'undefined') {
   window.addEventListener('locale-change', onLocaleChange);
 }
 
-async function processQueue() {
-  if (activeRequests >= MAX_CONCURRENT_REQUESTS || requestQueue.length === 0) return;
-  
-  // Sort by priority (lower = higher priority)
-  requestQueue.sort((a, b) => a.priority - b.priority);
-  
-  const next = requestQueue.shift();
-  if (next) {
-    activeRequests++;
-    try {
-      await next.fn();
-    } finally {
-      activeRequests--;
-      // Small delay between requests
-      setTimeout(processQueue, 200);
+function processQueue() {
+  // Process multiple items at once up to the limit
+  while (activeRequests < MAX_CONCURRENT_REQUESTS && requestQueue.length > 0) {
+    // Sort by priority (lower = higher priority)
+    requestQueue.sort((a, b) => a.priority - b.priority);
+    
+    const next = requestQueue.shift();
+    if (next) {
+      activeRequests++;
+      next.fn().finally(() => {
+        activeRequests--;
+        // Immediately try to process more
+        processQueue();
+      });
     }
   }
 }

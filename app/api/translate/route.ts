@@ -15,7 +15,7 @@ const GOOGLE_TRANSLATE_URL = 'https://translation.googleapis.com/language/transl
 
 // Rate limiting: track requests per IP
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
-const MAX_REQUESTS_PER_MINUTE = 100; // Increased for auto-translation
+const MAX_REQUESTS_PER_MINUTE = 200; // High limit for auto-translation
 const MAX_TEXT_LENGTH = 10000; // 10KB max per request
 
 interface TranslateRequest {
