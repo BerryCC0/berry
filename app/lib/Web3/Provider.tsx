@@ -16,6 +16,7 @@ import {
   metadata,
   projectId,
 } from "./config";
+import { mainnet } from "@reown/appkit/networks";
 
 // Create a query client for React Query
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ if (projectId) {
   createAppKit({
     adapters,
     networks: allNetworks,
+    defaultNetwork: mainnet,
     metadata,
     projectId,
     themeMode: "light",

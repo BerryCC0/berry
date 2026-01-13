@@ -22,6 +22,21 @@
   font-family: var(--berry-font-system);
 }
 
+/* Actor with avatar wrapper */
+.actorWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .actor {
   font-weight: bold;
   color: var(--berry-text-primary);

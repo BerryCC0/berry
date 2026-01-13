@@ -12,7 +12,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useEnsName } from 'wagmi';
+import { useEnsName, useEnsAvatar } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { formatEther } from 'viem';
 import { NounImageById } from '@/app/lib/nouns/components';
@@ -130,6 +130,11 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
     chainId: mainnet.id,
   });
 
+  const { data: actorAvatar } = useEnsAvatar({
+    name: actorEns || undefined,
+    chainId: mainnet.id,
+  });
+
   const { data: toAddressEns } = useEnsName({
     address: item.toAddress as `0x${string}` | undefined,
     chainId: mainnet.id,
@@ -162,6 +167,18 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
 
   const displayName = formatAddress(item.actor, actorEns);
   const timeAgo = formatTimeAgo(Number(item.timestamp));
+
+  // Render actor with optional avatar
+  const renderActor = (avatar?: string | null, name?: string, onClick?: () => void) => (
+    <span className={styles.actorWrapper}>
+      {avatar && (
+        <img src={avatar} alt="" className={styles.avatar} />
+      )}
+      <span className={styles.actor} onClick={onClick} role="button" tabIndex={0}>
+        {name}
+      </span>
+    </span>
+  );
 
   // Parse noun ID for image rendering
   const nounId = item.nounId ? parseInt(item.nounId, 10) : undefined;
@@ -257,9 +274,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         return (
           <>
             <div className={styles.header}>
-              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                {displayName}
-              </span>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
               {repostInfo ? (
                 <>
                   <span className={styles.action}>reposted a</span>
@@ -299,9 +314,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         return (
           <>
             <div className={styles.header}>
-              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                {displayName}
-              </span>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
               {repostInfo ? (
                 <>
                   <span className={styles.action}>reposted a</span>
@@ -335,9 +348,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
       case 'proposal_created':
         return (
           <div className={styles.header}>
-            <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-              {displayName}
-            </span>
+            {renderActor(actorAvatar, displayName, handleActorClick)}
             <span className={styles.action}>created</span>
             <span className={styles.badge} data-type="proposal">Proposal</span>
             {item.proposalTitle && (
@@ -392,9 +403,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         return (
           <>
             <div className={styles.header}>
-              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                {displayName}
-              </span>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
               <span className={styles.action}>updated</span>
               <span className={styles.badge} data-type="proposal">Proposal</span>
               {item.proposalTitle && (
@@ -412,9 +421,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
       case 'candidate_created':
         return (
           <div className={styles.header}>
-            <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-              {displayName}
-            </span>
+            {renderActor(actorAvatar, displayName, handleActorClick)}
             <span className={styles.action}>created</span>
             <span className={styles.badge} data-type="candidate">Candidate</span>
             {item.candidateSlug && (
@@ -429,9 +436,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         return (
           <>
             <div className={styles.header}>
-              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                {displayName}
-              </span>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
               {repostInfo ? (
                 <>
                   <span className={styles.action}>reposted a</span>
@@ -466,9 +471,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         return (
           <>
             <div className={styles.header}>
-              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                {displayName}
-              </span>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
               <span className={styles.action}>sponsored</span>
               {item.candidateTitle && (
                 <span className={styles.titleLink}>
@@ -486,9 +489,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         return (
           <>
             <div className={styles.header}>
-              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                {displayName}
-              </span>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
               <span className={styles.action}>updated</span>
               <span className={styles.badge} data-type="candidate">Candidate</span>
               {item.candidateSlug && (
@@ -509,9 +510,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
           const priceInEth = Number(formatEther(BigInt(item.salePrice))).toFixed(3);
           return (
             <div className={styles.header}>
-              <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                {displayName}
-              </span>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
               <span className={styles.action}>sold</span>
               {nounId !== undefined && (
                 <NounImageById id={nounId} size={18} className={styles.nounImageInline} />
