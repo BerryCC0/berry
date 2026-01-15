@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useTranslation } from '@/OS/lib/i18n';
 import { useProposal } from '../hooks';
@@ -65,8 +65,20 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const { t } = useTranslation();
   const { data: proposal, isLoading, error } = useProposal(proposalId);
   const { isConnected } = useAccount();
-  const { voteRefundable, isPending } = useVote();
+  const { voteRefundable, isPending, isConfirming, isSuccess, hash } = useVote();
   const [reason, setReason] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Clear reason and show success message when transaction is confirmed
+  useEffect(() => {
+    if (isSuccess && hash) {
+      setReason('');
+      setShowSuccess(true);
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => setShowSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, hash]);
   
   // Only simulate for proposals that could still be executed
   const shouldSkipSimulation = proposal ? SKIP_SIMULATION_STATUSES.includes(proposal.status) : false;
@@ -320,33 +332,47 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
           {/* Vote Actions */}
           {isConnected && isActive && (
             <div className={styles.voteActions}>
+              {/* Transaction Status */}
+              {(isPending || isConfirming || showSuccess) && (
+                <div className={`${styles.txStatus} ${
+                  showSuccess ? styles.txSuccess : 
+                  isConfirming ? styles.txConfirming : 
+                  styles.txPending
+                }`}>
+                  {isPending && '⏳ Waiting for wallet...'}
+                  {isConfirming && !isPending && '🔄 Confirming transaction...'}
+                  {showSuccess && '✓ Vote submitted successfully!'}
+                </div>
+              )}
+              
               <textarea
                 className={styles.reasonInput}
                 placeholder="Optional: Add a reason for your vote..."
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
+                disabled={isPending || isConfirming}
               />
               <div className={styles.voteButtons}>
                 <button 
                   className={`${styles.voteButton} ${styles.voteFor}`}
                   onClick={() => handleVote(1)}
-                  disabled={isPending}
+                  disabled={isPending || isConfirming}
                 >
-                  Vote For
+                  {isPending || isConfirming ? '...' : 'Vote For'}
                 </button>
                 <button 
                   className={`${styles.voteButton} ${styles.voteAgainst}`}
                   onClick={() => handleVote(0)}
-                  disabled={isPending}
+                  disabled={isPending || isConfirming}
                 >
-                  Vote Against
+                  {isPending || isConfirming ? '...' : 'Vote Against'}
                 </button>
                 <button 
                   className={`${styles.voteButton} ${styles.voteAbstain}`}
                   onClick={() => handleVote(2)}
-                  disabled={isPending}
+                  disabled={isPending || isConfirming}
                 >
-                  Abstain
+                  {isPending || isConfirming ? '...' : 'Abstain'}
                 </button>
               </div>
             </div>

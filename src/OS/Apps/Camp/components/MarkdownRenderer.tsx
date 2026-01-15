@@ -340,8 +340,29 @@ function createMarkdownComponents(onImageClick: (src: string, alt: string) => vo
     return <p className={styles.p}>{children}</p>;
   },
 
-  // Links - always render as links (video detection happens at paragraph level)
+  // Links - render images/GIFs inline, otherwise as regular links
   a: ({ href, children }) => {
+    // Check if this link points to an image/GIF URL
+    // and the link text is the URL itself (not a custom label like [click here](url))
+    const linkText = typeof children === 'string' ? children : '';
+    const isRawUrl = href && linkText === href;
+    
+    if (isRawUrl && href && isImageUrl(href)) {
+      const isGif = isGifUrl(href);
+      return (
+        <span className={styles.inlineImageContainer}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src={href} 
+            alt="" 
+            className={isGif ? styles.gifImage : styles.image} 
+            loading="lazy"
+            onClick={() => onImageClick(href, '')}
+          />
+        </span>
+      );
+    }
+    
     return (
       <a 
         href={href} 

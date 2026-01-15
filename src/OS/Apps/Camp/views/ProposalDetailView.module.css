@@ -255,17 +255,51 @@
   margin-bottom: 16px;
 }
 
+.txStatus {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.txPending {
+  background: color-mix(in srgb, var(--berry-warning) 15%, transparent);
+  border: 1px solid var(--berry-warning);
+  color: var(--berry-warning);
+}
+
+.txConfirming {
+  background: color-mix(in srgb, var(--berry-accent) 15%, transparent);
+  border: 1px solid var(--berry-accent);
+  color: var(--berry-accent);
+}
+
+.txSuccess {
+  background: color-mix(in srgb, var(--berry-success) 15%, transparent);
+  border: 1px solid var(--berry-success);
+  color: var(--berry-success);
+}
+
 .reasonInput {
   width: 100%;
-  height: 60px;
+  min-height: 80px;
+  max-height: 200px;
   padding: 8px;
   font-family: var(--berry-font-system);
   font-size: 11px;
   border: 1px solid var(--berry-input-border);
   background: var(--berry-input-bg);
   color: var(--berry-text-primary);
-  resize: none;
+  resize: vertical;
   margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.reasonInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .voteButtons {

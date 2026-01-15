@@ -82,6 +82,12 @@
   margin: 12px 0;
 }
 
+/* Inline image container - for images embedded within text */
+.inlineImageContainer {
+  display: block;
+  margin: 8px 0;
+}
+
 .image {
   max-width: 400px !important;
   max-height: 250px !important;
