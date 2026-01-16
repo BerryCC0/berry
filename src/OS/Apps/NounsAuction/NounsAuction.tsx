@@ -10,7 +10,7 @@ import { NounImage } from '@/app/lib/nouns/components';
 import type { AppComponentProps } from '@/OS/types/app';
 import { useTranslation } from '@/OS/lib/i18n';
 import { useCurrentAuction, useAuctionById, useNounById } from './hooks/useAuctionData';
-import { AuctionNavigation, BidButton, BidHistory, TraitsList } from './components';
+import { AuctionNavigation, BidButton, BidHistory, SettlerDisplay, TraitsList } from './components';
 import {
   formatCountdown,
   formatTimestamp,
@@ -203,6 +203,7 @@ export function NounsAuction({ windowId, initialState }: AppComponentProps) {
               <img src="/icons/loading.gif" alt="Loading..." className={styles.placeholderImage} />
             </div>
           )}
+          <SettlerDisplay nounId={displayAuction?.noun?.id || null} loading={loading} />
           <TraitsList seed={displayAuction?.noun?.seed || null} loading={loading} />
         </div>
 

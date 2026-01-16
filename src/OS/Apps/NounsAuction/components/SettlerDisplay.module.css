@@ -1,0 +1,41 @@
+/**
+ * SettlerDisplay Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.settlerDisplay {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+}
+
+.label {
+  color: var(--berry-text-secondary);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.settler {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.value {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
