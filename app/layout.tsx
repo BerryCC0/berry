@@ -26,6 +26,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  // Default theme color - will be updated dynamically by applySettings
+  themeColor: "#008080",
 };
 
 export default function RootLayout({

@@ -7,6 +7,20 @@ import type { SystemSettings, CustomTheme } from "@/OS/types/settings";
 import { BUILT_IN_THEMES } from "./defaults";
 
 /**
+ * Update the theme-color meta tag for mobile browser chrome
+ * This controls the color of the status bar area on iOS Safari
+ */
+function updateThemeColorMeta(color: string) {
+  let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.appendChild(meta);
+  }
+  meta.content = color;
+}
+
+/**
  * Apply appearance settings to the document
  */
 export function applyAppearance(appearance: SystemSettings["appearance"]) {
@@ -24,6 +38,9 @@ export function applyAppearance(appearance: SystemSettings["appearance"]) {
   root.style.setProperty("--berry-accent", appearance.accentColor);
   root.style.setProperty("--berry-primary", appearance.accentColor);
 
+  // Track the effective desktop background color for theme-color meta
+  let effectiveDesktopBg = getComputedStyle(root).getPropertyValue('--berry-desktop-bg').trim() || '#008080';
+
   // Wallpaper - can be a color (#hex) or image URL
   if (appearance.wallpaper && appearance.wallpaper !== "none") {
     const isColor = appearance.wallpaper.startsWith("#") || appearance.wallpaper.startsWith("rgb");
@@ -33,16 +50,23 @@ export function applyAppearance(appearance: SystemSettings["appearance"]) {
       root.style.setProperty("--berry-desktop-bg", appearance.wallpaper);
       root.style.removeProperty("--berry-wallpaper");
       root.style.setProperty("--berry-wallpaper-stipple", "0.3"); // Subtle stipple on solid colors
+      effectiveDesktopBg = appearance.wallpaper;
     } else {
-      // Image URL wallpaper
+      // Image URL wallpaper - use a dark color as the background behind the image
       root.style.setProperty("--berry-wallpaper", `url(${appearance.wallpaper})`);
       root.style.setProperty("--berry-wallpaper-stipple", "0"); // No stipple on images
+      // Set a neutral dark background color that shows behind/around the image
+      root.style.setProperty("--berry-desktop-bg", "#1a1a1a");
+      effectiveDesktopBg = '#1a1a1a';
     }
   } else {
     // No wallpaper - use theme's default desktop color with stipple
     root.style.removeProperty("--berry-wallpaper");
     root.style.setProperty("--berry-wallpaper-stipple", "1"); // Full stipple
   }
+
+  // Update browser chrome color on mobile
+  updateThemeColorMeta(effectiveDesktopBg);
 
   // Font size
   const fontSizes = { small: "12px", default: "14px", large: "16px" };

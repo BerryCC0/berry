@@ -149,19 +149,19 @@ html,
 body {
   height: 100%;
   width: 100%;
+  /* Apply background to both html and body for full coverage on iOS */
+  background-color: var(--berry-desktop-bg);
+  background-image: var(--berry-wallpaper, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 body {
   font-family: var(--berry-font-system);
   font-size: var(--berry-font-size-base);
   color: var(--berry-text-primary);
-  /* Base desktop background color */
-  background-color: var(--berry-desktop-bg);
-  /* Wallpaper image (set via CSS variable by applySettings) */
-  background-image: var(--berry-wallpaper, none);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
