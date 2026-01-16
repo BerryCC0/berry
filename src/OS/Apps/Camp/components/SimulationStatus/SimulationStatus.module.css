@@ -304,3 +304,23 @@
   overflow-x: auto;
   white-space: pre;
 }
+
+/* Tenderly link */
+.tenderlyLink {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: var(--berry-accent, #6366f1);
+  text-decoration: none;
+  border: 1px solid var(--berry-border, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.tenderlyLink:hover {
+  background: var(--berry-accent, #6366f1);
+  color: white;
+  border-color: var(--berry-accent, #6366f1);
+}

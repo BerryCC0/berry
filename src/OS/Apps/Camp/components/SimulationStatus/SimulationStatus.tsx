@@ -8,10 +8,46 @@
 import { useMemo, useState } from 'react';
 import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
+import { keccak256, toBytes, slice } from 'viem';
 import type { SimulationResult, TransactionResult, ProposalAction } from '../../hooks/useSimulation';
 import { decodeTransactions, type DecodedTransaction } from '../../utils/transactionDecoder';
 import { NounImageById } from '@/app/lib/nouns/components';
 import styles from './SimulationStatus.module.css';
+
+// Nouns DAO Executor (Timelock) - this is the address that executes proposals
+const NOUNS_EXECUTOR = '0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71';
+
+/**
+ * Encode function signature and calldata into transaction data
+ */
+function encodeTransactionData(signature: string, calldata: string): string {
+  if (!signature) {
+    return calldata || '0x';
+  }
+  const selector = slice(keccak256(toBytes(signature)), 0, 4);
+  const calldataWithoutPrefix = calldata.startsWith('0x') ? calldata.slice(2) : calldata;
+  return selector + calldataWithoutPrefix;
+}
+
+/**
+ * Generate Tenderly simulator URL for a transaction
+ */
+function getTenderlySimulatorUrl(action: ProposalAction): string {
+  const data = encodeTransactionData(action.signature, action.calldata);
+  const value = action.value === '0' ? '0' : action.value;
+  
+  const params = new URLSearchParams({
+    network: '1', // Ethereum mainnet
+    from: NOUNS_EXECUTOR,
+    contractAddress: action.target,
+    value: value,
+    rawFunctionInput: data,
+    gas: '8000000',
+    gasPrice: '0',
+  });
+  
+  return `https://dashboard.tenderly.co/simulator/new?${params.toString()}`;
+}
 
 interface SimulationStatusProps {
   result: SimulationResult | undefined;
@@ -57,10 +93,12 @@ function TransactionRow({
   decoded,
   result, 
   index,
+  action,
 }: { 
   decoded: DecodedTransaction;
   result?: TransactionResult; 
   index: number;
+  action?: ProposalAction;
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const success = result?.success !== false;
@@ -137,6 +175,19 @@ function TransactionRow({
         <div className={styles.transactionError}>
           {result.errorMessage || result.error || 'Transaction failed'}
         </div>
+      )}
+      
+      {/* Tenderly link for each transaction */}
+      {action && (
+        <a 
+          href={getTenderlySimulatorUrl(action)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.tenderlyLink}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Verify on Tenderly →
+        </a>
       )}
     </div>
   );
@@ -346,7 +397,8 @@ export function SimulationStatus({
                   key={index} 
                   decoded={decodedTxns[index] || { title: 'Unknown', target: action.target, functionName: '', value: action.value }}
                   result={result.results[index]} 
-                  index={index} 
+                  index={index}
+                  action={action}
                 />
               ))}
             </div>
