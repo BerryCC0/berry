@@ -31,20 +31,21 @@ interface MetaProposeEditorProps {
   validationErrors: ValidationError[];
 }
 
-// Templates that can be used inside meta-propose (exclude meta and custom initially)
-const INNER_TEMPLATE_CATEGORIES = ['treasury', 'swaps', 'nouns', 'payments', 'admin'] as const;
+// Templates that can be used inside meta-propose (includes meta for recursion!)
+const INNER_TEMPLATE_CATEGORIES = ['treasury', 'swaps', 'nouns', 'payments', 'admin', 'meta'] as const;
 
 function MetaProposeEditor({ fieldValues, updateField, disabled, validationErrors }: MetaProposeEditorProps) {
   const [innerTemplateId, setInnerTemplateId] = useState<ActionTemplateType | ''>('');
   const [innerFieldValues, setInnerFieldValues] = useState<TemplateFieldValues>({});
   
-  // Get available templates for inner action (exclude meta to prevent infinite recursion)
+  // Get available templates for inner action (includes meta for proposalception!)
   const innerTemplateGroups = INNER_TEMPLATE_CATEGORIES.map(category => ({
     label: category === 'treasury' ? 'Treasury Transfers' :
            category === 'swaps' ? 'Token Buyer' :
            category === 'nouns' ? 'Nouns Token' :
            category === 'payments' ? 'Streams' :
-           category === 'admin' ? 'DAO Admin' : category,
+           category === 'admin' ? 'DAO Admin' :
+           category === 'meta' ? 'Meta (Recursive)' : category,
     options: getTemplatesByCategory(category).map(t => ({
       value: t.id,
       label: t.name,

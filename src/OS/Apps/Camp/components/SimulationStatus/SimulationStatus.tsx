@@ -94,11 +94,14 @@ function TransactionRow({
   result, 
   index,
   action,
+  showTenderlyLink = false,
 }: { 
   decoded: DecodedTransaction;
   result?: TransactionResult; 
   index: number;
   action?: ProposalAction;
+  /** Only show per-transaction Tenderly link when there's no shared simulation URL */
+  showTenderlyLink?: boolean;
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const success = result?.success !== false;
@@ -177,8 +180,8 @@ function TransactionRow({
         </div>
       )}
       
-      {/* Tenderly link for each transaction */}
-      {action && (
+      {/* Tenderly link for each transaction (only when no shared URL) */}
+      {showTenderlyLink && action && (
         <a 
           href={getTenderlySimulatorUrl(action)}
           target="_blank"
@@ -399,22 +402,36 @@ export function SimulationStatus({
                   result={result.results[index]} 
                   index={index}
                   action={action}
+                  showTenderlyLink={!result.shareUrl}
                 />
               ))}
             </div>
           )}
           
           <div className={styles.footer}>
-            <span className={styles.icon}>
-              {result.success ? '✓' : '✗'}
-            </span>
-            <span className={styles.statusText}>
-              {result.success ? 'Simulation Passed' : 'Simulation Failed'}
-            </span>
-            {parseInt(result.totalGasUsed, 10) > 0 && (
-              <span className={styles.gasTotal}>
-                {formatGas(result.totalGasUsed)} total gas
+            <div className={styles.footerTop}>
+              <span className={styles.icon}>
+                {result.success ? '✓' : '✗'}
               </span>
+              <span className={styles.statusText}>
+                {result.success ? 'Simulation Passed' : 'Simulation Failed'}
+              </span>
+              {parseInt(result.totalGasUsed, 10) > 0 && (
+                <span className={styles.gasTotal}>
+                  {formatGas(result.totalGasUsed)} total gas
+                </span>
+              )}
+            </div>
+            {/* Shareable Tenderly link (when Dashboard API is configured) */}
+            {result.shareUrl && (
+              <a 
+                href={result.shareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.shareLink}
+              >
+                View full simulation on Tenderly →
+              </a>
             )}
           </div>
         </div>

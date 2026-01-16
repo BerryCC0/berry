@@ -172,3 +172,47 @@
   width: 100%;
 }
 
+/* Textarea for multi-line input */
+.textarea {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.15s;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.textarea:disabled {
+  background: var(--berry-bg-tertiary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.textarea::placeholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+}
+
+/* Nested action section for meta-propose */
+.nestedActionSection {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--berry-bg-tertiary);
+  border: 1px dashed var(--berry-border);
+  border-radius: 8px;
+}
+
+.nestedFields {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--berry-border);
+}

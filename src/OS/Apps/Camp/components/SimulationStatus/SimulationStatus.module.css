@@ -305,7 +305,7 @@
   white-space: pre;
 }
 
-/* Tenderly link */
+/* Tenderly link (per-transaction, fallback mode) */
 .tenderlyLink {
   display: inline-block;
   margin-top: 8px;
@@ -323,4 +323,30 @@
   background: var(--berry-accent, #6366f1);
   color: white;
   border-color: var(--berry-accent, #6366f1);
+}
+
+/* Footer layout */
+.footerTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Shareable simulation link (full simulation) */
+.shareLink {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  background: var(--berry-accent, #6366f1);
+  transition: all 0.15s ease;
+}
+
+.shareLink:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }

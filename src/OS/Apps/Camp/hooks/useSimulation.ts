@@ -26,6 +26,8 @@ export interface SimulationResult {
   results: TransactionResult[];
   totalGasUsed: string;
   error?: string;
+  /** Shareable Tenderly simulation URL (if Dashboard API is configured) */
+  shareUrl?: string;
 }
 
 async function simulateActions(actions: ProposalAction[]): Promise<SimulationResult> {
