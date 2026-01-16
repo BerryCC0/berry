@@ -151,8 +151,20 @@ function MetaProposeEditor({ fieldValues, updateField, disabled, validationError
           disabled={disabled}
         />
         
-        {/* Inner Template Fields */}
-        {innerTemplate && innerTemplate.id !== 'custom' && (
+        {/* Recursive MetaProposeEditor for nested meta-proposals */}
+        {innerTemplate?.id === 'meta-propose' && (
+          <div className={styles.nestedFields}>
+            <MetaProposeEditor
+              fieldValues={innerFieldValues}
+              updateField={handleInnerFieldChange}
+              disabled={disabled}
+              validationErrors={[]}
+            />
+          </div>
+        )}
+        
+        {/* Inner Template Fields (non-meta templates) */}
+        {innerTemplate && innerTemplate.id !== 'custom' && innerTemplate.id !== 'meta-propose' && (
           <div className={styles.nestedFields}>
             {innerTemplate.fields.map(field => (
               <div key={field.name} className={styles.inputGroup}>
