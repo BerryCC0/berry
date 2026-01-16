@@ -5,9 +5,10 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useEnsName, useEnsAvatar } from 'wagmi';
+import { useState, useMemo } from 'react';
+import { useEnsName, useEnsAvatar, useEnsAddress } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
+import { normalize } from 'viem/ens';
 import { NounImage } from '@/app/lib/nouns/components';
 import { useVoter } from '../hooks';
 import { getSupportLabel, getSupportColor } from '../types';
@@ -15,6 +16,19 @@ import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { DelegateModal } from '../components/DelegateModal';
 import styles from './VoterDetailView.module.css';
+
+/**
+ * Check if input looks like an ENS name (not a hex address)
+ */
+function isEnsName(input: string): boolean {
+  // If it starts with 0x and is 42 chars, it's an address
+  if (input.startsWith('0x') && input.length === 42) {
+    return false;
+  }
+  // ENS names typically end with .eth but can have other TLDs
+  // If it contains a dot and doesn't start with 0x, treat as ENS
+  return input.includes('.') || !input.startsWith('0x');
+}
 
 interface VoterDetailViewProps {
   address: string;
@@ -51,18 +65,40 @@ function AddressLink({
   );
 }
 
-export function VoterDetailView({ address, onNavigate, onBack, showBackButton = true, isOwnAccount = false }: VoterDetailViewProps) {
+export function VoterDetailView({ address: addressInput, onNavigate, onBack, showBackButton = true, isOwnAccount = false }: VoterDetailViewProps) {
   const [showDelegateModal, setShowDelegateModal] = useState(false);
-  const { data: voter, isLoading, error } = useVoter(address);
+  
+  // Determine if input is ENS name or address
+  const inputIsEns = useMemo(() => isEnsName(addressInput), [addressInput]);
+  
+  // If input is ENS, resolve to address
+  const { data: resolvedAddress, isLoading: isResolvingEns } = useEnsAddress({
+    name: inputIsEns ? normalize(addressInput) : undefined,
+    chainId: mainnet.id,
+  });
+  
+  // The actual address to use for API calls
+  const address = inputIsEns ? (resolvedAddress || null) : addressInput;
+  
+  // Fetch voter data using resolved address
+  const { data: voter, isLoading: isLoadingVoter, error } = useVoter(address);
+  
+  // Get ENS name for display (if we have an address)
   const { data: ensName } = useEnsName({
-    address: address as `0x${string}`,
+    address: address as `0x${string}` | undefined,
     chainId: mainnet.id,
   });
   const { data: ensAvatar } = useEnsAvatar({
-    name: ensName || undefined,
+    name: ensName || (inputIsEns ? addressInput : undefined),
   });
 
-  const displayName = ensName || `${address.slice(0, 6)}...${address.slice(-4)}`;
+  // Combined loading state
+  const isLoading = isResolvingEns || isLoadingVoter;
+  
+  // Display name: use the ENS from URL if provided, or resolved ENS, or truncated address
+  const displayName = inputIsEns 
+    ? addressInput 
+    : (ensName || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''));
   
   // Get owned Nouns
   const nounsOwned = voter?.nounsOwned || [];
@@ -79,6 +115,18 @@ export function VoterDetailView({ address, onNavigate, onBack, showBackButton = 
   // Show delegate button if viewing own account and they OWN Nouns
   const canDelegate = isOwnAccount && nounsOwned.length > 0;
 
+  // Handle ENS resolution failure
+  if (inputIsEns && !isResolvingEns && !resolvedAddress) {
+    return (
+      <div className={styles.error}>
+        {showBackButton && (
+          <button className={styles.backButton} onClick={onBack}>← Back</button>
+        )}
+        <p>Could not resolve ENS name: {addressInput}</p>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className={styles.error}>
@@ -90,13 +138,13 @@ export function VoterDetailView({ address, onNavigate, onBack, showBackButton = 
     );
   }
 
-  if (isLoading || !voter) {
+  if (isLoading || !voter || !address) {
     return (
       <div className={styles.loading}>
         {showBackButton && (
           <button className={styles.backButton} onClick={onBack}>← Back</button>
         )}
-        <p>Loading voter...</p>
+        <p>{isResolvingEns ? 'Resolving ENS name...' : 'Loading voter...'}</p>
       </div>
     );
   }
