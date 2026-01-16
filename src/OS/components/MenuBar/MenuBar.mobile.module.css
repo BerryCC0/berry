@@ -99,6 +99,13 @@
   font-size: 10px;
 }
 
+.walletAvatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
 .walletAddress {
   font-family: var(--berry-font-mono, monospace);
   font-size: 11px;

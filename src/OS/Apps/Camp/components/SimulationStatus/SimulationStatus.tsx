@@ -400,7 +400,7 @@ export function SimulationStatus({
                   key={index} 
                   decoded={decodedTxns[index] || { title: 'Unknown', target: action.target, functionName: '', value: action.value }}
                   result={result.results[index]} 
-                  index={index}
+                  index={index} 
                   action={action}
                   showTenderlyLink={!result.shareUrl}
                 />
@@ -410,16 +410,16 @@ export function SimulationStatus({
           
           <div className={styles.footer}>
             <div className={styles.footerTop}>
-              <span className={styles.icon}>
-                {result.success ? '✓' : '✗'}
+            <span className={styles.icon}>
+              {result.success ? '✓' : '✗'}
+            </span>
+            <span className={styles.statusText}>
+              {result.success ? 'Simulation Passed' : 'Simulation Failed'}
+            </span>
+            {parseInt(result.totalGasUsed, 10) > 0 && (
+              <span className={styles.gasTotal}>
+                {formatGas(result.totalGasUsed)} total gas
               </span>
-              <span className={styles.statusText}>
-                {result.success ? 'Simulation Passed' : 'Simulation Failed'}
-              </span>
-              {parseInt(result.totalGasUsed, 10) > 0 && (
-                <span className={styles.gasTotal}>
-                  {formatGas(result.totalGasUsed)} total gas
-                </span>
               )}
             </div>
             {/* Shareable Tenderly link (when Dashboard API is configured) */}

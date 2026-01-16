@@ -147,78 +147,78 @@ async function simulateWithRpc(
   actions: ProposalAction[],
   from: string
 ): Promise<SimulationResponse> {
-  const tenderlyUrl = process.env.TENDERLY_NODE_URL;
-  if (!tenderlyUrl) {
+    const tenderlyUrl = process.env.TENDERLY_NODE_URL;
+    if (!tenderlyUrl) {
     throw new Error('Tenderly not configured');
-  }
-  
+    }
+    
   // Build transaction objects for Tenderly RPC
-  const transactions = actions.map(action => ({
-    from,
-    to: action.target,
-    value: action.value === '0' ? '0x0' : `0x${BigInt(action.value).toString(16)}`,
-    data: encodeTransactionData(action.signature, action.calldata),
-    gas: '0x1000000', // 16M gas limit
-  }));
-  
-  // Use bundled simulation for multiple transactions
-  const rpcMethod = transactions.length === 1 
-    ? 'tenderly_simulateTransaction' 
-    : 'tenderly_simulateBundle';
-  
-  const rpcParams = transactions.length === 1
-    ? [transactions[0], 'latest']
-    : [transactions, 'latest'];
-  
-  const response = await fetch(tenderlyUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      id: 1,
-      jsonrpc: '2.0',
-      method: rpcMethod,
-      params: rpcParams,
-    }),
-  });
-  
-  if (!response.ok) {
+    const transactions = actions.map(action => ({
+      from,
+      to: action.target,
+      value: action.value === '0' ? '0x0' : `0x${BigInt(action.value).toString(16)}`,
+      data: encodeTransactionData(action.signature, action.calldata),
+      gas: '0x1000000', // 16M gas limit
+    }));
+    
+    // Use bundled simulation for multiple transactions
+    const rpcMethod = transactions.length === 1 
+      ? 'tenderly_simulateTransaction' 
+      : 'tenderly_simulateBundle';
+    
+    const rpcParams = transactions.length === 1
+      ? [transactions[0], 'latest']
+      : [transactions, 'latest'];
+    
+    const response = await fetch(tenderlyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: '2.0',
+        method: rpcMethod,
+        params: rpcParams,
+      }),
+    });
+    
+    if (!response.ok) {
     throw new Error(`Tenderly request failed: ${response.status}`);
-  }
-  
-  const rpcResponse = await response.json();
-  
-  if (rpcResponse.error) {
+    }
+    
+    const rpcResponse = await response.json();
+    
+    if (rpcResponse.error) {
     throw new Error(rpcResponse.error.message || 'Simulation failed');
-  }
-  
-  // Parse results
-  const rawResults = transactions.length === 1 
-    ? [rpcResponse.result] 
-    : rpcResponse.result;
-  
-  const results: TransactionResult[] = rawResults.map((result: {
-    status: boolean;
-    gasUsed: string;
-    error?: { message?: string };
-    errorMessage?: string;
-  }) => ({
-    success: result.status === true,
-    gasUsed: result.gasUsed || '0',
-    error: result.error?.message,
-    errorMessage: result.errorMessage,
-  }));
-  
-  const allSuccess = results.every(r => r.success);
-  const totalGasUsed = results.reduce((sum, r) => {
-    const gas = parseInt(r.gasUsed, 16) || 0;
-    return sum + gas;
-  }, 0);
-  
+    }
+    
+    // Parse results
+    const rawResults = transactions.length === 1 
+      ? [rpcResponse.result] 
+      : rpcResponse.result;
+    
+    const results: TransactionResult[] = rawResults.map((result: {
+      status: boolean;
+      gasUsed: string;
+      error?: { message?: string };
+      errorMessage?: string;
+    }) => ({
+      success: result.status === true,
+      gasUsed: result.gasUsed || '0',
+      error: result.error?.message,
+      errorMessage: result.errorMessage,
+    }));
+    
+    const allSuccess = results.every(r => r.success);
+    const totalGasUsed = results.reduce((sum, r) => {
+      const gas = parseInt(r.gasUsed, 16) || 0;
+      return sum + gas;
+    }, 0);
+    
   return {
-    success: allSuccess,
-    results,
-    totalGasUsed: totalGasUsed.toString(),
-  };
+      success: allSuccess,
+      results,
+      totalGasUsed: totalGasUsed.toString(),
+    };
 }
 
 export async function POST(request: NextRequest) {
