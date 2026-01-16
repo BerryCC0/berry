@@ -814,7 +814,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'meta-propose',
     category: 'meta',
     name: 'Create Proposal (Meta)',
-    description: 'Create a proposal that, when executed, creates another proposal 🤯',
+    description: 'Create a proposal that, when executed, creates another proposal',
     isMultiAction: false,
     fields: [
       {
@@ -833,38 +833,15 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         required: true,
         helpText: 'Full description/body of the inner proposal'
       },
+      // The inner action fields are handled specially by ActionTemplateEditor
+      // to show a nested template picker instead of raw fields
       {
-        name: 'innerTarget',
-        label: 'Inner Action Target',
-        type: 'address',
-        placeholder: '0x... or ENS name',
+        name: 'innerAction',
+        label: 'Inner Proposal Action',
+        type: 'text',
+        placeholder: '',
         required: true,
-        helpText: 'Contract address the inner proposal will call'
-      },
-      {
-        name: 'innerValue',
-        label: 'Inner Action ETH Value',
-        type: 'amount',
-        placeholder: '0',
-        required: false,
-        validation: { min: 0, decimals: 18 },
-        helpText: 'ETH to send with the inner action (usually 0)'
-      },
-      {
-        name: 'innerSignature',
-        label: 'Inner Action Signature',
-        type: 'text',
-        placeholder: 'e.g., transfer(address,uint256)',
-        required: false,
-        helpText: 'Function signature (leave empty if using raw calldata)'
-      },
-      {
-        name: 'innerCalldata',
-        label: 'Inner Action Calldata',
-        type: 'text',
-        placeholder: '0x',
-        required: false,
-        helpText: 'Encoded function parameters'
+        helpText: 'The action the inner proposal will execute'
       }
     ]
   },
@@ -1477,18 +1454,30 @@ export function generateActionsFromTemplate(
       const innerDescription = fieldValues.innerDescription || '';
       const innerFullDescription = `# ${innerTitle}\n\n${innerDescription}`;
       
-      const innerTarget = fieldValues.innerTarget as Address || '0x0000000000000000000000000000000000000000';
-      const innerValue = parseEther(fieldValues.innerValue || '0');
-      const innerSignature = fieldValues.innerSignature || '';
-      const innerCalldata = fieldValues.innerCalldata || '0x';
+      // Parse the inner action from JSON (stored by nested template editor)
+      let innerActions: ProposalAction[] = [];
+      try {
+        if (fieldValues.innerAction) {
+          innerActions = JSON.parse(fieldValues.innerAction);
+        }
+      } catch {
+        // If parsing fails, use empty action
+        innerActions = [{ target: '', value: '0', signature: '', calldata: '0x' }];
+      }
+      
+      // Extract arrays from inner actions
+      const innerTargets = innerActions.map(a => (a.target || '0x0000000000000000000000000000000000000000') as Address);
+      const innerValues = innerActions.map(a => BigInt(a.value || '0'));
+      const innerSignatures = innerActions.map(a => a.signature || '');
+      const innerCalldatas = innerActions.map(a => (a.calldata || '0x') as `0x${string}`);
       
       // Encode the propose() call with nested arrays
       // propose(address[],uint256[],string[],bytes[],string,uint32)
       const calldata = encodeMetaProposeCalldata(
-        [innerTarget],
-        [innerValue],
-        [innerSignature],
-        [innerCalldata as `0x${string}`],
+        innerTargets,
+        innerValues,
+        innerSignatures,
+        innerCalldatas,
         innerFullDescription,
         BERRY_CLIENT_ID
       );

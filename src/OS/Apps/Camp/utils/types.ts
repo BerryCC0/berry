@@ -9,6 +9,15 @@ import type { ActionTemplateState, ProposalAction } from './actionTemplates';
 export type { ActionTemplateState };
 
 /**
+ * Validation Error
+ * Used by action template editors
+ */
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+/**
  * Proposal Draft
  * Represents a saved proposal draft
  */

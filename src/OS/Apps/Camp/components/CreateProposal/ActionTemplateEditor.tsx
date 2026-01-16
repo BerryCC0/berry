@@ -10,13 +10,306 @@ import {
   ActionTemplateType,
   ACTION_TEMPLATES,
   getTemplatesByCategory,
+  generateActionsFromTemplate,
+  type TemplateFieldValues,
 } from '../../utils/actionTemplates';
-import type { ActionTemplateState } from '../../utils/types';
+import type { ActionTemplateState, ValidationError } from '../../utils/types';
 import { useActionTemplate } from '../../utils/hooks/useActionTemplate';
 import { SmartActionEditor } from './SmartActionEditor';
 import { ActionTemplateDropdown } from './ActionTemplateDropdown';
 import { AddressInput } from './AddressInput';
 import styles from './ActionTemplateEditor.module.css';
+
+// ============================================================================
+// MetaProposeEditor - Nested editor for meta-proposal inner action
+// ============================================================================
+
+interface MetaProposeEditorProps {
+  fieldValues: TemplateFieldValues;
+  updateField: (field: string, value: string) => void;
+  disabled: boolean;
+  validationErrors: ValidationError[];
+}
+
+// Templates that can be used inside meta-propose (exclude meta and custom initially)
+const INNER_TEMPLATE_CATEGORIES = ['treasury', 'swaps', 'nouns', 'payments', 'admin'] as const;
+
+function MetaProposeEditor({ fieldValues, updateField, disabled, validationErrors }: MetaProposeEditorProps) {
+  const [innerTemplateId, setInnerTemplateId] = useState<ActionTemplateType | ''>('');
+  const [innerFieldValues, setInnerFieldValues] = useState<TemplateFieldValues>({});
+  
+  // Get available templates for inner action (exclude meta to prevent infinite recursion)
+  const innerTemplateGroups = INNER_TEMPLATE_CATEGORIES.map(category => ({
+    label: category === 'treasury' ? 'Treasury Transfers' :
+           category === 'swaps' ? 'Token Buyer' :
+           category === 'nouns' ? 'Nouns Token' :
+           category === 'payments' ? 'Streams' :
+           category === 'admin' ? 'DAO Admin' : category,
+    options: getTemplatesByCategory(category).map(t => ({
+      value: t.id,
+      label: t.name,
+      description: t.description
+    }))
+  }));
+  
+  // Add custom option
+  innerTemplateGroups.push({
+    label: 'Custom',
+    options: [{ value: 'custom', label: 'Custom Transaction', description: 'Build a custom contract call' }]
+  });
+  
+  const innerTemplate = innerTemplateId ? ACTION_TEMPLATES[innerTemplateId] : null;
+  
+  // Update the inner action JSON when template or fields change
+  const updateInnerAction = useCallback((templateId: ActionTemplateType | '', fields: TemplateFieldValues) => {
+    if (!templateId) {
+      updateField('innerAction', '');
+      return;
+    }
+    
+    try {
+      const actions = generateActionsFromTemplate(templateId, fields);
+      updateField('innerAction', JSON.stringify(actions));
+    } catch {
+      // If generation fails, store empty
+      updateField('innerAction', '');
+    }
+  }, [updateField]);
+  
+  const handleInnerTemplateChange = (templateId: string) => {
+    const newTemplateId = templateId as ActionTemplateType | '';
+    setInnerTemplateId(newTemplateId);
+    setInnerFieldValues({});
+    updateInnerAction(newTemplateId, {});
+  };
+  
+  const handleInnerFieldChange = (field: string, value: string) => {
+    const newFields = { ...innerFieldValues, [field]: value };
+    setInnerFieldValues(newFields);
+    if (innerTemplateId) {
+      updateInnerAction(innerTemplateId, newFields);
+    }
+  };
+
+  return (
+    <div className={styles.templateForm}>
+      {/* Inner Proposal Title */}
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>
+          Inner Proposal Title
+          <span className={styles.required}>*</span>
+        </label>
+        <input
+          type="text"
+          className={styles.input}
+          value={fieldValues.innerTitle || ''}
+          onChange={(e) => updateField('innerTitle', e.target.value)}
+          placeholder="Title for the proposal that will be created"
+          disabled={disabled}
+        />
+        <div className={styles.helpText}>
+          This will be the title of the NEW proposal created when this one executes
+        </div>
+      </div>
+      
+      {/* Inner Proposal Description */}
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>
+          Inner Proposal Description
+          <span className={styles.required}>*</span>
+        </label>
+        <textarea
+          className={styles.textarea}
+          value={fieldValues.innerDescription || ''}
+          onChange={(e) => updateField('innerDescription', e.target.value)}
+          placeholder="Description for the inner proposal"
+          disabled={disabled}
+          rows={4}
+        />
+        <div className={styles.helpText}>
+          Full description/body of the inner proposal
+        </div>
+      </div>
+      
+      {/* Inner Action Section */}
+      <div className={styles.nestedActionSection}>
+        <label className={styles.label}>
+          Inner Proposal Action
+          <span className={styles.required}>*</span>
+        </label>
+        <div className={styles.helpText} style={{ marginBottom: '8px' }}>
+          The action the inner proposal will execute when IT passes
+        </div>
+        
+        {/* Inner Template Dropdown */}
+        <ActionTemplateDropdown
+          groups={innerTemplateGroups}
+          value={innerTemplateId}
+          onChange={handleInnerTemplateChange}
+          placeholder="Select inner action type..."
+          disabled={disabled}
+        />
+        
+        {/* Inner Template Fields */}
+        {innerTemplate && innerTemplate.id !== 'custom' && (
+          <div className={styles.nestedFields}>
+            {innerTemplate.fields.map(field => (
+              <div key={field.name} className={styles.inputGroup}>
+                <label className={styles.label}>
+                  {field.label}
+                  {field.required && <span className={styles.required}>*</span>}
+                </label>
+                
+                {field.type === 'select' ? (
+                  <select
+                    className={styles.select}
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(e) => handleInnerFieldChange(field.name, e.target.value)}
+                    disabled={disabled}
+                  >
+                    {field.options?.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                ) : field.type === 'address' ? (
+                  <AddressInput
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(value) => handleInnerFieldChange(field.name, value)}
+                    placeholder={field.placeholder || '0x... or name.eth'}
+                    disabled={disabled}
+                    helpText={field.helpText}
+                  />
+                ) : field.type === 'token-select' ? (
+                  <select
+                    className={styles.select}
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(e) => handleInnerFieldChange(field.name, e.target.value)}
+                    disabled={disabled}
+                  >
+                    <option value="">Select token...</option>
+                    <option value='{"symbol":"USDC","address":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","decimals":6}'>USDC</option>
+                    <option value='{"symbol":"WETH","address":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","decimals":18}'>WETH</option>
+                    <option value='{"symbol":"DAI","address":"0x6B175474E89094C44Da98b954EedeAC495271d0F","decimals":18}'>DAI</option>
+                    <option value='{"symbol":"stETH","address":"0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84","decimals":18}'>stETH</option>
+                    <option value='{"symbol":"wstETH","address":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0","decimals":18}'>wstETH</option>
+                    <option value='{"symbol":"rETH","address":"0xae78736Cd615f374D3085123A210448E74Fc6393","decimals":18}'>rETH</option>
+                  </select>
+                ) : (
+                  <input
+                    type={field.type === 'number' || field.type === 'amount' ? 'number' : 'text'}
+                    className={styles.input}
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(e) => handleInnerFieldChange(field.name, e.target.value)}
+                    placeholder={field.placeholder}
+                    disabled={disabled}
+                  />
+                )}
+                
+                {field.helpText && field.type !== 'address' && (
+                  <div className={styles.helpText}>{field.helpText}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Custom inner action - show raw fields */}
+        {innerTemplate?.id === 'custom' && (
+          <div className={styles.nestedFields}>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Target Address</label>
+              <AddressInput
+                value={innerFieldValues.target || ''}
+                onChange={(value) => {
+                  const newFields = { ...innerFieldValues, target: value };
+                  setInnerFieldValues(newFields);
+                  updateField('innerAction', JSON.stringify([{
+                    target: value,
+                    value: innerFieldValues.value || '0',
+                    signature: innerFieldValues.signature || '',
+                    calldata: innerFieldValues.calldata || '0x'
+                  }]));
+                }}
+                placeholder="0x..."
+                disabled={disabled}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>ETH Value</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={innerFieldValues.value || '0'}
+                onChange={(e) => {
+                  const newFields = { ...innerFieldValues, value: e.target.value };
+                  setInnerFieldValues(newFields);
+                  updateField('innerAction', JSON.stringify([{
+                    target: innerFieldValues.target || '',
+                    value: e.target.value,
+                    signature: innerFieldValues.signature || '',
+                    calldata: innerFieldValues.calldata || '0x'
+                  }]));
+                }}
+                placeholder="0"
+                disabled={disabled}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Function Signature</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={innerFieldValues.signature || ''}
+                onChange={(e) => {
+                  const newFields = { ...innerFieldValues, signature: e.target.value };
+                  setInnerFieldValues(newFields);
+                  updateField('innerAction', JSON.stringify([{
+                    target: innerFieldValues.target || '',
+                    value: innerFieldValues.value || '0',
+                    signature: e.target.value,
+                    calldata: innerFieldValues.calldata || '0x'
+                  }]));
+                }}
+                placeholder="e.g., transfer(address,uint256)"
+                disabled={disabled}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Calldata</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={innerFieldValues.calldata || '0x'}
+                onChange={(e) => {
+                  const newFields = { ...innerFieldValues, calldata: e.target.value };
+                  setInnerFieldValues(newFields);
+                  updateField('innerAction', JSON.stringify([{
+                    target: innerFieldValues.target || '',
+                    value: innerFieldValues.value || '0',
+                    signature: innerFieldValues.signature || '',
+                    calldata: e.target.value
+                  }]));
+                }}
+                placeholder="0x..."
+                disabled={disabled}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {validationErrors.find(err => err.field === 'innerAction') && (
+        <div className={styles.error}>
+          {validationErrors.find(err => err.field === 'innerAction')?.message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// ActionTemplateEditor - Main Component
+// ============================================================================
 
 interface ActionTemplateEditorProps {
   index: number;
@@ -124,7 +417,7 @@ export function ActionTemplateEditor({
     { label: 'Streams', options: paymentTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Token Buyer', options: swapTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Nouns Token', options: nounTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
-    { label: 'Meta 🤯', options: metaTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Meta', options: metaTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Custom', options: [{ value: 'custom', label: 'Custom Transaction', description: 'Build a custom contract call' }] },
     { label: 'DAO Admin Functions', options: adminTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) }
   ];
@@ -152,6 +445,18 @@ export function ActionTemplateEditor({
             });
           }}
           disabled={disabled}
+        />
+      );
+    }
+
+    // Meta-propose: show title/description fields + nested action editor
+    if (selectedTemplate.id === 'meta-propose') {
+      return (
+        <MetaProposeEditor
+          fieldValues={fieldValues}
+          updateField={updateField}
+          disabled={disabled}
+          validationErrors={validationErrors}
         />
       );
     }
