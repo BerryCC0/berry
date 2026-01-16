@@ -3,8 +3,8 @@
  * Business logic for generating proposal actions from user-friendly inputs
  */
 
-import { Address } from 'viem';
-import { NOUNS_ADDRESSES } from '@/app/lib/nouns';
+import { Address, encodeAbiParameters, parseAbiParameters } from 'viem';
+import { NOUNS_ADDRESSES, BERRY_CLIENT_ID } from '@/app/lib/nouns';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -40,6 +40,7 @@ export type ActionTemplateType =
   | 'admin-pending-admin'
   | 'admin-timelock-delay'
   | 'admin-timelock-admin'
+  | 'meta-propose'
   | 'custom';
 
 export interface ProposalAction {
@@ -55,7 +56,7 @@ export interface ProposalAction {
 
 export interface ActionTemplate {
   id: ActionTemplateType;
-  category: 'treasury' | 'swaps' | 'nouns' | 'payments' | 'admin' | 'custom';
+  category: 'treasury' | 'swaps' | 'nouns' | 'payments' | 'admin' | 'meta' | 'custom';
   name: string;
   description: string;
   isMultiAction: boolean;
@@ -808,6 +809,66 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  // Meta Proposal - Create a proposal that creates another proposal
+  'meta-propose': {
+    id: 'meta-propose',
+    category: 'meta',
+    name: 'Create Proposal (Meta)',
+    description: 'Create a proposal that, when executed, creates another proposal 🤯',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'innerTitle',
+        label: 'Inner Proposal Title',
+        type: 'text',
+        placeholder: 'Title for the proposal that will be created',
+        required: true,
+        helpText: 'This will be the title of the NEW proposal created when this one executes'
+      },
+      {
+        name: 'innerDescription',
+        label: 'Inner Proposal Description',
+        type: 'text',
+        placeholder: 'Description for the inner proposal',
+        required: true,
+        helpText: 'Full description/body of the inner proposal'
+      },
+      {
+        name: 'innerTarget',
+        label: 'Inner Action Target',
+        type: 'address',
+        placeholder: '0x... or ENS name',
+        required: true,
+        helpText: 'Contract address the inner proposal will call'
+      },
+      {
+        name: 'innerValue',
+        label: 'Inner Action ETH Value',
+        type: 'amount',
+        placeholder: '0',
+        required: false,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'ETH to send with the inner action (usually 0)'
+      },
+      {
+        name: 'innerSignature',
+        label: 'Inner Action Signature',
+        type: 'text',
+        placeholder: 'e.g., transfer(address,uint256)',
+        required: false,
+        helpText: 'Function signature (leave empty if using raw calldata)'
+      },
+      {
+        name: 'innerCalldata',
+        label: 'Inner Action Calldata',
+        type: 'text',
+        placeholder: '0x',
+        required: false,
+        helpText: 'Encoded function parameters'
+      }
+    ]
+  },
+
   // Custom Transaction
   'custom': {
     id: 'custom',
@@ -920,6 +981,26 @@ function encodeCreateStreamWithPredictedAddress(
   const predictedAddressPadded = predictedStreamAddress.slice(2).padStart(64, '0');
   
   return `0x${recipientPadded}${tokenAmountHex}${tokenAddressPadded}${startTimeHex}${stopTimeHex}${noncePadded}${predictedAddressPadded}`;
+}
+
+/**
+ * Encode the calldata for a meta-proposal (propose() that creates another proposal)
+ * This uses viem's encodeAbiParameters for complex nested array encoding
+ */
+function encodeMetaProposeCalldata(
+  targets: Address[],
+  values: bigint[],
+  signatures: string[],
+  calldatas: `0x${string}`[],
+  description: string,
+  clientId: number
+): `0x${string}` {
+  // Use viem to properly encode the complex nested structure
+  const encoded = encodeAbiParameters(
+    parseAbiParameters('address[], uint256[], string[], bytes[], string, uint32'),
+    [targets, values, signatures, calldatas, description, clientId]
+  );
+  return encoded;
 }
 
 // ============================================================================
@@ -1388,6 +1469,37 @@ export function generateActionsFromTemplate(
         signature: '_setPendingAdmin(address)',
         calldata: encodeAdminAddress(fieldValues.address as Address)
       }];
+
+    case 'meta-propose': {
+      // Create a proposal that creates another proposal when executed
+      // This calls propose() on the DAO Governor with the inner proposal parameters
+      const innerTitle = fieldValues.innerTitle || '';
+      const innerDescription = fieldValues.innerDescription || '';
+      const innerFullDescription = `# ${innerTitle}\n\n${innerDescription}`;
+      
+      const innerTarget = fieldValues.innerTarget as Address || '0x0000000000000000000000000000000000000000';
+      const innerValue = parseEther(fieldValues.innerValue || '0');
+      const innerSignature = fieldValues.innerSignature || '';
+      const innerCalldata = fieldValues.innerCalldata || '0x';
+      
+      // Encode the propose() call with nested arrays
+      // propose(address[],uint256[],string[],bytes[],string,uint32)
+      const calldata = encodeMetaProposeCalldata(
+        [innerTarget],
+        [innerValue],
+        [innerSignature],
+        [innerCalldata as `0x${string}`],
+        innerFullDescription,
+        BERRY_CLIENT_ID
+      );
+      
+      return [{
+        target: DAO_PROXY_ADDRESS,
+        value: '0',
+        signature: 'propose(address[],uint256[],string[],bytes[],string,uint32)',
+        calldata
+      }];
+    }
 
     case 'custom':
       return [{

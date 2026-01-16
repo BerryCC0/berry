@@ -116,6 +116,7 @@ export function ActionTemplateEditor({
   const nounTemplates = getTemplatesByCategory('nouns');
   const paymentTemplates = getTemplatesByCategory('payments');
   const adminTemplates = getTemplatesByCategory('admin');
+  const metaTemplates = getTemplatesByCategory('meta');
 
   // Build option groups with descriptions
   const optionGroups: TemplateGroup[] = [
@@ -123,6 +124,7 @@ export function ActionTemplateEditor({
     { label: 'Streams', options: paymentTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Token Buyer', options: swapTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Nouns Token', options: nounTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Meta 🤯', options: metaTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Custom', options: [{ value: 'custom', label: 'Custom Transaction', description: 'Build a custom contract call' }] },
     { label: 'DAO Admin Functions', options: adminTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) }
   ];
