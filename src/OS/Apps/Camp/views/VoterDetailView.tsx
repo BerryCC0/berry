@@ -110,7 +110,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   // Only show "delegating to" if this account actually owns Nouns
   const delegatingTo = nounsOwned.length > 0 ? voter?.delegatingTo : null;
   const delegators = voter?.delegators || [];
-  const isSelfDelegated = delegatingTo?.toLowerCase() === address.toLowerCase();
+  const isSelfDelegated = address && delegatingTo?.toLowerCase() === address.toLowerCase();
   
   // Show delegate button if viewing own account and they OWN Nouns
   const canDelegate = isOwnAccount && nounsOwned.length > 0;
