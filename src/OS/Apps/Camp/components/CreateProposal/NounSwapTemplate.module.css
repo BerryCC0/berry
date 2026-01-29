@@ -1,0 +1,227 @@
+/**
+ * NounSwapTemplate Styles
+ * Multi-action swap form styling
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.required {
+  color: var(--berry-error);
+}
+
+.input,
+.select {
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: var(--berry-font-system);
+  background: var(--berry-bg-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  color: var(--berry-text-primary);
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.helpText {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+}
+
+.error {
+  font-size: 10px;
+  color: var(--berry-error);
+  margin-top: 4px;
+}
+
+/* Approval Section */
+.approvalSection {
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--berry-border);
+}
+
+.approvalHeader {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  color: var(--berry-text-primary);
+}
+
+.approvalStatus {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.approvalWarning {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.warningText {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+
+.approvalButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.approveButton,
+.approveAllButton {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.approveButton {
+  background: var(--berry-accent);
+  color: white;
+}
+
+.approveButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.approveAllButton {
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-primary);
+  border: 1px solid var(--berry-border);
+}
+
+.approveAllButton:hover:not(:disabled) {
+  background: var(--berry-bg-hover);
+}
+
+.approveButton:disabled,
+.approveAllButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.approvalHelpText {
+  font-size: 10px;
+  color: var(--berry-text-tertiary);
+  font-style: italic;
+}
+
+.approvalError {
+  font-size: 11px;
+  color: var(--berry-error);
+  padding: 8px;
+  background: color-mix(in srgb, var(--berry-error) 10%, transparent);
+  border-radius: 4px;
+}
+
+.approvalSuccess {
+  font-size: 11px;
+  color: var(--berry-success);
+  padding: 8px;
+  background: color-mix(in srgb, var(--berry-success) 10%, transparent);
+  border-radius: 4px;
+}
+
+/* Tip Section */
+.tipSection {
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--berry-border);
+}
+
+.tipHeader {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-primary);
+}
+
+.tipDescription {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 10px;
+}
+
+.tipFields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tipFields .inputGroup {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Summary Section */
+.summarySection {
+  padding: 12px;
+  background: color-mix(in srgb, var(--berry-accent) 8%, transparent);
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--berry-accent) 30%, transparent);
+}
+
+.summaryHeader {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-primary);
+  margin-bottom: 8px;
+}
+
+.summaryContent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summaryLabel {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.summaryValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}

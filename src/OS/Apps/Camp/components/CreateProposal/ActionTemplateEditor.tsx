@@ -18,6 +18,7 @@ import { useActionTemplate } from '../../utils/hooks/useActionTemplate';
 import { SmartActionEditor } from './SmartActionEditor';
 import { ActionTemplateDropdown } from './ActionTemplateDropdown';
 import { AddressInput } from './AddressInput';
+import { NounSwapTemplate } from './NounSwapTemplate';
 import styles from './ActionTemplateEditor.module.css';
 
 // ============================================================================
@@ -470,6 +471,19 @@ export function ActionTemplateEditor({
           updateField={updateField}
           disabled={disabled}
           validationErrors={validationErrors}
+        />
+      );
+    }
+
+    // Noun swap: visual Noun selection with approval flow
+    if (selectedTemplate.id === 'noun-swap') {
+      return (
+        <NounSwapTemplate
+          template={selectedTemplate}
+          fieldValues={fieldValues}
+          onUpdateField={updateField}
+          validationErrors={validationErrors}
+          disabled={disabled}
         />
       );
     }

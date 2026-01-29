@@ -7,4 +7,6 @@ export { MarkdownEditor } from './MarkdownEditor';
 export { SmartActionEditor } from './SmartActionEditor';
 export { ActionTemplateEditor } from './ActionTemplateEditor';
 export { PersonaKYC } from './PersonaKYC';
+export { NounSelector } from './NounSelector';
+export { NounSwapTemplate } from './NounSwapTemplate';
 
