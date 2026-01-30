@@ -98,6 +98,24 @@ export const NounsTokenABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  // Approval functions (read)
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getApproved',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'operator', type: 'address' },
+    ],
+    name: 'isApprovedForAll',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
   // Write functions
   {
     inputs: [{ name: 'delegatee', type: 'address' }],
@@ -113,6 +131,27 @@ export const NounsTokenABI = [
       { name: 'tokenId', type: 'uint256' },
     ],
     name: 'transferFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  // Approval functions (write)
+  {
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+    ],
+    name: 'approve',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'operator', type: 'address' },
+      { name: 'approved', type: 'bool' },
+    ],
+    name: 'setApprovalForAll',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
