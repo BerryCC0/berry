@@ -70,7 +70,7 @@ async function fetchNounsByOwner(ownerAddress: string): Promise<NounWithSVG[]> {
   }
 
   // Convert to NounWithSVG format with data URLs for rendering
-  return account.nouns.map((noun) => {
+  const nouns = account.nouns.map((noun) => {
     const seed: NounSeed = {
       background: Number(noun.seed.background),
       body: Number(noun.seed.body),
@@ -85,6 +85,9 @@ async function fetchNounsByOwner(ownerAddress: string): Promise<NounWithSVG[]> {
       svgDataUrl: getNounDataUrl(seed),
     };
   });
+
+  // Sort numerically by ID (GraphQL returns lexicographic order)
+  return nouns.sort((a, b) => Number(a.id) - Number(b.id));
 }
 
 /**
