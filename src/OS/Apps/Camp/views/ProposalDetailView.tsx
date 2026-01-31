@@ -340,7 +340,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
                   styles.txPending
                 }`}>
                   {isPending && '⏳ Waiting for wallet...'}
-                  {isConfirming && !isPending && '🔄 Confirming transaction...'}
+                  {isConfirming && !isPending && 'Confirming transaction...'}
                   {showSuccess && '✓ Vote submitted successfully!'}
                 </div>
               )}
