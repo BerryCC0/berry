@@ -424,9 +424,9 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             {renderActor(actorAvatar, displayName, handleActorClick)}
             <span className={styles.action}>created</span>
             <span className={styles.badge} data-type="candidate">Candidate</span>
-            {item.candidateSlug && (
+            {(item.candidateTitle || item.candidateSlug) && (
               <span className={styles.titleLink} onClick={handleCandidateClick} role="button" tabIndex={0}>
-                {formatSlugToTitle(item.candidateSlug)}
+                {item.candidateTitle || formatSlugToTitle(item.candidateSlug!)}
               </span>
             )}
           </div>

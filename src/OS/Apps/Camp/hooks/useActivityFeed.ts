@@ -20,12 +20,13 @@ import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 import type { ActivityItem } from '../types';
 
 const ACTIVITY_QUERY = `
-  query ActivityFeed($first: Int!, $skip: Int!) {
+  query ActivityFeed($first: Int!, $skip: Int!, $sinceTimestamp: BigInt!) {
     votes(
       first: $first
       skip: $skip
       orderBy: blockTimestamp
       orderDirection: desc
+      where: { blockTimestamp_gte: $sinceTimestamp }
     ) {
       id
       voter {
@@ -46,6 +47,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
+      where: { createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
       voter {
@@ -65,6 +67,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
+      where: { createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
       title
@@ -85,12 +88,17 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
-      where: { canceled: false }
+      where: { canceled: false, createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
       proposer
       slug
       createdTimestamp
+      latestVersion {
+        content {
+          title
+        }
+      }
     }
     
     candidateFeedbacks(
@@ -98,6 +106,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
+      where: { createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
       voter {
@@ -124,6 +133,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: blockTimestamp
       orderDirection: desc
+      where: { blockTimestamp_gte: $sinceTimestamp }
     ) {
       id
       noun {
@@ -143,6 +153,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: blockTimestamp
       orderDirection: desc
+      where: { blockTimestamp_gte: $sinceTimestamp }
     ) {
       id
       noun {
@@ -165,6 +176,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: startTime
       orderDirection: desc
+      where: { startTime_gte: $sinceTimestamp }
     ) {
       id
       noun {
@@ -184,7 +196,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
-      where: { canceled: false }
+      where: { canceled: false, createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
       signer {
@@ -206,6 +218,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
+      where: { createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
       proposal {
@@ -225,6 +238,7 @@ const ACTIVITY_QUERY = `
       skip: $skip
       orderBy: createdAt
       orderDirection: desc
+      where: { createdAt_gte: $sinceTimestamp }
     ) {
       id
       proposal {
@@ -276,6 +290,11 @@ interface ActivityQueryResult {
     proposer: string;
     slug: string;
     createdTimestamp: string;
+    latestVersion: {
+      content: {
+        title: string;
+      };
+    } | null;
   }>;
   candidateFeedbacks: Array<{
     id: string;
@@ -366,12 +385,16 @@ const NOUNS_DAO = '0x0bc3807ec262cb779b38d65b38158acc3bfede10';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 async function fetchActivity(first: number, skip: number): Promise<ActivityItem[]> {
+  // Only fetch activity from the last 30 days for performance
+  const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60);
+  const sinceTimestamp = thirtyDaysAgo.toString();
+  
   const response = await fetch(GOLDSKY_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       query: ACTIVITY_QUERY,
-      variables: { first, skip },
+      variables: { first, skip, sinceTimestamp },
     }),
   });
 
@@ -518,6 +541,7 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
       timestamp: candidate.createdTimestamp,
       actor: candidate.proposer,
       candidateSlug: candidate.slug,
+      candidateTitle: candidate.latestVersion?.content?.title,
       candidateProposer: candidate.proposer,
     });
   }
@@ -667,38 +691,42 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     }
   }
 
-  // Fetch settler info for auction_started events from our database
-  // The settler is who created this noun by settling the previous auction
-  await Promise.all(auctionStartedItems.map(async (item) => {
+  // Batch fetch settler info for all auction items in a single API call
+  const allAuctionItems = [...auctionStartedItems, ...auctionSettledItems];
+  const nounIds = allAuctionItems.map(item => item.nounId).filter((id): id is string => !!id);
+  
+  if (nounIds.length > 0) {
     try {
-      const response = await fetch(`/api/nouns/${item.nounId}`);
+      const response = await fetch('/api/nouns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: nounIds }),
+      });
+      
       if (response.ok) {
-        const noun = await response.json();
-        if (noun.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
-          item.settler = noun.settled_by_address;
-          item.actor = noun.settled_by_address; // Update actor to be the settler
+        const { nouns } = await response.json();
+        
+        // Update auction_started items with settler info
+        for (const item of auctionStartedItems) {
+          const noun = nouns[item.nounId!];
+          if (noun?.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
+            item.settler = noun.settled_by_address;
+            item.actor = noun.settled_by_address; // Update actor to be the settler
+          }
+        }
+        
+        // Update auction_settled items with settler info
+        for (const item of auctionSettledItems) {
+          const noun = nouns[item.nounId!];
+          if (noun?.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
+            item.settler = noun.settled_by_address;
+          }
         }
       }
     } catch (error) {
       // Settler info not available, leave as auction house
     }
-  }));
-
-  // Fetch settler info for auction_settled events
-  // The settler is who "chose" this noun by settling the previous auction
-  await Promise.all(auctionSettledItems.map(async (item) => {
-    try {
-      const response = await fetch(`/api/nouns/${item.nounId}`);
-      if (response.ok) {
-        const noun = await response.json();
-        if (noun.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
-          item.settler = noun.settled_by_address;
-        }
-      }
-    } catch (error) {
-      // Settler info not available
-    }
-  }));
+  }
 
   // Convert candidate sponsorships to activity items
   for (const signature of data.proposalCandidateSignatures) {
@@ -794,10 +822,11 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
   return items;
 }
 
-export function useActivityFeed(first: number = 50) {
+export function useActivityFeed(first: number = 30) {
   return useQuery({
     queryKey: ['camp', 'activity', first],
     queryFn: () => fetchActivity(first, 0),
-    staleTime: 30000, // 30 seconds
+    staleTime: 60000, // 1 minute - reduce refetches
+    gcTime: 300000, // 5 minutes - keep in cache longer
   });
 }

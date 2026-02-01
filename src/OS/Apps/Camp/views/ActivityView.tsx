@@ -16,7 +16,7 @@ interface ActivityViewProps {
 }
 
 export function ActivityView({ onNavigate }: ActivityViewProps) {
-  const { data: activities, isLoading, error } = useActivityFeed(50);
+  const { data: activities, isLoading, error } = useActivityFeed(30);
 
   /**
    * Open the Nouns Auction app with a specific noun
