@@ -1,41 +1,35 @@
 /**
  * useActivityFeed Hook
- * Fetches unified activity feed from Goldsky
+ * Fetches unified activity feed from Goldsky using parallel queries
  * 
- * Includes:
- * - Votes on proposals
- * - Proposal feedback (signals)
- * - Proposal creation
- * - Candidate creation
- * - Noun transfers
- * - Noun delegations
- * - Auction settlements (with winner + bid)
- * - Auction starts
+ * Split into focused queries that run in parallel for better performance:
+ * - Core: votes, proposals, feedback
+ * - Candidates: creation, updates, signatures, feedback
+ * - Nouns: transfers, delegations, auctions
  */
 
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 import type { ActivityItem } from '../types';
 
-const ACTIVITY_QUERY = `
-  query ActivityFeed($first: Int!, $skip: Int!, $sinceTimestamp: BigInt!) {
+// ============================================================================
+// FOCUSED QUERIES - Split for parallel execution
+// ============================================================================
+
+const CORE_QUERY = `
+  query CoreActivity($first: Int!, $sinceTimestamp: BigInt!) {
     votes(
       first: $first
-      skip: $skip
       orderBy: blockTimestamp
       orderDirection: desc
       where: { blockTimestamp_gte: $sinceTimestamp }
     ) {
       id
-      voter {
-        id
-      }
-      proposal {
-        id
-        title
-      }
+      voter { id }
+      proposal { id, title }
       supportDetailed
       votes
       reason
@@ -44,19 +38,13 @@ const ACTIVITY_QUERY = `
     
     proposalFeedbacks(
       first: $first
-      skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
       where: { createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
-      voter {
-        id
-      }
-      proposal {
-        id
-        title
-      }
+      voter { id }
+      proposal { id, title }
       supportDetailed
       reason
       createdTimestamp
@@ -64,16 +52,13 @@ const ACTIVITY_QUERY = `
     
     proposals(
       first: $first
-      skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
       where: { createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
       title
-      proposer {
-        id
-      }
+      proposer { id }
       createdTimestamp
       startBlock
       endBlock
@@ -82,10 +67,13 @@ const ACTIVITY_QUERY = `
       againstVotes
       quorumVotes
     }
-    
+  }
+`;
+
+const CANDIDATES_QUERY = `
+  query CandidatesActivity($first: Int!, $sinceTimestamp: BigInt!) {
     proposalCandidates(
       first: $first
-      skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
       where: { canceled: false, createdTimestamp_gte: $sinceTimestamp }
@@ -95,31 +83,24 @@ const ACTIVITY_QUERY = `
       slug
       createdTimestamp
       latestVersion {
-        content {
-          title
-        }
+        content { title }
       }
     }
     
     candidateFeedbacks(
       first: $first
-      skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
       where: { createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
-      voter {
-        id
-      }
+      voter { id }
       candidate {
         id
         slug
         proposer
         latestVersion {
-          content {
-            title
-          }
+          content { title }
         }
       }
       supportDetailed
@@ -128,80 +109,14 @@ const ACTIVITY_QUERY = `
       createdTimestamp
     }
     
-    transferEvents(
-      first: $first
-      skip: $skip
-      orderBy: blockTimestamp
-      orderDirection: desc
-      where: { blockTimestamp_gte: $sinceTimestamp }
-    ) {
-      id
-      noun {
-        id
-      }
-      previousHolder {
-        id
-      }
-      newHolder {
-        id
-      }
-      blockTimestamp
-    }
-    
-    delegationEvents(
-      first: $first
-      skip: $skip
-      orderBy: blockTimestamp
-      orderDirection: desc
-      where: { blockTimestamp_gte: $sinceTimestamp }
-    ) {
-      id
-      noun {
-        id
-      }
-      delegator {
-        id
-      }
-      previousDelegate {
-        id
-      }
-      newDelegate {
-        id
-      }
-      blockTimestamp
-    }
-    
-    auctions(
-      first: $first
-      skip: $skip
-      orderBy: startTime
-      orderDirection: desc
-      where: { startTime_gte: $sinceTimestamp }
-    ) {
-      id
-      noun {
-        id
-      }
-      amount
-      bidder {
-        id
-      }
-      settled
-      startTime
-      endTime
-    }
-    
     proposalCandidateSignatures(
       first: $first
-      skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
       where: { canceled: false, createdTimestamp_gte: $sinceTimestamp }
     ) {
       id
-      signer {
-        id
-      }
+      signer { id }
       content {
         id
         proposalIdToUpdate
@@ -215,7 +130,6 @@ const ACTIVITY_QUERY = `
     
     proposalCandidateVersions(
       first: $first
-      skip: $skip
       orderBy: createdTimestamp
       orderDirection: desc
       where: { createdTimestamp_gte: $sinceTimestamp }
@@ -228,14 +142,61 @@ const ACTIVITY_QUERY = `
       }
       createdTimestamp
       updateMessage
-      content {
-        title
-      }
+      content { title }
+    }
+  }
+`;
+
+const NOUNS_QUERY = `
+  query NounsActivity($first: Int!, $sinceTimestamp: BigInt!) {
+    transferEvents(
+      first: $first
+      orderBy: blockTimestamp
+      orderDirection: desc
+      where: { blockTimestamp_gte: $sinceTimestamp }
+    ) {
+      id
+      noun { id }
+      previousHolder { id }
+      newHolder { id }
+      blockTimestamp
     }
     
+    delegationEvents(
+      first: $first
+      orderBy: blockTimestamp
+      orderDirection: desc
+      where: { blockTimestamp_gte: $sinceTimestamp }
+    ) {
+      id
+      noun { id }
+      delegator { id }
+      previousDelegate { id }
+      newDelegate { id }
+      blockTimestamp
+    }
+    
+    auctions(
+      first: $first
+      orderBy: startTime
+      orderDirection: desc
+      where: { startTime_gte: $sinceTimestamp }
+    ) {
+      id
+      noun { id }
+      amount
+      bidder { id }
+      settled
+      startTime
+      endTime
+    }
+  }
+`;
+
+const PROPOSAL_UPDATES_QUERY = `
+  query ProposalUpdates($first: Int!, $sinceTimestamp: BigInt!) {
     proposalVersions(
       first: $first
-      skip: $skip
       orderBy: createdAt
       orderDirection: desc
       where: { createdAt_gte: $sinceTimestamp }
@@ -244,18 +205,20 @@ const ACTIVITY_QUERY = `
       proposal {
         id
         title
-        proposer {
-          id
-        }
+        proposer { id }
       }
+      title
       createdAt
       updateMessage
-      title
     }
   }
 `;
 
-interface ActivityQueryResult {
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+interface CoreQueryResult {
   votes: Array<{
     id: string;
     voter: { id: string };
@@ -285,16 +248,15 @@ interface ActivityQueryResult {
     againstVotes: string;
     quorumVotes: string;
   }>;
+}
+
+interface CandidatesQueryResult {
   proposalCandidates: Array<{
     id: string;
     proposer: string;
     slug: string;
     createdTimestamp: string;
-    latestVersion: {
-      content: {
-        title: string;
-      };
-    } | null;
+    latestVersion: { content: { title: string } } | null;
   }>;
   candidateFeedbacks: Array<{
     id: string;
@@ -303,19 +265,38 @@ interface ActivityQueryResult {
       id: string;
       slug: string;
       proposer: string;
-      latestVersion: {
-        content: {
-          title: string;
-        };
-      } | null;
+      latestVersion: { content: { title: string } } | null;
     };
     supportDetailed: number;
     votes: string;
     reason: string | null;
     createdTimestamp: string;
   }>;
+  proposalCandidateSignatures: Array<{
+    id: string;
+    signer: { id: string };
+    content: {
+      id: string;
+      proposalIdToUpdate: string;
+      proposer: string;
+      title: string;
+    };
+    reason: string;
+    canceled: boolean;
+    createdTimestamp: string;
+  }>;
+  proposalCandidateVersions: Array<{
+    id: string;
+    proposal: { id: string; slug: string; proposer: string };
+    createdTimestamp: string;
+    updateMessage: string;
+    content: { title: string };
+  }>;
+}
+
+interface NounsQueryResult {
   transferEvents: Array<{
-    id: string; // This is the tx hash
+    id: string;
     noun: { id: string };
     previousHolder: { id: string };
     newHolder: { id: string };
@@ -338,73 +319,53 @@ interface ActivityQueryResult {
     startTime: string;
     endTime: string;
   }>;
-  proposalCandidateSignatures: Array<{
-    id: string;
-    signer: { id: string };
-    content: {
-      id: string;
-      proposalIdToUpdate: string;
-      proposer: string;
-      title: string;
-    };
-    reason: string;
-    canceled: boolean;
-    createdTimestamp: string;
-  }>;
-  proposalCandidateVersions: Array<{
-    id: string;
-    proposal: {
-      id: string;
-      slug: string;
-      proposer: string;
-    };
-    createdTimestamp: string;
-    updateMessage: string;
-    content: {
-      title: string;
-    };
-  }>;
+}
+
+interface ProposalUpdatesQueryResult {
   proposalVersions: Array<{
     id: string;
-    proposal: {
-      id: string;
-      title: string;
-      proposer: {
-        id: string;
-      };
-    };
+    proposal: { id: string; title: string; proposer: { id: string } };
+    title: string;
     createdAt: string;
     updateMessage: string;
-    title: string;
   }>;
 }
 
-// Nouns Auction House and Treasury addresses (for filtering mints/burns)
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 const AUCTION_HOUSE = '0x830bd73e4184cef73443c15111a1df14e495c706';
 const NOUNS_DAO = '0x0bc3807ec262cb779b38d65b38158acc3bfede10';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-async function fetchActivity(first: number, skip: number): Promise<ActivityItem[]> {
-  // Only fetch activity from the last 30 days for performance
-  const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60);
-  const sinceTimestamp = thirtyDaysAgo.toString();
-  
+// ============================================================================
+// QUERY EXECUTION
+// ============================================================================
+
+async function executeQuery<T>(query: string, first: number, sinceTimestamp: string): Promise<T> {
   const response = await fetch(GOLDSKY_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      query: ACTIVITY_QUERY,
-      variables: { first, skip, sinceTimestamp },
+      query,
+      variables: { first, sinceTimestamp },
     }),
   });
 
   const json = await response.json();
   if (json.errors) throw new Error(json.errors[0].message);
+  return json.data as T;
+}
 
-  const data = json.data as ActivityQueryResult;
+// ============================================================================
+// DATA PROCESSING
+// ============================================================================
+
+function processCoreData(data: CoreQueryResult): ActivityItem[] {
   const items: ActivityItem[] = [];
 
-  // Convert votes to activity items
+  // Votes
   for (const vote of data.votes) {
     items.push({
       id: `vote-${vote.id}`,
@@ -419,7 +380,7 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     });
   }
 
-  // Convert feedbacks to activity items
+  // Proposal feedbacks
   for (const feedback of data.proposalFeedbacks) {
     items.push({
       id: `feedback-${feedback.id}`,
@@ -433,7 +394,59 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     });
   }
 
-  // Convert candidate feedbacks to activity items
+  // Proposal creations
+  const currentBlock = Math.floor(Date.now() / 12000);
+  for (const proposal of data.proposals) {
+    const startBlock = Number(proposal.startBlock);
+    const endBlock = Number(proposal.endBlock);
+    const forVotes = BigInt(proposal.forVotes);
+    const againstVotes = BigInt(proposal.againstVotes);
+    const quorumVotes = BigInt(proposal.quorumVotes);
+    
+    let derivedStatus: 'active' | 'pending' | 'succeeded' | 'defeated' | undefined;
+    if (currentBlock < startBlock) {
+      derivedStatus = 'pending';
+    } else if (currentBlock >= startBlock && currentBlock <= endBlock) {
+      derivedStatus = 'active';
+    } else if (forVotes > againstVotes && forVotes >= quorumVotes) {
+      derivedStatus = 'succeeded';
+    } else {
+      derivedStatus = 'defeated';
+    }
+    
+    if (derivedStatus === 'active' || derivedStatus === 'pending') {
+      items.push({
+        id: `proposal-created-${proposal.id}`,
+        type: 'proposal_created',
+        timestamp: proposal.createdTimestamp,
+        actor: proposal.proposer.id,
+        proposalId: proposal.id,
+        proposalTitle: proposal.title,
+        proposalStatus: derivedStatus,
+      });
+    }
+  }
+
+  return items;
+}
+
+function processCandidatesData(data: CandidatesQueryResult): ActivityItem[] {
+  const items: ActivityItem[] = [];
+
+  // Candidate creations
+  for (const candidate of data.proposalCandidates) {
+    items.push({
+      id: `candidate-created-${candidate.id}`,
+      type: 'candidate_created',
+      timestamp: candidate.createdTimestamp,
+      actor: candidate.proposer,
+      candidateSlug: candidate.slug,
+      candidateTitle: candidate.latestVersion?.content?.title,
+      candidateProposer: candidate.proposer,
+    });
+  }
+
+  // Candidate feedbacks
   for (const feedback of data.candidateFeedbacks) {
     items.push({
       id: `candidate-feedback-${feedback.id}`,
@@ -449,290 +462,9 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     });
   }
 
-  // Convert proposal creations to activity items
-  for (const proposal of data.proposals) {
-    items.push({
-      id: `proposal-created-${proposal.id}`,
-      type: 'proposal_created',
-      timestamp: proposal.createdTimestamp,
-      actor: proposal.proposer.id,
-      proposalId: proposal.id,
-      proposalTitle: proposal.title,
-    });
-  }
-
-  // Get current block to detect proposals where voting just started
-  let currentBlock = 0;
-  try {
-    const blockResponse = await fetch('https://eth.llamarpc.com', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'eth_blockNumber',
-        params: [],
-        id: 1,
-      }),
-    });
-    const blockJson = await blockResponse.json();
-    currentBlock = parseInt(blockJson.result, 16);
-  } catch {
-    // Fallback estimate
-    currentBlock = Math.floor((Date.now() / 1000 - 1438269988) / 12);
-  }
-
-  // Create "voting started" items for proposals where voting recently began
-  // Show if voting started within the last ~7200 blocks (~1 day)
-  const VOTING_WINDOW = 7200;
-  
-  for (const proposal of data.proposals) {
-    const startBlock = Number(proposal.startBlock);
-    const endBlock = Number(proposal.endBlock);
-    
-    // Voting has started if current block is past start block
-    // Only show if within the recent window
-    if (currentBlock >= startBlock && currentBlock < startBlock + VOTING_WINDOW) {
-      // Estimate timestamp: startBlock was ~(currentBlock - startBlock) * 12 seconds ago
-      const blocksAgo = currentBlock - startBlock;
-      const secondsAgo = blocksAgo * 12;
-      const votingStartedTimestamp = Math.floor(Date.now() / 1000) - secondsAgo;
-      
-      items.push({
-        id: `proposal-voting-started-${proposal.id}`,
-        type: 'proposal_voting_started',
-        timestamp: votingStartedTimestamp.toString(),
-        actor: proposal.proposer.id,
-        proposalId: proposal.id,
-        proposalTitle: proposal.title,
-      });
-    }
-    
-    // Voting has ended if current block is past end block
-    // Only show if within the recent window
-    if (currentBlock >= endBlock && currentBlock < endBlock + VOTING_WINDOW) {
-      // Determine outcome: succeeded if forVotes >= quorum AND forVotes > againstVotes
-      const forVotes = Number(proposal.forVotes);
-      const againstVotes = Number(proposal.againstVotes);
-      const quorum = Number(proposal.quorumVotes);
-      
-      const succeeded = forVotes >= quorum && forVotes > againstVotes;
-      
-      // Estimate timestamp
-      const blocksAgo = currentBlock - endBlock;
-      const secondsAgo = blocksAgo * 12;
-      const votingEndedTimestamp = Math.floor(Date.now() / 1000) - secondsAgo;
-      
-      items.push({
-        id: `proposal-${succeeded ? 'succeeded' : 'defeated'}-${proposal.id}`,
-        type: succeeded ? 'proposal_succeeded' : 'proposal_defeated',
-        timestamp: votingEndedTimestamp.toString(),
-        actor: proposal.proposer.id,
-        proposalId: proposal.id,
-        proposalTitle: proposal.title,
-      });
-    }
-  }
-
-  // Convert candidate creations to activity items
-  for (const candidate of data.proposalCandidates) {
-    items.push({
-      id: `candidate-created-${candidate.id}`,
-      type: 'candidate_created',
-      timestamp: candidate.createdTimestamp,
-      actor: candidate.proposer,
-      candidateSlug: candidate.slug,
-      candidateTitle: candidate.latestVersion?.content?.title,
-      candidateProposer: candidate.proposer,
-    });
-  }
-
-  // Build a set of transfer keys (nounId + timestamp) to filter out auto-delegations
-  // When a noun is transferred, delegation automatically follows - we only show the transfer
-  const transferKeys = new Set<string>();
-  
-  // Collect transfer items to check for sales
-  const transferItems: ActivityItem[] = [];
-  
-  // Convert transfers to activity items (filter out auction-related transfers)
-  for (const transfer of data.transferEvents) {
-    const fromLower = transfer.previousHolder.id.toLowerCase();
-    const toLower = transfer.newHolder.id.toLowerCase();
-    
-    // Skip:
-    // - Mints from zero address
-    // - Transfers from auction house (noun won at auction - shown via auction_settled)
-    // - Transfers TO auction house (noun going up for auction - shown via auction_started)
-    // - Burns to zero address
-    // - Transfers to treasury
-    if (
-      fromLower === ZERO_ADDRESS ||
-      fromLower === AUCTION_HOUSE.toLowerCase() ||
-      toLower === ZERO_ADDRESS ||
-      toLower === AUCTION_HOUSE.toLowerCase() ||
-      toLower === NOUNS_DAO.toLowerCase()
-    ) {
-      continue;
-    }
-
-    // Track this transfer to filter out the accompanying delegation
-    transferKeys.add(`${transfer.noun.id}-${transfer.blockTimestamp}`);
-
-    // The id field is in format "{txHash}_{nounId}" - extract just the tx hash
-    const txHash = transfer.id.includes('_') 
-      ? transfer.id.split('_')[0] 
-      : transfer.id;
-    
-    const item: ActivityItem = {
-      id: `transfer-${transfer.id}`,
-      type: 'noun_transfer',
-      timestamp: transfer.blockTimestamp,
-      actor: transfer.previousHolder.id,
-      nounId: transfer.noun.id,
-      fromAddress: transfer.previousHolder.id,
-      toAddress: transfer.newHolder.id,
-      txHash,
-    };
-    items.push(item);
-    transferItems.push(item);
-  }
-
-  // Check transfers for sale info (in parallel, limit to avoid rate limiting)
-  const saleChecks = transferItems.slice(0, 10).map(async (item) => {
-    if (!item.txHash) return;
-    try {
-      const response = await fetch(
-        `/api/nouns/sale?txHash=${item.txHash}&seller=${item.fromAddress}`
-      );
-      if (response.ok) {
-        const saleInfo = await response.json();
-        if (saleInfo.isSale && saleInfo.price) {
-          item.salePrice = saleInfo.price;
-        }
-      }
-    } catch {
-      // Sale info not available, leave as regular transfer
-    }
-  });
-  await Promise.all(saleChecks);
-
-  // Convert delegations to activity items
-  for (const delegation of data.delegationEvents) {
-    const delegatorLower = delegation.delegator.id.toLowerCase();
-    const previousDelegateLower = delegation.previousDelegate.id.toLowerCase();
-    const newDelegateLower = delegation.newDelegate.id.toLowerCase();
-    const auctionHouseLower = AUCTION_HOUSE.toLowerCase();
-    
-    // Skip any delegation involving the auction house (in any role)
-    // These are implied by auction start/settlement events
-    if (
-      delegatorLower === auctionHouseLower ||
-      previousDelegateLower === auctionHouseLower ||
-      newDelegateLower === auctionHouseLower
-    ) {
-      continue;
-    }
-    
-    // Skip self-delegations and delegations to/from zero address
-    if (
-      newDelegateLower === delegatorLower ||
-      newDelegateLower === ZERO_ADDRESS ||
-      previousDelegateLower === ZERO_ADDRESS
-    ) {
-      continue;
-    }
-
-    // Skip delegations that occurred alongside a transfer (auto-delegation on transfer)
-    const transferKey = `${delegation.noun.id}-${delegation.blockTimestamp}`;
-    if (transferKeys.has(transferKey)) {
-      continue;
-    }
-
-    items.push({
-      id: `delegation-${delegation.id}`,
-      type: 'noun_delegation',
-      timestamp: delegation.blockTimestamp,
-      actor: delegation.delegator.id,
-      nounId: delegation.noun.id,
-      fromAddress: delegation.previousDelegate.id,
-      toAddress: delegation.newDelegate.id,
-    });
-  }
-
-  // Convert auctions to activity items
-  // Collect items that need settler info
-  const auctionStartedItems: ActivityItem[] = [];
-  const auctionSettledItems: ActivityItem[] = [];
-  
-  for (const auction of data.auctions) {
-    if (auction.settled && auction.bidder) {
-      // Auction ended/settled - settler will be fetched from next noun
-      const item: ActivityItem = {
-        id: `auction-settled-${auction.id}`,
-        type: 'auction_settled',
-        timestamp: auction.endTime,
-        actor: auction.bidder.id,
-        nounId: auction.noun.id,
-        winningBid: auction.amount,
-        winner: auction.bidder.id,
-      };
-      items.push(item);
-      auctionSettledItems.push(item);
-    } else if (!auction.settled) {
-      // Auction started - settler will be fetched below
-      const item: ActivityItem = {
-        id: `auction-started-${auction.id}`,
-        type: 'auction_started',
-        timestamp: auction.startTime,
-        actor: AUCTION_HOUSE,
-        nounId: auction.noun.id,
-      };
-      items.push(item);
-      auctionStartedItems.push(item);
-    }
-  }
-
-  // Batch fetch settler info for all auction items in a single API call
-  const allAuctionItems = [...auctionStartedItems, ...auctionSettledItems];
-  const nounIds = allAuctionItems.map(item => item.nounId).filter((id): id is string => !!id);
-  
-  if (nounIds.length > 0) {
-    try {
-      const response = await fetch('/api/nouns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: nounIds }),
-      });
-      
-      if (response.ok) {
-        const { nouns } = await response.json();
-        
-        // Update auction_started items with settler info
-        for (const item of auctionStartedItems) {
-          const noun = nouns[item.nounId!];
-          if (noun?.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
-            item.settler = noun.settled_by_address;
-            item.actor = noun.settled_by_address; // Update actor to be the settler
-          }
-        }
-        
-        // Update auction_settled items with settler info
-        for (const item of auctionSettledItems) {
-          const noun = nouns[item.nounId!];
-          if (noun?.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
-            item.settler = noun.settled_by_address;
-          }
-        }
-      }
-    } catch (error) {
-      // Settler info not available, leave as auction house
-    }
-  }
-
-  // Convert candidate sponsorships to activity items
+  // Candidate sponsorships
   for (const signature of data.proposalCandidateSignatures) {
-    // Skip canceled signatures
     if (signature.canceled) continue;
-    
     items.push({
       id: `candidate-sponsored-${signature.id}`,
       type: 'candidate_sponsored',
@@ -745,11 +477,8 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     });
   }
 
-  // Convert candidate version updates to activity items
-  // Track which candidates we've seen to identify the first version (which is creation, not update)
+  // Candidate updates
   const candidateFirstVersions = new Map<string, string>();
-  
-  // First pass: find the earliest version for each candidate
   for (const version of data.proposalCandidateVersions) {
     const candidateId = version.proposal.id;
     const existingTime = candidateFirstVersions.get(candidateId);
@@ -758,15 +487,10 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     }
   }
   
-  // Second pass: only add non-first versions (actual updates)
   for (const version of data.proposalCandidateVersions) {
     const candidateId = version.proposal.id;
     const firstVersionTime = candidateFirstVersions.get(candidateId);
-    
-    // Skip the first version (that's the creation, not an update)
     if (version.createdTimestamp === firstVersionTime) continue;
-    
-    // Only show updates that have an update message
     if (!version.updateMessage || version.updateMessage.trim() === '') continue;
     
     items.push({
@@ -781,11 +505,93 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     });
   }
 
-  // Convert proposal version updates to activity items
-  // Track which proposals we've seen to identify the first version (which is creation, not update)
+  return items;
+}
+
+function processNounsData(data: NounsQueryResult): { items: ActivityItem[]; auctionStartedItems: ActivityItem[]; auctionSettledItems: ActivityItem[] } {
+  const items: ActivityItem[] = [];
+  const auctionStartedItems: ActivityItem[] = [];
+  const auctionSettledItems: ActivityItem[] = [];
+
+  // Build transfer keys for filtering
+  const transferKeys = new Set<string>();
+  for (const transfer of data.transferEvents) {
+    transferKeys.add(`${transfer.noun.id}-${transfer.blockTimestamp}`);
+  }
+
+  // Transfers
+  for (const transfer of data.transferEvents) {
+    const from = transfer.previousHolder.id.toLowerCase();
+    const to = transfer.newHolder.id.toLowerCase();
+    
+    if (from === ZERO_ADDRESS || from === AUCTION_HOUSE.toLowerCase()) continue;
+    if (to === ZERO_ADDRESS) continue;
+    
+    items.push({
+      id: `transfer-${transfer.id}`,
+      type: 'noun_transfer',
+      timestamp: transfer.blockTimestamp,
+      actor: from,
+      nounId: transfer.noun.id,
+      from: transfer.previousHolder.id,
+      to: transfer.newHolder.id,
+    });
+  }
+
+  // Delegations (skip if there's a transfer at the same time)
+  for (const delegation of data.delegationEvents) {
+    const transferKey = `${delegation.noun.id}-${delegation.blockTimestamp}`;
+    if (transferKeys.has(transferKey)) continue;
+    
+    const from = delegation.previousDelegate.id.toLowerCase();
+    const to = delegation.newDelegate.id.toLowerCase();
+    if (from === to) continue;
+    
+    items.push({
+      id: `delegation-${delegation.id}`,
+      type: 'noun_delegation',
+      timestamp: delegation.blockTimestamp,
+      actor: delegation.delegator.id,
+      nounId: delegation.noun.id,
+      from: delegation.previousDelegate.id,
+      to: delegation.newDelegate.id,
+    });
+  }
+
+  // Auctions
+  for (const auction of data.auctions) {
+    if (auction.settled && auction.bidder) {
+      const item: ActivityItem = {
+        id: `auction-settled-${auction.id}`,
+        type: 'auction_settled',
+        timestamp: auction.endTime,
+        actor: auction.bidder.id,
+        nounId: auction.noun.id,
+        winningBid: auction.amount,
+        winner: auction.bidder.id,
+      };
+      items.push(item);
+      auctionSettledItems.push(item);
+    } else if (!auction.settled) {
+      const item: ActivityItem = {
+        id: `auction-started-${auction.id}`,
+        type: 'auction_started',
+        timestamp: auction.startTime,
+        actor: AUCTION_HOUSE,
+        nounId: auction.noun.id,
+      };
+      items.push(item);
+      auctionStartedItems.push(item);
+    }
+  }
+
+  return { items, auctionStartedItems, auctionSettledItems };
+}
+
+function processProposalUpdatesData(data: ProposalUpdatesQueryResult): ActivityItem[] {
+  const items: ActivityItem[] = [];
+
   const proposalFirstVersions = new Map<string, string>();
-  
-  // First pass: find the earliest version for each proposal
   for (const version of data.proposalVersions) {
     const proposalId = version.proposal.id;
     const existingTime = proposalFirstVersions.get(proposalId);
@@ -794,15 +600,10 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     }
   }
   
-  // Second pass: only add non-first versions (actual updates)
   for (const version of data.proposalVersions) {
     const proposalId = version.proposal.id;
     const firstVersionTime = proposalFirstVersions.get(proposalId);
-    
-    // Skip the first version (that's the creation, not an update)
     if (version.createdAt === firstVersionTime) continue;
-    
-    // Only show updates that have an update message
     if (!version.updateMessage || version.updateMessage.trim() === '') continue;
     
     items.push({
@@ -816,17 +617,125 @@ async function fetchActivity(first: number, skip: number): Promise<ActivityItem[
     });
   }
 
-  // Sort by timestamp descending
-  items.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
-
   return items;
 }
 
+// ============================================================================
+// MAIN HOOK
+// ============================================================================
+
 export function useActivityFeed(first: number = 30) {
-  return useQuery({
-    queryKey: ['camp', 'activity', first],
-    queryFn: () => fetchActivity(first, 0),
-    staleTime: 60000, // 1 minute - reduce refetches
-    gcTime: 300000, // 5 minutes - keep in cache longer
+  // Only fetch activity from the last 14 days for performance
+  // Round to the nearest hour to prevent query key changes on every render
+  const sinceTimestamp = useMemo(() => {
+    const fourteenDaysAgo = Math.floor(Date.now() / 1000) - (14 * 24 * 60 * 60);
+    const roundedToHour = Math.floor(fourteenDaysAgo / 3600) * 3600;
+    return roundedToHour.toString();
+  }, []);
+
+  const queries = useQueries({
+    queries: [
+      {
+        queryKey: ['camp', 'activity', 'core', first, sinceTimestamp],
+        queryFn: () => executeQuery<CoreQueryResult>(CORE_QUERY, first, sinceTimestamp),
+        staleTime: 60000,
+        gcTime: 300000,
+        refetchInterval: 60000, // Poll every 60 seconds
+      },
+      {
+        queryKey: ['camp', 'activity', 'candidates', first, sinceTimestamp],
+        queryFn: () => executeQuery<CandidatesQueryResult>(CANDIDATES_QUERY, first, sinceTimestamp),
+        staleTime: 60000,
+        gcTime: 300000,
+        refetchInterval: 60000,
+      },
+      {
+        queryKey: ['camp', 'activity', 'nouns', first, sinceTimestamp],
+        queryFn: () => executeQuery<NounsQueryResult>(NOUNS_QUERY, first, sinceTimestamp),
+        staleTime: 60000,
+        gcTime: 300000,
+        refetchInterval: 60000,
+      },
+      {
+        queryKey: ['camp', 'activity', 'updates', first, sinceTimestamp],
+        queryFn: () => executeQuery<ProposalUpdatesQueryResult>(PROPOSAL_UPDATES_QUERY, first, sinceTimestamp),
+        staleTime: 60000,
+        gcTime: 300000,
+        refetchInterval: 60000,
+      },
+    ],
+    combine: (results) => {
+      const isLoading = results.some(r => r.isLoading);
+      const error = results.find(r => r.error)?.error;
+      
+      // Process available data (progressive loading)
+      let allItems: ActivityItem[] = [];
+      let auctionStartedItems: ActivityItem[] = [];
+      let auctionSettledItems: ActivityItem[] = [];
+      
+      if (results[0].data) {
+        allItems.push(...processCoreData(results[0].data));
+      }
+      if (results[1].data) {
+        allItems.push(...processCandidatesData(results[1].data));
+      }
+      if (results[2].data) {
+        const nounsResult = processNounsData(results[2].data);
+        allItems.push(...nounsResult.items);
+        auctionStartedItems = nounsResult.auctionStartedItems;
+        auctionSettledItems = nounsResult.auctionSettledItems;
+      }
+      if (results[3].data) {
+        allItems.push(...processProposalUpdatesData(results[3].data));
+      }
+
+      // Sort by timestamp descending
+      allItems.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+
+      return {
+        data: allItems.length > 0 ? allItems : undefined,
+        isLoading,
+        error,
+        // Expose for settler enrichment
+        _auctionItems: { auctionStartedItems, auctionSettledItems },
+      };
+    },
   });
+
+  // Enrich auction items with settler info (separate query, non-blocking)
+  const auctionItems = queries._auctionItems;
+  const allAuctionItems = [...auctionItems.auctionStartedItems, ...auctionItems.auctionSettledItems];
+  const nounIds = allAuctionItems.map(item => item.nounId).filter((id): id is string => !!id);
+
+  // Fetch settler data in background (doesn't block initial render)
+  if (nounIds.length > 0 && queries.data) {
+    fetch('/api/nouns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: nounIds }),
+    })
+      .then(res => res.json())
+      .then(({ nouns }) => {
+        for (const item of auctionItems.auctionStartedItems) {
+          const noun = nouns[item.nounId!];
+          if (noun?.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
+            item.settler = noun.settled_by_address;
+            item.actor = noun.settled_by_address;
+          }
+        }
+        for (const item of auctionItems.auctionSettledItems) {
+          const noun = nouns[item.nounId!];
+          if (noun?.settled_by_address && noun.settled_by_address !== '0x0000000000000000000000000000000000000000') {
+            item.settler = noun.settled_by_address;
+          }
+        }
+      })
+      .catch(() => {});
+  }
+
+  return {
+    data: queries.data,
+    isLoading: queries.isLoading,
+    error: queries.error as Error | null,
+  };
 }
