@@ -19,7 +19,7 @@ const NOUNS_BY_OWNER_QUERY = `
   query NounsByOwner($owner: ID!) {
     account(id: $owner) {
       id
-      nouns {
+      nouns(first: 1000) {
         id
         seed {
           background
