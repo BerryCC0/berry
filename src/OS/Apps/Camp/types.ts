@@ -270,6 +270,7 @@ export interface ActivityItem {
   // Context depends on type
   proposalId?: string;
   proposalTitle?: string;
+  proposalStatus?: 'active' | 'pending' | 'succeeded' | 'defeated';
   candidateSlug?: string;
   candidateProposer?: string;
   

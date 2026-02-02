@@ -70,7 +70,7 @@ const CORE_QUERY = `
     }
   }
 `;
-
+    
 const CANDIDATES_QUERY = `
   query CandidatesActivity($first: Int!, $sinceTimestamp: BigInt!) {
     proposalCandidates(
@@ -326,7 +326,7 @@ interface ProposalUpdatesQueryResult {
   proposalVersions: Array<{
     id: string;
     proposal: { id: string; title: string; proposer: { id: string } };
-    title: string;
+      title: string;
     createdAt: string;
     updateMessage: string;
   }>;
@@ -563,8 +563,8 @@ function processNounsData(data: NounsQueryResult): { items: ActivityItem[]; auct
       timestamp: transfer.blockTimestamp,
       actor: from,
       nounId: transfer.noun.id,
-      from: transfer.previousHolder.id,
-      to: transfer.newHolder.id,
+      fromAddress: transfer.previousHolder.id,
+      toAddress: transfer.newHolder.id,
     });
   }
 
@@ -576,15 +576,15 @@ function processNounsData(data: NounsQueryResult): { items: ActivityItem[]; auct
     const from = delegation.previousDelegate.id.toLowerCase();
     const to = delegation.newDelegate.id.toLowerCase();
     if (from === to) continue;
-    
+
     items.push({
       id: `delegation-${delegation.id}`,
       type: 'noun_delegation',
       timestamp: delegation.blockTimestamp,
       actor: delegation.delegator.id,
       nounId: delegation.noun.id,
-      from: delegation.previousDelegate.id,
-      to: delegation.newDelegate.id,
+      fromAddress: delegation.previousDelegate.id,
+      toAddress: delegation.newDelegate.id,
     });
   }
 
