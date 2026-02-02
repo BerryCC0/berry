@@ -12,6 +12,7 @@
 
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
+import { useBlockNumber } from 'wagmi';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 import type { ActivityItem } from '../types';
 
@@ -362,7 +363,7 @@ async function executeQuery<T>(query: string, first: number, sinceTimestamp: str
 // DATA PROCESSING
 // ============================================================================
 
-function processCoreData(data: CoreQueryResult): ActivityItem[] {
+function processCoreData(data: CoreQueryResult, currentBlock: number | undefined): ActivityItem[] {
   const items: ActivityItem[] = [];
 
   // Votes
@@ -394,8 +395,8 @@ function processCoreData(data: CoreQueryResult): ActivityItem[] {
     });
   }
 
-  // Proposal creations
-  const currentBlock = Math.floor(Date.now() / 12000);
+  // Proposal creations - show active/pending proposals in the feed
+  // Use the actual Ethereum block number for accurate status calculation
   for (const proposal of data.proposals) {
     const startBlock = Number(proposal.startBlock);
     const endBlock = Number(proposal.endBlock);
@@ -404,16 +405,45 @@ function processCoreData(data: CoreQueryResult): ActivityItem[] {
     const quorumVotes = BigInt(proposal.quorumVotes);
     
     let derivedStatus: 'active' | 'pending' | 'succeeded' | 'defeated' | undefined;
-    if (currentBlock < startBlock) {
-      derivedStatus = 'pending';
-    } else if (currentBlock >= startBlock && currentBlock <= endBlock) {
-      derivedStatus = 'active';
-    } else if (forVotes > againstVotes && forVotes >= quorumVotes) {
-      derivedStatus = 'succeeded';
+    
+    // Use actual block number if available for accurate status
+    if (currentBlock !== undefined) {
+      if (currentBlock < startBlock) {
+        derivedStatus = 'pending';
+      } else if (currentBlock >= startBlock && currentBlock <= endBlock) {
+        derivedStatus = 'active';
+      } else {
+        // Voting period is over - check results
+        if (forVotes > againstVotes && forVotes >= quorumVotes) {
+          derivedStatus = 'succeeded';
+        } else {
+          derivedStatus = 'defeated';
+        }
+      }
     } else {
-      derivedStatus = 'defeated';
+      // Fallback: trust GraphQL status or use vote counts
+      const graphqlStatus = proposal.status?.toUpperCase();
+      
+      if (graphqlStatus === 'PENDING') {
+        derivedStatus = 'pending';
+      } else if (graphqlStatus === 'ACTIVE') {
+        derivedStatus = 'active';
+      } else if (graphqlStatus === 'SUCCEEDED' || graphqlStatus === 'QUEUED' || graphqlStatus === 'EXECUTED') {
+        derivedStatus = 'succeeded';
+      } else if (graphqlStatus === 'DEFEATED' || graphqlStatus === 'VETOED' || graphqlStatus === 'CANCELLED' || graphqlStatus === 'EXPIRED') {
+        derivedStatus = 'defeated';
+      } else {
+        // Last resort: check if there are votes
+        const totalVotes = forVotes + againstVotes;
+        if (totalVotes > 0n) {
+          derivedStatus = forVotes > againstVotes && forVotes >= quorumVotes ? 'succeeded' : 'defeated';
+        } else {
+          derivedStatus = 'pending';
+        }
+      }
     }
     
+    // Only show active or pending proposals in activity feed
     if (derivedStatus === 'active' || derivedStatus === 'pending') {
       items.push({
         id: `proposal-created-${proposal.id}`,
@@ -625,6 +655,12 @@ function processProposalUpdatesData(data: ProposalUpdatesQueryResult): ActivityI
 // ============================================================================
 
 export function useActivityFeed(first: number = 30) {
+  // Get current Ethereum block number for accurate proposal status
+  const { data: blockNumber } = useBlockNumber({
+    watch: false, // Don't poll, just get once
+  });
+  const currentBlock = blockNumber ? Number(blockNumber) : undefined;
+  
   // Only fetch activity from the last 14 days for performance
   // Round to the nearest hour to prevent query key changes on every render
   const sinceTimestamp = useMemo(() => {
@@ -674,7 +710,7 @@ export function useActivityFeed(first: number = 30) {
       let auctionSettledItems: ActivityItem[] = [];
       
       if (results[0].data) {
-        allItems.push(...processCoreData(results[0].data));
+        allItems.push(...processCoreData(results[0].data, currentBlock));
       }
       if (results[1].data) {
         allItems.push(...processCandidatesData(results[1].data));
