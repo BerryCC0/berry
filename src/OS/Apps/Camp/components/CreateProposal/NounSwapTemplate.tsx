@@ -15,6 +15,7 @@ import { useNounApproval } from '../../utils/hooks/useNounApproval';
 import type { ValidationError } from '../../utils/types';
 import { NounSelector } from './NounSelector';
 import { AddressInput } from './AddressInput';
+import { Select, type SelectOption } from '@/src/OS/components/Primitives/Select';
 import styles from './NounSwapTemplate.module.css';
 
 interface NounSwapTemplateProps {
@@ -86,12 +87,11 @@ export function NounSwapTemplate({
     onUpdateField('treasuryNounId', nounId);
   };
 
-  // Tip currency options
-  const tipCurrencyOptions = [
-    { value: '', label: 'No Tip' },
-    { value: 'eth', label: 'ETH' },
-    { value: 'weth', label: 'WETH' },
-    { value: 'usdc', label: 'USDC' },
+  // Tip currency options for Select component
+  const tipCurrencyOptions: SelectOption[] = [
+    { value: 'eth', label: 'ETH', description: 'Native Ether' },
+    { value: 'weth', label: 'WETH', description: 'Wrapped Ether' },
+    { value: 'usdc', label: 'USDC', description: 'USD Coin' },
   ];
 
   return (
@@ -223,16 +223,15 @@ export function NounSwapTemplate({
           {/* Tip Currency */}
           <div className={styles.inputGroup}>
             <label className={styles.label}>Currency</label>
-            <select
-              className={styles.select}
+            <Select
+              options={tipCurrencyOptions}
               value={fieldValues.tipCurrency || ''}
-              onChange={(e) => onUpdateField('tipCurrency', e.target.value)}
+              onChange={(value) => onUpdateField('tipCurrency', value)}
+              placeholder="Select currency..."
               disabled={disabled}
-            >
-              {tipCurrencyOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              allowNone
+              noneLabel="No Tip"
+            />
           </div>
 
           {/* Tip Amount */}

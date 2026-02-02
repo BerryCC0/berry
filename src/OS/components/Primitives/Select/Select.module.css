@@ -1,0 +1,148 @@
+/**
+ * Select Styles
+ * Custom dropdown with Berry OS styling
+ */
+
+.container {
+  position: relative;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system, "Geneva", sans-serif);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+
+.trigger:hover:not(.disabled) {
+  border-color: var(--berry-text-secondary);
+}
+
+.trigger.open {
+  border-color: var(--berry-primary);
+}
+
+.trigger.hasValue {
+  font-weight: 500;
+}
+
+.trigger.disabled {
+  background: var(--berry-bg-tertiary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.triggerContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.triggerLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerPlaceholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+}
+
+.arrow {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  transition: transform 0.2s;
+  margin-left: 8px;
+}
+
+.trigger.open .arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  overflow: hidden;
+  max-height: 280px;
+}
+
+.optionsList {
+  overflow-y: auto;
+  max-height: 280px;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system, "Geneva", sans-serif);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  gap: 2px;
+  position: relative;
+}
+
+.option:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.option.selected {
+  background: var(--berry-bg-tertiary);
+}
+
+.option.selected::before {
+  content: "✓";
+  position: absolute;
+  left: 12px;
+  font-size: 11px;
+  color: var(--berry-primary);
+}
+
+.option.selected {
+  padding-left: 28px;
+}
+
+.option.noneOption {
+  border-bottom: 1px solid var(--berry-border);
+  color: var(--berry-text-secondary);
+}
+
+.optionLabel {
+  font-weight: 500;
+}
+
+.optionDescription {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.3;
+}

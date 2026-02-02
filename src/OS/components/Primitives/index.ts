@@ -11,3 +11,5 @@ export type { DialogAction } from "./Dialog";
 
 export { ScrollArea } from "./ScrollArea";
 
+export { Select } from "./Select";
+export type { SelectOption } from "./Select";
