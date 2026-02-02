@@ -435,7 +435,7 @@ function processCoreData(data: CoreQueryResult, currentBlock: number | undefined
       } else {
         // Last resort: check if there are votes
         const totalVotes = forVotes + againstVotes;
-        if (totalVotes > 0n) {
+        if (totalVotes > BigInt(0)) {
           derivedStatus = forVotes > againstVotes && forVotes >= quorumVotes ? 'succeeded' : 'defeated';
         } else {
           derivedStatus = 'pending';
