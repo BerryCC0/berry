@@ -102,11 +102,12 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const canVote = isActive && !hasAlreadyVoted;
   
   // Auto-switch to comment mode if user can't vote
+  // Only run after proposal has loaded to avoid premature switching
   useEffect(() => {
-    if (!canVote && actionMode === 'vote') {
+    if (proposal && !canVote && actionMode === 'vote') {
       setActionMode('comment');
     }
-  }, [canVote, actionMode]);
+  }, [proposal, canVote, actionMode]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
