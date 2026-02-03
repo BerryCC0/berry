@@ -5,9 +5,17 @@
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 
 export const runtime = 'edge';
+
+// Viem client for ENS resolution
+const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http('https://eth.llamarpc.com'),
+});
 
 // Proposal status colors
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -77,6 +85,17 @@ async function fetchProposal(id: string): Promise<ProposalData | null> {
 
 function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+async function resolveENS(address: string): Promise<string> {
+  try {
+    const ensName = await publicClient.getEnsName({
+      address: address as `0x${string}`,
+    });
+    return ensName || formatAddress(address);
+  } catch {
+    return formatAddress(address);
+  }
 }
 
 function formatDate(timestamp: string): string {
@@ -156,9 +175,11 @@ export async function GET(
   const againstVotes = Number(proposal.againstVotes);
   const abstainVotes = Number(proposal.abstainVotes);
   const quorumVotes = Number(proposal.quorumVotes);
-  const totalVotes = forVotes + againstVotes + abstainVotes;
   const fundingRequest = extractFundingRequest(proposal.description);
   const timeRemaining = status === 'ACTIVE' ? getTimeRemaining(proposal.endBlock) : null;
+  
+  // Resolve ENS name for proposer
+  const proposerDisplay = await resolveENS(proposal.proposer.id);
 
   // Calculate vote bar widths
   const maxVotes = Math.max(forVotes, againstVotes + abstainVotes, quorumVotes) || 1;
@@ -219,7 +240,7 @@ export async function GET(
 
         {/* Proposer and Date */}
         <div style={{ display: 'flex', fontSize: 22, color: '#9ca3af', marginBottom: 32 }}>
-          Proposed {formatDate(proposal.createdTimestamp)} by {formatAddress(proposal.proposer.id)}
+          Proposed {formatDate(proposal.createdTimestamp)} by {proposerDisplay}
         </div>
 
         {/* Funding Request (if found) */}

@@ -5,9 +5,17 @@
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
 import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 
 export const runtime = 'edge';
+
+// Viem client for ENS resolution
+const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http('https://eth.llamarpc.com'),
+});
 
 const CANDIDATE_QUERY = `
   query Candidate($id: ID!) {
@@ -76,6 +84,17 @@ async function fetchCandidate(proposer: string, slug: string): Promise<{ candida
 
 function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+async function resolveENS(address: string): Promise<string> {
+  try {
+    const ensName = await publicClient.getEnsName({
+      address: address as `0x${string}`,
+    });
+    return ensName || formatAddress(address);
+  } catch {
+    return formatAddress(address);
+  }
 }
 
 function formatDate(timestamp: string): string {
@@ -160,6 +179,9 @@ export async function GET(
   const description = candidate.latestVersion?.content?.description || '';
   const fundingRequest = extractFundingRequest(description);
   const isCanceled = candidate.canceled;
+  
+  // Resolve ENS name for proposer
+  const proposerDisplay = await resolveENS(candidate.proposer);
 
   // Calculate feedback totals
   let forVotes = 0;
@@ -227,7 +249,7 @@ export async function GET(
 
         {/* Proposer and Date */}
         <div style={{ display: 'flex', fontSize: 22, color: '#9ca3af', marginBottom: 32 }}>
-          Created {formatDate(candidate.createdTimestamp)} by {formatAddress(candidate.proposer)}
+          Created {formatDate(candidate.createdTimestamp)} by {proposerDisplay}
         </div>
 
         {/* Funding Request (if found) */}
