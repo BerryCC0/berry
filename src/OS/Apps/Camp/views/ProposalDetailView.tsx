@@ -5,12 +5,13 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useAccount, useReadContract } from 'wagmi';
 import { useTranslation } from '@/OS/lib/i18n';
-import { useProposal } from '../hooks';
+import { useProposal, useSignal } from '../hooks';
 import { useSimulation } from '../hooks/useSimulation';
 import { useVote } from '@/app/lib/nouns/hooks';
+import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
@@ -61,24 +62,101 @@ function escapeRegex(str: string): string {
 // Statuses where simulation doesn't make sense (already finalized)
 const SKIP_SIMULATION_STATUSES = ['EXECUTED', 'DEFEATED', 'VETOED', 'CANCELLED', 'EXPIRED'];
 
+type ActionMode = 'vote' | 'comment';
+
 export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalDetailViewProps) {
   const { t } = useTranslation();
-  const { data: proposal, isLoading, error } = useProposal(proposalId);
-  const { isConnected } = useAccount();
+  const { data: proposal, isLoading, error, refetch } = useProposal(proposalId);
+  const { isConnected, address } = useAccount();
   const { voteRefundable, isPending, isConfirming, isSuccess, hash } = useVote();
-  const [reason, setReason] = useState('');
+  const {
+    sendProposalSignal,
+    isPending: signalPending,
+    isConfirming: signalConfirming,
+    isSuccess: signalSuccess,
+    hasVotingPower,
+    reset: resetSignal,
+  } = useSignal(address);
+  
+  // Check if user has already voted
+  const { data: voteReceipt } = useReadContract({
+    address: NOUNS_CONTRACTS.governor.address,
+    abi: NOUNS_CONTRACTS.governor.abi,
+    functionName: 'getReceipt',
+    args: address ? [BigInt(proposalId), address] : undefined,
+  });
+  
+  const hasAlreadyVoted = voteReceipt?.hasVoted ?? false;
+  
+  // State
+  const [actionReason, setActionReason] = useState('');
+  const [actionMode, setActionMode] = useState<ActionMode>('vote');
+  const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Determine if voting is active
+  const isActive = proposal?.status === 'ACTIVE' || proposal?.status === 'OBJECTION_PERIOD';
+  
+  // Can user cast a vote? Only if active AND hasn't voted
+  const canVote = isActive && !hasAlreadyVoted;
+  
+  // Auto-switch to comment mode if user can't vote
+  useEffect(() => {
+    if (!canVote && actionMode === 'vote') {
+      setActionMode('comment');
+    }
+  }, [canVote, actionMode]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowModeDropdown(false);
+      }
+    }
+    if (showModeDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showModeDropdown]);
 
   // Clear reason and show success message when transaction is confirmed
   useEffect(() => {
     if (isSuccess && hash) {
-      setReason('');
+      setActionReason('');
       setShowSuccess(true);
-      // Hide success message after 5 seconds
+      refetch();
       const timer = setTimeout(() => setShowSuccess(false), 5000);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess, hash]);
+  }, [isSuccess, hash, refetch]);
+
+  useEffect(() => {
+    if (signalSuccess) {
+      setActionReason('');
+      setShowSuccess(true);
+      resetSignal();
+      refetch();
+      const timer = setTimeout(() => setShowSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [signalSuccess, resetSignal, refetch]);
+
+  const handleAction = async (support: 0 | 1 | 2) => {
+    try {
+      if (actionMode === 'vote') {
+        voteRefundable(BigInt(proposalId), support, actionReason);
+      } else {
+        await sendProposalSignal(BigInt(proposalId), support, actionReason);
+      }
+    } catch (err) {
+      console.error('Failed to send action:', err);
+    }
+  };
+  
+  const isActionPending = actionMode === 'vote' ? isPending : signalPending;
+  const isActionConfirming = actionMode === 'vote' ? isConfirming : signalConfirming;
   
   // Only simulate for proposals that could still be executed
   const shouldSkipSimulation = proposal ? SKIP_SIMULATION_STATUSES.includes(proposal.status) : false;
@@ -170,12 +248,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
   const quorumMet = forVotes >= quorum;
 
-  const handleVote = (support: number) => {
-    // Use voteRefundable which includes reason and gas refund
-    voteRefundable(BigInt(proposalId), support as 0 | 1 | 2, reason);
-  };
-
-  const isActive = proposal.status === 'ACTIVE' || proposal.status === 'OBJECTION_PERIOD';
+  // Note: isActive is already declared above in the hooks section
 
   return (
     <div className={styles.container}>
@@ -329,50 +402,113 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
             </div>
           </div>
 
-          {/* Vote Actions */}
-          {isConnected && isActive && (
-            <div className={styles.voteActions}>
+          {/* Vote/Comment Actions - Unified UI */}
+          {isConnected && hasVotingPower && (
+            <div className={styles.actionBox}>
+              {/* Header with mode selector */}
+              <div className={styles.actionHeader}>
+                <span className={styles.actionLabel}>
+                  {actionMode === 'vote' ? 'Cast vote' : 'Comment onchain'}
+                </span>
+                
+                {/* Mode dropdown - only show if user can vote */}
+                {canVote && (
+                  <div className={styles.modeSelector} ref={dropdownRef}>
+                    <button
+                      type="button"
+                      className={styles.modeTrigger}
+                      onClick={() => setShowModeDropdown(!showModeDropdown)}
+                    >
+                      {actionMode === 'vote' ? 'Cast vote' : 'Comment onchain'}
+                      <span className={styles.modeArrow}>▼</span>
+                    </button>
+                    
+                    {showModeDropdown && (
+                      <div className={styles.modeDropdown}>
+                        <button
+                          type="button"
+                          className={`${styles.modeOption} ${actionMode === 'vote' ? styles.modeSelected : ''}`}
+                          onClick={() => { setActionMode('vote'); setShowModeDropdown(false); }}
+                        >
+                          <span>Cast vote</span>
+                          {actionMode === 'vote' && <span className={styles.modeCheck}>✓</span>}
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.modeOption} ${actionMode === 'comment' ? styles.modeSelected : ''}`}
+                          onClick={() => { setActionMode('comment'); setShowModeDropdown(false); }}
+                        >
+                          <span>Comment onchain</span>
+                          {actionMode === 'comment' && <span className={styles.modeCheck}>✓</span>}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Info text for comment mode */}
+              {actionMode === 'comment' && (
+                <p className={styles.actionDescription}>
+                  {hasAlreadyVoted 
+                    ? 'You have already voted. Add a comment to share additional thoughts.'
+                    : !isActive 
+                      ? <>Voting is not active.<br />Leave a comment to share your position.</>
+                      : 'Comments are non-binding feedback visible onchain.'}
+                </p>
+              )}
+              
+              {/* Gas refund note for voting */}
+              {actionMode === 'vote' && (
+                <p className={styles.actionDescription}>
+                  Gas spent on voting will be refunded.
+                </p>
+              )}
+              
               {/* Transaction Status */}
-              {(isPending || isConfirming || showSuccess) && (
+              {(isActionPending || isActionConfirming || showSuccess) && (
                 <div className={`${styles.txStatus} ${
                   showSuccess ? styles.txSuccess : 
-                  isConfirming ? styles.txConfirming : 
+                  isActionConfirming ? styles.txConfirming : 
                   styles.txPending
                 }`}>
-                  {isPending && '⏳ Waiting for wallet...'}
-                  {isConfirming && !isPending && 'Confirming transaction...'}
-                  {showSuccess && '✓ Vote submitted successfully!'}
+                  {isActionPending && 'Waiting for wallet...'}
+                  {isActionConfirming && !isActionPending && 'Confirming transaction...'}
+                  {showSuccess && (actionMode === 'vote' ? 'Vote submitted!' : 'Comment posted!')}
                 </div>
               )}
               
               <textarea
                 className={styles.reasonInput}
-                placeholder="Optional: Add a reason for your vote..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                disabled={isPending || isConfirming}
+                placeholder={actionMode === 'vote' 
+                  ? 'Optional: Add a reason for your vote...' 
+                  : 'Add your comment...'}
+                value={actionReason}
+                onChange={(e) => setActionReason(e.target.value)}
+                disabled={isActionPending || isActionConfirming}
               />
-              <div className={styles.voteButtons}>
+              
+              <div className={styles.actionButtons}>
                 <button 
-                  className={`${styles.voteButton} ${styles.voteFor}`}
-                  onClick={() => handleVote(1)}
-                  disabled={isPending || isConfirming}
+                  className={`${styles.actionButton} ${styles.actionFor}`}
+                  onClick={() => handleAction(1)}
+                  disabled={isActionPending || isActionConfirming}
                 >
-                  {isPending || isConfirming ? '...' : 'Vote For'}
+                  {isActionPending || isActionConfirming ? '...' : 'For'}
                 </button>
                 <button 
-                  className={`${styles.voteButton} ${styles.voteAgainst}`}
-                  onClick={() => handleVote(0)}
-                  disabled={isPending || isConfirming}
+                  className={`${styles.actionButton} ${styles.actionAgainst}`}
+                  onClick={() => handleAction(0)}
+                  disabled={isActionPending || isActionConfirming}
                 >
-                  {isPending || isConfirming ? '...' : 'Vote Against'}
+                  {isActionPending || isActionConfirming ? '...' : 'Against'}
                 </button>
                 <button 
-                  className={`${styles.voteButton} ${styles.voteAbstain}`}
-                  onClick={() => handleVote(2)}
-                  disabled={isPending || isConfirming}
+                  className={`${styles.actionButton} ${styles.actionAbstain}`}
+                  onClick={() => handleAction(2)}
+                  disabled={isActionPending || isActionConfirming}
                 >
-                  {isPending || isConfirming ? '...' : 'Abstain'}
+                  {isActionPending || isActionConfirming ? '...' : 'Abstain'}
                 </button>
               </div>
             </div>

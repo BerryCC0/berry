@@ -5,10 +5,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useEnsName, useReadContract } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useCandidate } from '../hooks/useCandidates';
+import { useSignal } from '../hooks';
 import { useSimulation } from '../hooks/useSimulation';
 import { usePromoteCandidate } from '../hooks/usePromoteCandidate';
 import { useCandidateActions } from '../utils/hooks/useCandidateActions';
@@ -94,12 +95,44 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
     args: [proposer as `0x${string}`],
   });
 
+  const {
+    sendCandidateSignal,
+    isPending: signalPending,
+    isConfirming: signalConfirming,
+    isSuccess: signalSuccess,
+    hasVotingPower,
+    reset: resetSignal,
+  } = useSignal(address);
+
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showPromoteConfirm, setShowPromoteConfirm] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [signalReason, setSignalReason] = useState('');
+  const [showSignalSuccess, setShowSignalSuccess] = useState(false);
   // Track sponsor voting power from SponsorsPanel
   const [totalSponsorVotes, setTotalSponsorVotes] = useState(0);
+
+  // Clear reason and show success message when signal transaction is confirmed
+  useEffect(() => {
+    if (signalSuccess) {
+      setSignalReason('');
+      setShowSignalSuccess(true);
+      resetSignal();
+      refetch(); // Refetch candidate to show new feedback
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => setShowSignalSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [signalSuccess, resetSignal, refetch]);
+
+  const handleSignal = async (support: 0 | 1 | 2) => {
+    try {
+      await sendCandidateSignal(proposer, slug, support, signalReason);
+    } catch (err) {
+      console.error('Failed to send signal:', err);
+    }
+  };
   
   // Automatic simulation
   const simulation = useSimulation(candidate?.actions);
@@ -310,6 +343,62 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
                     onNavigate={onNavigate}
                   />
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Comment Actions - Available for users with voting power */}
+          {isConnected && hasVotingPower && !isCanceled && (
+            <div className={styles.commentBox}>
+              <div className={styles.commentHeader}>
+                <span className={styles.commentLabel}>Comment onchain</span>
+              </div>
+              <p className={styles.commentDescription}>
+                Share your position on this candidate. Comments help proposers gauge community sentiment.
+              </p>
+              
+              {/* Status */}
+              {(signalPending || signalConfirming || showSignalSuccess) && (
+                <div className={`${styles.txStatus} ${
+                  showSignalSuccess ? styles.txSuccess : 
+                  signalConfirming ? styles.txConfirming : 
+                  styles.txPending
+                }`}>
+                  {signalPending && 'Waiting for wallet...'}
+                  {signalConfirming && !signalPending && 'Confirming transaction...'}
+                  {showSignalSuccess && 'Comment posted!'}
+                </div>
+              )}
+              
+              <textarea
+                className={styles.commentInput}
+                placeholder="Add your comment..."
+                value={signalReason}
+                onChange={(e) => setSignalReason(e.target.value)}
+                disabled={signalPending || signalConfirming}
+              />
+              <div className={styles.commentButtons}>
+                <button 
+                  className={`${styles.commentButton} ${styles.commentFor}`}
+                  onClick={() => handleSignal(1)}
+                  disabled={signalPending || signalConfirming}
+                >
+                  {signalPending || signalConfirming ? '...' : 'For'}
+                </button>
+                <button 
+                  className={`${styles.commentButton} ${styles.commentAgainst}`}
+                  onClick={() => handleSignal(0)}
+                  disabled={signalPending || signalConfirming}
+                >
+                  {signalPending || signalConfirming ? '...' : 'Against'}
+                </button>
+                <button 
+                  className={`${styles.commentButton} ${styles.commentAbstain}`}
+                  onClick={() => handleSignal(2)}
+                  disabled={signalPending || signalConfirming}
+                >
+                  {signalPending || signalConfirming ? '...' : 'Abstain'}
+                </button>
               </div>
             </div>
           )}

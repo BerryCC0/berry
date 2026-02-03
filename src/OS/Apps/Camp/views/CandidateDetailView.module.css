@@ -413,3 +413,134 @@
 .linkButton:hover {
   opacity: 0.8;
 }
+
+/* Comment Box (Onchain Comments/Signals) */
+.commentBox {
+  padding: 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.commentLabel {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.commentDescription {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.txStatus {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.txPending {
+  background: color-mix(in srgb, var(--berry-warning) 15%, transparent);
+  border: 1px solid var(--berry-warning);
+  color: var(--berry-warning);
+}
+
+.txConfirming {
+  background: color-mix(in srgb, var(--berry-accent) 15%, transparent);
+  border: 1px solid var(--berry-accent);
+  color: var(--berry-accent);
+}
+
+.txSuccess {
+  background: color-mix(in srgb, var(--berry-success) 15%, transparent);
+  border: 1px solid var(--berry-success);
+  color: var(--berry-success);
+}
+
+.commentInput {
+  width: 100%;
+  min-height: 60px;
+  max-height: 150px;
+  padding: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  border: 1px solid var(--berry-input-border);
+  background: var(--berry-input-bg);
+  color: var(--berry-text-primary);
+  resize: vertical;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.commentInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.commentButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.commentButton {
+  flex: 1;
+  padding: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  border: 1px solid;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.commentButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.commentFor {
+  background: color-mix(in srgb, var(--berry-success) 15%, transparent);
+  border-color: var(--berry-success);
+  color: var(--berry-success);
+}
+
+.commentFor:hover:not(:disabled) {
+  background: var(--berry-success);
+  color: white;
+}
+
+.commentAgainst {
+  background: color-mix(in srgb, var(--berry-error) 15%, transparent);
+  border-color: var(--berry-error);
+  color: var(--berry-error);
+}
+
+.commentAgainst:hover:not(:disabled) {
+  background: var(--berry-error);
+  color: white;
+}
+
+.commentAbstain {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-border);
+  color: var(--berry-text-secondary);
+}
+
+.commentAbstain:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+}

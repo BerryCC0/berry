@@ -248,6 +248,161 @@
   font-family: var(--berry-font-system);
 }
 
+/* Unified Action Box (Vote/Comment) */
+.actionBox {
+  padding: 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.actionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.actionLabel {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.actionDescription {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+/* Mode Selector Dropdown */
+.modeSelector {
+  position: relative;
+}
+
+.modeTrigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.modeTrigger:hover {
+  background: var(--berry-bg-tertiary);
+}
+
+.modeArrow {
+  font-size: 8px;
+  color: var(--berry-text-secondary);
+}
+
+.modeDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.modeOption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.modeOption:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.modeOption.modeSelected {
+  background: var(--berry-bg-tertiary);
+}
+
+.modeCheck {
+  color: var(--berry-accent);
+  font-size: 11px;
+}
+
+/* Action Buttons */
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton {
+  flex: 1;
+  padding: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  border: 1px solid;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actionFor {
+  background: color-mix(in srgb, var(--berry-success) 15%, transparent);
+  border-color: var(--berry-success);
+  color: var(--berry-success);
+}
+
+.actionFor:hover:not(:disabled) {
+  background: var(--berry-success);
+  color: white;
+}
+
+.actionAgainst {
+  background: color-mix(in srgb, var(--berry-error) 15%, transparent);
+  border-color: var(--berry-error);
+  color: var(--berry-error);
+}
+
+.actionAgainst:hover:not(:disabled) {
+  background: var(--berry-error);
+  color: white;
+}
+
+.actionAbstain {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-border);
+  color: var(--berry-text-secondary);
+}
+
+.actionAbstain:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+}
+
+/* Legacy voteActions - keeping for compatibility */
 .voteActions {
   padding: 12px;
   background: var(--berry-bg);
@@ -392,4 +547,80 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* Signal Actions */
+.signalActions {
+  padding: 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.signalTitle {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.signalDescription {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.signalButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.signalButton {
+  flex: 1;
+  padding: 6px;
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  font-weight: bold;
+  border: 1px solid;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.signalButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.signalFor {
+  background: color-mix(in srgb, var(--berry-success) 10%, transparent);
+  border-color: var(--berry-success);
+  color: var(--berry-success);
+}
+
+.signalFor:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--berry-success) 25%, transparent);
+}
+
+.signalAgainst {
+  background: color-mix(in srgb, var(--berry-error) 10%, transparent);
+  border-color: var(--berry-error);
+  color: var(--berry-error);
+}
+
+.signalAgainst:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--berry-error) 25%, transparent);
+}
+
+.signalAbstain {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-border);
+  color: var(--berry-text-secondary);
+}
+
+.signalAbstain:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
 }
