@@ -103,12 +103,27 @@ function formatDate(timestamp: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function getTimeRemaining(endBlock: string): string {
-  // Estimate: ~12 seconds per block
-  const currentBlock = Math.floor(Date.now() / 12000);
-  const endBlockNum = Number(endBlock);
-  const blocksRemaining = endBlockNum - currentBlock;
-  
+async function getCurrentBlock(): Promise<number> {
+  try {
+    const response = await fetch('https://eth.llamarpc.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_blockNumber',
+        params: [],
+        id: 1,
+      }),
+    });
+    const json = await response.json();
+    return parseInt(json.result, 16);
+  } catch {
+    // Fallback: estimate from timestamp (genesis ~Jul 30, 2015)
+    return Math.floor((Date.now() / 1000 - 1438269988) / 12);
+  }
+}
+
+function formatTimeRemaining(blocksRemaining: number): string {
   if (blocksRemaining <= 0) return 'Ended';
   
   const secondsRemaining = blocksRemaining * 12;
@@ -118,7 +133,11 @@ function getTimeRemaining(endBlock: string): string {
     const days = Math.floor(hours / 24);
     return `${days} day${days > 1 ? 's' : ''} left`;
   }
-  return `${hours} hour${hours > 1 ? 's' : ''} left`;
+  if (hours > 0) {
+    return `${hours} hour${hours > 1 ? 's' : ''} left`;
+  }
+  const minutes = Math.floor(secondsRemaining / 60);
+  return `${minutes} min${minutes > 1 ? 's' : ''} left`;
 }
 
 function extractFundingRequest(description: string): string | null {
@@ -176,7 +195,15 @@ export async function GET(
   const abstainVotes = Number(proposal.abstainVotes);
   const quorumVotes = Number(proposal.quorumVotes);
   const fundingRequest = extractFundingRequest(proposal.description);
-  const timeRemaining = status === 'ACTIVE' ? getTimeRemaining(proposal.endBlock) : null;
+  
+  // Calculate time remaining for active proposals
+  let timeRemaining: string | null = null;
+  if (status === 'ACTIVE' || status === 'OBJECTION_PERIOD') {
+    const currentBlock = await getCurrentBlock();
+    const endBlockNum = Number(proposal.endBlock);
+    const blocksRemaining = endBlockNum - currentBlock;
+    timeRemaining = formatTimeRemaining(blocksRemaining);
+  }
   
   // Resolve ENS name for proposer
   const proposerDisplay = await resolveENS(proposal.proposer.id);
@@ -216,9 +243,9 @@ export async function GET(
           >
             {status.replace('_', ' ')}
           </div>
-          {timeRemaining && (
+          {timeRemaining && timeRemaining !== 'Ended' && (
             <div style={{ display: 'flex', fontSize: 20, color: '#9ca3af' }}>
-              {timeRemaining}
+              Voting ends in {timeRemaining.replace(' left', '')}
             </div>
           )}
         </div>
