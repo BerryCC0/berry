@@ -434,11 +434,16 @@ export function SponsorsPanel({
                 
                 {isSmartContractWallet && !hasPendingSignature && (
                   <div className={styles.scwWarning}>
-                    <strong>📋 Smart Contract Wallet Detected</strong>
+                    <strong>⚠️ Smart Contract Wallet - Important</strong>
                     <p>
-                      For Safe and other multi-sig wallets, we&apos;ll break this into two steps: 
-                      first sign the message, then submit the transaction. This allows time for 
-                      multi-sig approval if needed.
+                      <strong>The signer must have voting power.</strong> When you sign, the signature 
+                      is created by your Safe owner EOA, not the Safe itself. The Nouns contract 
+                      checks if the <em>signer</em> (your owner EOA) has voting power.
+                    </p>
+                    <p>
+                      <strong>Solution:</strong> From your Safe, delegate voting power to your owner 
+                      EOA by calling <code>NounsToken.delegate(ownerAddress)</code>. Then the owner 
+                      will have voting power and can sign sponsorships.
                     </p>
                   </div>
                 )}
@@ -488,8 +493,14 @@ export function SponsorsPanel({
                 
                 {sponsorError && (
                   <div className={styles.errorMessage}>
-                    {sponsorError.message.includes('user rejected')
+                    {sponsorError.message.includes('user rejected') || sponsorError.message.includes('User rejected')
                       ? 'Transaction was rejected'
+                      : sponsorError.message.includes('GS013')
+                      ? 'Safe transaction failed: Not enough signatures. If this is a multi-sig Safe, ensure all required signers have approved.'
+                      : sponsorError.message.includes('GS')
+                      ? `Safe error: ${sponsorError.message}. Try initiating the transaction from the Safe app directly.`
+                      : sponsorError.message.includes('must have votes') || sponsorError.message.includes('MustHaveVotes') || sponsorError.message.includes('execution reverted')
+                      ? 'The signer does not have voting power. For Safe wallets, delegate voting power from your Safe to your owner EOA, then try again.'
                       : sponsorError.message}
                   </div>
                 )}

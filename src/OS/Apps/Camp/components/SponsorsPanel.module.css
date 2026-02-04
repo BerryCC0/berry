@@ -388,8 +388,8 @@
 
 /* Smart Contract Wallet notice */
 .scwWarning {
-  background: rgba(33, 150, 243, 0.1);
-  border: 1px solid rgba(33, 150, 243, 0.3);
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
   border-radius: 4px;
   padding: 10px;
   margin-bottom: 16px;
@@ -398,7 +398,7 @@
 .scwWarning strong {
   font-family: var(--berry-font-system);
   font-size: 11px;
-  color: #2196f3;
+  color: #ff9800;
   display: block;
   margin-bottom: 6px;
 }
@@ -409,6 +409,18 @@
   color: var(--berry-text-secondary);
   line-height: 1.5;
   margin: 0;
+}
+
+.scwWarning p + p {
+  margin-top: 8px;
+}
+
+.scwWarning code {
+  font-family: monospace;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 2px;
 }
 
 /* Pending signature state */
