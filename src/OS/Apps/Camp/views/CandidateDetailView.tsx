@@ -284,6 +284,36 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
 
         {/* Right Column: Simulation, Meta, Actions */}
         <div className={styles.rightColumn}>
+          {/* Owner Actions - Show at top for candidate owner */}
+          {isOwner && !isCanceled && (
+            <div className={styles.ownerActions}>
+              <span className={styles.ownerActionsLabel}>Owner</span>
+              {canPromote && (
+                <button
+                  className={styles.promoteButton}
+                  onClick={handlePromoteClick}
+                  disabled={isPending || isConfirming || isPromoting}
+                >
+                  {isPromoting ? 'Promoting...' : 'Promote to Proposal'}
+                </button>
+              )}
+              <button
+                className={styles.editButton}
+                onClick={handleEdit}
+                disabled={isPending || isConfirming || isPromoting}
+              >
+                Edit Candidate
+              </button>
+              <button
+                className={styles.cancelButton}
+                onClick={handleCancelClick}
+                disabled={isPending || isConfirming || isPromoting}
+              >
+                Cancel Candidate
+              </button>
+            </div>
+          )}
+
           {/* Simulation Status */}
           <SimulationStatus
             result={simulation.result}
@@ -324,6 +354,11 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
             threshold={threshold}
             onNavigate={onNavigate}
             onSponsorVotesChange={setTotalSponsorVotes}
+            candidate={candidate}
+            onSponsorSuccess={() => {
+              // Refetch candidate data to show new sponsor
+              refetch();
+            }}
           />
 
           {/* Feedback Signals */}
@@ -400,36 +435,6 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
                   {signalPending || signalConfirming ? '...' : 'Abstain'}
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* Owner Actions */}
-          {isOwner && !isCanceled && (
-            <div className={styles.ownerActions}>
-              <span className={styles.ownerActionsLabel}>Owner</span>
-              {canPromote && (
-                <button
-                  className={styles.promoteButton}
-                  onClick={handlePromoteClick}
-                  disabled={isPending || isConfirming || isPromoting}
-                >
-                  {isPromoting ? 'Promoting...' : 'Promote to Proposal'}
-                </button>
-              )}
-              <button
-                className={styles.editButton}
-                onClick={handleEdit}
-                disabled={isPending || isConfirming || isPromoting}
-              >
-                Edit Candidate
-              </button>
-              <button
-                className={styles.cancelButton}
-                onClick={handleCancelClick}
-                disabled={isPending || isConfirming || isPromoting}
-              >
-                Cancel Candidate
-              </button>
             </div>
           )}
         </div>

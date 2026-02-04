@@ -353,30 +353,54 @@ export function ActionTemplateEditor({
     validationErrors,
     setSelectedTemplate,
     updateField,
+    resetTemplate,
   } = useActionTemplate();
 
   const initializedRef = useRef(false);
   const lastStateRef = useRef<string>('');
+  const lastTemplateIdRef = useRef<string>(templateState.templateId);
   
   // Stable callback reference for parent updates
   const stableOnUpdate = useRef(onUpdateTemplateState);
   stableOnUpdate.current = onUpdateTemplateState;
   
-  // Initialize from saved template state on mount
+  // Initialize from saved template state on mount OR when templateId changes externally
   useEffect(() => {
-    if (!initializedRef.current && templateState.templateId) {
+    const templateIdChanged = lastTemplateIdRef.current !== templateState.templateId;
+    
+    // Re-initialize if this is the first time OR if the template ID changed externally
+    // (e.g., when loading edit data for a candidate)
+    if ((!initializedRef.current || templateIdChanged) && templateState.templateId) {
+      // If template changed, reset the hook state first
+      if (templateIdChanged && initializedRef.current) {
+        resetTemplate();
+      }
+      
       setSelectedTemplate(templateState.templateId as ActionTemplateType);
       
-      // Restore field values
-      Object.entries(templateState.fieldValues).forEach(([field, value]) => {
-        if (value) {
-          updateField(field, value);
-        }
-      });
+      // Restore field values - use setTimeout to ensure setSelectedTemplate has updated state first
+      setTimeout(() => {
+        Object.entries(templateState.fieldValues).forEach(([field, value]) => {
+          if (value) {
+            updateField(field, value);
+          }
+        });
+      }, 0);
       
+      // Update category for dropdown display
+      if (templateState.templateId !== 'custom') {
+        const template = ACTION_TEMPLATES[templateState.templateId as ActionTemplateType];
+        if (template) {
+          setSelectedCategory(template.category);
+        }
+      } else {
+        setSelectedCategory('custom');
+      }
+      
+      lastTemplateIdRef.current = templateState.templateId;
       initializedRef.current = true;
     }
-  }, [templateState.templateId, templateState.fieldValues, setSelectedTemplate, updateField]);
+  }, [templateState.templateId, templateState.fieldValues, setSelectedTemplate, updateField, resetTemplate]);
   
   // Update parent template state when fields or actions change
   // Use JSON comparison to prevent infinite loops

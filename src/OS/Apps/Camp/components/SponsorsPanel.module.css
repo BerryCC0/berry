@@ -142,3 +142,200 @@
   background: var(--berry-bg-tertiary);
   border-radius: 4px;
 }
+
+/* Sponsor button */
+.sponsorButtonContainer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--berry-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sponsorButton {
+  width: 100%;
+  padding: 10px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  background: var(--berry-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.sponsorButton:hover:not(:disabled) {
+  background: var(--berry-accent-hover, #005f5f);
+}
+
+.sponsorButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sponsorHint {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  text-align: center;
+}
+
+/* Modal overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modalContent {
+  background: var(--berry-bg-primary);
+  border: 2px solid var(--berry-border);
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modalTitle {
+  font-family: var(--berry-font-system);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin: 0 0 12px 0;
+}
+
+.modalDescription {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+/* Reason field */
+.reasonField {
+  margin-bottom: 16px;
+}
+
+.reasonLabel {
+  display: block;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin-bottom: 6px;
+}
+
+.reasonInput {
+  width: 100%;
+  padding: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.reasonInput:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.reasonInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Modal buttons */
+.modalButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  padding: 8px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmButton {
+  padding: 8px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  background: var(--berry-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: var(--berry-accent-hover, #005f5f);
+}
+
+.confirmButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Status messages */
+.successMessage {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 4px;
+  padding: 12px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: #4caf50;
+  text-align: center;
+}
+
+.errorMessage {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 4px;
+  padding: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: #f44336;
+  margin-bottom: 12px;
+}
+
+.statusHint {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  text-align: center;
+  margin-top: 12px;
+  font-style: italic;
+}

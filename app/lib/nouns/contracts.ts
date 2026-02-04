@@ -465,6 +465,37 @@ export const NounsDAODataABI = [
     stateMutability: 'payable',
     type: 'function',
   },
+  // Add signature to sponsor a candidate
+  {
+    inputs: [
+      { name: 'sig', type: 'bytes' },
+      { name: 'expirationTimestamp', type: 'uint256' },
+      { name: 'proposer', type: 'address' },
+      { name: 'slug', type: 'string' },
+      { name: 'proposalIdToUpdate', type: 'uint256' },
+      { name: 'encodedProp', type: 'bytes' },
+      { name: 'reason', type: 'string' },
+    ],
+    name: 'addSignature',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  // Calculate encoded proposal data for signatures
+  {
+    inputs: [
+      { name: 'proposer', type: 'address' },
+      { name: 'targets', type: 'address[]' },
+      { name: 'values', type: 'uint256[]' },
+      { name: 'signatures', type: 'string[]' },
+      { name: 'calldatas', type: 'bytes[]' },
+      { name: 'description', type: 'string' },
+    ],
+    name: 'calcProposalEncodeData',
+    outputs: [{ name: '', type: 'bytes' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
   {
     inputs: [
       { name: 'targets', type: 'address[]' },

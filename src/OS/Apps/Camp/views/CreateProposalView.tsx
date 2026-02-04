@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAOABI, NounsDAODataABI, BERRY_CLIENT_ID } from '@/app/lib/nouns';
 import {
@@ -18,6 +18,7 @@ import {
 } from '../components/CreateProposal';
 import type { ActionTemplateState, ProposalDraft } from '../utils/types';
 import { generateSlugFromTitle, makeSlugUnique, generateUniqueSlug, generateSlug } from '../utils/slugGenerator';
+import { parseActionsToTemplates, generateActionsFromTemplate } from '../utils/actionTemplates';
 import { useNounHolderStatus } from '../utils/hooks/useNounHolderStatus';
 import { useCandidate } from '../hooks/useCandidates';
 import { useSimulation } from '../hooks/useSimulation';
@@ -125,8 +126,13 @@ export function CreateProposalView({
   const [drafts, setDrafts] = useState<ProposalDraft[]>([]);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('unsaved');
-  const [updateReason, setUpdateReason] = useState(''); // Reason for updating candidate
   const [editDataLoaded, setEditDataLoaded] = useState(false);
+  
+  // Update modal state
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateReason, setUpdateReason] = useState('');
+  const [updateModalState, setUpdateModalState] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const updateReasonInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Simulation - memoize actions to avoid re-simulating on every render
   const simulationActions = useMemo(() => {
@@ -157,11 +163,51 @@ export function CreateProposalView({
       setDescription(extractedDescription);
       setProposalType('candidate'); // Lock to candidate type when editing
       setDraftSlug(editCandidateSlug || '');
-      setEditDataLoaded(true);
       
-      // TODO: If candidate has actions, parse them into actionTemplateStates
-      // For now, leave actions as custom/empty - user will need to re-add them
-      // This is because parsing encoded calldata back to template fields is complex
+      // Parse candidate actions back to template states
+      if (editingCandidate.actions && editingCandidate.actions.length > 0) {
+        try {
+          const parsedTemplates = parseActionsToTemplates(editingCandidate.actions);
+          
+          // Regenerate actions for each template to ensure consistency
+          const templatesWithActions = parsedTemplates.map(template => {
+            if (template.templateId !== 'custom') {
+              try {
+                const regeneratedActions = generateActionsFromTemplate(
+                  template.templateId,
+                  template.fieldValues
+                );
+                return {
+                  ...template,
+                  generatedActions: regeneratedActions
+                };
+              } catch {
+                // If regeneration fails, keep the original parsed template
+                return template;
+              }
+            }
+            return template;
+          });
+          
+          setActionTemplateStates(templatesWithActions);
+        } catch (err) {
+          console.error('Failed to parse candidate actions:', err);
+          // Fall back to custom template with raw actions
+          const fallbackTemplates: ActionTemplateState[] = editingCandidate.actions.map(action => ({
+            templateId: 'custom' as const,
+            fieldValues: {
+              target: action.target,
+              value: action.value,
+              signature: action.signature,
+              calldata: action.calldata
+            },
+            generatedActions: [action]
+          }));
+          setActionTemplateStates(fallbackTemplates);
+        }
+      }
+      
+      setEditDataLoaded(true);
     }
   }, [isEditMode, editingCandidate, editDataLoaded, editCandidateSlug]);
 
@@ -170,15 +216,15 @@ export function CreateProposalView({
     if (address && !isEditMode) {
       loadUserDrafts();
     }
-  }, [address]);
+  }, [address, isEditMode]);
 
-  // Auto-load most recent draft when drafts are loaded
+  // Auto-load most recent draft when drafts are loaded (skip in edit mode)
   useEffect(() => {
-    if (drafts.length > 0 && !draftSlug && address) {
+    if (drafts.length > 0 && !draftSlug && address && !isEditMode) {
       const mostRecent = drafts[0];
       handleLoadDraft(mostRecent);
     }
-  }, [drafts.length, address]);
+  }, [drafts.length, address, isEditMode]);
 
   // Auto-save draft as user types (debounced)
   useEffect(() => {
@@ -415,8 +461,85 @@ export function CreateProposalView({
     return true;
   };
 
+  // Open update modal (for edit mode)
+  const handleOpenUpdateModal = () => {
+    if (!validateForm()) return;
+    setShowUpdateModal(true);
+    setUpdateReason('');
+    setUpdateModalState('idle');
+    // Focus the reason input after modal opens
+    setTimeout(() => updateReasonInputRef.current?.focus(), 100);
+  };
+  
+  // Close update modal
+  const handleCloseUpdateModal = useCallback(() => {
+    if (updateModalState !== 'pending') {
+      setShowUpdateModal(false);
+      setUpdateReason('');
+      setUpdateModalState('idle');
+    }
+  }, [updateModalState]);
+  
+  // Confirm update from modal
+  const handleConfirmUpdate = async () => {
+    if (!editCandidateSlug) return;
+    
+    setUpdateModalState('pending');
+    setErrorMessage(null);
+    
+    try {
+      const allActions = flattenActionTemplates(actionTemplateStates);
+      const targets = allActions.map(action => action.target as `0x${string}`);
+      const values = allActions.map(action => BigInt(action.value));
+      const signatures = allActions.map(action => action.signature);
+      const calldatas = allActions.map(action => {
+        const data = action.calldata;
+        return (data.startsWith('0x') ? data : `0x${data}`) as `0x${string}`;
+      });
+      const fullDescription = `# ${title}\n\n${description}`;
+      
+      const shouldPayFee = !hasVotingPower;
+      const feeAmount = shouldPayFee && updateCandidateCost ? updateCandidateCost : BigInt(0);
+      
+      await writeContractAsync({
+        address: NOUNS_ADDRESSES.data as `0x${string}`,
+        abi: NounsDAODataABI,
+        functionName: 'updateProposalCandidate',
+        args: [
+          targets, 
+          values, 
+          signatures, 
+          calldatas, 
+          fullDescription, 
+          editCandidateSlug, 
+          BigInt(0), // proposalIdToUpdate
+          updateReason || 'Updated via Berry',
+        ],
+        value: feeAmount,
+      });
+      
+      setUpdateModalState('success');
+      
+      // Navigate back to candidate detail after success
+      setTimeout(() => {
+        setShowUpdateModal(false);
+        onNavigate(`candidate/${editCandidateProposer}/${editCandidateSlug}`);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to update candidate:', error);
+      setUpdateModalState('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to update candidate');
+    }
+  };
+
   const handleSubmitCandidate = async () => {
     if (!validateForm()) return;
+    
+    // In edit mode, open the update modal instead of directly submitting
+    if (isEditMode && editCandidateSlug) {
+      handleOpenUpdateModal();
+      return;
+    }
 
     setErrorMessage(null);
     setCandidateState('confirming');
@@ -434,58 +557,27 @@ export function CreateProposalView({
 
       setCandidateState('pending');
       
-      if (isEditMode && editCandidateSlug) {
-        // UPDATE existing candidate
-        const shouldPayFee = !hasVotingPower;
-        const feeAmount = shouldPayFee && updateCandidateCost ? updateCandidateCost : BigInt(0);
-        
-        await writeContractAsync({
-          address: NOUNS_ADDRESSES.data as `0x${string}`,
-          abi: NounsDAODataABI,
-          functionName: 'updateProposalCandidate',
-          args: [
-            targets, 
-            values, 
-            signatures, 
-            calldatas, 
-            fullDescription, 
-            editCandidateSlug, 
-            BigInt(0), // proposalIdToUpdate
-            updateReason || 'Updated via Berry',
-          ],
-          value: feeAmount,
-        });
+      // CREATE new candidate
+      const baseSlug = generateSlugFromTitle(title);
+      const uniqueSlug = makeSlugUnique(baseSlug);
+      
+      const shouldPayFee = !hasVotingPower;
+      const feeAmount = shouldPayFee && candidateCost ? candidateCost : BigInt(0);
+      
+      await writeContractAsync({
+        address: NOUNS_ADDRESSES.data as `0x${string}`,
+        abi: NounsDAODataABI,
+        functionName: 'createProposalCandidate',
+        args: [targets, values, signatures, calldatas, fullDescription, uniqueSlug, BigInt(0)],
+        value: feeAmount,
+      });
 
-        setCandidateState('success');
-        setErrorMessage(null);
+      setCandidateState('success');
+      setErrorMessage(null);
 
-        // Navigate back to candidate detail after success
-        setTimeout(() => {
-          onNavigate(`candidate/${editCandidateProposer}/${editCandidateSlug}`);
-        }, 2000);
-      } else {
-        // CREATE new candidate
-        const baseSlug = generateSlugFromTitle(title);
-        const uniqueSlug = makeSlugUnique(baseSlug);
-        
-        const shouldPayFee = !hasVotingPower;
-        const feeAmount = shouldPayFee && candidateCost ? candidateCost : BigInt(0);
-        
-        await writeContractAsync({
-          address: NOUNS_ADDRESSES.data as `0x${string}`,
-          abi: NounsDAODataABI,
-          functionName: 'createProposalCandidate',
-          args: [targets, values, signatures, calldatas, fullDescription, uniqueSlug, BigInt(0)],
-          value: feeAmount,
-        });
-
-        setCandidateState('success');
-        setErrorMessage(null);
-
-        setTimeout(() => {
-          handleNewDraft();
-        }, 3000);
-      }
+      setTimeout(() => {
+        handleNewDraft();
+      }, 3000);
     } catch (err: unknown) {
       setCandidateState('error');
 
@@ -701,29 +793,6 @@ export function CreateProposalView({
             )}
           </div>
         )}
-        
-        {/* Update reason - only show in edit mode */}
-        {isEditMode && (
-          <div className={styles.section}>
-            <label className={styles.label}>Update Reason</label>
-            <input
-              type="text"
-              className={styles.input}
-              value={updateReason}
-              onChange={(e) => setUpdateReason(e.target.value)}
-              placeholder="Briefly describe what changed (optional)"
-              disabled={isCreating}
-            />
-            <div className={styles.helpText}>
-              This will be recorded on-chain as the reason for the update.
-              {!hasVotingPower && updateCandidateCost && (
-                <span className={styles.feeNotice}>
-                  {' '}Update fee: {(Number(updateCandidateCost) / 1e18).toFixed(4)} ETH (waived for Noun owners)
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Title */}
         <div className={styles.section}>
@@ -878,12 +947,69 @@ export function CreateProposalView({
 
         {candidateState === 'success' && (
           <div className={styles.success}>
-            {isEditMode 
-              ? 'Your candidate has been successfully updated! Redirecting...'
-              : 'Your candidate has been successfully created! Share it with the community to gather support.'}
+            Your candidate has been successfully created! Share it with the community to gather support.
           </div>
         )}
       </div>
+      
+      {/* Update Candidate Modal */}
+      {showUpdateModal && (
+        <div className={styles.modalOverlay} onClick={handleCloseUpdateModal}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Update Candidate</h3>
+            
+            {updateModalState === 'success' ? (
+              <div className={styles.modalSuccess}>
+                Your candidate has been successfully updated! Redirecting...
+              </div>
+            ) : (
+              <>
+                <p className={styles.modalDescription}>
+                  Provide an optional reason for this update. This will be recorded on-chain.
+                </p>
+                
+                <textarea
+                  ref={updateReasonInputRef}
+                  className={styles.modalTextarea}
+                  value={updateReason}
+                  onChange={(e) => setUpdateReason(e.target.value)}
+                  placeholder="Briefly describe what changed (optional)"
+                  disabled={updateModalState === 'pending'}
+                  rows={3}
+                />
+                
+                {!hasVotingPower && updateCandidateCost && (
+                  <div className={styles.modalFeeNotice}>
+                    Update fee: {(Number(updateCandidateCost) / 1e18).toFixed(4)} ETH
+                    <span className={styles.modalFeeNote}>(waived for Noun owners)</span>
+                  </div>
+                )}
+                
+                {updateModalState === 'error' && errorMessage && (
+                  <div className={styles.modalError}>{errorMessage}</div>
+                )}
+                
+                <div className={styles.modalActions}>
+                  <button
+                    className={styles.modalButtonSecondary}
+                    onClick={handleCloseUpdateModal}
+                    disabled={updateModalState === 'pending'}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={styles.modalButtonPrimary}
+                    onClick={handleConfirmUpdate}
+                    disabled={updateModalState === 'pending'}
+                  >
+                    {updateModalState === 'pending' ? 'Updating...' : 'Update Candidate'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

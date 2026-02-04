@@ -1,15 +1,17 @@
 /**
  * SponsorsPanel Component
  * Shows candidate sponsors with their voting power
+ * Includes ability to sponsor candidates
  */
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useEnsName, useReadContract } from 'wagmi';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useEnsName, useReadContract, useAccount } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
-import type { CandidateSignature } from '../types';
+import { useSponsorCandidate } from '../hooks/useSponsorCandidate';
+import type { CandidateSignature, Candidate } from '../types';
 import styles from './SponsorsPanel.module.css';
 
 interface SponsorsPanelProps {
@@ -18,6 +20,10 @@ interface SponsorsPanelProps {
   threshold: number; // This is proposalThreshold from Goldsky - actual requirement is > threshold
   onNavigate: (path: string) => void;
   onSponsorVotesChange?: (totalSponsorVotes: number) => void;
+  // Candidate data needed for sponsoring
+  candidate?: Candidate;
+  // Callback when sponsorship is successful
+  onSponsorSuccess?: () => void;
 }
 
 interface SponsorItemProps {
@@ -87,9 +93,36 @@ function SponsorItem({ signature, onNavigate, onVotesLoaded }: SponsorItemProps)
   );
 }
 
-export function SponsorsPanel({ signatures, proposer, threshold, onNavigate, onSponsorVotesChange }: SponsorsPanelProps) {
+export function SponsorsPanel({ 
+  signatures, 
+  proposer, 
+  threshold, 
+  onNavigate, 
+  onSponsorVotesChange,
+  candidate,
+  onSponsorSuccess,
+}: SponsorsPanelProps) {
+  const { isConnected, address } = useAccount();
+  
   // Track voting power for each unique signer
   const [sponsorVotes, setSponsorVotes] = useState<Record<string, number>>({});
+  
+  // Modal state
+  const [showSponsorModal, setShowSponsorModal] = useState(false);
+  const [sponsorReason, setSponsorReason] = useState('');
+  const reasonInputRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Sponsor hook
+  const {
+    hasVotingPower,
+    isSigning,
+    isPending,
+    isConfirming,
+    isSuccess: sponsorSuccess,
+    error: sponsorError,
+    sponsorCandidate,
+    reset: resetSponsor,
+  } = useSponsorCandidate();
   
   // Get voting power for proposer
   const { data: proposerVotingPower } = useReadContract({
@@ -100,6 +133,72 @@ export function SponsorsPanel({ signatures, proposer, threshold, onNavigate, onS
   });
 
   const proposerVotes = proposerVotingPower ? Number(proposerVotingPower) : 0;
+  
+  // Check if user has already sponsored
+  const hasAlreadySponsored = useMemo(() => {
+    if (!address) return false;
+    return signatures.some(s => s.signer.toLowerCase() === address.toLowerCase());
+  }, [signatures, address]);
+  
+  // Check if user is the proposer
+  const isProposer = useMemo(() => {
+    if (!address) return false;
+    return proposer.toLowerCase() === address.toLowerCase();
+  }, [proposer, address]);
+  
+  // Can sponsor: connected, has voting power, hasn't already sponsored, isn't the proposer
+  const canSponsor = isConnected && hasVotingPower && !hasAlreadySponsored && !isProposer && candidate && !candidate.canceled;
+  
+  // Handle sponsor button click
+  const handleSponsorClick = useCallback(() => {
+    setShowSponsorModal(true);
+    setSponsorReason('');
+    resetSponsor();
+    // Focus the reason input after modal opens
+    setTimeout(() => reasonInputRef.current?.focus(), 100);
+  }, [resetSponsor]);
+  
+  // Handle sponsor submit
+  const handleSponsorSubmit = useCallback(async () => {
+    if (!candidate) return;
+    
+    try {
+      await sponsorCandidate(
+        {
+          proposer: candidate.proposer,
+          slug: candidate.slug,
+          proposalIdToUpdate: candidate.proposalIdToUpdate,
+          description: candidate.description,
+          actions: candidate.actions || [],
+        },
+        sponsorReason,
+        14 // 14 days expiration
+      );
+    } catch (err) {
+      console.error('Sponsor failed:', err);
+    }
+  }, [candidate, sponsorCandidate, sponsorReason]);
+  
+  // Handle successful sponsorship
+  useEffect(() => {
+    if (sponsorSuccess) {
+      // Close modal after a delay to show success
+      setTimeout(() => {
+        setShowSponsorModal(false);
+        setSponsorReason('');
+        onSponsorSuccess?.();
+      }, 2000);
+    }
+  }, [sponsorSuccess, onSponsorSuccess]);
+  
+  // Close modal handler
+  const handleCloseModal = useCallback(() => {
+    if (!isSigning && !isPending && !isConfirming) {
+      setShowSponsorModal(false);
+      setSponsorReason('');
+      resetSponsor();
+    }
+  }, [isSigning, isPending, isConfirming, resetSponsor]);
 
   // Callback for SponsorItems to report their votes
   const handleVotesLoaded = useCallback((signer: string, votes: number) => {
@@ -182,6 +281,106 @@ export function SponsorsPanel({ signatures, proposer, threshold, onNavigate, onS
           No sponsors yet. {proposerVotes >= requiredNouns 
             ? 'The proposer has enough nouns to promote this candidate directly.'
             : `${requiredNouns - proposerVotes} more sponsoring ${requiredNouns - proposerVotes === 1 ? 'noun is' : 'nouns are'} needed to promote.`}
+        </div>
+      )}
+      
+      {/* Sponsor Button */}
+      {candidate && !candidate.canceled && (
+        <div className={styles.sponsorButtonContainer}>
+          <button
+            className={styles.sponsorButton}
+            onClick={handleSponsorClick}
+            disabled={!canSponsor}
+            title={
+              !isConnected ? 'Connect wallet to sponsor' :
+              !hasVotingPower ? 'You need voting power to sponsor' :
+              hasAlreadySponsored ? 'You have already sponsored this candidate' :
+              isProposer ? 'You are the proposer' :
+              'Sponsor this candidate'
+            }
+          >
+            Sponsor Candidate
+          </button>
+          {!isConnected && (
+            <span className={styles.sponsorHint}>Connect wallet to sponsor</span>
+          )}
+          {isConnected && !hasVotingPower && (
+            <span className={styles.sponsorHint}>Requires Noun voting power</span>
+          )}
+          {hasAlreadySponsored && (
+            <span className={styles.sponsorHint}>You have already sponsored</span>
+          )}
+        </div>
+      )}
+      
+      {/* Sponsor Modal */}
+      {showSponsorModal && (
+        <div className={styles.modalOverlay} onClick={handleCloseModal}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Sponsor Candidate</h3>
+            
+            {sponsorSuccess ? (
+              <div className={styles.successMessage}>
+                Sponsorship submitted successfully! Your signature has been added to this candidate.
+              </div>
+            ) : (
+              <>
+                <p className={styles.modalDescription}>
+                  By sponsoring, you&apos;re adding your voting power to help this candidate reach the threshold 
+                  for promotion to a full proposal. Your signature will be valid for 14 days.
+                </p>
+                
+                <div className={styles.reasonField}>
+                  <label className={styles.reasonLabel}>Reason (optional)</label>
+                  <textarea
+                    ref={reasonInputRef}
+                    className={styles.reasonInput}
+                    value={sponsorReason}
+                    onChange={e => setSponsorReason(e.target.value)}
+                    placeholder="Why are you sponsoring this candidate?"
+                    rows={3}
+                    disabled={isSigning || isPending || isConfirming}
+                  />
+                </div>
+                
+                {sponsorError && (
+                  <div className={styles.errorMessage}>
+                    {sponsorError.message.includes('user rejected')
+                      ? 'Transaction was rejected'
+                      : sponsorError.message}
+                  </div>
+                )}
+                
+                <div className={styles.modalButtons}>
+                  <button
+                    className={styles.cancelButton}
+                    onClick={handleCloseModal}
+                    disabled={isSigning || isPending || isConfirming}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={styles.confirmButton}
+                    onClick={handleSponsorSubmit}
+                    disabled={isSigning || isPending || isConfirming}
+                  >
+                    {isSigning ? 'Sign in wallet...' :
+                     isPending ? 'Confirm in wallet...' :
+                     isConfirming ? 'Confirming...' :
+                     'Sign & Submit'}
+                  </button>
+                </div>
+                
+                {(isSigning || isPending || isConfirming) && (
+                  <div className={styles.statusHint}>
+                    {isSigning && 'Please sign the message in your wallet...'}
+                    {isPending && 'Please confirm the transaction in your wallet...'}
+                    {isConfirming && 'Waiting for transaction confirmation...'}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
