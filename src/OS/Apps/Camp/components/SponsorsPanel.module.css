@@ -198,7 +198,7 @@
 }
 
 .modalContent {
-  background: var(--berry-bg-primary);
+  background: var(--berry-bg-tertiary);
   border: 2px solid var(--berry-border);
   border-radius: 8px;
   padding: 20px;

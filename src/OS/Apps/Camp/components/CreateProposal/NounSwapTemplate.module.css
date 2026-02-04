@@ -32,7 +32,7 @@
   padding: 8px 10px;
   font-size: 12px;
   font-family: var(--berry-font-system);
-  background: var(--berry-bg-primary);
+  background: var(--berry-bg-tertiary);
   border: 1px solid var(--berry-border);
   border-radius: 4px;
   color: var(--berry-text-primary);
