@@ -63,32 +63,18 @@ interface UseSponsorCandidateReturn {
   reset: () => void;
 }
 
-// Domain for EIP-712 signature - Nouns DAO Governor contract (NOT Data contract)
-// The signature is verified against the DAO contract's domain
-const NOUNS_DAO_DOMAIN = {
+// Domain for EIP-712 signature - Nouns DAO Data contract
+const NOUNS_DAO_DATA_DOMAIN = {
   name: 'Nouns DAO',
   chainId: 1,
-  verifyingContract: NOUNS_ADDRESSES.governor as `0x${string}`,
+  verifyingContract: NOUNS_ADDRESSES.data as `0x${string}`,
 };
 
 // EIP-712 types for proposal signature
-// IMPORTANT: The field name must be "expiry" not "expirationTimestamp"
+// IMPORTANT: The field name must be 'expiry' to match the contract's PROPOSAL_TYPEHASH:
+// keccak256('Proposal(address proposer,address[] targets,uint256[] values,string[] signatures,bytes[] calldatas,string description,uint256 expiry)')
 const PROPOSAL_TYPES = {
   Proposal: [
-    { name: 'proposer', type: 'address' },
-    { name: 'targets', type: 'address[]' },
-    { name: 'values', type: 'uint256[]' },
-    { name: 'signatures', type: 'string[]' },
-    { name: 'calldatas', type: 'bytes[]' },
-    { name: 'description', type: 'string' },
-    { name: 'expiry', type: 'uint256' },
-  ],
-} as const;
-
-// Types for updating an existing proposal
-const UPDATE_PROPOSAL_TYPES = {
-  UpdateProposal: [
-    { name: 'proposalId', type: 'uint256' },
     { name: 'proposer', type: 'address' },
     { name: 'targets', type: 'address[]' },
     { name: 'values', type: 'uint256[]' },
@@ -283,46 +269,22 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       // Encode proposal data
       const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
-      // Determine if this is an update to an existing proposal
-      const isUpdate = candidate.proposalIdToUpdate && candidate.proposalIdToUpdate !== '0';
-      
       // Sign EIP-712 typed data
-      // IMPORTANT: Use "expiry" not "expirationTimestamp" - this must match the contract's expected type
-      // IMPORTANT: Use DAO Governor address for verifyingContract, not Data contract
-      let rawSignature: `0x${string}`;
-      
-      if (isUpdate) {
-        rawSignature = await signTypedDataAsync({
-          domain: NOUNS_DAO_DOMAIN,
-          types: UPDATE_PROPOSAL_TYPES,
-          primaryType: 'UpdateProposal',
-          message: {
-            proposalId: BigInt(candidate.proposalIdToUpdate!),
-            proposer,
-            targets,
-            values,
-            signatures,
-            calldatas,
-            description,
-            expiry: expirationTimestamp,
-          },
-        });
-      } else {
-        rawSignature = await signTypedDataAsync({
-          domain: NOUNS_DAO_DOMAIN,
-          types: PROPOSAL_TYPES,
-          primaryType: 'Proposal',
-          message: {
-            proposer,
-            targets,
-            values,
-            signatures,
-            calldatas,
-            description,
-            expiry: expirationTimestamp,
-          },
-        });
-      }
+      // Note: The message field 'expiry' must match the PROPOSAL_TYPEHASH in the contract
+      const rawSignature = await signTypedDataAsync({
+        domain: NOUNS_DAO_DATA_DOMAIN,
+        types: PROPOSAL_TYPES,
+        primaryType: 'Proposal',
+        message: {
+          proposer,
+          targets,
+          values,
+          signatures,
+          calldatas,
+          description,
+          expiry: expirationTimestamp, // Field name is 'expiry' in the typehash
+        },
+      });
       
       // For smart contract wallets, the signature needs special handling
       // The raw signature from signTypedData is signed by the Safe owner,

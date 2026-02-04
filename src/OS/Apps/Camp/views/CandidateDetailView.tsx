@@ -413,27 +413,27 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
                 disabled={signalPending || signalConfirming}
               />
               <div className={styles.commentButtons}>
-                <button 
+                <button
                   className={`${styles.commentButton} ${styles.commentFor}`}
                   onClick={() => handleSignal(1)}
                   disabled={signalPending || signalConfirming}
                 >
                   {signalPending || signalConfirming ? '...' : 'For'}
                 </button>
-                <button 
+              <button
                   className={`${styles.commentButton} ${styles.commentAgainst}`}
                   onClick={() => handleSignal(0)}
                   disabled={signalPending || signalConfirming}
                 >
                   {signalPending || signalConfirming ? '...' : 'Against'}
-                </button>
-                <button 
+              </button>
+              <button
                   className={`${styles.commentButton} ${styles.commentAbstain}`}
                   onClick={() => handleSignal(2)}
                   disabled={signalPending || signalConfirming}
                 >
                   {signalPending || signalConfirming ? '...' : 'Abstain'}
-                </button>
+              </button>
               </div>
             </div>
           )}
