@@ -513,7 +513,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
               {renderActor(actorAvatar, displayName, handleActorClick)}
               <span className={styles.action}>sold</span>
               {nounId !== undefined && (
-                <NounImageById id={nounId} size={18} className={styles.nounImageInline} />
+                <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
               )}
               <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
               <span className={styles.action}>for</span>
@@ -534,7 +534,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             </span>
             <span className={styles.action}>transferred</span>
             {nounId !== undefined && (
-              <NounImageById id={nounId} size={18} className={styles.nounImageInline} />
+              <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
             )}
             <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
             <span className={styles.action}>to</span>
@@ -552,7 +552,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             </span>
             <span className={styles.action}>delegated</span>
             {nounId !== undefined && (
-              <NounImageById id={nounId} size={18} className={styles.nounImageInline} />
+              <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
             )}
             <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
             <span className={styles.action}>to</span>
@@ -572,7 +572,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         return (
           <div className={styles.nounActivity}>
             {nounId !== undefined && (
-              <NounImageById id={nounId} size={48} className={styles.nounImage} />
+              <NounImageById id={nounId} size={64} className={styles.nounImage} />
             )}
             <div className={styles.nounContent}>
               <div className={styles.header}>
@@ -619,7 +619,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             {nounId !== undefined && (
               <NounImageById 
                 id={nounId} 
-                size={48} 
+                size={64} 
                 className={`${styles.nounImage} ${styles.clickable}`} 
                 onClick={handleAuctionClick}
               />

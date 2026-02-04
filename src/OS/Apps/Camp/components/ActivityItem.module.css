@@ -4,7 +4,7 @@
  */
 
 .item {
-  padding: 10px 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--berry-border);
   background: var(--berry-bg);
 }
@@ -17,24 +17,27 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 14px;
   font-family: var(--berry-font-system);
 }
 
 /* Actor with avatar wrapper */
 .actorWrapper {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  align-items: baseline;
+  gap: 6px;
 }
 
 .avatar {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+  /* Offset to align with text baseline */
+  position: relative;
+  top: 5px;
 }
 
 .actor {
@@ -58,12 +61,12 @@
 
 .votes {
   color: var(--berry-text-muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .proposal {
-  margin-top: 4px;
-  font-size: 11px;
+  margin-top: 6px;
+  font-size: 13px;
   color: var(--berry-text-primary);
   cursor: pointer;
   line-height: 1.4;
@@ -87,13 +90,13 @@
 }
 
 .reason {
-  margin-top: 6px;
-  padding: 8px 10px;
+  margin-top: 8px;
+  padding: 10px 12px;
   background: var(--berry-bg-secondary);
-  border-left: 2px solid var(--berry-border);
-  font-size: 11px;
+  border-left: 3px solid var(--berry-border);
+  font-size: 13px;
   color: var(--berry-text-secondary);
-  line-height: 1.4;
+  line-height: 1.5;
   word-break: break-word;
   /* Reset styles that would interfere with MarkdownRenderer */
   font-style: normal;
@@ -101,19 +104,19 @@
 }
 
 .time {
-  margin-top: 4px;
-  font-size: 10px;
+  margin-top: 6px;
+  font-size: 11px;
   color: var(--berry-text-muted);
 }
 
 /* Badges */
 .badge {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 2px 5px;
-  border-radius: 3px;
+  padding: 3px 6px;
+  border-radius: 4px;
   background: var(--berry-bg-tertiary);
   color: var(--berry-text-secondary);
 }
@@ -168,12 +171,12 @@
 .nounActivity {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
 }
 
 .nounImage {
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   background: var(--berry-bg-secondary);
 }
 
@@ -189,8 +192,8 @@
 .nounImageInline {
   display: inline-block;
   vertical-align: middle;
-  border-radius: 2px;
-  margin: 0 2px;
+  border-radius: 3px;
+  margin: 0 3px;
 }
 
 .nounContent {
@@ -200,7 +203,7 @@
 
 /* Noun badge for transfers/delegations/auctions */
 .nounBadge {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--berry-text-secondary);
 }
 
@@ -210,7 +213,7 @@
 }
 
 .salePrice {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--berry-success);
 }
@@ -219,12 +222,12 @@
 .auctionDetails {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 10px;
+  margin-top: 6px;
 }
 
 .bidAmount {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--berry-text-primary);
   font-family: var(--berry-font-mono, monospace);
@@ -233,8 +236,8 @@
 .settlerInfo {
   display: flex;
   align-items: baseline;
-  gap: 4px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 13px;
   font-family: var(--berry-font-system);
 }
 
@@ -265,32 +268,32 @@
 
 /* Quoted content (for reposts) */
 .quotedReason {
-  margin-top: 6px;
-  padding-left: 10px;
+  margin-top: 8px;
+  padding-left: 12px;
   border-left: 2px solid var(--color-border);
   opacity: 0.85;
 }
 
 /* Reply styles */
 .replyContainer {
-  margin-top: 6px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .quotedReply {
-  padding: 8px 10px;
+  padding: 10px 12px;
   background: var(--color-bg-tertiary, rgba(0, 0, 0, 0.1));
   border-radius: 6px;
   border-left: 3px solid var(--color-border);
 }
 
 .quoteAttribution {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-tertiary);
   font-style: italic;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .quoteAttribution::before {
@@ -298,7 +301,7 @@
 }
 
 .quotedText {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-secondary);
   opacity: 0.9;
 }
