@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useEnsName, useReadContract, useAccount } from 'wagmi';
+import { useEnsName, useReadContract, useAccount, usePublicClient } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import { useSponsorCandidate } from '../hooks/useSponsorCandidate';
@@ -103,9 +103,30 @@ export function SponsorsPanel({
   onSponsorSuccess,
 }: SponsorsPanelProps) {
   const { isConnected, address } = useAccount();
+  const publicClient = usePublicClient();
   
   // Track voting power for each unique signer
   const [sponsorVotes, setSponsorVotes] = useState<Record<string, number>>({});
+  
+  // Check if connected wallet is a Smart Contract Wallet (SCW)
+  const [isSmartContractWallet, setIsSmartContractWallet] = useState(false);
+  
+  useEffect(() => {
+    async function checkIfSCW() {
+      if (!address || !publicClient) {
+        setIsSmartContractWallet(false);
+        return;
+      }
+      try {
+        const code = await publicClient.getCode({ address: address as `0x${string}` });
+        // If there's bytecode, it's a contract (SCW)
+        setIsSmartContractWallet(code !== undefined && code !== '0x');
+      } catch {
+        setIsSmartContractWallet(false);
+      }
+    }
+    checkIfSCW();
+  }, [address, publicClient]);
   
   // Modal state
   const [showSponsorModal, setShowSponsorModal] = useState(false);
@@ -144,7 +165,11 @@ export function SponsorsPanel({
     isConfirming,
     isSuccess: sponsorSuccess,
     error: sponsorError,
+    signedData,
+    hasPendingSignature,
     sponsorCandidate,
+    signOnly,
+    submitSignature,
     reset: resetSponsor,
   } = useSponsorCandidate();
   
@@ -186,9 +211,16 @@ export function SponsorsPanel({
     setTimeout(() => reasonInputRef.current?.focus(), 100);
   }, [resetSponsor]);
   
-  // Handle sponsor submit
+  // Track if a sponsor operation is in progress (to prevent double calls)
+  const sponsorInProgressRef = useRef(false);
+  
+  // Handle sponsor submit (combined flow for EOA wallets)
   const handleSponsorSubmit = useCallback(async () => {
     if (!candidate) return;
+    
+    // Prevent double-calls
+    if (sponsorInProgressRef.current) return;
+    sponsorInProgressRef.current = true;
     
     try {
       await sponsorCandidate(
@@ -204,8 +236,50 @@ export function SponsorsPanel({
       );
     } catch (err) {
       console.error('Sponsor failed:', err);
+    } finally {
+      sponsorInProgressRef.current = false;
     }
   }, [candidate, sponsorCandidate, sponsorReason, expirationDays]);
+  
+  // Handle sign only (step 1 for SCW wallets)
+  const handleSignOnly = useCallback(async () => {
+    if (!candidate) return;
+    
+    if (sponsorInProgressRef.current) return;
+    sponsorInProgressRef.current = true;
+    
+    try {
+      await signOnly(
+        {
+          proposer: candidate.proposer,
+          slug: candidate.slug,
+          proposalIdToUpdate: candidate.proposalIdToUpdate,
+          description: candidate.description,
+          actions: candidate.actions || [],
+        },
+        sponsorReason,
+        expirationDays
+      );
+    } catch (err) {
+      console.error('Sign failed:', err);
+    } finally {
+      sponsorInProgressRef.current = false;
+    }
+  }, [candidate, signOnly, sponsorReason, expirationDays]);
+  
+  // Handle submit signature (step 2 for SCW wallets)
+  const handleSubmitSignature = useCallback(async () => {
+    if (sponsorInProgressRef.current) return;
+    sponsorInProgressRef.current = true;
+    
+    try {
+      await submitSignature();
+    } catch (err) {
+      console.error('Submit failed:', err);
+    } finally {
+      sponsorInProgressRef.current = false;
+    }
+  }, [submitSignature]);
   
   // Handle successful sponsorship
   useEffect(() => {
@@ -358,6 +432,27 @@ export function SponsorsPanel({
                   for promotion to a full proposal.
                 </p>
                 
+                {isSmartContractWallet && !hasPendingSignature && (
+                  <div className={styles.scwWarning}>
+                    <strong>📋 Smart Contract Wallet Detected</strong>
+                    <p>
+                      For Safe and other multi-sig wallets, we&apos;ll break this into two steps: 
+                      first sign the message, then submit the transaction. This allows time for 
+                      multi-sig approval if needed.
+                    </p>
+                  </div>
+                )}
+                
+                {hasPendingSignature && (
+                  <div className={styles.pendingSignature}>
+                    <strong>✓ Signature Ready</strong>
+                    <p>
+                      Your signature has been created. Click &quot;Submit Transaction&quot; below to add your 
+                      sponsorship to the blockchain.
+                    </p>
+                  </div>
+                )}
+                
                 <div className={styles.expirationField}>
                   <label className={styles.fieldLabel}>Signature Expiration</label>
                   <div className={styles.expirationRow}>
@@ -407,24 +502,63 @@ export function SponsorsPanel({
                   >
                     Cancel
                   </button>
-                  <button
-                    className={styles.confirmButton}
-                    onClick={handleSponsorSubmit}
-                    disabled={isSigning || isPending || isConfirming}
-                  >
-                    {isSigning ? 'Sign in wallet...' :
-                     isPending ? 'Confirm in wallet...' :
-                     isConfirming ? 'Confirming...' :
-                     'Sign & Submit'}
-                  </button>
+                  
+                  {/* For SCW wallets: two-step flow */}
+                  {isSmartContractWallet ? (
+                    <>
+                      {!hasPendingSignature ? (
+                        <button
+                          className={styles.confirmButton}
+                          onClick={handleSignOnly}
+                          disabled={isSigning || isPending || isConfirming}
+                        >
+                          {isSigning ? 'Signing...' : 'Step 1: Sign Message'}
+                        </button>
+                      ) : (
+                        <button
+                          className={styles.confirmButton}
+                          onClick={handleSubmitSignature}
+                          disabled={isSigning || isPending || isConfirming}
+                        >
+                          {isPending ? 'Submitting...' :
+                           isConfirming ? 'Confirming...' :
+                           'Step 2: Submit Transaction'}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    /* For EOA wallets: combined flow */
+                    <button
+                      className={styles.confirmButton}
+                      onClick={handleSponsorSubmit}
+                      disabled={isSigning || isPending || isConfirming}
+                    >
+                      {isSigning ? 'Sign in wallet...' :
+                       isPending ? 'Confirm in wallet...' :
+                       isConfirming ? 'Confirming...' :
+                       'Sign & Submit'}
+                    </button>
+                  )}
                 </div>
                 
                 {(isSigning || isPending || isConfirming) && (
                   <div className={styles.statusHint}>
-                    {isSigning && 'Please sign the message in your wallet...'}
-                    {isPending && 'Please confirm the transaction in your wallet...'}
+                    {isSigning && (isSmartContractWallet 
+                      ? 'Please sign the message in your wallet. For multi-sig wallets, additional approvals may be needed.'
+                      : 'Step 1/2: Please sign the message in your wallet...')}
+                    {isPending && (isSmartContractWallet
+                      ? 'Please confirm the transaction in your wallet.'
+                      : 'Step 2/2: Please confirm the transaction in your wallet...')}
                     {isConfirming && 'Waiting for transaction confirmation...'}
                   </div>
+                )}
+                
+                {!isSigning && !isPending && !isConfirming && !hasPendingSignature && (
+                  <p className={styles.processHint}>
+                    {isSmartContractWallet 
+                      ? 'This process has two steps to support multi-sig wallets.'
+                      : 'This will require a signature request followed by a transaction.'}
+                  </p>
                 )}
               </>
             )}

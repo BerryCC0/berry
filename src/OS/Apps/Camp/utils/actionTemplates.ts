@@ -209,7 +209,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'treasury-erc20-custom',
     category: 'treasury',
     name: 'Send ERC20 Token from Treasury',
-    description: 'Transfer any ERC20 token from treasury to a recipient',
+    description: 'Transfer any ERC20 token from the treasury to a recipient',
     isMultiAction: false,
     fields: [
       {

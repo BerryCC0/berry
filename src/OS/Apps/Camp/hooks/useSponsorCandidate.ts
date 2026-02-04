@@ -7,6 +7,10 @@
  * 2. Modal opens for reason input
  * 3. User signs EIP-712 typed data
  * 4. User submits addSignature transaction
+ * 
+ * For Smart Contract Wallets (Safe, etc.):
+ * - The signing and submission can be done as separate steps
+ * - This allows time for multi-sig approval if needed
  */
 
 'use client';
@@ -30,6 +34,14 @@ interface CandidateData {
   }[];
 }
 
+interface SignedSponsorData {
+  signature: `0x${string}`;
+  expirationTimestamp: bigint;
+  encodedProp: `0x${string}`;
+  candidate: CandidateData;
+  reason: string;
+}
+
 interface UseSponsorCandidateReturn {
   // State
   hasVotingPower: boolean;
@@ -40,8 +52,14 @@ interface UseSponsorCandidateReturn {
   isSuccess: boolean;
   error: Error | null;
   
+  // For two-step flow (Safe wallets)
+  signedData: SignedSponsorData | null;
+  hasPendingSignature: boolean;
+  
   // Actions
   sponsorCandidate: (candidate: CandidateData, reason: string, expirationDays?: number) => Promise<void>;
+  signOnly: (candidate: CandidateData, reason: string, expirationDays?: number) => Promise<SignedSponsorData>;
+  submitSignature: () => Promise<void>;
   reset: () => void;
 }
 
@@ -72,13 +90,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [signedData, setSignedData] = useState<{
-    signature: `0x${string}`;
-    expirationTimestamp: bigint;
-    encodedProp: `0x${string}`;
-    candidate: CandidateData;
-    reason: string;
-  } | null>(null);
+  const [signedData, setSignedData] = useState<SignedSponsorData | null>(null);
   
   // Check if user has voting power
   const { data: votingPower } = useReadContract({
@@ -124,7 +136,6 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     description: string
   ): `0x${string}` => {
     // Encode the proposal data as the contract expects
-    // This is the keccak256 hash of the packed encoding
     const encoded = encodeAbiParameters(
       parseAbiParameters('address, address[], uint256[], string[], bytes[], string'),
       [proposer, targets, values, signatures, calldatas, description]
@@ -133,13 +144,31 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   }, []);
   
   /**
-   * Sponsor a candidate
+   * Prepare proposal data from candidate
    */
-  const sponsorCandidate = useCallback(async (
+  const prepareProposalData = useCallback((candidate: CandidateData) => {
+    const proposer = candidate.proposer as Address;
+    const targets = candidate.actions.map(a => a.target as Address);
+    const values = candidate.actions.map(a => BigInt(a.value || '0'));
+    const signatures = candidate.actions.map(a => a.signature || '');
+    const calldatas = candidate.actions.map(a => {
+      const data = a.calldata || '';
+      return (data.startsWith('0x') ? data : `0x${data}`) as `0x${string}`;
+    });
+    const description = candidate.description;
+    
+    return { proposer, targets, values, signatures, calldatas, description };
+  }, []);
+  
+  /**
+   * Sign only - for two-step flow (Safe wallets)
+   * Returns the signed data without submitting the transaction
+   */
+  const signOnly = useCallback(async (
     candidate: CandidateData,
     reason: string,
     expirationDays: number = 14
-  ) => {
+  ): Promise<SignedSponsorData> => {
     if (!isConnected || !address) {
       throw new Error('Wallet not connected');
     }
@@ -148,30 +177,19 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       throw new Error('No voting power');
     }
     
-    setIsLoading(true);
+    setIsSigning(true);
     setError(null);
     
     try {
-      // Prepare proposal data
-      const proposer = candidate.proposer as Address;
-      const targets = candidate.actions.map(a => a.target as Address);
-      const values = candidate.actions.map(a => BigInt(a.value || '0'));
-      const signatures = candidate.actions.map(a => a.signature || '');
-      const calldatas = candidate.actions.map(a => {
-        const data = a.calldata || '';
-        return (data.startsWith('0x') ? data : `0x${data}`) as `0x${string}`;
-      });
-      const description = candidate.description;
+      const { proposer, targets, values, signatures, calldatas, description } = prepareProposalData(candidate);
       
-      // Calculate expiration timestamp (default 14 days from now)
+      // Calculate expiration timestamp
       const expirationTimestamp = BigInt(Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60));
       
-      // Encode proposal data for the encodedProp parameter
+      // Encode proposal data
       const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
-      // Step 1: Sign EIP-712 typed data
-      setIsSigning(true);
-      
+      // Sign EIP-712 typed data
       const signature = await signTypedDataAsync({
         domain: NOUNS_DAO_DATA_DOMAIN,
         types: PROPOSAL_TYPES,
@@ -189,16 +207,45 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       
       setIsSigning(false);
       
-      // Store signed data for the transaction
-      setSignedData({
+      const data: SignedSponsorData = {
         signature,
         expirationTimestamp,
         encodedProp,
         candidate,
         reason,
-      });
+      };
       
-      // Step 2: Submit addSignature transaction
+      // Store signed data
+      setSignedData(data);
+      
+      return data;
+      
+    } catch (err) {
+      setIsSigning(false);
+      const error = err instanceof Error ? err : new Error('Failed to sign sponsorship');
+      setError(error);
+      throw error;
+    }
+  }, [isConnected, address, hasVotingPower, signTypedDataAsync, prepareProposalData, encodeProposalData]);
+  
+  /**
+   * Submit a previously signed signature
+   */
+  const submitSignature = useCallback(async () => {
+    if (!signedData) {
+      throw new Error('No signed data available. Please sign first.');
+    }
+    
+    if (isLoading) {
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { signature, expirationTimestamp, encodedProp, candidate, reason } = signedData;
+      
       await writeContractAsync({
         address: NOUNS_ADDRESSES.data as `0x${string}`,
         abi: NounsDAODataABI,
@@ -206,7 +253,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
         args: [
           signature,
           expirationTimestamp,
-          proposer,
+          candidate.proposer as Address,
           candidate.slug,
           BigInt(candidate.proposalIdToUpdate || '0'),
           encodedProp,
@@ -217,13 +264,66 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       setIsLoading(false);
       
     } catch (err) {
-      setIsSigning(false);
+      setIsLoading(false);
+      const error = err instanceof Error ? err : new Error('Failed to submit signature');
+      setError(error);
+      throw error;
+    }
+  }, [signedData, isLoading, writeContractAsync]);
+  
+  /**
+   * Sponsor a candidate (combined sign + submit for EOA wallets)
+   */
+  const sponsorCandidate = useCallback(async (
+    candidate: CandidateData,
+    reason: string,
+    expirationDays: number = 14
+  ) => {
+    if (!isConnected || !address) {
+      throw new Error('Wallet not connected');
+    }
+    
+    if (!hasVotingPower) {
+      throw new Error('No voting power');
+    }
+    
+    // Prevent double-calls while already processing
+    if (isLoading) {
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Step 1: Sign
+      const data = await signOnly(candidate, reason, expirationDays);
+      
+      // Step 2: Submit
+      await writeContractAsync({
+        address: NOUNS_ADDRESSES.data as `0x${string}`,
+        abi: NounsDAODataABI,
+        functionName: 'addSignature',
+        args: [
+          data.signature,
+          data.expirationTimestamp,
+          candidate.proposer as Address,
+          candidate.slug,
+          BigInt(candidate.proposalIdToUpdate || '0'),
+          data.encodedProp,
+          reason,
+        ],
+      });
+      
+      setIsLoading(false);
+      
+    } catch (err) {
       setIsLoading(false);
       const error = err instanceof Error ? err : new Error('Failed to sponsor candidate');
       setError(error);
       throw error;
     }
-  }, [isConnected, address, hasVotingPower, signTypedDataAsync, writeContractAsync, encodeProposalData]);
+  }, [isConnected, address, hasVotingPower, isLoading, signOnly, writeContractAsync]);
   
   /**
    * Reset state
@@ -244,7 +344,11 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     isConfirming,
     isSuccess,
     error: error || writeError || null,
+    signedData,
+    hasPendingSignature: !!signedData && !isSuccess,
     sponsorCandidate,
+    signOnly,
+    submitSignature,
     reset,
   };
 }

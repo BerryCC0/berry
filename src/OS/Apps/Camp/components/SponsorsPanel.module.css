@@ -385,3 +385,63 @@
   margin-top: 12px;
   font-style: italic;
 }
+
+/* Smart Contract Wallet notice */
+.scwWarning {
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 16px;
+}
+
+.scwWarning strong {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: #2196f3;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.scwWarning p {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Pending signature state */
+.pendingSignature {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 16px;
+}
+
+.pendingSignature strong {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: #4caf50;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.pendingSignature p {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Process hint */
+.processHint {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  text-align: center;
+  margin: 12px 0 0 0;
+  line-height: 1.4;
+}
