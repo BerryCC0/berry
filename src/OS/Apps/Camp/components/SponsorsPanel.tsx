@@ -110,7 +110,31 @@ export function SponsorsPanel({
   // Modal state
   const [showSponsorModal, setShowSponsorModal] = useState(false);
   const [sponsorReason, setSponsorReason] = useState('');
+  const [expirationDate, setExpirationDate] = useState<string>(() => {
+    // Default to 14 days from now
+    const date = new Date();
+    date.setDate(date.getDate() + 14);
+    return date.toISOString().split('T')[0];
+  });
   const reasonInputRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Calculate days until expiration
+  const expirationDays = useMemo(() => {
+    const expDate = new Date(expirationDate);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    expDate.setHours(0, 0, 0, 0);
+    const diffTime = expDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(1, diffDays); // Minimum 1 day
+  }, [expirationDate]);
+  
+  // Minimum date is tomorrow
+  const minDate = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().split('T')[0];
+  }, []);
   
   // Sponsor hook
   const {
@@ -153,6 +177,10 @@ export function SponsorsPanel({
   const handleSponsorClick = useCallback(() => {
     setShowSponsorModal(true);
     setSponsorReason('');
+    // Reset expiration to 14 days from now
+    const date = new Date();
+    date.setDate(date.getDate() + 14);
+    setExpirationDate(date.toISOString().split('T')[0]);
     resetSponsor();
     // Focus the reason input after modal opens
     setTimeout(() => reasonInputRef.current?.focus(), 100);
@@ -172,12 +200,12 @@ export function SponsorsPanel({
           actions: candidate.actions || [],
         },
         sponsorReason,
-        14 // 14 days expiration
+        expirationDays
       );
     } catch (err) {
       console.error('Sponsor failed:', err);
     }
-  }, [candidate, sponsorCandidate, sponsorReason]);
+  }, [candidate, sponsorCandidate, sponsorReason, expirationDays]);
   
   // Handle successful sponsorship
   useEffect(() => {
@@ -327,11 +355,31 @@ export function SponsorsPanel({
               <>
                 <p className={styles.modalDescription}>
                   By sponsoring, you&apos;re adding your voting power to help this candidate reach the threshold 
-                  for promotion to a full proposal. Your signature will be valid for 14 days.
+                  for promotion to a full proposal.
                 </p>
                 
+                <div className={styles.expirationField}>
+                  <label className={styles.fieldLabel}>Signature Expiration</label>
+                  <div className={styles.expirationRow}>
+                    <input
+                      type="date"
+                      className={styles.dateInput}
+                      value={expirationDate}
+                      onChange={e => setExpirationDate(e.target.value)}
+                      min={minDate}
+                      disabled={isSigning || isPending || isConfirming}
+                    />
+                    <span className={styles.expirationHint}>
+                      {expirationDays} day{expirationDays !== 1 ? 's' : ''} from now
+                    </span>
+                  </div>
+                  <p className={styles.fieldHelpText}>
+                    Your sponsorship will be valid until this date. You can set it as far in the future as you want.
+                  </p>
+                </div>
+                
                 <div className={styles.reasonField}>
-                  <label className={styles.reasonLabel}>Reason (optional)</label>
+                  <label className={styles.fieldLabel}>Reason (optional)</label>
                   <textarea
                     ref={reasonInputRef}
                     className={styles.reasonInput}

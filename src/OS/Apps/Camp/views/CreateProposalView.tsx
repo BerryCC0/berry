@@ -513,7 +513,7 @@ export function CreateProposalView({
           fullDescription, 
           editCandidateSlug, 
           BigInt(0), // proposalIdToUpdate
-          updateReason || 'Updated via Berry',
+          updateReason,
         ],
         value: feeAmount,
       });

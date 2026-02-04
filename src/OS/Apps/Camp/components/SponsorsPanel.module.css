@@ -228,15 +228,6 @@
   margin-bottom: 16px;
 }
 
-.reasonLabel {
-  display: block;
-  font-family: var(--berry-font-system);
-  font-size: 11px;
-  font-weight: bold;
-  color: var(--berry-text-primary);
-  margin-bottom: 6px;
-}
-
 .reasonInput {
   width: 100%;
   padding: 8px;
@@ -258,6 +249,61 @@
 .reasonInput:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Expiration field */
+.expirationField {
+  margin-bottom: 16px;
+}
+
+.fieldLabel {
+  display: block;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin-bottom: 6px;
+}
+
+.expirationRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dateInput {
+  padding: 6px 10px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.dateInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.expirationHint {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.fieldHelpText {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+  margin: 6px 0 0 0;
+  line-height: 1.4;
 }
 
 /* Modal buttons */

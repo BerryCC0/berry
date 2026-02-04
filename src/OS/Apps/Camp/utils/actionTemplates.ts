@@ -20,6 +20,7 @@ export type ActionTemplateType =
   | 'noun-transfer'
   | 'noun-swap'
   | 'noun-delegate'
+  | 'auction-bid'
   | 'payment-stream'
   | 'payment-once'
   | 'admin-voting-delay'
@@ -208,7 +209,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'treasury-erc20-custom',
     category: 'treasury',
     name: 'Send ERC20 Token from Treasury',
-    description: 'Transfer any ERC20 token from treasury (shows actual balances)',
+    description: 'Transfer any ERC20 token from treasury to a recipient',
     isMultiAction: false,
     fields: [
       {
@@ -305,7 +306,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'noun-swap',
     category: 'nouns',
     name: 'Swap Nouns with Treasury',
-    description: 'Multi-step: Your Noun + optional tip → Treasury Noun',
+    description: 'Your Noun + optional tip → Treasury Noun',
     isMultiAction: true,
     fields: [
       {
@@ -339,7 +340,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         label: 'Tip Currency',
         type: 'select',
         required: false,
-        helpText: 'Optional currency for tip',
+        helpText: 'Tip',
         options: [
           { label: 'No Tip', value: '' },
           { label: 'ETH', value: 'eth' },
@@ -377,12 +378,40 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  'auction-bid': {
+    id: 'auction-bid',
+    category: 'nouns',
+    name: 'Bid on Noun Auction',
+    description: 'Place a bid on a Noun auction using Governor contract funds',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'nounId',
+        label: 'Noun ID',
+        type: 'number',
+        placeholder: '1234',
+        required: true,
+        validation: { min: 0 },
+        helpText: 'The ID of the Noun to bid on'
+      },
+      {
+        name: 'bidAmount',
+        label: 'Bid Amount (ETH)',
+        type: 'amount',
+        placeholder: '100',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Amount of ETH to bid from Governor contract'
+      }
+    ]
+  },
+
   // Payment Streams
   'payment-stream': {
     id: 'payment-stream',
     category: 'payments',
     name: 'Create Payment Stream',
-    description: 'Set up a streaming payment via StreamFactory (creates stream + funds it)',
+    description: 'Create a streaming payment via StreamFactory',
     isMultiAction: true,
     fields: [
       {
@@ -500,7 +529,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-proposal-threshold',
     category: 'admin',
     name: 'Set Proposal Threshold BPS',
-    description: 'Adjust minimum Nouns needed to propose (basis points)',
+    description: 'Adjust minimum Nouns needed to propose',
     isMultiAction: false,
     fields: [
       {
@@ -574,7 +603,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-min-quorum',
     category: 'admin',
     name: 'Set Min Quorum BPS',
-    description: 'Adjust minimum quorum (basis points)',
+    description: 'Adjust minimum quorum',
     isMultiAction: false,
     fields: [
       {
@@ -593,7 +622,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-max-quorum',
     category: 'admin',
     name: 'Set Max Quorum BPS',
-    description: 'Adjust maximum quorum (basis points)',
+    description: 'Adjust maximum quorum',
     isMultiAction: false,
     fields: [
       {
@@ -612,7 +641,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-quorum-coefficient',
     category: 'admin',
     name: 'Set Quorum Coefficient',
-    description: 'Adjust dynamic quorum calculation coefficient',
+    description: 'Adjust dynamic quorum coefficient',
     isMultiAction: false,
     fields: [
       {
@@ -684,7 +713,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-fork-threshold',
     category: 'admin',
     name: 'Set Fork Threshold BPS',
-    description: 'Adjust Nouns needed to trigger fork (basis points)',
+    description: 'Adjust Nouns needed to trigger fork',
     isMultiAction: false,
     fields: [
       {
@@ -1210,6 +1239,19 @@ export function generateActionsFromTemplate(
         calldata: encodeDelegate(fieldValues.delegatee as Address)
       }];
 
+    case 'auction-bid': {
+      const bidAmountWei = parseUnits(fieldValues.bidAmount || '0', 18);
+      return [{
+        target: NOUNS_ADDRESSES.auctionHouse,
+        value: bidAmountWei.toString(),
+        signature: 'createBid(uint256,uint32)',
+        calldata: encodeAbiParameters(
+          parseAbiParameters('uint256, uint32'),
+          [BigInt(fieldValues.nounId || '0'), BERRY_CLIENT_ID]
+        )
+      }];
+    }
+
     // Payment Streams
     case 'payment-stream': {
       const actions: ProposalAction[] = [];
@@ -1655,6 +1697,22 @@ function matchActionToTemplate(
         templateId: 'noun-delegate',
         fieldValues: {
           delegatee: decoded[0] as string
+        },
+        generatedActions: []
+      };
+    }
+  }
+  
+  // Auction Bid
+  const AUCTION_HOUSE_ADDRESS = NOUNS_ADDRESSES.auctionHouse.toLowerCase();
+  if (target === AUCTION_HOUSE_ADDRESS && signature === 'createBid(uint256,uint32)') {
+    const decoded = decodeCalldata(calldata, ['uint256', 'uint32']);
+    if (decoded) {
+      return {
+        templateId: 'auction-bid',
+        fieldValues: {
+          nounId: decoded[0] as string,
+          bidAmount: formatUnits(BigInt(value), 18)
         },
         generatedActions: []
       };
