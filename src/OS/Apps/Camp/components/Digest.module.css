@@ -1,0 +1,236 @@
+/**
+ * Digest Styles
+ * Compact proposal/candidate list with sections
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: var(--berry-font-system);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--berry-text-primary);
+  background: var(--berry-bg-secondary);
+}
+
+.tab.active {
+  color: var(--berry-text-primary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--berry-text-primary);
+  border-radius: 4px 4px 0 0;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 4px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+  letter-spacing: 0.5px;
+  transition: background 0.15s ease;
+}
+
+.sectionHeader:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.chevron {
+  font-size: 12px;
+  width: 12px;
+  text-align: center;
+  color: var(--berry-text-tertiary);
+}
+
+.sectionTitle {
+  text-transform: uppercase;
+}
+
+.sectionSubtitle {
+  font-weight: 400;
+  color: var(--berry-text-tertiary);
+  text-transform: none;
+}
+
+.sectionContent {
+  padding: 0 8px;
+}
+
+/* Proposal items */
+.proposalItem,
+.candidateItem {
+  padding: 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.proposalItem:hover,
+.candidateItem:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.proposalMeta {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.proposer {
+  color: var(--berry-link);
+}
+
+.sponsors {
+  color: var(--berry-text-tertiary);
+}
+
+.thresholdMet {
+  font-style: italic;
+  color: var(--berry-success);
+}
+
+.proposalTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+/* Vote bar */
+.voteBar {
+  position: relative;
+  height: 4px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 2px;
+  overflow: visible;
+  margin-bottom: 8px;
+  display: flex;
+}
+
+.forSection {
+  height: 100%;
+  background: var(--berry-success);
+  border-radius: 2px 0 0 2px;
+}
+
+.quorumSpace {
+  height: 100%;
+  background: transparent;
+}
+
+.abstainSection {
+  height: 100%;
+  background: var(--berry-text-tertiary);
+}
+
+.againstSection {
+  height: 100%;
+  background: var(--berry-error);
+  border-radius: 0 2px 2px 0;
+}
+
+.quorumMarker {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 8px;
+  background: var(--berry-text-secondary);
+  transform: translateX(-50%);
+}
+
+/* Proposal stats */
+.proposalStats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  flex-wrap: wrap;
+}
+
+.statusBadge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusBadge.ongoing {
+  background: rgba(var(--berry-success-rgb, 74, 222, 128), 0.2);
+  color: var(--berry-success);
+}
+
+.statusBadge.upcoming {
+  background: rgba(var(--berry-warning-rgb, 251, 191, 36), 0.2);
+  color: var(--berry-warning);
+}
+
+.statusBadge.updatable {
+  background: rgba(var(--berry-info-rgb, 96, 165, 250), 0.2);
+  color: var(--berry-info);
+}
+
+.voteCount {
+  color: var(--berry-text-secondary);
+}
+
+.timeRemaining {
+  color: var(--berry-text-tertiary);
+  margin-left: auto;
+}
+
+/* Empty state */
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-size: 12px;
+  color: var(--berry-text-tertiary);
+}

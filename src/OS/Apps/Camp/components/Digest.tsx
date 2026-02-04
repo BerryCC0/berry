@@ -1,0 +1,379 @@
+/**
+ * Digest Component
+ * Shows proposals and candidates grouped by state/priority
+ * Compact view for the Activity sidebar
+ */
+
+'use client';
+
+import { useState, useMemo } from 'react';
+import { useAccount } from 'wagmi';
+import { useProposals, useCandidates, useVoter } from '../hooks';
+import type { Proposal, Candidate } from '../types';
+import styles from './Digest.module.css';
+
+interface DigestProps {
+  onNavigate: (path: string) => void;
+}
+
+type DigestTab = 'digest' | 'proposals' | 'topics' | 'candidates' | 'voters';
+
+/**
+ * Format relative time (e.g., "Ends in 5 hours", "Starts in 2 days")
+ */
+function formatRelativeTime(timestamp: number, prefix: string): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = timestamp - now;
+  
+  if (diff < 0) {
+    return 'Ended';
+  }
+  
+  if (diff < 3600) {
+    const mins = Math.floor(diff / 60);
+    return `${prefix} ${mins} minute${mins !== 1 ? 's' : ''}`;
+  }
+  
+  if (diff < 86400) {
+    const hours = Math.floor(diff / 3600);
+    return `${prefix} ${hours} hour${hours !== 1 ? 's' : ''}`;
+  }
+  
+  const days = Math.floor(diff / 86400);
+  return `${prefix} ${days} day${days !== 1 ? 's' : ''}`;
+}
+
+/**
+ * Calculate end time from endBlock (rough estimate: 12 sec/block)
+ */
+function estimateEndTime(endBlock: string, currentBlock: number): number {
+  const blocksRemaining = Number(endBlock) - currentBlock;
+  const secondsRemaining = blocksRemaining * 12;
+  return Math.floor(Date.now() / 1000) + secondsRemaining;
+}
+
+/**
+ * Calculate start time from startBlock (rough estimate: 12 sec/block)
+ */
+function estimateStartTime(startBlock: string, currentBlock: number): number {
+  const blocksUntilStart = Number(startBlock) - currentBlock;
+  const secondsUntilStart = blocksUntilStart * 12;
+  return Math.floor(Date.now() / 1000) + secondsUntilStart;
+}
+
+interface DigestSection {
+  id: string;
+  title: string;
+  subtitle?: string;
+  items: (Proposal | Candidate)[];
+  type: 'proposal' | 'candidate';
+  collapsed: boolean;
+}
+
+export function Digest({ onNavigate }: DigestProps) {
+  const { address } = useAccount();
+  const [activeTab, setActiveTab] = useState<DigestTab>('digest');
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  
+  // Fetch data
+  const { data: proposals } = useProposals(50, 'all', 'newest');
+  const { data: candidates } = useCandidates(20);
+  const { data: voterData } = useVoter(address || null);
+  
+  // Rough current block estimate
+  const currentBlock = useMemo(() => {
+    return Math.floor((Date.now() / 1000 - 1438269988) / 12);
+  }, []);
+  
+  // Get proposals the user hasn't voted on
+  const votedProposalIds = useMemo(() => {
+    if (!voterData?.votes) return new Set<string>();
+    return new Set(voterData.votes.map(v => v.proposalId));
+  }, [voterData]);
+  
+  // Group proposals and candidates into sections
+  const sections = useMemo<DigestSection[]>(() => {
+    if (!proposals) return [];
+    
+    const result: DigestSection[] = [];
+    
+    // Active proposals user hasn't voted on
+    const notVoted = proposals.filter(p => 
+      ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status) && 
+      address && 
+      !votedProposalIds.has(p.id)
+    );
+    
+    if (notVoted.length > 0) {
+      result.push({
+        id: 'not-voted',
+        title: 'NOT YET VOTED',
+        items: notVoted,
+        type: 'proposal',
+        collapsed: collapsedSections.has('not-voted'),
+      });
+    }
+    
+    // Ongoing proposals (currently voting)
+    const ongoing = proposals.filter(p => 
+      ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status)
+    );
+    
+    if (ongoing.length > 0) {
+      result.push({
+        id: 'ongoing',
+        title: 'ONGOING PROPOSALS',
+        subtitle: 'Currently voting',
+        items: ongoing,
+        type: 'proposal',
+        collapsed: collapsedSections.has('ongoing'),
+      });
+    }
+    
+    // Upcoming proposals (pending/updatable)
+    const upcoming = proposals.filter(p => 
+      ['PENDING', 'UPDATABLE'].includes(p.status)
+    );
+    
+    if (upcoming.length > 0) {
+      result.push({
+        id: 'upcoming',
+        title: 'UPCOMING PROPOSALS',
+        items: upcoming,
+        type: 'proposal',
+        collapsed: collapsedSections.has('upcoming'),
+      });
+    }
+    
+    // New candidates (created in last 7 days)
+    if (candidates && candidates.length > 0) {
+      const oneWeekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
+      const newCandidates = candidates.filter(c => 
+        Number(c.createdTimestamp) > oneWeekAgo
+      );
+      
+      if (newCandidates.length > 0) {
+        result.push({
+          id: 'new-candidates',
+          title: 'NEW CANDIDATES',
+          subtitle: 'Created within the last 7 days',
+          items: newCandidates,
+          type: 'candidate',
+          collapsed: collapsedSections.has('new-candidates'),
+        });
+      }
+    }
+    
+    return result;
+  }, [proposals, candidates, address, votedProposalIds, collapsedSections]);
+  
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
+  };
+  
+  const handleProposalClick = (proposal: Proposal) => {
+    onNavigate(`proposal/${proposal.id}`);
+  };
+  
+  const handleCandidateClick = (candidate: Candidate) => {
+    onNavigate(`candidate/${candidate.proposer}/${candidate.slug}`);
+  };
+  
+  const renderProposalItem = (proposal: Proposal) => {
+    const forVotes = Number(proposal.forVotes);
+    const againstVotes = Number(proposal.againstVotes);
+    const abstainVotes = Number(proposal.abstainVotes || 0);
+    const quorum = Number(proposal.quorumVotes) || 1;
+    
+    // Calculate bar widths
+    const leftExtent = Math.max(forVotes, quorum);
+    const rightExtent = abstainVotes + againstVotes;
+    const totalScale = leftExtent + rightExtent || 1;
+    
+    const forWidth = (forVotes / totalScale) * 100;
+    const quorumPosition = (quorum / totalScale) * 100;
+    const abstainWidth = (abstainVotes / totalScale) * 100;
+    const againstWidth = (againstVotes / totalScale) * 100;
+    const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
+    
+    const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(proposal.status);
+    const isPending = ['PENDING', 'UPDATABLE'].includes(proposal.status);
+    
+    const endTime = estimateEndTime(proposal.endBlock, currentBlock);
+    const startTime = estimateStartTime(proposal.startBlock, currentBlock);
+    
+    return (
+      <div 
+        key={proposal.id} 
+        className={styles.proposalItem}
+        onClick={() => handleProposalClick(proposal)}
+      >
+        <div className={styles.proposalMeta}>
+          Prop {proposal.id} by <span className={styles.proposer}>{formatAddress(proposal.proposer)}</span>
+        </div>
+        
+        <div className={styles.proposalTitle}>{proposal.title}</div>
+        
+        {/* Vote bar for active/ongoing proposals */}
+        {isActive && (
+          <>
+            <div className={styles.voteBar}>
+              <div className={styles.forSection} style={{ width: `${forWidth}%` }} />
+              {gapWidth > 0 && <div className={styles.quorumSpace} style={{ width: `${gapWidth}%` }} />}
+              <div className={styles.quorumMarker} style={{ left: `${quorumPosition}%` }} />
+              {abstainVotes > 0 && <div className={styles.abstainSection} style={{ width: `${abstainWidth}%` }} />}
+              {againstVotes > 0 && <div className={styles.againstSection} style={{ width: `${againstWidth}%` }} />}
+            </div>
+            
+            <div className={styles.proposalStats}>
+              <span className={`${styles.statusBadge} ${styles.ongoing}`}>ONGOING</span>
+              <span className={styles.voteCount}>{forVotes} ↑ / {quorum}</span>
+              {abstainVotes > 0 && <span className={styles.voteCount}>{abstainVotes}</span>}
+              {againstVotes > 0 && <span className={styles.voteCount}>{againstVotes} ↓</span>}
+              <span className={styles.timeRemaining}>{formatRelativeTime(endTime, 'Ends in')}</span>
+            </div>
+          </>
+        )}
+        
+        {/* Status for pending proposals */}
+        {isPending && (
+          <div className={styles.proposalStats}>
+            <span className={`${styles.statusBadge} ${styles.upcoming}`}>UPCOMING</span>
+            <span className={styles.timeRemaining}>{formatRelativeTime(startTime, 'Starts in')}</span>
+          </div>
+        )}
+        
+        {/* Updatable status */}
+        {proposal.status === 'UPDATABLE' && (
+          <div className={styles.proposalStats}>
+            <span className={`${styles.statusBadge} ${styles.updatable}`}>OPEN FOR CHANGES</span>
+            <span className={styles.timeRemaining}>{formatRelativeTime(startTime, 'Editable for another')}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  const renderCandidateItem = (candidate: Candidate) => {
+    const sponsorCount = candidate.signatures?.filter(s => !s.canceled).length || 0;
+    const thresholdMet = sponsorCount >= 2; // Simplified threshold check
+    
+    return (
+      <div 
+        key={`${candidate.proposer}-${candidate.slug}`}
+        className={styles.candidateItem}
+        onClick={() => handleCandidateClick(candidate)}
+      >
+        <div className={styles.proposalMeta}>
+          Candidate by <span className={styles.proposer}>{formatAddress(candidate.proposer)}</span>
+          {thresholdMet && <span className={styles.thresholdMet}> – Sponsor threshold met</span>}
+        </div>
+        
+        <div className={styles.proposalTitle}>
+          {candidate.title || formatSlugToTitle(candidate.slug)}
+        </div>
+      </div>
+    );
+  };
+  
+  return (
+    <div className={styles.container}>
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button 
+          className={`${styles.tab} ${activeTab === 'digest' ? styles.active : ''}`}
+          onClick={() => setActiveTab('digest')}
+        >
+          Digest
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'proposals' ? styles.active : ''}`}
+          onClick={() => {
+            setActiveTab('proposals');
+            onNavigate('proposals');
+          }}
+        >
+          Proposals
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'topics' ? styles.active : ''}`}
+          onClick={() => setActiveTab('topics')}
+        >
+          Topics
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'candidates' ? styles.active : ''}`}
+          onClick={() => {
+            setActiveTab('candidates');
+            onNavigate('candidates');
+          }}
+        >
+          Candidates
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'voters' ? styles.active : ''}`}
+          onClick={() => {
+            setActiveTab('voters');
+            onNavigate('voters');
+          }}
+        >
+          Voters
+        </button>
+      </div>
+      
+      {/* Content */}
+      <div className={styles.content}>
+        {sections.map(section => (
+          <div key={section.id} className={styles.section}>
+            <button 
+              className={styles.sectionHeader}
+              onClick={() => toggleSection(section.id)}
+            >
+              <span className={styles.chevron}>{section.collapsed ? '›' : '⌄'}</span>
+              <span className={styles.sectionTitle}>{section.title}</span>
+              {section.subtitle && (
+                <span className={styles.sectionSubtitle}> — {section.subtitle}</span>
+              )}
+            </button>
+            
+            {!section.collapsed && (
+              <div className={styles.sectionContent}>
+                {section.type === 'proposal' 
+                  ? section.items.map(item => renderProposalItem(item as Proposal))
+                  : section.items.map(item => renderCandidateItem(item as Candidate))
+                }
+              </div>
+            )}
+          </div>
+        ))}
+        
+        {sections.length === 0 && (
+          <div className={styles.empty}>
+            No active proposals or candidates
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatAddress(address: string): string {
+  // TODO: Use ENS resolver
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function formatSlugToTitle(slug: string): string {
+  return slug
+    .replace(/---+/g, ' - ')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/^./, c => c.toUpperCase());
+}

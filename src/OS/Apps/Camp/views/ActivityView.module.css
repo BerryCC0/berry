@@ -1,13 +1,111 @@
 /**
  * ActivityView Styles
+ * Two-column layout: Activity feed | Digest
  * Theme-compliant using --berry-* CSS variables
  */
 
+/* Two-column layout container */
+.twoColumn {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Activity column (left) */
+.activityColumn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--berry-border);
+}
+
+/* Digest column (right) - desktop only */
+.digestColumn {
+  width: 420px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--berry-bg-primary);
+}
+
+/* Hide digest on mobile */
+@media (max-width: 900px) {
+  .digestColumn {
+    display: none;
+  }
+  
+  .activityColumn {
+    border-right: none;
+  }
+}
+
+/* Search bar */
+.searchBar {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.searchInput::placeholder {
+  color: var(--berry-text-tertiary);
+}
+
+.searchInput:focus {
+  border-color: var(--berry-accent);
+  box-shadow: 0 0 0 2px rgba(var(--berry-accent-rgb, 59, 130, 246), 0.2);
+}
+
+/* Search button that opens command palette */
+.searchButton {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  text-align: left;
+  color: var(--berry-text-tertiary);
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.searchButton:hover {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-text-tertiary);
+}
+
+.searchPlaceholder {
+  opacity: 0.7;
+}
+
+/* Activity list */
+.activityList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* Legacy container (fallback) */
 .container {
   height: 100%;
   overflow-y: auto;
 }
 
+/* Loading, empty, error states */
 .loading,
 .empty,
 .error {

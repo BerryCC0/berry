@@ -120,9 +120,9 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
     return null;
   }
 
-  // Calculate position - use provided coordinates or smart cascade
-  let x = options.x;
-  let y = options.y;
+  // Calculate position - use provided coordinates, then config defaults, then cascade
+  let x = options.x ?? config.window.x;
+  let y = options.y ?? config.window.y;
   
   if (x === undefined || y === undefined) {
     const cascadePos = getCascadePosition(config.window.width, config.window.height);

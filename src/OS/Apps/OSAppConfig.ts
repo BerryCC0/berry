@@ -246,8 +246,10 @@ const campConfig: AppConfig = {
   singleton: true,
   showInDock: true,
   window: {
-    width: 800,
-    height: 600,
+    x: 20,
+    y: 32,
+    width: 1100,
+    height: 750,
     minWidth: 600,
     minHeight: 450,
     isResizable: true,
