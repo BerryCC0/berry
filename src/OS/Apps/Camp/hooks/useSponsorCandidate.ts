@@ -18,7 +18,7 @@
 import { useState, useCallback } from 'react';
 import { useAccount, useSignTypedData, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAODataABI, NounsTokenABI } from '@/app/lib/nouns/contracts';
-import { encodeAbiParameters, parseAbiParameters, hashTypedData, pad, concat, toHex } from 'viem';
+import { encodeAbiParameters, parseAbiParameters } from 'viem';
 import type { Address, Hex } from 'viem';
 
 interface CandidateData {
@@ -180,60 +180,25 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   /**
    * Create an EIP-1271 compatible signature for Smart Contract Wallets
    * 
-   * For contracts using OpenZeppelin's SignatureChecker, there are typically two formats:
-   * 1. Standard ECDSA (65 bytes) - ecrecover returns signer, if contract, call isValidSignature
-   * 2. Contract signature format with explicit signer
+   * For the Nouns Data contract, when msg.sender (the Safe) calls addSignature:
+   * 1. The contract first tries ecrecover on the signature
+   * 2. If the recovered address doesn't have votes but msg.sender does, 
+   *    it calls isValidSignature on msg.sender (the Safe)
+   * 3. The Safe's isValidSignature verifies the signature is from an owner
    * 
-   * For Nouns DAO which uses SignatureChecker, we need the signature to resolve to the Safe address.
-   * Since the raw signature resolves to the owner's EOA, we need a different approach.
-   * 
-   * One common pattern for EIP-1271 is:
-   * - Signature format: | signer address (32 bytes) | signature offset (32 bytes) | signature data |
-   * - But this requires the contract to expect this format
-   * 
-   * Another approach used by Safe:
-   * - Use v=0 to indicate contract signature
-   * - r = signer address (left padded to 32 bytes)  
-   * - s = offset to signature data
+   * We just pass the raw ECDSA signature - the Safe handles EIP-1271 verification internally
    */
   const createEIP1271Signature = useCallback((
-    signerAddress: Address,
+    _signerAddress: Address,
     rawSignature: Hex
   ): Hex => {
-    // The Nouns contract may use SignatureChecker.isValidSignatureNow which supports:
-    // 1. ECDSA signatures - recovered address is checked
-    // 2. EIP-1271 - if recovered address is a contract OR if specific format is used
-    
-    // For Safe wallets, the challenge is that ecrecover returns the owner's address,
-    // not the Safe's address. We need to signal that verification should happen on the Safe.
-    
-    // Try approach: Create a signature where v=0 indicates contract signature
-    // and the signer address is embedded
-    // Format: | r (signer address padded to 32 bytes) | s (offset, 32 bytes) | v (0) |
-    
-    // Actually, for SignatureChecker to work with EIP-1271, it checks if the
-    // RECOVERED address is a contract. Since our signature recovers to an EOA,
-    // it won't trigger EIP-1271 verification.
-    
-    // The only way this can work is if the Nouns contract explicitly handles
-    // a format where the signer address is provided separately.
-    
-    // Let's try prepending the signer address (as done in some implementations)
-    // This creates: | signer (20 bytes) | signature (65 bytes) |
-    const signerPadded = pad(signerAddress as Hex, { size: 32 });
-    const dynamicOffset = pad(toHex(65), { size: 32 }); // Offset to signature data
-    
-    // Contract signature format with v=0
-    // r = contract address (padded)
-    // s = offset to signature data
-    // v = 0 (indicates contract signature)
-    // followed by: length (32 bytes) + signature data
-    
-    // Simpler approach for now - just return raw signature and log for debugging
-    // The Safe app should handle EIP-1271 signatures properly
-    console.log('[EIP1271] Creating signature for signer:', signerAddress);
-    console.log('[EIP1271] Raw signature:', rawSignature);
-    
+    // The Nouns contract's SignatureChecker will:
+    // 1. Try ecrecover - gets owner's EOA address  
+    // 2. Check if msg.sender (Safe) has votes
+    // 3. Call Safe.isValidSignature(hash, signature)
+    // 4. Safe verifies the signature is from one of its owners
+    // 
+    // Just return the raw signature - no special formatting needed
     return rawSignature;
   }, []);
   
@@ -292,21 +257,12 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       let signature = rawSignature;
       
       if (isSCW) {
-        // For SCW, the signature is from the owner's EOA but we need EIP-1271 verification
-        // Most contracts that support EIP-1271 will call isValidSignature on the signer
-        // The signer is recovered from the signature, which will be the owner's address
-        // 
-        // The issue: ecrecover returns owner address, not Safe address
-        // For EIP-1271 to work, the contract needs to know to call the Safe's isValidSignature
-        //
-        // Some implementations prepend the contract address to the signature
-        // Let's try this format: | contract address (20 bytes) | signature (65 bytes) |
+        // For Smart Contract Wallets (Safe, etc.):
+        // - The raw signature is signed by one of the Safe's owners
+        // - When the Safe calls addSignature, the Nouns contract will call isValidSignature on the Safe
+        // - The Safe verifies the signature is from one of its owners
+        // - Just pass the raw signature through - no special formatting needed
         signature = createEIP1271Signature(address, rawSignature);
-        
-        console.log('[Sponsor] Smart Contract Wallet detected');
-        console.log('[Sponsor] SCW Address:', address);
-        console.log('[Sponsor] Raw signature:', rawSignature);
-        console.log('[Sponsor] Final signature:', signature);
       }
       
       setIsSigning(false);
