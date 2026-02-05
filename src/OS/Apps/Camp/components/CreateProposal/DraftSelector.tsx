@@ -108,14 +108,16 @@ export function DraftSelector({
           {drafts.length === 0 ? 'No Drafts Yet' : 'Your Drafts'}
           {drafts.length > 0 && <span className={styles.count}> ({drafts.length})</span>}
         </label>
-        <button
-          type="button"
-          className={styles.newButton}
-          onClick={onNew}
-          disabled={disabled}
-        >
-          + New Draft
-        </button>
+        {currentDraft && (
+          <button
+            type="button"
+            className={styles.newButton}
+            onClick={onNew}
+            disabled={disabled}
+          >
+            + New Draft
+          </button>
+        )}
       </div>
 
       {drafts.length === 0 ? (
