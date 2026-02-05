@@ -75,6 +75,7 @@
 .typeColumn {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -170,7 +171,7 @@
 
 .twoColumnLayout {
   display: grid;
-  grid-template-columns: 7fr 3fr;
+  grid-template-columns: 65fr 35fr;
   gap: 24px;
 }
 

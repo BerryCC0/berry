@@ -699,7 +699,7 @@ export function CreateProposalView({
           ← Back
         </button>
         <h2 className={styles.pageTitle}>
-          {isEditMode ? 'Edit Candidate' : 'Create Proposal'}
+          {isEditMode ? 'Edit Candidate' : 'Create'}
         </h2>
         {!isEditMode && draftTitle && (
           <div className={styles.draftIndicator}>
