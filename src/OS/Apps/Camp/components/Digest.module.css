@@ -216,6 +216,31 @@
   color: var(--berry-info);
 }
 
+.statusBadge.queued {
+  background: rgba(var(--berry-success-rgb, 74, 222, 128), 0.2);
+  color: var(--berry-success);
+}
+
+.statusBadge.executed {
+  background: var(--berry-success);
+  color: white;
+}
+
+.statusBadge.succeeded {
+  background: rgba(var(--berry-success-rgb, 74, 222, 128), 0.2);
+  color: var(--berry-success);
+}
+
+.statusBadge.cancelled {
+  background: rgba(var(--berry-error-rgb, 239, 68, 68), 0.2);
+  color: var(--berry-error);
+}
+
+.statusBadge.defeated {
+  background: rgba(var(--berry-error-rgb, 239, 68, 68), 0.2);
+  color: var(--berry-error);
+}
+
 .voteCount {
   color: var(--berry-text-secondary);
 }

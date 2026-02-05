@@ -269,11 +269,51 @@ export function Digest({ onNavigate }: DigestProps) {
     const againstWidth = (againstVotes / totalScale) * 100;
     const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
     
-    const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(proposal.status);
     const isPending = ['PENDING', 'UPDATABLE'].includes(proposal.status);
+    const isQueued = proposal.status === 'QUEUED';
+    const isExecuted = proposal.status === 'EXECUTED';
+    const isCancelled = proposal.status === 'CANCELLED';
+    const isVetoed = proposal.status === 'VETOED';
+    
+    // Check if voting period has actually ended (endBlock has passed)
+    const votingEnded = Number(proposal.endBlock) <= currentBlock;
+    
+    // isActive means status is ACTIVE/OBJECTION_PERIOD AND voting hasn't ended yet
+    const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(proposal.status) && !votingEnded;
+    
+    // Calculate outcome for proposals where voting has ended
+    // Defeated: didn't meet quorum OR more against than for
+    const isDefeated = proposal.status === 'DEFEATED' || (
+      votingEnded && 
+      !isQueued && !isExecuted && !isCancelled && !isVetoed &&
+      (forVotes < quorum || againstVotes > forVotes)
+    );
+    
+    // Succeeded: voting ended, met quorum, more for than against, but not yet queued/executed
+    const isSucceeded = proposal.status === 'SUCCEEDED' || (
+      votingEnded &&
+      !isQueued && !isExecuted && !isCancelled && !isVetoed && !isDefeated &&
+      forVotes >= quorum && forVotes > againstVotes
+    );
     
     const endTime = estimateEndTime(proposal.endBlock, currentBlock);
     const startTime = estimateStartTime(proposal.startBlock, currentBlock);
+    
+    // Determine status display - order matters!
+    // Check terminal states first, then calculated states, then active states
+    const getStatusBadge = () => {
+      if (isExecuted) return { label: 'EXECUTED', className: styles.executed };
+      if (isCancelled) return { label: 'CANCELLED', className: styles.cancelled };
+      if (isVetoed) return { label: 'VETOED', className: styles.cancelled };
+      if (isQueued) return { label: 'QUEUED', className: styles.queued };
+      if (isDefeated) return { label: 'DEFEATED', className: styles.defeated };
+      if (isSucceeded) return { label: 'SUCCEEDED', className: styles.succeeded };
+      if (isActive) return { label: 'ONGOING', className: styles.ongoing };
+      if (isPending) return { label: 'UPCOMING', className: styles.upcoming };
+      return null;
+    };
+    
+    const statusBadge = getStatusBadge();
     
     return (
       <div 
@@ -289,40 +329,36 @@ export function Digest({ onNavigate }: DigestProps) {
         
         {/* Vote bar for active/ongoing proposals */}
         {isActive && (
-          <>
-            <div className={styles.voteBar}>
-              <div className={styles.forSection} style={{ width: `${forWidth}%` }} />
-              {gapWidth > 0 && <div className={styles.quorumSpace} style={{ width: `${gapWidth}%` }} />}
-              <div className={styles.quorumMarker} style={{ left: `${quorumPosition}%` }} />
-              {abstainVotes > 0 && <div className={styles.abstainSection} style={{ width: `${abstainWidth}%` }} />}
-              {againstVotes > 0 && <div className={styles.againstSection} style={{ width: `${againstWidth}%` }} />}
-            </div>
-            
-            <div className={styles.proposalStats}>
-              <span className={`${styles.statusBadge} ${styles.ongoing}`}>ONGOING</span>
+          <div className={styles.voteBar}>
+            <div className={styles.forSection} style={{ width: `${forWidth}%` }} />
+            {gapWidth > 0 && <div className={styles.quorumSpace} style={{ width: `${gapWidth}%` }} />}
+            <div className={styles.quorumMarker} style={{ left: `${quorumPosition}%` }} />
+            {abstainVotes > 0 && <div className={styles.abstainSection} style={{ width: `${abstainWidth}%` }} />}
+            {againstVotes > 0 && <div className={styles.againstSection} style={{ width: `${againstWidth}%` }} />}
+          </div>
+        )}
+        
+        {/* Status and stats */}
+        <div className={styles.proposalStats}>
+          {statusBadge && (
+            <span className={`${styles.statusBadge} ${statusBadge.className}`}>{statusBadge.label}</span>
+          )}
+          
+          {/* Show vote counts for active proposals */}
+          {isActive && (
+            <>
               <span className={styles.voteCount}>{forVotes} ↑ / {quorum}</span>
               {abstainVotes > 0 && <span className={styles.voteCount}>{abstainVotes}</span>}
               {againstVotes > 0 && <span className={styles.voteCount}>{againstVotes} ↓</span>}
               <span className={styles.timeRemaining}>{formatRelativeTime(endTime, 'Ends in')}</span>
-            </div>
-          </>
-        )}
-        
-        {/* Status for pending proposals */}
-        {isPending && (
-          <div className={styles.proposalStats}>
-            <span className={`${styles.statusBadge} ${styles.upcoming}`}>UPCOMING</span>
+            </>
+          )}
+          
+          {/* Show start time for pending */}
+          {isPending && (
             <span className={styles.timeRemaining}>{formatRelativeTime(startTime, 'Starts in')}</span>
-          </div>
-        )}
-        
-        {/* Updatable status */}
-        {proposal.status === 'UPDATABLE' && (
-          <div className={styles.proposalStats}>
-            <span className={`${styles.statusBadge} ${styles.updatable}`}>OPEN FOR CHANGES</span>
-            <span className={styles.timeRemaining}>{formatRelativeTime(startTime, 'Editable for another')}</span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   };
