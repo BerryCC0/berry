@@ -316,9 +316,9 @@ const crystalBallConfig: AppConfig = {
   showInDock: true,
   window: {
     width: 306,
-    height: 500,
+    height: 560,
     minWidth: 306,
-    minHeight: 460,
+    minHeight: 520,
     isResizable: true,
   },
   permissions: ["network"],

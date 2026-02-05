@@ -103,3 +103,92 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Settle Section */
+.settleSection {
+  padding: 12px;
+  border-top: 1px solid var(--berry-border);
+}
+
+.settleButton {
+  width: 100%;
+  padding: 10px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-primary);
+  background: var(--berry-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  box-shadow: 
+    inset -1px -1px 0 rgba(0, 0, 0, 0.2),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.settleButton:hover:not(:disabled) {
+  background: var(--berry-secondary-hover, var(--berry-bg-tertiary));
+}
+
+.settleButton:active:not(:disabled) {
+  box-shadow: 
+    inset 1px 1px 0 rgba(0, 0, 0, 0.2),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.settleButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.connectMessage {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
+.error {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: #ff6b6b;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
+.success {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: #4ecdc4;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
+/* Countdown Display */
+.countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.countdownTime {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  letter-spacing: 2px;
+}
+
+.countdownLabel {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
