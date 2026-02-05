@@ -720,73 +720,76 @@ export function CreateProposalView({
       </div>
 
       <div className={styles.form}>
-        {/* Draft Management - hide in edit mode */}
+        {/* Type & Drafts Row - hide in edit mode */}
         {!isEditMode && (
-          <DraftSelector
-            drafts={drafts}
-            currentDraft={drafts.find(d => d.draft_slug === draftSlug) || null}
-            onLoad={handleLoadDraft}
-            onDelete={handleDeleteDraft}
-            onRename={handleRenameDraft}
-            onNew={handleNewDraft}
-            disabled={isCreating}
-          />
-        )}
-
-        {/* Proposal Type - hide in edit mode (locked to candidate) */}
-        {!isEditMode && (
-          <div className={styles.section}>
-            <label className={styles.label}>Proposal Type *</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  value="candidate"
-                  checked={proposalType === 'candidate'}
-                  onChange={(e) => setProposalType(e.target.value as 'candidate')}
-                  disabled={isCreating}
-                />
-                <span>Candidate (Draft)</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  value="standard"
-                  checked={proposalType === 'standard'}
-                  onChange={(e) => setProposalType(e.target.value as 'standard')}
-                  disabled={isCreating}
-                />
-                <span>Standard Proposal</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  value="timelock_v1"
-                  checked={proposalType === 'timelock_v1'}
-                  onChange={(e) => setProposalType(e.target.value as 'timelock_v1')}
-                  disabled={isCreating}
-                />
-                <span>TimelockV1 Proposal</span>
-              </label>
+          <div className={styles.typeDraftsRow}>
+            {/* Proposal Type - Left */}
+            <div className={styles.typeColumn}>
+              <label className={styles.label}>Proposal Type *</label>
+              <div className={styles.radioGroup}>
+                <label className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    value="candidate"
+                    checked={proposalType === 'candidate'}
+                    onChange={(e) => setProposalType(e.target.value as 'candidate')}
+                    disabled={isCreating}
+                  />
+                  <span>Candidate (Draft)</span>
+                </label>
+                <label className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    value="standard"
+                    checked={proposalType === 'standard'}
+                    onChange={(e) => setProposalType(e.target.value as 'standard')}
+                    disabled={isCreating}
+                  />
+                  <span>Standard Proposal</span>
+                </label>
+                <label className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    value="timelock_v1"
+                    checked={proposalType === 'timelock_v1'}
+                    onChange={(e) => setProposalType(e.target.value as 'timelock_v1')}
+                    disabled={isCreating}
+                  />
+                  <span>TimelockV1 Proposal</span>
+                </label>
+              </div>
+              
+              {proposalType === 'candidate' && (
+                <div className={styles.helpText}>
+                  Candidates are draft proposals that can gather community support before formal submission.
+                  {!hasVotingPower && candidateCost && (
+                    <span className={styles.feeNotice}>
+                      {' '}Fee: {(Number(candidateCost) / 1e18).toFixed(4)} ETH (waived for Noun owners)
+                    </span>
+                  )}
+                </div>
+              )}
+              
+              {proposalType !== 'candidate' && !hasVotingPower && (
+                <div className={styles.warningText}>
+                  You need at least 4 Nouns to submit a proposal.
+                  Consider creating a candidate instead.
+                </div>
+              )}
             </div>
-            
-            {proposalType === 'candidate' && (
-              <div className={styles.helpText}>
-                Candidates are draft proposals that can gather community support before formal submission.
-                {!hasVotingPower && candidateCost && (
-                  <span className={styles.feeNotice}>
-                    {' '}Fee: {(Number(candidateCost) / 1e18).toFixed(4)} ETH (waived for Noun owners)
-                  </span>
-                )}
-              </div>
-            )}
-            
-            {proposalType !== 'candidate' && !hasVotingPower && (
-              <div className={styles.warningText}>
-                You need at least 4 Nouns to submit a proposal.
-                Consider creating a candidate instead.
-              </div>
-            )}
+
+            {/* Draft Management - Right */}
+            <div className={styles.draftsColumn}>
+              <DraftSelector
+                drafts={drafts}
+                currentDraft={drafts.find(d => d.draft_slug === draftSlug) || null}
+                onLoad={handleLoadDraft}
+                onDelete={handleDeleteDraft}
+                onRename={handleRenameDraft}
+                onNew={handleNewDraft}
+                disabled={isCreating}
+              />
+            </div>
           </div>
         )}
 

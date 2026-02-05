@@ -66,6 +66,23 @@
   gap: 20px;
 }
 
+.typeDraftsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.typeColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.draftsColumn {
+  display: flex;
+  flex-direction: column;
+}
+
 .section {
   display: flex;
   flex-direction: column;
@@ -416,6 +433,10 @@
 /* Responsive */
 @media (max-width: 900px) {
   .twoColumnLayout {
+    grid-template-columns: 1fr;
+  }
+  
+  .typeDraftsRow {
     grid-template-columns: 1fr;
   }
 }
