@@ -185,10 +185,55 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
         />
       )}
 
-      {/* Voting Power */}
-      <div className={styles.votingPower}>
-        <span className={styles.votingPowerValue}>{voter.delegatedVotes}</span>
-        <span className={styles.votingPowerLabel}>Voting Power</span>
+      {/* Voting Power & Delegators */}
+      <div className={styles.votingPowerSection}>
+        <div className={styles.votingPowerRow}>
+          <div className={styles.votingPowerInfo}>
+            <div className={styles.votingPower}>
+              <span className={styles.votingPowerValue}>{voter.delegatedVotes}</span>
+              <span className={styles.votingPowerLabel}>Voting Power</span>
+            </div>
+          </div>
+          
+          {/* Nouns represented (voting power source) */}
+          {nounsRepresented.length > 0 && (
+            <div className={styles.nounsRepresentedGrid}>
+              {nounsRepresented.map((noun) => (
+                <div key={noun.id} className={styles.nounMini}>
+                  {noun.seed ? (
+                    <NounImage seed={noun.seed} size={40} className={styles.nounMiniImage} />
+                  ) : (
+                    <div className={styles.nounMiniPlaceholder} />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Delegators */}
+        {delegators.length > 0 && (
+          <>
+            <div className={styles.divider} />
+            <div className={styles.delegatorsBox}>
+              <span className={styles.delegatorsLabel}>
+                Delegators ({delegators.length})
+              </span>
+              <div className={styles.delegatorsList}>
+                {delegators.slice(0, 5).map((delegator) => (
+                  <AddressLink 
+                    key={delegator}
+                    address={delegator} 
+                    onClick={() => onNavigate(`voter/${delegator}`)}
+                  />
+                ))}
+                {delegators.length > 5 && (
+                  <span className={styles.moreCount}>+{delegators.length - 5} more</span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Nouns Owned */}
@@ -210,30 +255,11 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
         </div>
       )}
 
-      {/* Nouns Delegated to this address (voting power) */}
-      {nounsRepresented.length > 0 && nounsOwned.length === 0 && (
-        <div className={styles.nounsSection}>
-          <h2 className={styles.sectionTitle}>Voting Power From</h2>
-          <div className={styles.nounsGrid}>
-            {nounsRepresented.map((noun) => (
-              <div key={noun.id} className={styles.nounCard}>
-                {noun.seed ? (
-                  <NounImage seed={noun.seed} size={64} className={styles.nounImage} />
-                ) : (
-                  <div className={styles.nounImagePlaceholder} />
-                )}
-                <span className={styles.nounId}>#{noun.id}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Delegation Info */}
-      {(delegatingTo || delegators.length > 0) && (
+      {/* Delegation Info - Who this account is delegating to */}
+      {delegatingTo && (
         <div className={styles.delegationSection}>
-          {/* Who this account is delegating to */}
-          {delegatingTo && !isSelfDelegated && (
+          {!isSelfDelegated ? (
             <div className={styles.delegationRow}>
               <span className={styles.delegationLabel}>Delegating to</span>
               <AddressLink 
@@ -241,33 +267,10 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
                 onClick={() => onNavigate(`voter/${delegatingTo}`)}
               />
             </div>
-          )}
-          
-          {isSelfDelegated && (
+          ) : (
             <div className={styles.delegationRow}>
               <span className={styles.delegationLabel}>Delegating to</span>
               <span className={styles.selfDelegated}>Self</span>
-            </div>
-          )}
-
-          {/* Who is delegating to this account */}
-          {delegators.length > 0 && (
-            <div className={styles.delegationRow}>
-              <span className={styles.delegationLabel}>
-                Delegators ({delegators.length})
-              </span>
-              <div className={styles.delegatorsList}>
-                {delegators.slice(0, 5).map((delegator) => (
-                  <AddressLink 
-                    key={delegator}
-                    address={delegator} 
-                    onClick={() => onNavigate(`voter/${delegator}`)}
-                  />
-                ))}
-                {delegators.length > 5 && (
-                  <span className={styles.moreCount}>+{delegators.length - 5} more</span>
-                )}
-              </div>
             </div>
           )}
         </div>

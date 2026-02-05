@@ -100,16 +100,30 @@
   opacity: 0.9;
 }
 
-/* Voting Power - prominent display */
-.votingPower {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 12px 16px;
+/* Voting Power Section - contains voting power, nouns, and delegators */
+.votingPowerSection {
   background: var(--berry-bg-secondary);
   border: 1px solid var(--berry-border);
   border-radius: 8px;
   margin-bottom: 16px;
+}
+
+.votingPowerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  gap: 16px;
+}
+
+.votingPowerInfo {
+  flex-shrink: 0;
+}
+
+.votingPower {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .votingPowerValue {
@@ -123,6 +137,51 @@
   font-family: var(--berry-font-system);
   font-size: 12px;
   color: var(--berry-text-secondary);
+}
+
+/* Mini noun grid in voting power section */
+.nounsRepresentedGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.nounMini {
+  flex-shrink: 0;
+}
+
+.nounMiniImage {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--berry-border);
+}
+
+.nounMiniPlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+}
+
+.divider {
+  height: 1px;
+  background: var(--berry-border);
+  margin: 0 16px;
+}
+
+.delegatorsBox {
+  padding: 12px 16px;
+}
+
+.delegatorsLabel {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  display: block;
+  margin-bottom: 6px;
 }
 
 .sectionTitle {
