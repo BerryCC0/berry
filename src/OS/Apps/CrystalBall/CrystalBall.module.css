@@ -41,8 +41,10 @@
   border: 1px solid var(--berry-border);
 }
 
-.crystal {
-  font-size: 64px;
+.crystalIcon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
   animation: pulse 2s ease-in-out infinite;
 }
 

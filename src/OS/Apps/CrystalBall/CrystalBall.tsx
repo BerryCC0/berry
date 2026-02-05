@@ -71,13 +71,15 @@ export function CrystalBall({}: AppComponentProps) {
       <div className={styles.imageSection}>
         {isLoading ? (
           <div className={styles.placeholder}>
-            <span className={styles.crystal}>🔮</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/crystal-ball.png" alt="Loading..." className={styles.crystalIcon} />
           </div>
         ) : seed ? (
           <NounImage seed={seed} size={280} className={styles.nounImage} />
         ) : (
           <div className={styles.placeholder}>
-            <span className={styles.crystal}>🔮</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/crystal-ball.png" alt="Crystal Ball" className={styles.crystalIcon} />
           </div>
         )}
       </div>

@@ -315,6 +315,8 @@ const crystalBallConfig: AppConfig = {
   singleton: true,
   showInDock: true,
   window: {
+    x: 1000,
+    y: 200,
     width: 306,
     height: 560,
     minWidth: 306,
