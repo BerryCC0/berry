@@ -95,29 +95,36 @@ export function Launchpad() {
       }
     });
 
+    // Sort standalone apps alphabetically
+    standaloneApps.sort((a, b) => a.name.localeCompare(b.name));
+
     // Build items list
     const itemsList: LaunchpadItem[] = [];
 
-    // Add standalone apps first
+    // Add standalone apps first (already sorted)
     standaloneApps.forEach((app) => {
       itemsList.push({ type: "app", app });
     });
 
-    // Add folders
-    Object.entries(folders).forEach(([category, apps]) => {
-      if (apps.length > 0) {
-        const folderName = category.charAt(0).toUpperCase() + category.slice(1);
-        itemsList.push({
-          type: "folder",
-          folder: {
-            id: category,
-            name: folderName,
-            apps,
-            icon: getIcon("folder"),
-          },
-        });
-      }
-    });
+    // Add folders (sorted alphabetically by category name)
+    Object.entries(folders)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([category, apps]) => {
+        if (apps.length > 0) {
+          const folderName = category.charAt(0).toUpperCase() + category.slice(1);
+          // Sort apps within folder alphabetically
+          const sortedApps = [...apps].sort((a, b) => a.name.localeCompare(b.name));
+          itemsList.push({
+            type: "folder",
+            folder: {
+              id: category,
+              name: folderName,
+              apps: sortedApps,
+              icon: getIcon("folder"),
+            },
+          });
+        }
+      });
 
     return { items: itemsList, allAppsFlat: allApps };
   }, [appRegistryVersion]);

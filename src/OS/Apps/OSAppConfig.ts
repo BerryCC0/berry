@@ -23,6 +23,7 @@ const NounsAuction = lazy(() => import("./NounsAuction/NounsAuction").then(m => 
 const Camp = lazy(() => import("./Camp/Camp").then(m => ({ default: m.Camp })));
 const Treasury = lazy(() => import("./Treasury/Treasury").then(m => ({ default: m.Treasury })));
 const Nounspot = lazy(() => import("./Nounspot/Nounspot").then(m => ({ default: m.Nounspot })));
+const CrystalBall = lazy(() => import("./CrystalBall/CrystalBall").then(m => ({ default: m.CrystalBall })));
 
 /**
  * Finder - File browser
@@ -303,6 +304,28 @@ const nounspotConfig: AppConfig = {
 };
 
 /**
+ * Crystal Ball - Preview the next Noun
+ * Shows what the next Noun would look like if minted at the current block
+ */
+const crystalBallConfig: AppConfig = {
+  id: "crystal-ball",
+  name: "Crystal Ball",
+  icon: getIcon("crystal-ball"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 306,
+    height: 500,
+    minWidth: 306,
+    minHeight: 460,
+    isResizable: true,
+  },
+  permissions: ["network"],
+  component: CrystalBall,
+};
+
+/**
  * All OS app configurations
  * 
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -321,6 +344,7 @@ export const osAppConfigs: AppConfig[] = [
   campConfig,
   treasuryConfig,
   nounspotConfig,
+  crystalBallConfig,
 ];
 
 /**
