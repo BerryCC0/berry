@@ -731,7 +731,7 @@ export function CreateProposalView({
                 options={[
                   { 
                     value: 'candidate', 
-                    label: 'Candidate (Draft)',
+                    label: 'Candidate',
                     description: 'Gather community support before formal submission'
                   },
                   { 
