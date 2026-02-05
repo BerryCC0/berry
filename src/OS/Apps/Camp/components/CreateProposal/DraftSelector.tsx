@@ -114,13 +114,12 @@ export function DraftSelector({
           onClick={onNew}
           disabled={disabled}
         >
-          + New Proposal
+          + New Draft
         </button>
       </div>
 
       {drafts.length === 0 ? (
         <div className={styles.noDrafts}>
-          <div className={styles.noDraftsIcon}>📝</div>
           <div className={styles.noDraftsText}>
             Start typing a proposal title to create your first draft.
           </div>
