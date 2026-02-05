@@ -7,10 +7,23 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useAccount } from 'wagmi';
-import { useProposals, useCandidates, useVoter } from '../hooks';
-import type { Proposal, Candidate } from '../types';
+import { useAccount, useBlockNumber, useEnsName } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
+import { useProposals, useCandidates, useVoter, useVoters } from '../hooks';
+import type { Proposal, Candidate, Voter } from '../types';
 import styles from './Digest.module.css';
+
+/**
+ * ENSName - Resolves and displays ENS name for an address
+ */
+function ENSName({ address }: { address: string }) {
+  const { data: ensName } = useEnsName({
+    address: address as `0x${string}`,
+    chainId: mainnet.id,
+  });
+  
+  return <>{ensName || `${address.slice(0, 6)}...${address.slice(-4)}`}</>;
+}
 
 interface DigestProps {
   onNavigate: (path: string) => void;
@@ -73,22 +86,32 @@ interface DigestSection {
 export function Digest({ onNavigate }: DigestProps) {
   const { address } = useAccount();
   const [activeTab, setActiveTab] = useState<DigestTab>('digest');
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['ongoing']));
   
   // Fetch data
   const { data: proposals } = useProposals(50, 'all', 'newest');
-  const { data: candidates } = useCandidates(20);
+  const { data: candidates } = useCandidates(50);
+  const { data: voters } = useVoters(50, 'power');
   const { data: voterData } = useVoter(address || null);
+  const { data: blockNumber } = useBlockNumber({ watch: true });
   
-  // Rough current block estimate
-  const currentBlock = useMemo(() => {
-    return Math.floor((Date.now() / 1000 - 1438269988) / 12);
+  // Estimate current block: Block 19,000,000 was Jan 17, 2024 (timestamp 1705500000)
+  // ~12 seconds per block since then
+  const estimatedBlock = useMemo(() => {
+    const referenceBlock = 19000000;
+    const referenceTimestamp = 1705500000; // Jan 17, 2024
+    const secondsSinceReference = Math.floor(Date.now() / 1000) - referenceTimestamp;
+    const blocksSinceReference = Math.floor(secondsSinceReference / 12);
+    return referenceBlock + blocksSinceReference;
   }, []);
   
-  // Get proposals the user hasn't voted on
+  // Use actual block number from chain, or estimated if not available yet
+  const currentBlock = blockNumber ? Number(blockNumber) : estimatedBlock;
+  
+  // Get proposals the user has already voted on
   const votedProposalIds = useMemo(() => {
-    if (!voterData?.votes) return new Set<string>();
-    return new Set(voterData.votes.map(v => v.proposalId));
+    if (!voterData?.recentVotes) return new Set<string>();
+    return new Set(voterData.recentVotes.map((v: { proposalId: string }) => v.proposalId));
   }, [voterData]);
   
   // Group proposals and candidates into sections
@@ -97,9 +120,15 @@ export function Digest({ onNavigate }: DigestProps) {
     
     const result: DigestSection[] = [];
     
+    // Helper to check if proposal voting is still active
+    // Must have active status AND endBlock must not have passed
+    const isVotingActive = (p: Proposal) => 
+      ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status) && 
+      Number(p.endBlock) > currentBlock;
+    
     // Active proposals user hasn't voted on
     const notVoted = proposals.filter(p => 
-      ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status) && 
+      isVotingActive(p) && 
       address && 
       !votedProposalIds.has(p.id)
     );
@@ -115,9 +144,7 @@ export function Digest({ onNavigate }: DigestProps) {
     }
     
     // Ongoing proposals (currently voting)
-    const ongoing = proposals.filter(p => 
-      ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status)
-    );
+    const ongoing = proposals.filter(p => isVotingActive(p));
     
     if (ongoing.length > 0) {
       result.push({
@@ -217,7 +244,7 @@ export function Digest({ onNavigate }: DigestProps) {
         onClick={() => handleProposalClick(proposal)}
       >
         <div className={styles.proposalMeta}>
-          Prop {proposal.id} by <span className={styles.proposer}>{formatAddress(proposal.proposer)}</span>
+          Prop {proposal.id} by <span className={styles.proposer}><ENSName address={proposal.proposer} /></span>
         </div>
         
         <div className={styles.proposalTitle}>{proposal.title}</div>
@@ -273,7 +300,7 @@ export function Digest({ onNavigate }: DigestProps) {
         onClick={() => handleCandidateClick(candidate)}
       >
         <div className={styles.proposalMeta}>
-          Candidate by <span className={styles.proposer}>{formatAddress(candidate.proposer)}</span>
+          Candidate by <span className={styles.proposer}><ENSName address={candidate.proposer} /></span>
           {thresholdMet && <span className={styles.thresholdMet}> – Sponsor threshold met</span>}
         </div>
         
@@ -282,6 +309,101 @@ export function Digest({ onNavigate }: DigestProps) {
         </div>
       </div>
     );
+  };
+  
+  const renderVoterItem = (voter: Voter) => {
+    const votes = Number(voter.delegatedVotes);
+    
+    return (
+      <div 
+        key={voter.id}
+        className={styles.voterItem}
+        onClick={() => onNavigate(`voter/${voter.id}`)}
+      >
+        <div className={styles.voterInfo}>
+          <span className={styles.voterName}><ENSName address={voter.id} /></span>
+          <span className={styles.voterVotes}>{votes} vote{votes !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render content based on active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'proposals':
+        return (
+          <div className={styles.listContent}>
+            {proposals?.map(proposal => renderProposalItem(proposal))}
+            {(!proposals || proposals.length === 0) && (
+              <div className={styles.empty}>No proposals found</div>
+            )}
+          </div>
+        );
+      
+      case 'candidates':
+        return (
+          <div className={styles.listContent}>
+            {candidates?.map(candidate => renderCandidateItem(candidate))}
+            {(!candidates || candidates.length === 0) && (
+              <div className={styles.empty}>No candidates found</div>
+            )}
+          </div>
+        );
+      
+      case 'voters':
+        return (
+          <div className={styles.listContent}>
+            {voters?.map(voter => renderVoterItem(voter))}
+            {(!voters || voters.length === 0) && (
+              <div className={styles.empty}>No voters found</div>
+            )}
+          </div>
+        );
+      
+      case 'topics':
+        return (
+          <div className={styles.empty}>
+            Topics coming soon
+          </div>
+        );
+      
+      case 'digest':
+      default:
+        return (
+          <>
+            {sections.map(section => (
+              <div key={section.id} className={styles.section}>
+                <button 
+                  className={styles.sectionHeader}
+                  onClick={() => toggleSection(section.id)}
+                >
+                  <span className={styles.chevron}>{section.collapsed ? '›' : '⌄'}</span>
+                  <span className={styles.sectionTitle}>{section.title}</span>
+                  {section.subtitle && (
+                    <span className={styles.sectionSubtitle}> — {section.subtitle}</span>
+                  )}
+                </button>
+                
+                {!section.collapsed && (
+                  <div className={styles.sectionContent}>
+                    {section.type === 'proposal' 
+                      ? section.items.map(item => renderProposalItem(item as Proposal))
+                      : section.items.map(item => renderCandidateItem(item as Candidate))
+                    }
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {sections.length === 0 && (
+              <div className={styles.empty}>
+                No active proposals or candidates
+              </div>
+            )}
+          </>
+        );
+    }
   };
   
   return (
@@ -296,10 +418,7 @@ export function Digest({ onNavigate }: DigestProps) {
         </button>
         <button 
           className={`${styles.tab} ${activeTab === 'proposals' ? styles.active : ''}`}
-          onClick={() => {
-            setActiveTab('proposals');
-            onNavigate('proposals');
-          }}
+          onClick={() => setActiveTab('proposals')}
         >
           Proposals
         </button>
@@ -311,19 +430,13 @@ export function Digest({ onNavigate }: DigestProps) {
         </button>
         <button 
           className={`${styles.tab} ${activeTab === 'candidates' ? styles.active : ''}`}
-          onClick={() => {
-            setActiveTab('candidates');
-            onNavigate('candidates');
-          }}
+          onClick={() => setActiveTab('candidates')}
         >
           Candidates
         </button>
         <button 
           className={`${styles.tab} ${activeTab === 'voters' ? styles.active : ''}`}
-          onClick={() => {
-            setActiveTab('voters');
-            onNavigate('voters');
-          }}
+          onClick={() => setActiveTab('voters')}
         >
           Voters
         </button>
@@ -331,43 +444,10 @@ export function Digest({ onNavigate }: DigestProps) {
       
       {/* Content */}
       <div className={styles.content}>
-        {sections.map(section => (
-          <div key={section.id} className={styles.section}>
-            <button 
-              className={styles.sectionHeader}
-              onClick={() => toggleSection(section.id)}
-            >
-              <span className={styles.chevron}>{section.collapsed ? '›' : '⌄'}</span>
-              <span className={styles.sectionTitle}>{section.title}</span>
-              {section.subtitle && (
-                <span className={styles.sectionSubtitle}> — {section.subtitle}</span>
-              )}
-            </button>
-            
-            {!section.collapsed && (
-              <div className={styles.sectionContent}>
-                {section.type === 'proposal' 
-                  ? section.items.map(item => renderProposalItem(item as Proposal))
-                  : section.items.map(item => renderCandidateItem(item as Candidate))
-                }
-              </div>
-            )}
-          </div>
-        ))}
-        
-        {sections.length === 0 && (
-          <div className={styles.empty}>
-            No active proposals or candidates
-          </div>
-        )}
+        {renderTabContent()}
       </div>
     </div>
   );
-}
-
-function formatAddress(address: string): string {
-  // TODO: Use ENS resolver
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 function formatSlugToTitle(slug: string): string {

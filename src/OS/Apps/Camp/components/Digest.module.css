@@ -225,6 +225,42 @@
   margin-left: auto;
 }
 
+/* List content (for tab views) */
+.listContent {
+  padding: 0 8px;
+}
+
+/* Voter items */
+.voterItem {
+  padding: 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.voterItem:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.voterInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.voterName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+}
+
+.voterVotes {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
 /* Empty state */
 .empty {
   display: flex;
