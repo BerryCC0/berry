@@ -30,6 +30,7 @@ const APP_ALIASES: Record<string, string> = {
   'auction': 'nouns-auction',
   'treasury': 'treasury',
   'wallet': 'wallet-panel',
+  'noc': 'crystal-ball',
 };
 
 export default function AppRoute() {

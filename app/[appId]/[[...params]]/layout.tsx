@@ -81,14 +81,45 @@ function extractDescription(text: string): string {
   return cleaned.trim();
 }
 
+// App ID aliases (must match page.tsx)
+const APP_ALIASES: Record<string, string> = {
+  'auction': 'nouns-auction',
+  'treasury': 'treasury',
+  'wallet': 'wallet-panel',
+  'noc': 'crystal-ball',
+};
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ appId: string; params?: string[] }>;
 }): Promise<Metadata> {
-  const { appId, params: routeParams } = await params;
+  const { appId: rawAppId, params: routeParams } = await params;
+  // Resolve aliases
+  const appId = APP_ALIASES[rawAppId] || rawAppId;
   const app = osAppConfigs.find((a) => a.id === appId);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://berryos.wtf';
+
+  // Special metadata for Crystal Ball (Noun O' Clock)
+  if (appId === 'crystal-ball') {
+    const ogImageUrl = `${baseUrl}/api/og/crystal-ball`;
+    return {
+      title: "Noun O' Clock - Berry OS",
+      description: "Settle the next Noun.",
+      openGraph: {
+        title: "Noun O' Clock",
+        description: "Settle the next Noun.",
+        images: [ogImageUrl],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "Noun O' Clock",
+        description: "Settle the next Noun.",
+        images: [ogImageUrl],
+      },
+    };
+  }
 
   // Default metadata
   const defaultMeta: Metadata = {
