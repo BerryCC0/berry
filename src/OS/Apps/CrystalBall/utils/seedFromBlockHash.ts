@@ -48,10 +48,10 @@ export function getNounSeedFromBlockHash(
   // Extract each trait using bit shifting (similar to Solidity uint48 extraction)
   // In the contract, each uint48 is extracted by shifting right
   const background = Number(pseudorandomBigInt % BigInt(counts.backgrounds));
-  const body = Number((pseudorandomBigInt >> 48n) % BigInt(counts.bodies));
-  const accessory = Number((pseudorandomBigInt >> 96n) % BigInt(counts.accessories));
-  const head = Number((pseudorandomBigInt >> 144n) % BigInt(counts.heads));
-  const glasses = Number((pseudorandomBigInt >> 192n) % BigInt(counts.glasses));
+  const body = Number((pseudorandomBigInt >> BigInt(48)) % BigInt(counts.bodies));
+  const accessory = Number((pseudorandomBigInt >> BigInt(96)) % BigInt(counts.accessories));
+  const head = Number((pseudorandomBigInt >> BigInt(144)) % BigInt(counts.heads));
+  const glasses = Number((pseudorandomBigInt >> BigInt(192)) % BigInt(counts.glasses));
   
   return {
     background,

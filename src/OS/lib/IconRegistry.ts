@@ -90,7 +90,7 @@ const iconRegistry: Record<IconId, string> = {
   "camp": `${ICONS_BASE_PATH}/camp.svg`,
   "treasury": `${ICONS_BASE_PATH}/treasury.png`,
   "nounspot": `${ICONS_BASE_PATH}/nounspot.svg`,
-  "crystal-ball": `${ICONS_BASE_PATH}/default.svg`,
+  "crystal-ball": `${ICONS_BASE_PATH}/crystal-ball.png`,
 
   // File type icons
   "file-text": `${ICONS_BASE_PATH}/file-text.svg`,
