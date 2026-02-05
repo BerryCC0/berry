@@ -25,6 +25,13 @@ import { bootBerryOS } from "@/OS/lib/Boot";
 import { BootOverlay } from "@/OS/components/BootOverlay";
 import styles from "./page.module.css";
 
+// URL aliases for shorter/friendlier URLs
+const APP_ALIASES: Record<string, string> = {
+  'auction': 'nouns-auction',
+  'treasury': 'treasury',
+  'wallet': 'wallet-panel',
+};
+
 export default function AppRoute() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -41,7 +48,9 @@ export default function AppRoute() {
   // Prevent double-launch
   const hasLaunched = useRef(false);
 
-  const appId = params.appId as string;
+  // Resolve aliases to actual app IDs
+  const rawAppId = params.appId as string;
+  const appId = APP_ALIASES[rawAppId] || rawAppId;
   const pathParams = (params.params as string[]) || [];
 
   // Trigger boot on mount if not already booted/booting

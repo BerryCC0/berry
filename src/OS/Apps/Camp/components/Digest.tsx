@@ -7,11 +7,17 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useAccount, useBlockNumber, useEnsName } from 'wagmi';
+import { useAccount, useBlockNumber, useEnsName, useEnsAvatar } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useProposals, useCandidates, useVoter, useVoters } from '../hooks';
 import type { Proposal, Candidate, Voter } from '../types';
 import styles from './Digest.module.css';
+
+// Treasury addresses to filter from voter list
+const TREASURY_ADDRESSES = [
+  '0xb1a32fc9f9d8b2cf86c068cae13108809547ef71', // treasury (nouns.eth)
+  '0x0bc3807ec262cb779b38d65b38158acc3bfede10', // treasuryV1
+];
 
 /**
  * ENSName - Resolves and displays ENS name for an address
@@ -23,6 +29,34 @@ function ENSName({ address }: { address: string }) {
   });
   
   return <>{ensName || `${address.slice(0, 6)}...${address.slice(-4)}`}</>;
+}
+
+/**
+ * VoterIdentity - Shows ENS avatar and name for a voter
+ */
+function VoterIdentity({ address }: { address: string }) {
+  const { data: ensName } = useEnsName({
+    address: address as `0x${string}`,
+    chainId: mainnet.id,
+  });
+  
+  const { data: ensAvatar } = useEnsAvatar({
+    name: ensName || undefined,
+    chainId: mainnet.id,
+  });
+  
+  const displayName = ensName || `${address.slice(0, 6)}...${address.slice(-4)}`;
+  
+  return (
+    <div className={styles.voterIdentity}>
+      {ensAvatar ? (
+        <img src={ensAvatar} alt="" className={styles.voterAvatar} />
+      ) : (
+        <div className={styles.voterAvatarPlaceholder} />
+      )}
+      <span className={styles.voterName}>{displayName}</span>
+    </div>
+  );
 }
 
 interface DigestProps {
@@ -89,11 +123,15 @@ export function Digest({ onNavigate }: DigestProps) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['ongoing']));
   
   // Fetch data
-  const { data: proposals } = useProposals(50, 'all', 'newest');
-  const { data: candidates } = useCandidates(50);
-  const { data: voters } = useVoters(50, 'power');
+  const { data: proposals, isLoading: proposalsLoading, error: proposalsError } = useProposals(50, 'all', 'newest');
+  const { data: candidates, isLoading: candidatesLoading, error: candidatesError } = useCandidates(50);
+  const { data: voters, isLoading: votersLoading, error: votersError } = useVoters(50, 'power');
   const { data: voterData } = useVoter(address || null);
   const { data: blockNumber } = useBlockNumber({ watch: true });
+  
+  // Combined loading/error states
+  const isLoading = proposalsLoading || candidatesLoading;
+  const hasError = proposalsError || candidatesError;
   
   // Estimate current block: Block 19,000,000 was Jan 17, 2024 (timestamp 1705500000)
   // ~12 seconds per block since then
@@ -321,17 +359,25 @@ export function Digest({ onNavigate }: DigestProps) {
         onClick={() => onNavigate(`voter/${voter.id}`)}
       >
         <div className={styles.voterInfo}>
-          <span className={styles.voterName}><ENSName address={voter.id} /></span>
+          <VoterIdentity address={voter.id} />
           <span className={styles.voterVotes}>{votes} vote{votes !== 1 ? 's' : ''}</span>
         </div>
       </div>
     );
   };
   
+  // Filter out treasury addresses from voters
+  const filteredVoters = useMemo(() => {
+    if (!voters) return [];
+    return voters.filter(v => !TREASURY_ADDRESSES.includes(v.id.toLowerCase()));
+  }, [voters]);
+  
   // Render content based on active tab
   const renderTabContent = () => {
     switch (activeTab) {
       case 'proposals':
+        if (proposalsLoading) return <div className={styles.loading}>Loading proposals...</div>;
+        if (proposalsError) return <div className={styles.error}>Failed to load proposals</div>;
         return (
           <div className={styles.listContent}>
             {proposals?.map(proposal => renderProposalItem(proposal))}
@@ -342,6 +388,8 @@ export function Digest({ onNavigate }: DigestProps) {
         );
       
       case 'candidates':
+        if (candidatesLoading) return <div className={styles.loading}>Loading candidates...</div>;
+        if (candidatesError) return <div className={styles.error}>Failed to load candidates</div>;
         return (
           <div className={styles.listContent}>
             {candidates?.map(candidate => renderCandidateItem(candidate))}
@@ -352,10 +400,12 @@ export function Digest({ onNavigate }: DigestProps) {
         );
       
       case 'voters':
+        if (votersLoading) return <div className={styles.loading}>Loading voters...</div>;
+        if (votersError) return <div className={styles.error}>Failed to load voters</div>;
         return (
           <div className={styles.listContent}>
-            {voters?.map(voter => renderVoterItem(voter))}
-            {(!voters || voters.length === 0) && (
+            {filteredVoters.map(voter => renderVoterItem(voter))}
+            {filteredVoters.length === 0 && (
               <div className={styles.empty}>No voters found</div>
             )}
           </div>
@@ -370,6 +420,8 @@ export function Digest({ onNavigate }: DigestProps) {
       
       case 'digest':
       default:
+        if (isLoading) return <div className={styles.loading}>Loading...</div>;
+        if (hasError) return <div className={styles.error}>Failed to load data</div>;
         return (
           <>
             {sections.map(section => (
