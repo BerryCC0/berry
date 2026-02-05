@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useAccount, useReadContract, useEnsName, useEnsAvatar } from 'wagmi';
+import { useAccount, useReadContract, useEnsName, useEnsAvatar, useBlockNumber } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useTranslation } from '@/OS/lib/i18n';
 import { useProposal, useSignal } from '../hooks';
@@ -18,6 +18,7 @@ import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
 import { VoterRow } from '../components/VoterRow';
 import { getClientName } from '@/src/OS/Apps/NounsAuction/utils/clientNames';
+import { decodeTransactions, type DecodedTransaction } from '../utils/transactionDecoder';
 import styles from './ProposalDetailView.module.css';
 
 /**
@@ -45,6 +46,90 @@ function AddressWithAvatar({ address, onClick }: { address: string; onClick?: ()
       )}
       <span className={styles.addressName}>{displayName}</span>
     </span>
+  );
+}
+
+/**
+ * TransactionSummary - Shows a summary box of what the proposal requests
+ */
+function TransactionSummary({ actions }: { actions: { target: string; value: string; signature: string; calldata: string }[] }) {
+  const decodedTransactions = useMemo(() => {
+    return decodeTransactions(actions);
+  }, [actions]);
+  
+  if (decodedTransactions.length === 0) return null;
+  
+  // Group similar transactions for summary
+  const summary = useMemo(() => {
+    const groups: { type: string; count: number; details: string }[] = [];
+    
+    for (const tx of decodedTransactions) {
+      // Categorize by title prefix
+      const title = tx.title;
+      
+      if (title.startsWith('Transfer') && title.includes('ETH')) {
+        const existing = groups.find(g => g.type === 'ETH Transfer');
+        // Strip "Transfer " prefix since we add "Requesting " in the display
+        const amount = title.replace(/^Transfer\s+/, '');
+        if (existing) {
+          existing.count++;
+        } else {
+          groups.push({ type: 'ETH Transfer', count: 1, details: amount });
+        }
+      } else if (title.startsWith('Transfer') || title.startsWith('Fund')) {
+        const existing = groups.find(g => g.type === 'Token Transfer');
+        // Strip "Transfer " or "Fund " prefix since we add "Requesting " in the display
+        const amount = title.replace(/^(Transfer|Fund)\s+/, '');
+        // Determine source: Payer Contract or Treasury
+        const isPayer = tx.description?.includes('Payer');
+        const source = isPayer ? 'via Payer' : 'via Treasury';
+        if (existing) {
+          existing.count++;
+          existing.details = `${existing.count} transfers`;
+        } else {
+          groups.push({ type: 'Token Transfer', count: 1, details: `${amount} ${source}` });
+        }
+      } else if (title.startsWith('Stream')) {
+        const existing = groups.find(g => g.type === 'Stream');
+        if (existing) {
+          existing.count++;
+          existing.details = `${existing.count} streams`;
+        } else {
+          groups.push({ type: 'Stream', count: 1, details: title + (tx.description ? ` (${tx.description})` : '') });
+        }
+      } else if (title.includes('Noun')) {
+        groups.push({ type: 'Noun Transfer', count: 1, details: title });
+      } else if (title.startsWith('Approve')) {
+        groups.push({ type: 'Approval', count: 1, details: title });
+      } else if (title.startsWith('Delegate')) {
+        groups.push({ type: 'Delegation', count: 1, details: title });
+      } else {
+        groups.push({ type: 'Contract Call', count: 1, details: title + (tx.description ? ` - ${tx.description}` : '') });
+      }
+    }
+    
+    return groups;
+  }, [decodedTransactions]);
+  
+  return (
+    <div className={styles.txSummary}>
+      <div className={styles.txSummaryContent}>
+        {summary.map((item, i) => (
+          <div key={i} className={styles.txSummaryItem}>
+            <span className={styles.txSummaryTitle}>
+              {item.type === 'Token Transfer' && 'Requesting '}
+              {item.type === 'ETH Transfer' && 'Requesting '}
+              {item.type === 'Stream'}
+              {item.type === 'Noun Transfer' && '⌐◨-◨ '}
+              {item.type === 'Approval'}
+              {item.type === 'Delegation'}
+              {item.type === 'Contract Call'}
+              {item.details}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -123,6 +208,9 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Get current block number for countdown
+  const { data: blockNumber } = useBlockNumber({ watch: true });
   
   // Determine if voting is active
   const isActive = proposal?.status === 'ACTIVE' || proposal?.status === 'OBJECTION_PERIOD';
@@ -278,6 +366,50 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
   const quorumMet = forVotes >= quorum;
 
+  // Calculate time remaining
+  const timeRemaining = useMemo(() => {
+    if (!blockNumber || !proposal.startBlock || !proposal.endBlock) return null;
+    
+    const currentBlock = Number(blockNumber);
+    const startBlock = Number(proposal.startBlock);
+    const endBlock = Number(proposal.endBlock);
+    const SECONDS_PER_BLOCK = 12;
+    
+    // Voting hasn't started yet
+    if (currentBlock < startBlock) {
+      const blocksUntilStart = startBlock - currentBlock;
+      const secondsUntilStart = blocksUntilStart * SECONDS_PER_BLOCK;
+      return { type: 'pending' as const, seconds: secondsUntilStart };
+    }
+    
+    // Voting is active
+    if (currentBlock < endBlock) {
+      const blocksRemaining = endBlock - currentBlock;
+      const secondsRemaining = blocksRemaining * SECONDS_PER_BLOCK;
+      return { type: 'active' as const, seconds: secondsRemaining };
+    }
+    
+    // Voting has ended
+    return { type: 'ended' as const, seconds: 0 };
+  }, [blockNumber, proposal.startBlock, proposal.endBlock]);
+  
+  // Format time remaining as human-readable string
+  const formatTimeRemaining = (seconds: number): string => {
+    if (seconds <= 0) return 'Ended';
+    
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (days > 0) {
+      return `${days}d ${hours}h remaining`;
+    }
+    if (hours > 0) {
+      return `${hours}h ${minutes}m remaining`;
+    }
+    return `${minutes}m remaining`;
+  };
+
   // Note: isActive is already declared above in the hooks section
 
   return (
@@ -336,6 +468,11 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
       <div className={styles.columns}>
         {/* Left Column: Description */}
         <div className={styles.leftColumn}>
+          {/* Transaction Summary */}
+          {proposal.actions && proposal.actions.length > 0 && (
+            <TransactionSummary actions={proposal.actions} />
+          )}
+          
           <div className={styles.description}>
             <h2 className={styles.sectionTitle}>{t('common.description')}</h2>
             <MarkdownRenderer 
@@ -347,6 +484,19 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
 
         {/* Right Column: Simulation, Votes, Actions */}
         <div className={styles.rightColumn}>
+          {/* Time Remaining */}
+          {timeRemaining && timeRemaining.type !== 'ended' && (
+            <div className={styles.timeRemaining}>
+              <span className={styles.timeIcon}>⏱</span>
+              <span className={styles.timeText}>
+                {timeRemaining.type === 'pending' 
+                  ? `Voting starts in ${formatTimeRemaining(timeRemaining.seconds)}`
+                  : formatTimeRemaining(timeRemaining.seconds)
+                }
+              </span>
+            </div>
+          )}
+          
           {/* Simulation Status / Transaction List */}
           <SimulationStatus
             result={simulation.result}
