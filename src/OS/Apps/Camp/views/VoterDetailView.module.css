@@ -1,12 +1,13 @@
 /**
  * VoterDetailView Styles
- * Theme-compliant using --berry-* CSS variables
+ * Two-column layout matching the design
  */
 
 .container {
   height: 100%;
-  overflow-y: auto;
-  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .loading,
@@ -21,7 +22,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
 }
 
 .backButton {
@@ -40,37 +43,39 @@
   color: white;
 }
 
-.profile {
+/* Two Column Layout */
+.twoColumn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Left Column */
+.leftColumn {
+  padding: 16px;
+  overflow-y: auto;
+  border-right: 1px solid var(--berry-border);
+}
+
+/* Profile Header */
+.profileHeader {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 16px;
 }
 
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid var(--berry-border);
-}
-
-.avatarPlaceholder {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background: var(--berry-bg-tertiary);
-  border: 1px solid var(--berry-border);
-}
-
-.profileInfo {
+.profileMain {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .name {
   font-family: var(--berry-font-system);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: bold;
   color: var(--berry-text-primary);
   margin: 0;
@@ -78,102 +83,81 @@
 
 .address {
   font-family: monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--berry-text-secondary);
 }
 
+.profileActions {
+  display: flex;
+  gap: 8px;
+}
+
 .delegateButton {
-  margin-left: auto;
-  padding: 8px 14px;
+  padding: 6px 12px;
   font-family: var(--berry-font-system);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   background: var(--berry-accent);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: opacity 0.15s ease;
 }
 
 .delegateButton:hover {
   opacity: 0.9;
 }
 
-/* Voting Power Section - contains voting power, nouns, and delegators */
-.votingPowerSection {
-  background: var(--berry-bg-secondary);
-  border: 1px solid var(--berry-border);
-  border-radius: 8px;
+/* Nouns Grid */
+.nounsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
-.votingPowerRow {
+.nounCard {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  gap: 16px;
+  gap: 2px;
 }
 
-.votingPowerInfo {
-  flex-shrink: 0;
-}
-
-.votingPower {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.votingPowerValue {
-  font-family: var(--berry-font-system);
-  font-size: 24px;
-  font-weight: bold;
-  color: var(--berry-text-primary);
-}
-
-.votingPowerLabel {
-  font-family: var(--berry-font-system);
-  font-size: 12px;
-  color: var(--berry-text-secondary);
-}
-
-/* Mini noun grid in voting power section */
-.nounsRepresentedGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
-}
-
-.nounMini {
-  flex-shrink: 0;
-}
-
-.nounMiniImage {
-  width: 40px;
-  height: 40px;
+.nounImage {
+  width: 48px;
+  height: 48px;
   border-radius: 6px;
   border: 1px solid var(--berry-border);
 }
 
-.nounMiniPlaceholder {
-  width: 40px;
-  height: 40px;
+.nounImagePlaceholder {
+  width: 48px;
+  height: 48px;
   border-radius: 6px;
   background: var(--berry-bg-tertiary);
   border: 1px solid var(--berry-border);
 }
 
-.divider {
-  height: 1px;
-  background: var(--berry-border);
-  margin: 0 16px;
+.nounId {
+  font-family: var(--berry-font-system);
+  font-size: 9px;
+  color: var(--berry-text-secondary);
 }
 
-.delegatorsBox {
-  padding: 12px 16px;
+/* Delegation Info */
+.delegatingTo {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 12px;
+}
+
+.delegatingLabel {
+  color: var(--berry-text-secondary);
+}
+
+.delegatorsSection {
+  margin-bottom: 16px;
 }
 
 .delegatorsLabel {
@@ -184,83 +168,14 @@
   margin-bottom: 6px;
 }
 
-.sectionTitle {
-  font-family: var(--berry-font-system);
-  font-size: 12px;
-  font-weight: bold;
-  color: var(--berry-text-primary);
-  margin: 0 0 8px 0;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--berry-border);
-}
-
-.nounsSection {
-  margin-bottom: 16px;
-}
-
-.nounsGrid {
+.delegatorsList {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-}
-
-.nounCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.nounImage {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
-  border: 1px solid var(--berry-border);
-}
-
-.nounImagePlaceholder {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
-  background: var(--berry-bg-tertiary);
-  border: 1px solid var(--berry-border);
-}
-
-.nounId {
-  font-family: var(--berry-font-system);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--berry-text-primary);
-}
-
-/* Delegation Section */
-.delegationSection {
-  margin-bottom: 16px;
-  padding: 12px;
-  background: var(--berry-bg-secondary);
-  border: 1px solid var(--berry-border);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.delegationRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.delegationLabel {
-  font-family: var(--berry-font-system);
-  font-size: 11px;
-  color: var(--berry-text-secondary);
-  min-width: 100px;
-  flex-shrink: 0;
+  gap: 6px;
 }
 
 .addressLink {
-  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-family: monospace;
   font-size: 11px;
   color: var(--berry-accent);
   cursor: pointer;
@@ -270,74 +185,174 @@
   text-decoration: underline;
 }
 
-.selfDelegated {
-  font-family: var(--berry-font-system);
-  font-size: 11px;
-  color: var(--berry-text-primary);
-  font-style: italic;
-}
-
-.delegatorsList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .moreCount {
   font-family: var(--berry-font-system);
   font-size: 11px;
   color: var(--berry-text-secondary);
 }
 
-.votesSection {
-  margin-bottom: 16px;
-}
-
-.votesList {
+/* Right Column */
+.rightColumn {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  overflow: hidden;
 }
 
-.voteItem {
-  padding: 8px;
-  background: var(--berry-bg);
+/* Stats Card */
+.statsCard {
+  padding: 16px;
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.statsHeader {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  margin-bottom: 12px;
+}
+
+/* Vote Bar */
+.voteBar {
+  margin-bottom: 12px;
+}
+
+.voteBarLabels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.forLabel {
+  color: #4ade80;
+}
+
+.againstLabel {
+  color: #f87171;
+}
+
+.abstainLabel {
+  color: var(--berry-text-secondary);
+}
+
+.voteBarTrack {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--berry-bg-tertiary);
+}
+
+.voteBarFor {
+  background: #4ade80;
+}
+
+.voteBarAbstain {
+  background: #9ca3af;
+}
+
+.voteBarAgainst {
+  background: #f87171;
+}
+
+.voteCount {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  margin-top: 4px;
+  text-align: center;
+}
+
+/* Filter Row */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterLabel {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.filterSelect {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 4px 8px;
   border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.voteItem:hover {
+/* Activity Feed */
+.activityFeed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.activityItem {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--berry-border);
+  cursor: pointer;
+}
+
+.activityItem:hover {
   background: var(--berry-bg-secondary);
 }
 
-.voteHeader {
+.activityHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
   font-family: var(--berry-font-system);
   font-size: 11px;
-}
-
-.proposalId {
-  font-weight: bold;
   color: var(--berry-text-primary);
 }
 
-.voteSupport {
-  font-weight: bold;
+.activityVoter {
+  font-weight: 600;
+  color: var(--berry-accent);
 }
 
-.proposalTitle {
-  margin-top: 4px;
-  font-family: var(--berry-font-system);
-  font-size: 10px;
+.activitySupport {
+  font-weight: 600;
+}
+
+.activityProposal {
   color: var(--berry-text-secondary);
 }
 
-.voteReason {
-  margin-top: 4px;
+.activityReason {
+  margin-top: 6px;
   font-family: var(--berry-font-system);
-  font-size: 10px;
-  font-style: italic;
+  font-size: 11px;
   color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+
+.emptyActivity {
+  padding: 24px 16px;
+  text-align: center;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+/* Responsive: Stack on narrow windows */
+@media (max-width: 700px) {
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+
+  .leftColumn {
+    border-right: none;
+    border-bottom: 1px solid var(--berry-border);
+    max-height: 50%;
+  }
 }

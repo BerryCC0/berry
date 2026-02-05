@@ -1,6 +1,6 @@
 /**
  * VoterDetailView
- * Full voter/delegate profile
+ * Full voter/delegate profile with two-column layout
  */
 
 'use client';
@@ -21,12 +21,9 @@ import styles from './VoterDetailView.module.css';
  * Check if input looks like an ENS name (not a hex address)
  */
 function isEnsName(input: string): boolean {
-  // If it starts with 0x and is 42 chars, it's an address
   if (input.startsWith('0x') && input.length === 42) {
     return false;
   }
-  // ENS names typically end with .eth but can have other TLDs
-  // If it contains a dot and doesn't start with 0x, treat as ENS
   return input.includes('.') || !input.startsWith('0x');
 }
 
@@ -35,7 +32,7 @@ interface VoterDetailViewProps {
   onNavigate: (path: string) => void;
   onBack: () => void;
   showBackButton?: boolean;
-  isOwnAccount?: boolean; // True when viewing your own account
+  isOwnAccount?: boolean;
 }
 
 // Component to display an address with ENS resolution
@@ -65,8 +62,12 @@ function AddressLink({
   );
 }
 
+// Quorum is approximately 127 votes (10% of ~1270 total Nouns)
+const QUORUM_VOTES = 127;
+
 export function VoterDetailView({ address: addressInput, onNavigate, onBack, showBackButton = true, isOwnAccount = false }: VoterDetailViewProps) {
   const [showDelegateModal, setShowDelegateModal] = useState(false);
+  const [activityFilter, setActivityFilter] = useState<'all' | 'with-reason'>('all');
   
   // Determine if input is ENS name or address
   const inputIsEns = useMemo(() => isEnsName(addressInput), [addressInput]);
@@ -95,7 +96,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   // Combined loading state
   const isLoading = isResolvingEns || isLoadingVoter;
   
-  // Display name: use the ENS from URL if provided, or resolved ENS, or truncated address
+  // Display name
   const displayName = inputIsEns 
     ? addressInput 
     : (ensName || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''));
@@ -103,17 +104,34 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   // Get owned Nouns
   const nounsOwned = voter?.nounsOwned || [];
   
-  // Get Nouns delegated TO this address (for voting power display)
+  // Get Nouns delegated TO this address
   const nounsRepresented = voter?.nounsRepresented || [];
   
   // Get delegation info
-  // Only show "delegating to" if this account actually owns Nouns
   const delegatingTo = nounsOwned.length > 0 ? voter?.delegatingTo : null;
   const delegators = voter?.delegators || [];
   const isSelfDelegated = address && delegatingTo?.toLowerCase() === address.toLowerCase();
   
   // Show delegate button if viewing own account and they OWN Nouns
   const canDelegate = isOwnAccount && nounsOwned.length > 0;
+
+  // Calculate vote stats
+  const recentVotes = voter?.recentVotes || [];
+  const forVotes = recentVotes.filter((v: any) => v.support === 1).length;
+  const againstVotes = recentVotes.filter((v: any) => v.support === 0).length;
+  const abstainVotes = recentVotes.filter((v: any) => v.support === 2).length;
+  const totalVotes = recentVotes.length;
+  const votesWithReason = recentVotes.filter((v: any) => v.reason && v.reason.trim().length > 0).length;
+  const reasonPercentage = totalVotes > 0 ? Math.round((votesWithReason / totalVotes) * 100) : 0;
+
+  // Quorum percentage
+  const votingPower = Number(voter?.delegatedVotes || 0);
+  const quorumPercentage = ((votingPower / QUORUM_VOTES) * 100).toFixed(1);
+
+  // Filter activity
+  const filteredVotes = activityFilter === 'with-reason' 
+    ? recentVotes.filter((v: any) => v.reason && v.reason.trim().length > 0)
+    : recentVotes;
 
   // Handle ENS resolution failure
   if (inputIsEns && !isResolvingEns && !resolvedAddress) {
@@ -151,6 +169,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
 
   return (
     <div className={styles.container}>
+      {/* Navigation */}
       <div className={styles.navBar}>
         {showBackButton && (
           <button className={styles.backButton} onClick={onBack}>← Back</button>
@@ -158,24 +177,163 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
         <ShareButton path={`voter/${address}`} />
       </div>
 
-      <div className={styles.profile}>
-        {ensAvatar ? (
-          <img src={ensAvatar} alt="" className={styles.avatar} />
-        ) : (
-          <div className={styles.avatarPlaceholder} />
-        )}
-        <div className={styles.profileInfo}>
-          <h1 className={styles.name}>{displayName}</h1>
-          <span className={styles.address}>{address}</span>
+      <div className={styles.twoColumn}>
+        {/* LEFT COLUMN */}
+        <div className={styles.leftColumn}>
+          {/* Profile Header */}
+          <div className={styles.profileHeader}>
+            <div className={styles.profileMain}>
+              <h1 className={styles.name}>{displayName}</h1>
+              <span className={styles.address}>{address.slice(0, 6)}...{address.slice(-4)}</span>
+            </div>
+            <div className={styles.profileActions}>
+              {canDelegate && (
+                <button 
+                  className={styles.delegateButton}
+                  onClick={() => setShowDelegateModal(true)}
+                >
+                  Delegate
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Nouns Grid */}
+          {nounsRepresented.length > 0 && (
+            <div className={styles.nounsGrid}>
+              {nounsRepresented.map((noun) => (
+                <div key={noun.id} className={styles.nounCard}>
+                  {noun.seed ? (
+                    <NounImage seed={noun.seed} size={48} className={styles.nounImage} />
+                  ) : (
+                    <div className={styles.nounImagePlaceholder} />
+                  )}
+                  <span className={styles.nounId}>{noun.id}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Delegation Info */}
+          {delegatingTo && !isSelfDelegated && (
+            <div className={styles.delegatingTo}>
+              <span className={styles.delegatingLabel}>Delegating to </span>
+              <AddressLink 
+                address={delegatingTo} 
+                onClick={() => onNavigate(`voter/${delegatingTo}`)}
+              />
+            </div>
+          )}
+
+          {/* Delegators */}
+          {delegators.length > 0 && (
+            <div className={styles.delegatorsSection}>
+              <span className={styles.delegatorsLabel}>Delegators ({delegators.length})</span>
+              <div className={styles.delegatorsList}>
+                {delegators.slice(0, 8).map((delegator) => (
+                  <AddressLink 
+                    key={delegator}
+                    address={delegator} 
+                    onClick={() => onNavigate(`voter/${delegator}`)}
+                  />
+                ))}
+                {delegators.length > 8 && (
+                  <span className={styles.moreCount}>+{delegators.length - 8} more</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-        {canDelegate && (
-          <button 
-            className={styles.delegateButton}
-            onClick={() => setShowDelegateModal(true)}
-          >
-            Delegate
-          </button>
-        )}
+
+        {/* RIGHT COLUMN */}
+        <div className={styles.rightColumn}>
+          {/* Voting Power Stats */}
+          <div className={styles.statsCard}>
+            <div className={styles.statsHeader}>
+              {votingPower} nouns represented (~{quorumPercentage}% of quorum)
+            </div>
+
+            {/* Vote Distribution Bar */}
+            {totalVotes > 0 && (
+              <div className={styles.voteBar}>
+                <div className={styles.voteBarLabels}>
+                  <span className={styles.forLabel}>For {forVotes}</span>
+                  <span className={styles.againstLabel}>
+                    {abstainVotes > 0 && <span className={styles.abstainLabel}>Abstain {abstainVotes} · </span>}
+                    Against {againstVotes}
+                  </span>
+                </div>
+                <div className={styles.voteBarTrack}>
+                  {forVotes > 0 && (
+                    <div 
+                      className={styles.voteBarFor} 
+                      style={{ width: `${(forVotes / totalVotes) * 100}%` }} 
+                    />
+                  )}
+                  {abstainVotes > 0 && (
+                    <div 
+                      className={styles.voteBarAbstain} 
+                      style={{ width: `${(abstainVotes / totalVotes) * 100}%` }} 
+                    />
+                  )}
+                  {againstVotes > 0 && (
+                    <div 
+                      className={styles.voteBarAgainst} 
+                      style={{ width: `${(againstVotes / totalVotes) * 100}%` }} 
+                    />
+                  )}
+                </div>
+                <div className={styles.voteCount}>
+                  Voted on {totalVotes} proposals (~{reasonPercentage}% with reason)
+                </div>
+              </div>
+            )}
+
+            {/* Activity Filter */}
+            <div className={styles.filterRow}>
+              <span className={styles.filterLabel}>Show:</span>
+              <select 
+                className={styles.filterSelect}
+                value={activityFilter}
+                onChange={(e) => setActivityFilter(e.target.value as 'all' | 'with-reason')}
+              >
+                <option value="all">Everything</option>
+                <option value="with-reason">With Reason</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Activity Feed */}
+          <div className={styles.activityFeed}>
+            {filteredVotes.map((vote: any) => (
+              <div 
+                key={vote.id} 
+                className={styles.activityItem}
+                onClick={() => onNavigate(`proposal/${vote.proposalId}`)}
+              >
+                <div className={styles.activityHeader}>
+                  <span className={styles.activityVoter}>{displayName}</span>
+                  <span 
+                    className={styles.activitySupport}
+                    style={{ color: getSupportColor(vote.support) }}
+                  >
+                    {getSupportLabel(vote.support).toLowerCase()} for ({vote.votes || votingPower})
+                  </span>
+                  <span className={styles.activityProposal}>{vote.proposalId}: {vote.proposalTitle?.slice(0, 20) || 'Proposal'}...</span>
+                </div>
+                {vote.reason && (
+                  <MarkdownRenderer 
+                    content={vote.reason} 
+                    className={styles.activityReason}
+                  />
+                )}
+              </div>
+            ))}
+            {filteredVotes.length === 0 && (
+              <div className={styles.emptyActivity}>No voting activity</div>
+            )}
+          </div>
+        </div>
       </div>
       
       {showDelegateModal && (
@@ -183,132 +341,6 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
           userAddress={address as `0x${string}`}
           onClose={() => setShowDelegateModal(false)}
         />
-      )}
-
-      {/* Voting Power & Delegators */}
-      <div className={styles.votingPowerSection}>
-        <div className={styles.votingPowerRow}>
-          <div className={styles.votingPowerInfo}>
-            <div className={styles.votingPower}>
-              <span className={styles.votingPowerValue}>{voter.delegatedVotes}</span>
-              <span className={styles.votingPowerLabel}>Voting Power</span>
-            </div>
-          </div>
-          
-          {/* Nouns represented (voting power source) */}
-          {nounsRepresented.length > 0 && (
-            <div className={styles.nounsRepresentedGrid}>
-              {nounsRepresented.map((noun) => (
-                <div key={noun.id} className={styles.nounMini}>
-                  {noun.seed ? (
-                    <NounImage seed={noun.seed} size={40} className={styles.nounMiniImage} />
-                  ) : (
-                    <div className={styles.nounMiniPlaceholder} />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        {/* Delegators */}
-        {delegators.length > 0 && (
-          <>
-            <div className={styles.divider} />
-            <div className={styles.delegatorsBox}>
-              <span className={styles.delegatorsLabel}>
-                Delegators ({delegators.length})
-              </span>
-              <div className={styles.delegatorsList}>
-                {delegators.slice(0, 5).map((delegator) => (
-                  <AddressLink 
-                    key={delegator}
-                    address={delegator} 
-                    onClick={() => onNavigate(`voter/${delegator}`)}
-                  />
-                ))}
-                {delegators.length > 5 && (
-                  <span className={styles.moreCount}>+{delegators.length - 5} more</span>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Nouns Owned */}
-      {nounsOwned.length > 0 && (
-        <div className={styles.nounsSection}>
-          <h2 className={styles.sectionTitle}>Nouns Owned</h2>
-          <div className={styles.nounsGrid}>
-            {nounsOwned.map((noun) => (
-              <div key={noun.id} className={styles.nounCard}>
-                {noun.seed ? (
-                  <NounImage seed={noun.seed} size={64} className={styles.nounImage} />
-                ) : (
-                  <div className={styles.nounImagePlaceholder} />
-                )}
-                <span className={styles.nounId}>#{noun.id}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-
-      {/* Delegation Info - Who this account is delegating to */}
-      {delegatingTo && (
-        <div className={styles.delegationSection}>
-          {!isSelfDelegated ? (
-            <div className={styles.delegationRow}>
-              <span className={styles.delegationLabel}>Delegating to</span>
-              <AddressLink 
-                address={delegatingTo} 
-                onClick={() => onNavigate(`voter/${delegatingTo}`)}
-              />
-            </div>
-          ) : (
-            <div className={styles.delegationRow}>
-              <span className={styles.delegationLabel}>Delegating to</span>
-              <span className={styles.selfDelegated}>Self</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Recent Votes */}
-      {voter.recentVotes && voter.recentVotes.length > 0 && (
-        <div className={styles.votesSection}>
-          <h2 className={styles.sectionTitle}>Recent Votes</h2>
-          <div className={styles.votesList}>
-            {voter.recentVotes.map((vote: any) => (
-              <div 
-                key={vote.id} 
-                className={styles.voteItem}
-                onClick={() => onNavigate(`proposal/${vote.proposalId}`)}
-              >
-                <div className={styles.voteHeader}>
-                  <span className={styles.proposalId}>Prop #{vote.proposalId}</span>
-                  <span 
-                    className={styles.voteSupport}
-                    style={{ color: getSupportColor(vote.support) }}
-                  >
-                    {getSupportLabel(vote.support)}
-                  </span>
-                </div>
-                {vote.proposalTitle && (
-                  <div className={styles.proposalTitle}>{vote.proposalTitle}</div>
-                )}
-                {vote.reason && (
-                  <MarkdownRenderer 
-                    content={vote.reason} 
-                    className={styles.voteReason}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
