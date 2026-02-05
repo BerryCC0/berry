@@ -231,6 +231,9 @@ const PROPOSAL_QUERY = `
       proposer {
         id
       }
+      signers {
+        id
+      }
       forVotes
       againstVotes
       abstainVotes
@@ -445,6 +448,7 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVo
     status,
     actions,
     clientId: p.clientId ?? undefined,
+    signers: (p.signers || []).map((s: { id: string }) => s.id),
     votes: (p.votes || []).map((v: any) => ({
       id: v.id,
       voter: v.voter.id,

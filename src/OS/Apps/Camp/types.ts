@@ -130,8 +130,8 @@ export interface Proposal {
   actions?: ProposalAction[];
   // Client that facilitated this proposal
   clientId?: number;
-  // Sponsors (for digest display)
-  sponsors?: string[];
+  // Signers who sponsored the proposal candidate
+  signers?: string[];
 }
 
 export type ProposalStatus =

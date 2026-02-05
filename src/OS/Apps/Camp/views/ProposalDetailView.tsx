@@ -6,7 +6,8 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useAccount, useReadContract } from 'wagmi';
+import { useAccount, useReadContract, useEnsName, useEnsAvatar } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
 import { useTranslation } from '@/OS/lib/i18n';
 import { useProposal, useSignal } from '../hooks';
 import { useSimulation } from '../hooks/useSimulation';
@@ -18,6 +19,34 @@ import { SimulationStatus } from '../components/SimulationStatus';
 import { VoterRow } from '../components/VoterRow';
 import { getClientName } from '@/src/OS/Apps/NounsAuction/utils/clientNames';
 import styles from './ProposalDetailView.module.css';
+
+/**
+ * AddressWithAvatar - Displays an address with ENS avatar and name
+ */
+function AddressWithAvatar({ address, onClick }: { address: string; onClick?: () => void }) {
+  const { data: ensName } = useEnsName({
+    address: address as `0x${string}`,
+    chainId: mainnet.id,
+  });
+  
+  const { data: ensAvatar } = useEnsAvatar({
+    name: ensName || undefined,
+    chainId: mainnet.id,
+  });
+  
+  const displayName = ensName || `${address.slice(0, 6)}...${address.slice(-4)}`;
+  
+  return (
+    <span className={styles.addressWithAvatar} onClick={onClick}>
+      {ensAvatar ? (
+        <img src={ensAvatar} alt="" className={styles.miniAvatar} />
+      ) : (
+        <span className={styles.miniAvatarPlaceholder} />
+      )}
+      <span className={styles.addressName}>{displayName}</span>
+    </span>
+  );
+}
 
 interface ProposalDetailViewProps {
   proposalId: string;
@@ -273,6 +302,35 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
       </div>
 
       <h1 className={styles.title}>{proposal.title}</h1>
+      
+      {/* Proposal metadata: date, proposer, sponsors */}
+      <div className={styles.proposalMeta}>
+        <span className={styles.metaDate}>
+          Proposed {new Date(Number(proposal.createdTimestamp) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
+        <span className={styles.metaSeparator}>by</span>
+        <AddressWithAvatar 
+          address={proposal.proposer} 
+          onClick={() => onNavigate(`voter/${proposal.proposer}`)}
+        />
+        {proposal.signers && proposal.signers.length > 0 && (
+          <>
+            <span className={styles.metaSeparator}>, sponsored by</span>
+            {proposal.signers.slice(0, 3).map((signer, i) => (
+              <span key={signer}>
+                {i > 0 && <span className={styles.metaSeparator}> </span>}
+                <AddressWithAvatar 
+                  address={signer} 
+                  onClick={() => onNavigate(`voter/${signer}`)}
+                />
+              </span>
+            ))}
+            {proposal.signers.length > 3 && (
+              <span className={styles.metaMore}>+{proposal.signers.length - 3} more</span>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Two-column layout on desktop */}
       <div className={styles.columns}>
