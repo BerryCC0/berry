@@ -12,9 +12,10 @@ import styles from './AccountView.module.css';
 
 interface AccountViewProps {
   onNavigate: (path: string) => void;
+  onBack: () => void;
 }
 
-export function AccountView({ onNavigate }: AccountViewProps) {
+export function AccountView({ onNavigate, onBack }: AccountViewProps) {
   const { address, isConnected } = useAccount();
 
   // Show wallet connection prompt if not connected
@@ -40,13 +41,13 @@ export function AccountView({ onNavigate }: AccountViewProps) {
     );
   }
 
-  // Show voter detail view for connected wallet (no back button needed)
+  // Show voter detail view for connected wallet
   return (
     <VoterDetailView 
       address={address} 
       onNavigate={onNavigate}
-      onBack={() => {}} // No back button for account view
-      showBackButton={false}
+      onBack={onBack}
+      showBackButton={true}
       isOwnAccount={true}
     />
   );

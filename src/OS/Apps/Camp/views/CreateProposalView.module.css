@@ -351,10 +351,17 @@
   border-radius: 4px;
 }
 
+.navBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .backButton {
   font-family: var(--berry-font-system);
-  font-size: 12px;
-  padding: 6px 12px;
+  font-size: 11px;
+  padding: 4px 8px;
   border: 1px solid var(--berry-border);
   background: var(--berry-button-bg);
   color: var(--berry-button-text);

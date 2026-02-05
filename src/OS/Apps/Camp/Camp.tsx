@@ -189,7 +189,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
         );
       
       case 'account':
-        return <AccountView onNavigate={navigate} />;
+        return <AccountView onNavigate={navigate} onBack={goBack} />;
       
       case 'create':
         return (

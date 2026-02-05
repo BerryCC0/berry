@@ -692,14 +692,16 @@ export function CreateProposalView({
 
   return (
     <div className={styles.container}>
+      {/* Nav bar with back button */}
+      <div className={styles.navBar}>
+        <button className={styles.backButton} onClick={onBack}>
+          ← Back
+        </button>
+      </div>
+      
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
-          {isEditMode && (
-            <button className={styles.backButton} onClick={onBack}>
-              Back to Candidate
-            </button>
-          )}
           <h2 className={styles.pageTitle}>
             {isEditMode ? 'Edit Candidate' : 'Create Proposal'}
           </h2>
