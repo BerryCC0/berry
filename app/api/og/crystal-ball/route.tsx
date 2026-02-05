@@ -8,6 +8,10 @@ import { ImageResponse } from 'next/og';
 export const runtime = 'edge';
 
 export async function GET() {
+  // Fetch the crystal ball icon
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://berryos.wtf';
+  const iconUrl = `${baseUrl}/icons/crystal-ball.png`;
+
   return new ImageResponse(
     (
       <div
@@ -35,16 +39,16 @@ export async function GET() {
           }}
         />
 
-        {/* Crystal Ball Emoji */}
-        <div
+        {/* Crystal Ball Icon */}
+        <img
+          src={iconUrl}
+          alt=""
+          width={180}
+          height={180}
           style={{
-            display: 'flex',
-            fontSize: 180,
-            marginBottom: 20,
+            marginBottom: 32,
           }}
-        >
-          🔮
-        </div>
+        />
 
         {/* Title */}
         <div
@@ -64,46 +68,11 @@ export async function GET() {
         <div
           style={{
             display: 'flex',
-            fontSize: 32,
+            fontSize: 36,
             color: 'rgba(255,255,255,0.7)',
-            marginBottom: 40,
           }}
         >
-          Preview the next Noun before it&apos;s minted
-        </div>
-
-        {/* Decorative line */}
-        <div
-          style={{
-            display: 'flex',
-            width: 200,
-            height: 2,
-            background: 'linear-gradient(90deg, transparent, rgba(138,43,226,0.8), transparent)',
-            marginBottom: 40,
-          }}
-        />
-
-        {/* Features */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 48,
-            fontSize: 24,
-            color: 'rgba(255,255,255,0.6)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>⚡</span>
-            <span>Live block updates</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>🎨</span>
-            <span>Trait prediction</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>⏰</span>
-            <span>Settle auctions</span>
-          </div>
+          Settle the next Noun.
         </div>
 
         {/* Berry OS Branding */}
