@@ -63,7 +63,7 @@ interface DigestProps {
   onNavigate: (path: string) => void;
 }
 
-type DigestTab = 'digest' | 'proposals' | 'topics' | 'candidates' | 'voters';
+type DigestTab = 'digest' | 'proposals' | 'candidates' | 'voters';
 
 /**
  * Format relative time (e.g., "Ends in 5 hours", "Starts in 2 days")
@@ -453,13 +453,6 @@ export function Digest({ onNavigate }: DigestProps) {
           </div>
         );
       
-      case 'topics':
-        return (
-          <div className={styles.empty}>
-            Topics coming soon
-          </div>
-        );
-      
       case 'digest':
       default:
         if (isLoading) return <div className={styles.loading}>Loading...</div>;
@@ -515,12 +508,6 @@ export function Digest({ onNavigate }: DigestProps) {
           onClick={() => setActiveTab('proposals')}
         >
           Proposals
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'topics' ? styles.active : ''}`}
-          onClick={() => setActiveTab('topics')}
-        >
-          Topics
         </button>
         <button 
           className={`${styles.tab} ${activeTab === 'candidates' ? styles.active : ''}`}
