@@ -241,6 +241,10 @@
   color: var(--berry-error);
 }
 
+.statusBadge.rightAligned {
+  margin-left: auto;
+}
+
 .voteCount {
   color: var(--berry-text-secondary);
 }

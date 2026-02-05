@@ -340,7 +340,8 @@ export function Digest({ onNavigate }: DigestProps) {
         
         {/* Status and stats */}
         <div className={styles.proposalStats}>
-          {statusBadge && (
+          {/* Badge on left for active/pending proposals */}
+          {statusBadge && !votingEnded && (
             <span className={`${styles.statusBadge} ${statusBadge.className}`}>{statusBadge.label}</span>
           )}
           
@@ -357,6 +358,11 @@ export function Digest({ onNavigate }: DigestProps) {
           {/* Show start time for pending */}
           {isPending && (
             <span className={styles.timeRemaining}>{formatRelativeTime(startTime, 'Starts in')}</span>
+          )}
+          
+          {/* Badge on right for ended proposals */}
+          {statusBadge && votingEnded && (
+            <span className={`${styles.statusBadge} ${styles.rightAligned} ${statusBadge.className}`}>{statusBadge.label}</span>
           )}
         </div>
       </div>
