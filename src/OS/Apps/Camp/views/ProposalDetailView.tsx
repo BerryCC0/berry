@@ -201,6 +201,50 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   });
   
   const hasAlreadyVoted = voteReceipt?.hasVoted ?? false;
+  const userVoteSupport = (voteReceipt as { support?: number } | undefined)?.support;
+  
+  // Get current block number for time remaining
+  const { data: blockNumber } = useBlockNumber({ watch: true });
+  
+  // Calculate time remaining
+  const timeRemaining = useMemo(() => {
+    if (!blockNumber || !proposal?.startBlock || !proposal?.endBlock) return null;
+    
+    const currentBlock = Number(blockNumber);
+    const startBlock = Number(proposal.startBlock);
+    const endBlock = Number(proposal.endBlock);
+    const SECONDS_PER_BLOCK = 12;
+    
+    // Voting hasn't started yet
+    if (currentBlock < startBlock) {
+      const blocksUntilStart = startBlock - currentBlock;
+      const secondsUntilStart = blocksUntilStart * SECONDS_PER_BLOCK;
+      return { type: 'pending' as const, seconds: secondsUntilStart };
+    }
+    
+    // Voting is active
+    if (currentBlock < endBlock) {
+      const blocksRemaining = endBlock - currentBlock;
+      const secondsRemaining = blocksRemaining * SECONDS_PER_BLOCK;
+      return { type: 'active' as const, seconds: secondsRemaining };
+    }
+    
+    // Voting has ended
+    return { type: 'ended' as const, seconds: 0 };
+  }, [blockNumber, proposal?.startBlock, proposal?.endBlock]);
+  
+  // Format time remaining
+  const formatTimeRemaining = (seconds: number): string => {
+    if (seconds <= 0) return 'Ended';
+    
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    
+    if (days > 0) {
+      return `${days} day${days > 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}`;
+    }
+    return `${hours} hour${hours !== 1 ? 's' : ''}`;
+  };
   
   // State
   const [actionReason, setActionReason] = useState('');
@@ -208,9 +252,6 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  // Get current block number for countdown
-  const { data: blockNumber } = useBlockNumber({ watch: true });
   
   // Determine if voting is active
   const isActive = proposal?.status === 'ACTIVE' || proposal?.status === 'OBJECTION_PERIOD';
@@ -366,50 +407,6 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const gapWidth = forVotes < quorum ? quorumPosition - forWidth : 0;
   const quorumMet = forVotes >= quorum;
 
-  // Calculate time remaining
-  const timeRemaining = useMemo(() => {
-    if (!blockNumber || !proposal.startBlock || !proposal.endBlock) return null;
-    
-    const currentBlock = Number(blockNumber);
-    const startBlock = Number(proposal.startBlock);
-    const endBlock = Number(proposal.endBlock);
-    const SECONDS_PER_BLOCK = 12;
-    
-    // Voting hasn't started yet
-    if (currentBlock < startBlock) {
-      const blocksUntilStart = startBlock - currentBlock;
-      const secondsUntilStart = blocksUntilStart * SECONDS_PER_BLOCK;
-      return { type: 'pending' as const, seconds: secondsUntilStart };
-    }
-    
-    // Voting is active
-    if (currentBlock < endBlock) {
-      const blocksRemaining = endBlock - currentBlock;
-      const secondsRemaining = blocksRemaining * SECONDS_PER_BLOCK;
-      return { type: 'active' as const, seconds: secondsRemaining };
-    }
-    
-    // Voting has ended
-    return { type: 'ended' as const, seconds: 0 };
-  }, [blockNumber, proposal.startBlock, proposal.endBlock]);
-  
-  // Format time remaining as human-readable string
-  const formatTimeRemaining = (seconds: number): string => {
-    if (seconds <= 0) return 'Ended';
-    
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    
-    if (days > 0) {
-      return `${days}d ${hours}h remaining`;
-    }
-    if (hours > 0) {
-      return `${hours}h ${minutes}m remaining`;
-    }
-    return `${minutes}m remaining`;
-  };
-
   // Note: isActive is already declared above in the hooks section
 
   return (
@@ -484,6 +481,20 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
 
         {/* Right Column: Simulation, Votes, Actions */}
         <div className={styles.rightColumn}>
+          {/* User's Vote Status */}
+          {hasAlreadyVoted && userVoteSupport !== undefined && (
+            <div className={styles.userVoteStatus}>
+              <span className={styles.userVoteText}>You voted </span>
+              <span className={
+                userVoteSupport === 1 ? styles.voteFor : 
+                userVoteSupport === 0 ? styles.voteAgainst : 
+                styles.voteAbstain
+              }>
+                {userVoteSupport === 1 ? 'FOR' : userVoteSupport === 0 ? 'AGAINST' : 'ABSTAIN'}
+              </span>
+            </div>
+          )}
+          
           {/* Time Remaining */}
           {timeRemaining && timeRemaining.type !== 'ended' && (
             <div className={styles.timeRemaining}>
@@ -491,7 +502,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
               <span className={styles.timeText}>
                 {timeRemaining.type === 'pending' 
                   ? `Voting starts in ${formatTimeRemaining(timeRemaining.seconds)}`
-                  : formatTimeRemaining(timeRemaining.seconds)
+                  : `Voting ends in ${formatTimeRemaining(timeRemaining.seconds)}`
                 }
               </span>
             </div>
