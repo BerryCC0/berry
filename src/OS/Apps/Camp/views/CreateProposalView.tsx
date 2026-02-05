@@ -16,6 +16,7 @@ import {
   ActionTemplateEditor,
   PersonaKYC,
 } from '../components/CreateProposal';
+import { Select } from '@/src/OS/components/Primitives/Select/Select';
 import type { ActionTemplateState, ProposalDraft } from '../utils/types';
 import { generateSlugFromTitle, generateUniqueSlug, generateSlug, generateSlugWithConflictCheck } from '../utils/slugGenerator';
 import { parseActionsToTemplates, generateActionsFromTemplate } from '../utils/actionTemplates';
@@ -726,47 +727,34 @@ export function CreateProposalView({
             {/* Proposal Type - Left */}
             <div className={styles.typeColumn}>
               <label className={styles.label}>Proposal Type *</label>
-              <div className={styles.radioGroup}>
-                <label className={styles.radioLabel}>
-                  <input
-                    type="radio"
-                    value="candidate"
-                    checked={proposalType === 'candidate'}
-                    onChange={(e) => setProposalType(e.target.value as 'candidate')}
-                    disabled={isCreating}
-                  />
-                  <span>Candidate (Draft)</span>
-                </label>
-                <label className={styles.radioLabel}>
-                  <input
-                    type="radio"
-                    value="standard"
-                    checked={proposalType === 'standard'}
-                    onChange={(e) => setProposalType(e.target.value as 'standard')}
-                    disabled={isCreating}
-                  />
-                  <span>Standard Proposal</span>
-                </label>
-                <label className={styles.radioLabel}>
-                  <input
-                    type="radio"
-                    value="timelock_v1"
-                    checked={proposalType === 'timelock_v1'}
-                    onChange={(e) => setProposalType(e.target.value as 'timelock_v1')}
-                    disabled={isCreating}
-                  />
-                  <span>TimelockV1 Proposal</span>
-                </label>
-              </div>
+              <Select
+                options={[
+                  { 
+                    value: 'candidate', 
+                    label: 'Candidate (Draft)',
+                    description: 'Gather community support before formal submission'
+                  },
+                  { 
+                    value: 'standard', 
+                    label: 'Standard Proposal',
+                    description: 'Submit directly to onchain voting (requires 4 Nouns)'
+                  },
+                  { 
+                    value: 'timelock_v1', 
+                    label: 'Timelock V1 Proposal',
+                    description: 'For legacy proposals using Timelock V1'
+                  },
+                ]}
+                value={proposalType}
+                onChange={(value) => setProposalType(value as 'candidate' | 'standard' | 'timelock_v1')}
+                disabled={isCreating}
+              />
               
-              {proposalType === 'candidate' && (
+              {proposalType === 'candidate' && !hasVotingPower && candidateCost && (
                 <div className={styles.helpText}>
-                  Candidates are draft proposals that can gather community support before formal submission.
-                  {!hasVotingPower && candidateCost && (
-                    <span className={styles.feeNotice}>
-                      {' '}Fee: {(Number(candidateCost) / 1e18).toFixed(4)} ETH (waived for Noun owners)
-                    </span>
-                  )}
+                  <span className={styles.feeNotice}>
+                    Fee: {(Number(candidateCost) / 1e18).toFixed(4)} ETH (waived for Noun owners)
+                  </span>
                 </div>
               )}
               
