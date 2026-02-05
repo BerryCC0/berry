@@ -153,7 +153,7 @@
 
 .twoColumnLayout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 7fr 3fr;
   gap: 24px;
 }
 
@@ -353,9 +353,14 @@
 
 .navBar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.navBar .pageTitle {
+  font-size: 18px;
+  margin: 0;
 }
 
 .backButton {

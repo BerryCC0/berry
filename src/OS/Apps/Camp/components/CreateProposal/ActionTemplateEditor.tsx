@@ -593,17 +593,17 @@ export function ActionTemplateEditor({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <span className={styles.actionLabel}>Action {index + 1}</span>
+        <span className={styles.actionLabel}>Transaction {index + 1}</span>
       </div>
 
       {/* Template Selection Dropdown */}
       <div className={styles.inputGroup}>
-        <label className={styles.label}>Action Type *</label>
+        <label className={styles.label}>Transaction Type *</label>
         <ActionTemplateDropdown
           groups={optionGroups}
           value={selectedTemplate?.id || ''}
           onChange={handleTemplateSelect}
-          placeholder="Select action type..."
+          placeholder="Select transaction type..."
           disabled={disabled}
         />
 

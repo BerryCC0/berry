@@ -31,7 +31,7 @@ export function ActionTemplateDropdown({
   groups,
   value,
   onChange,
-  placeholder = 'Select action type...',
+  placeholder = 'Select transaction type...',
   disabled = false,
 }: ActionTemplateDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);

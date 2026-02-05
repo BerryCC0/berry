@@ -110,7 +110,7 @@ export function CreateProposalView({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [actionTemplateStates, setActionTemplateStates] = useState<ActionTemplateState[]>([
-    { templateId: 'custom', fieldValues: {}, generatedActions: [{ target: '', value: '0', signature: '', calldata: '0x' }] }
+    { templateId: '', fieldValues: {}, generatedActions: [] }
   ]);
   const [proposalType, setProposalType] = useState<'standard' | 'timelock_v1' | 'candidate'>('candidate');
 
@@ -171,7 +171,7 @@ export function CreateProposalView({
           
           // Regenerate actions for each template to ensure consistency
           const templatesWithActions = parsedTemplates.map(template => {
-            if (template.templateId !== 'custom') {
+            if (template.templateId !== 'custom' && template.templateId !== '') {
               try {
                 const regeneratedActions = generateActionsFromTemplate(
                   template.templateId,
@@ -322,7 +322,7 @@ export function CreateProposalView({
       setActionTemplateStates(customTemplates);
     } else {
       setActionTemplateStates([
-        { templateId: 'custom', fieldValues: {}, generatedActions: [{ target: '', value: '0', signature: '', calldata: '0x' }] }
+        { templateId: '', fieldValues: {}, generatedActions: [] }
       ]);
     }
     
@@ -383,7 +383,7 @@ export function CreateProposalView({
     setTitle('');
     setDescription('');
     setActionTemplateStates([
-      { templateId: 'custom', fieldValues: {}, generatedActions: [{ target: '', value: '0', signature: '', calldata: '0x' }] }
+      { templateId: '', fieldValues: {}, generatedActions: [] }
     ]);
     setProposalType('candidate');
     setKycVerified(false);
@@ -410,7 +410,7 @@ export function CreateProposalView({
   const addAction = () => {
     setActionTemplateStates([
       ...actionTemplateStates, 
-      { templateId: 'custom', fieldValues: {}, generatedActions: [{ target: '', value: '0', signature: '', calldata: '0x' }] }
+      { templateId: '', fieldValues: {}, generatedActions: [] }
     ]);
   };
 
@@ -443,17 +443,17 @@ export function CreateProposalView({
     for (let i = 0; i < allActions.length; i++) {
       const action = allActions[i];
       if (!action.target.trim()) {
-        setErrorMessage(`Action ${i + 1}: Target address is required`);
+        setErrorMessage(`Transaction ${i + 1}: Target address is required`);
         return false;
       }
 
       if (!/^0x[a-fA-F0-9]{40}$/.test(action.target)) {
-        setErrorMessage(`Action ${i + 1}: Invalid target address format`);
+        setErrorMessage(`Transaction ${i + 1}: Invalid target address format`);
         return false;
       }
 
       if (isNaN(Number(action.value))) {
-        setErrorMessage(`Action ${i + 1}: Value must be a valid number`);
+        setErrorMessage(`Transaction ${i + 1}: Value must be a valid number`);
         return false;
       }
     }
@@ -692,37 +692,31 @@ export function CreateProposalView({
 
   return (
     <div className={styles.container}>
-      {/* Nav bar with back button */}
+      {/* Nav bar with back button and title */}
       <div className={styles.navBar}>
         <button className={styles.backButton} onClick={onBack}>
           ← Back
         </button>
-      </div>
-      
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <h2 className={styles.pageTitle}>
-            {isEditMode ? 'Edit Candidate' : 'Create Proposal'}
-          </h2>
-          {!isEditMode && draftTitle && (
-            <div className={styles.draftIndicator}>
-              <span className={styles.draftName}>Draft: {draftTitle}</span>
-              <span className={styles.separator}>|</span>
-              {saveStatus === 'saving' && <span className={styles.savingIndicator}>Saving...</span>}
-              {saveStatus === 'saved' && lastSaved && (
-                <span className={styles.savedIndicator}>Saved {formatRelativeTime(lastSaved)}</span>
-              )}
-              {saveStatus === 'unsaved' && <span className={styles.unsavedIndicator}>Unsaved</span>}
-              {saveStatus === 'error' && <span className={styles.errorIndicator}>Save failed</span>}
-            </div>
-          )}
-          {isEditMode && editCandidateSlug && (
-            <div className={styles.editIndicator}>
-              <span className={styles.editSlug}>/{editCandidateSlug}</span>
-            </div>
-          )}
-        </div>
+        <h2 className={styles.pageTitle}>
+          {isEditMode ? 'Edit Candidate' : 'Create Proposal'}
+        </h2>
+        {!isEditMode && draftTitle && (
+          <div className={styles.draftIndicator}>
+            <span className={styles.draftName}>Draft: {draftTitle}</span>
+            <span className={styles.separator}>|</span>
+            {saveStatus === 'saving' && <span className={styles.savingIndicator}>Saving...</span>}
+            {saveStatus === 'saved' && lastSaved && (
+              <span className={styles.savedIndicator}>Saved {formatRelativeTime(lastSaved)}</span>
+            )}
+            {saveStatus === 'unsaved' && <span className={styles.unsavedIndicator}>Unsaved</span>}
+            {saveStatus === 'error' && <span className={styles.errorIndicator}>Save failed</span>}
+          </div>
+        )}
+        {isEditMode && editCandidateSlug && (
+          <div className={styles.editIndicator}>
+            <span className={styles.editSlug}>/{editCandidateSlug}</span>
+          </div>
+        )}
       </div>
 
       <div className={styles.form}>
@@ -825,19 +819,19 @@ export function CreateProposalView({
             </div>
           </div>
 
-          {/* Right Column: Actions + KYC */}
+          {/* Right Column: Transactions + KYC */}
           <div className={styles.rightColumn}>
-            {/* Actions */}
+            {/* Transactions */}
             <div className={styles.section}>
               <div className={styles.sectionHeader}>
-                <label className={styles.label}>Actions</label>
+                <label className={styles.label}>Transactions</label>
                 <button
                   type="button"
                   className={styles.addButton}
                   onClick={addAction}
                   disabled={isCreating}
                 >
-                  + Add Action
+                  + Add Transaction
                 </button>
               </div>
 

@@ -92,7 +92,7 @@ export interface TemplateFieldValues {
 }
 
 export interface ActionTemplateState {
-  templateId: ActionTemplateType | 'custom';
+  templateId: ActionTemplateType | 'custom' | '';
   fieldValues: TemplateFieldValues;
   generatedActions: ProposalAction[];
 }
