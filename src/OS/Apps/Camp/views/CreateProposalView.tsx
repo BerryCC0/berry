@@ -805,7 +805,7 @@ export function CreateProposalView({
                 value={description}
                 onChange={setDescription}
                 disabled={isCreating}
-                rows={12}
+                minHeight={450}
               />
             </div>
           </div>
