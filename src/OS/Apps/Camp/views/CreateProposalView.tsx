@@ -814,17 +814,7 @@ export function CreateProposalView({
           <div className={styles.rightColumn}>
             {/* Transactions */}
             <div className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <label className={styles.label}>Transactions</label>
-                <button
-                  type="button"
-                  className={styles.addButton}
-                  onClick={addAction}
-                  disabled={isCreating}
-                >
-                  + Add Transaction
-                </button>
-              </div>
+              <label className={styles.label}>Transactions</label>
 
               {actionTemplateStates.map((templateState, index) => (
                 <div key={index} className={styles.actionContainer}>
@@ -848,6 +838,17 @@ export function CreateProposalView({
                   />
                 </div>
               ))}
+
+              <div className={styles.addButtonRow}>
+                <button
+                  type="button"
+                  className={styles.addButton}
+                  onClick={addAction}
+                  disabled={isCreating}
+                >
+                  + New Transaction
+                </button>
+              </div>
               
               {/* Simulation Status */}
               <SimulationStatus

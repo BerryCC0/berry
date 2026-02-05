@@ -19,7 +19,18 @@ import { SmartActionEditor } from './SmartActionEditor';
 import { ActionTemplateDropdown } from './ActionTemplateDropdown';
 import { AddressInput } from './AddressInput';
 import { NounSwapTemplate } from './NounSwapTemplate';
+import { Select, type SelectOption } from '@/src/OS/components/Primitives/Select/Select';
 import styles from './ActionTemplateEditor.module.css';
+
+// Token options for ERC20 transfers
+const TOKEN_OPTIONS: SelectOption[] = [
+  { value: '{"symbol":"USDC","address":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","decimals":6}', label: 'USDC' },
+  { value: '{"symbol":"WETH","address":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","decimals":18}', label: 'WETH' },
+  { value: '{"symbol":"DAI","address":"0x6B175474E89094C44Da98b954EedeAC495271d0F","decimals":18}', label: 'DAI' },
+  { value: '{"symbol":"stETH","address":"0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84","decimals":18}', label: 'stETH' },
+  { value: '{"symbol":"wstETH","address":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0","decimals":18}', label: 'wstETH' },
+  { value: '{"symbol":"rETH","address":"0xae78736Cd615f374D3085123A210448E74Fc6393","decimals":18}', label: 'rETH' },
+];
 
 // ============================================================================
 // MetaProposeEditor - Nested editor for meta-proposal inner action
@@ -194,20 +205,13 @@ function MetaProposeEditor({ fieldValues, updateField, disabled, validationError
                     helpText={field.helpText}
                   />
                 ) : field.type === 'token-select' ? (
-                  <select
-                    className={styles.select}
+                  <Select
+                    options={TOKEN_OPTIONS}
                     value={innerFieldValues[field.name] || ''}
-                    onChange={(e) => handleInnerFieldChange(field.name, e.target.value)}
+                    onChange={(value) => handleInnerFieldChange(field.name, value)}
+                    placeholder="Select token..."
                     disabled={disabled}
-                  >
-                    <option value="">Select token...</option>
-                    <option value='{"symbol":"USDC","address":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","decimals":6}'>USDC</option>
-                    <option value='{"symbol":"WETH","address":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","decimals":18}'>WETH</option>
-                    <option value='{"symbol":"DAI","address":"0x6B175474E89094C44Da98b954EedeAC495271d0F","decimals":18}'>DAI</option>
-                    <option value='{"symbol":"stETH","address":"0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84","decimals":18}'>stETH</option>
-                    <option value='{"symbol":"wstETH","address":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0","decimals":18}'>wstETH</option>
-                    <option value='{"symbol":"rETH","address":"0xae78736Cd615f374D3085123A210448E74Fc6393","decimals":18}'>rETH</option>
-                  </select>
+                  />
                 ) : (
                   <input
                     type={field.type === 'number' || field.type === 'amount' ? 'number' : 'text'}
@@ -542,20 +546,13 @@ export function ActionTemplateEditor({
                 disabled={disabled}
               />
             ) : field.type === 'token-select' ? (
-              <select
-                className={styles.select}
+              <Select
+                options={TOKEN_OPTIONS}
                 value={fieldValues[field.name] || ''}
-                onChange={(e) => updateField(field.name, e.target.value)}
+                onChange={(value) => updateField(field.name, value)}
+                placeholder="Select token..."
                 disabled={disabled}
-              >
-                <option value="">Select token...</option>
-                <option value='{"symbol":"USDC","address":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","decimals":6}'>USDC</option>
-                <option value='{"symbol":"WETH","address":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","decimals":18}'>WETH</option>
-                <option value='{"symbol":"DAI","address":"0x6B175474E89094C44Da98b954EedeAC495271d0F","decimals":18}'>DAI</option>
-                <option value='{"symbol":"stETH","address":"0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84","decimals":18}'>stETH</option>
-                <option value='{"symbol":"wstETH","address":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0","decimals":18}'>wstETH</option>
-                <option value='{"symbol":"rETH","address":"0xae78736Cd615f374D3085123A210448E74Fc6393","decimals":18}'>rETH</option>
-              </select>
+              />
             ) : field.type === 'address' ? (
               <AddressInput
                 value={fieldValues[field.name] || ''}

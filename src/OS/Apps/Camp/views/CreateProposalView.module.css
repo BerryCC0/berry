@@ -182,6 +182,12 @@
   gap: 20px;
 }
 
+.addButtonRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
 .addButton {
   padding: 6px 12px;
   background: var(--berry-primary);
