@@ -3,13 +3,15 @@
  * Comprehensive governance app with deep linking support
  * 
  * Routes:
- * - /app/camp                    → Activity feed
- * - /app/camp/proposals          → Proposals list
- * - /app/camp/proposal/{id}      → Single proposal
- * - /app/camp/voters             → Voters list
- * - /app/camp/voter/{address}    → Single voter
- * - /app/camp/account            → Connected user's profile
- * - /app/camp/create             → Create proposal (requires wallet)
+ * - /camp                    → Activity feed
+ * - /camp/proposals          → Proposals list
+ * - /camp/proposal/{id}      → Single proposal
+ * - /camp/c/{slug}           → Single candidate (clean URL)
+ * - /camp/candidates         → Candidates list
+ * - /camp/voters             → Voters list
+ * - /camp/voter/{address}    → Single voter
+ * - /camp/account            → Connected user's profile
+ * - /camp/create             → Create proposal (requires wallet)
  */
 
 'use client';
@@ -29,6 +31,7 @@ import {
   AccountView,
   CreateProposalView,
 } from './views';
+import { CommandPalette } from './components';
 import styles from './Camp.module.css';
 
 import type { AppComponentProps } from '@/OS/types/app';
@@ -51,6 +54,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
   // Parse initial route from initialState
   const [route, setRoute] = useState<CampRoute>(() => parseRoute(campState?.path));
   const [history, setHistory] = useState<CampRoute[]>([]);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Update route when initialState changes (deep link)
   useEffect(() => {
@@ -212,7 +216,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
 
   return (
     <div className={styles.camp}>
-      {/* Header with logo and tabs */}
+      {/* Header with logo, search, and action buttons */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <img 
@@ -221,36 +225,16 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
             className={styles.logo}
           />
           
-          {/* Left tabs - public */}
-          <div className={styles.tabs}>
+          {/* Search bar - opens command palette */}
           <button
-            className={`${styles.tab} ${currentTab === 'activity' ? styles.active : ''}`}
-            onClick={() => handleTabChange('activity')}
+            className={styles.searchButton}
+            onClick={() => setIsCommandPaletteOpen(true)}
           >
-            {t('camp.tabs.activity')}
+            <span className={styles.searchPlaceholder}>Search...</span>
           </button>
-          <button
-            className={`${styles.tab} ${currentTab === 'proposals' ? styles.active : ''}`}
-            onClick={() => handleTabChange('proposals')}
-          >
-            {t('camp.tabs.proposals')}
-          </button>
-          <button
-            className={`${styles.tab} ${currentTab === 'candidates' ? styles.active : ''}`}
-            onClick={() => handleTabChange('candidates')}
-          >
-            {t('camp.tabs.candidates')}
-          </button>
-          <button
-            className={`${styles.tab} ${currentTab === 'voters' ? styles.active : ''}`}
-            onClick={() => handleTabChange('voters')}
-          >
-            {t('camp.tabs.voters')}
-          </button>
-          </div>
         </div>
 
-        {/* Right tabs - wallet-only */}
+        {/* Right buttons - wallet-only */}
         {isConnected && (
           <div className={styles.tabsRight}>
             <button
@@ -273,6 +257,13 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
       <div className={styles.content}>
         {renderView()}
       </div>
+      
+      {/* Command Palette Modal */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={navigate}
+      />
     </div>
   );
 }

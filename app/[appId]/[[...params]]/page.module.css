@@ -1,0 +1,34 @@
+/**
+ * App Route Styles
+ * Used for error/loading states during deep link handling
+ */
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--berry-desktop-bg, #1a1a2e);
+  font-family: var(--berry-font-system);
+}
+
+.content {
+  text-align: center;
+  color: var(--berry-text-primary, #fff);
+}
+
+.icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.message {
+  font-size: 18px;
+  margin: 0 0 8px 0;
+}
+
+.submessage {
+  font-size: 14px;
+  color: var(--berry-text-secondary, #888);
+  margin: 0;
+}

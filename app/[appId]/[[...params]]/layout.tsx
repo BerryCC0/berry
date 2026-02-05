@@ -31,7 +31,7 @@ async function fetchProposalMeta(id: string) {
   }
 }
 
-// Fetch candidate data for metadata
+// Fetch candidate data for metadata by proposer + slug
 async function fetchCandidateMeta(proposer: string, slug: string) {
   try {
     const id = `${proposer.toLowerCase()}-${slug}`;
@@ -45,6 +45,24 @@ async function fetchCandidateMeta(proposer: string, slug: string) {
     });
     const json = await response.json();
     return json.data?.proposalCandidate;
+  } catch {
+    return null;
+  }
+}
+
+// Fetch candidate data for metadata by slug only (clean URL format)
+async function fetchCandidateMetaBySlug(slug: string) {
+  try {
+    const response = await fetch(GOLDSKY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query { proposalCandidates(where: { slug: "${slug}" }, first: 1) { slug, proposer, latestVersion { content { title, description } } } }`,
+      }),
+      next: { revalidate: 60 },
+    });
+    const json = await response.json();
+    return json.data?.proposalCandidates?.[0] || null;
   } catch {
     return null;
   }
@@ -94,7 +112,7 @@ export async function generateMetadata({
   if (appId === 'camp' && routeParams && routeParams.length > 0) {
     const [routeType, ...rest] = routeParams;
 
-    // Proposal route: /app/camp/proposal/123
+    // Proposal route: /camp/proposal/123
     if (routeType === 'proposal' && rest[0]) {
       const proposalId = rest[0];
       const proposal = await fetchProposalMeta(proposalId);
@@ -123,7 +141,38 @@ export async function generateMetadata({
       }
     }
 
-    // Candidate route: /app/camp/candidate/{proposer}/{slug}
+    // Clean candidate route: /camp/c/{slug}
+    if (routeType === 'c' && rest[0]) {
+      const slug = rest.join('/');
+      const candidate = await fetchCandidateMetaBySlug(slug);
+      
+      if (candidate) {
+        const title = candidate.latestVersion?.content?.title || candidate.slug.replace(/-/g, ' ');
+        const rawDescription = candidate.latestVersion?.content?.description || '';
+        const proposer = candidate.proposer || '';
+        const description = extractDescription(rawDescription) || `Proposal candidate by ${proposer.slice(0, 6)}...${proposer.slice(-4)}`;
+        const ogImageUrl = `${baseUrl}/api/og/candidate/${proposer}/${slug}`;
+        
+        return {
+          title: `${title} - Candidate - Berry OS`,
+          description,
+          openGraph: {
+            title: `${title} (Candidate)`,
+            description,
+            images: [ogImageUrl],
+            type: "website",
+          },
+          twitter: {
+            card: "summary_large_image",
+            title: `${title} (Candidate)`,
+            description,
+            images: [ogImageUrl],
+          },
+        };
+      }
+    }
+
+    // Legacy candidate route: /camp/candidate/{proposer}/{slug}
     if (routeType === 'candidate' && rest[0] && rest[1]) {
       const proposer = rest[0];
       const slug = rest.slice(1).join('/');
@@ -161,4 +210,3 @@ export async function generateMetadata({
 export default async function AppRouteLayout({ children, params }: LayoutProps) {
   return <>{children}</>;
 }
-

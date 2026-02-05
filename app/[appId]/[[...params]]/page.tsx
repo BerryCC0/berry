@@ -9,10 +9,11 @@
  * handles all visual feedback.
  * 
  * Examples:
- *   /app/calculator           → Opens Calculator
- *   /app/finder               → Opens Finder at root
- *   /app/finder/Documents     → Opens Finder at /Documents
- *   /app/settings             → Opens Settings
+ *   /calculator           → Opens Calculator
+ *   /finder               → Opens Finder at root
+ *   /finder/Documents     → Opens Finder at /Documents
+ *   /settings             → Opens Settings
+ *   /camp/proposal/123    → Opens Camp with proposal 123
  */
 
 import { useEffect, useState, useRef } from "react";
@@ -182,7 +183,7 @@ function buildInitialState(
   // Handle path params based on app
   switch (appId) {
     case "finder":
-      // /app/finder/Documents/Projects → path: /Documents/Projects
+      // /finder/Documents/Projects → path: /Documents/Projects
       if (safeParams.length > 0) {
         state.path = "/" + safeParams.join("/");
       }
@@ -192,47 +193,47 @@ function buildInitialState(
     case "image-viewer":
     case "movie-player":
     case "sound-jam":
-      // /app/media-viewer/Pictures/photo.jpg → filePath: /Pictures/photo.jpg
+      // /media-viewer/Pictures/photo.jpg → filePath: /Pictures/photo.jpg
       if (safeParams.length > 0) {
         state.filePath = "/" + safeParams.join("/");
       }
       break;
 
     case "text-editor":
-      // /app/text-editor?file=/path/to/file.txt
+      // /text-editor?file=/path/to/file.txt
       if (safeSearchParams.file) {
         state.filePath = sanitizePath(safeSearchParams.file);
       }
       break;
       
     case "pdf-viewer":
-      // /app/pdf-viewer/Documents/file.pdf → filePath
+      // /pdf-viewer/Documents/file.pdf → filePath
       if (safeParams.length > 0) {
         state.filePath = "/" + safeParams.join("/");
       }
       break;
 
     case "settings":
-      // /app/settings/appearance → panel: appearance
+      // /settings/appearance → panel: appearance
       if (safeParams.length > 0) {
         state.panel = safeParams[0];
       }
       break;
 
     case "wallet-panel":
-      // /app/wallet-panel → no special params
+      // /wallet-panel → no special params
       break;
 
     case "camp":
-      // /app/camp/proposal/123 → path for internal routing
-      // /app/camp/voter/0x123 → voter detail
+      // /camp/proposal/123 → path for internal routing
+      // /camp/voter/0x123 → voter detail
       if (safeParams.length > 0) {
         state.path = safeParams.join("/");
       }
       break;
 
     case "nouns-auction":
-      // /app/nouns-auction/123 → view specific noun
+      // /nouns-auction/123 → view specific noun
       if (safeParams.length > 0) {
         state.nounId = parseInt(safeParams[0], 10);
       }
@@ -247,4 +248,3 @@ function buildInitialState(
 
   return state;
 }
-

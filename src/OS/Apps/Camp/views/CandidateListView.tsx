@@ -35,7 +35,7 @@ export function CandidateListView({ onNavigate }: CandidateListViewProps) {
             <CandidateCard
               key={candidate.id}
               candidate={candidate}
-              onClick={() => onNavigate(`candidate/${candidate.proposer}/${candidate.slug}`)}
+              onClick={() => onNavigate(`c/${candidate.slug}`)}
             />
           ))
         ) : (

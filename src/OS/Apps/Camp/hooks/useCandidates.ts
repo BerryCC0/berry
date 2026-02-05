@@ -83,6 +83,44 @@ const CANDIDATE_QUERY = `
   }
 `;
 
+// Query to find a candidate by slug only (when proposer is not known)
+const CANDIDATE_BY_SLUG_QUERY = `
+  query CandidateBySlug($slug: String!) {
+    proposalCandidates(
+      where: { slug: $slug }
+      first: 1
+    ) {
+      id
+      slug
+      proposer
+      createdTimestamp
+      lastUpdatedTimestamp
+      canceled
+      latestVersion {
+        content {
+          title
+          description
+          targets
+          values
+          signatures
+          calldatas
+          contentSignatures(where: { canceled: false }) {
+            id
+            signer {
+              id
+            }
+            sig
+            expirationTimestamp
+            reason
+            canceled
+            createdTimestamp
+          }
+        }
+      }
+    }
+  }
+`;
+
 interface CandidatesQueryResult {
   proposalCandidates: Array<{
     id: string;
@@ -136,23 +174,10 @@ interface SignatureResult {
   createdTimestamp: string;
 }
 
-async function fetchCandidate(proposer: string, slug: string): Promise<Candidate> {
-  const id = `${proposer.toLowerCase()}-${slug}`;
-  
-  const response = await fetch(GOLDSKY_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: CANDIDATE_QUERY,
-      variables: { id },
-    }),
-  });
-
-  const json = await response.json();
-  if (json.errors) throw new Error(json.errors[0].message);
-  if (!json.data?.proposalCandidate) throw new Error('Candidate not found');
-
-  const c = json.data.proposalCandidate;
+/**
+ * Parse candidate data from subgraph response
+ */
+function parseCandidateData(c: any, feedbackData?: any[]): Candidate {
   const content = c.latestVersion?.content;
   
   // Build actions array from parallel arrays
@@ -178,7 +203,7 @@ async function fetchCandidate(proposer: string, slug: string): Promise<Candidate
     }));
 
   // Build feedback array
-  const feedback: CandidateFeedback[] = (json.data.candidateFeedbacks || []).map((f: any) => ({
+  const feedback: CandidateFeedback[] = (feedbackData || []).map((f: any) => ({
     id: f.id,
     voter: f.voter.id,
     support: f.supportDetailed,
@@ -202,6 +227,50 @@ async function fetchCandidate(proposer: string, slug: string): Promise<Candidate
   };
 }
 
+async function fetchCandidate(proposer: string, slug: string): Promise<Candidate> {
+  const id = `${proposer.toLowerCase()}-${slug}`;
+  
+  const response = await fetch(GOLDSKY_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: CANDIDATE_QUERY,
+      variables: { id },
+    }),
+  });
+
+  const json = await response.json();
+  if (json.errors) throw new Error(json.errors[0].message);
+  if (!json.data?.proposalCandidate) throw new Error('Candidate not found');
+
+  return parseCandidateData(json.data.proposalCandidate, json.data.candidateFeedbacks);
+}
+
+/**
+ * Fetch candidate by slug only (when proposer is not known from URL)
+ */
+async function fetchCandidateBySlug(slug: string): Promise<Candidate> {
+  const response = await fetch(GOLDSKY_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: CANDIDATE_BY_SLUG_QUERY,
+      variables: { slug },
+    }),
+  });
+
+  const json = await response.json();
+  if (json.errors) throw new Error(json.errors[0].message);
+  
+  const candidates = json.data?.proposalCandidates;
+  if (!candidates || candidates.length === 0) throw new Error('Candidate not found');
+  
+  const c = candidates[0];
+  
+  // Fetch full data including feedback using the found proposer
+  return fetchCandidate(c.proposer, slug);
+}
+
 export function useCandidates(first: number = 20) {
   return useQuery({
     queryKey: ['camp', 'candidates', first],
@@ -210,11 +279,22 @@ export function useCandidates(first: number = 20) {
   });
 }
 
+/**
+ * Fetch a candidate by proposer + slug (full ID) or just slug (clean URL)
+ * When proposer is empty, looks up the candidate by slug
+ */
 export function useCandidate(proposer: string | null, slug: string | null) {
   return useQuery({
-    queryKey: ['camp', 'candidate', proposer, slug],
-    queryFn: () => fetchCandidate(proposer!, slug!),
-    enabled: !!proposer && !!slug,
+    queryKey: ['camp', 'candidate', proposer || 'by-slug', slug],
+    queryFn: () => {
+      if (!slug) throw new Error('Slug is required');
+      // If proposer is empty, look up by slug only
+      if (!proposer) {
+        return fetchCandidateBySlug(slug);
+      }
+      return fetchCandidate(proposer, slug);
+    },
+    enabled: !!slug,
     staleTime: 30000,
   });
 }

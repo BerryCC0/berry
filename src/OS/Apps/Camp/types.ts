@@ -35,6 +35,14 @@ export function parseRoute(path?: string): CampRoute {
       return { view: 'proposals' };
     case 'candidates':
       return { view: 'candidates' };
+    // New clean format: /c/{slug}
+    case 'c':
+      if (parts[1]) {
+        // Just the slug - proposer will be looked up
+        return { view: 'candidate', proposer: '', slug: parts.slice(1).join('/') };
+      }
+      return { view: 'candidates' };
+    // Legacy format: /candidate/{proposer}/{slug}
     case 'candidate':
       if (parts[1] && parts[2]) {
         return { view: 'candidate', proposer: parts[1], slug: parts.slice(2).join('/') };
@@ -74,7 +82,8 @@ export function routeToPath(route: CampRoute): string {
     case 'candidates':
       return 'candidates';
     case 'candidate':
-      return `candidate/${route.proposer}/${route.slug}`;
+      // Use clean URL format: /c/{slug}
+      return `c/${route.slug}`;
     case 'voters':
       return 'voters';
     case 'voter':
@@ -121,6 +130,8 @@ export interface Proposal {
   actions?: ProposalAction[];
   // Client that facilitated this proposal
   clientId?: number;
+  // Sponsors (for digest display)
+  sponsors?: string[];
 }
 
 export type ProposalStatus =
@@ -227,6 +238,13 @@ export interface Candidate {
   signatures?: CandidateSignature[];
   // Feedback signals
   feedback?: CandidateFeedback[];
+  // Latest version info for digest display
+  latestVersion?: {
+    content: {
+      title?: string;
+      contentSignatures?: { signer: { id: string } }[];
+    };
+  };
 }
 
 export interface CandidateFeedback {
@@ -306,4 +324,3 @@ export interface ActivityItem {
 export type ProposalFilter = 'all' | 'active' | 'pending' | 'succeeded' | 'defeated' | 'executed';
 export type ProposalSort = 'newest' | 'oldest' | 'ending_soon';
 export type VoterSort = 'votes' | 'power' | 'represented';
-

@@ -33,7 +33,27 @@
   image-rendering: pixelated;
 }
 
-.tabs,
+.searchButton {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.searchButton:hover {
+  background: var(--berry-bg-tertiary);
+}
+
+.searchPlaceholder {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
 .tabsRight {
   display: flex;
   gap: 0;
@@ -90,13 +110,8 @@
     gap: 8px;
   }
 
-  .tabs,
   .tabsRight {
     width: 100%;
-  }
-
-  .tabsRight {
-    order: 3;
   }
 
   .tab {
@@ -113,5 +128,10 @@
   .logo {
     width: 28px;
     height: 28px;
+  }
+  
+  .searchButton {
+    flex: 1;
+    min-width: unset;
   }
 }

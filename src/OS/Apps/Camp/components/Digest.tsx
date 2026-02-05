@@ -184,7 +184,7 @@ export function Digest({ onNavigate }: DigestProps) {
   };
   
   const handleCandidateClick = (candidate: Candidate) => {
-    onNavigate(`candidate/${candidate.proposer}/${candidate.slug}`);
+    onNavigate(`c/${candidate.slug}`);
   };
   
   const renderProposalItem = (proposal: Proposal) => {

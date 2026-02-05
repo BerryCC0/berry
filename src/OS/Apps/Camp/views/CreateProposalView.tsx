@@ -17,7 +17,7 @@ import {
   PersonaKYC,
 } from '../components/CreateProposal';
 import type { ActionTemplateState, ProposalDraft } from '../utils/types';
-import { generateSlugFromTitle, makeSlugUnique, generateUniqueSlug, generateSlug } from '../utils/slugGenerator';
+import { generateSlugFromTitle, generateUniqueSlug, generateSlug, generateSlugWithConflictCheck } from '../utils/slugGenerator';
 import { parseActionsToTemplates, generateActionsFromTemplate } from '../utils/actionTemplates';
 import { useNounHolderStatus } from '../utils/hooks/useNounHolderStatus';
 import { useCandidate } from '../hooks/useCandidates';
@@ -523,7 +523,7 @@ export function CreateProposalView({
       // Navigate back to candidate detail after success
       setTimeout(() => {
         setShowUpdateModal(false);
-        onNavigate(`candidate/${editCandidateProposer}/${editCandidateSlug}`);
+        onNavigate(`c/${editCandidateSlug}`);
       }, 2000);
     } catch (error) {
       console.error('Failed to update candidate:', error);
@@ -534,6 +534,7 @@ export function CreateProposalView({
 
   const handleSubmitCandidate = async () => {
     if (!validateForm()) return;
+    if (!address) return; // Need wallet connected
     
     // In edit mode, open the update modal instead of directly submitting
     if (isEditMode && editCandidateSlug) {
@@ -557,9 +558,8 @@ export function CreateProposalView({
 
       setCandidateState('pending');
       
-      // CREATE new candidate
-      const baseSlug = generateSlugFromTitle(title);
-      const uniqueSlug = makeSlugUnique(baseSlug);
+      // CREATE new candidate - only add unique suffix if slug already exists
+      const uniqueSlug = await generateSlugWithConflictCheck(title, address);
       
       const shouldPayFee = !hasVotingPower;
       const feeAmount = shouldPayFee && candidateCost ? candidateCost : BigInt(0);

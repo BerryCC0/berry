@@ -228,7 +228,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
     <div className={styles.container}>
       <div className={styles.navBar}>
         <button className={styles.backButton} onClick={onBack}>Back</button>
-        <ShareButton path={`candidate/${proposer}/${slug}`} />
+        <ShareButton path={`c/${slug}`} />
       </div>
 
       <div className={styles.header}>

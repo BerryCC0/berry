@@ -196,7 +196,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
           label: c.title || formatSlugToTitle(c.slug),
           section: 'Candidates',
           meta: formatAddress(c.proposer),
-          action: () => { onNavigate(`candidate/${c.proposer}/${c.slug}`); onClose(); },
+          action: () => { onNavigate(`c/${c.slug}`); onClose(); },
         });
       });
     }

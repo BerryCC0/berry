@@ -20,7 +20,7 @@ export function ShareButton({ path }: ShareButtonProps) {
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : '';
-    const fullUrl = `${baseUrl}/app/camp/${path}`;
+    const fullUrl = `${baseUrl}/camp/${path}`;
 
     try {
       await navigator.clipboard.writeText(fullUrl);

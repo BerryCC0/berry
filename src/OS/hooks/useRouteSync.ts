@@ -7,6 +7,13 @@
  * - Updates URL when focused window changes
  * - Handles browser back/forward navigation
  * - Builds URLs based on app state
+ * 
+ * URL Format (clean, no /app/ prefix):
+ *   /                    → Desktop
+ *   /camp                → Camp app
+ *   /camp/proposal/123   → Camp with proposal 123
+ *   /treasury            → Treasury app
+ *   /finder/Documents    → Finder at /Documents
  */
 
 import { useEffect, useCallback } from "react";
@@ -31,56 +38,57 @@ export function useRouteSync() {
 
   /**
    * Build URL for a window's current state
+   * Uses clean URLs without /app/ prefix
    */
   const buildUrlForWindow = useCallback((window: WindowState): string => {
     const { appId, appState } = window;
 
     // Simple case: just the app
     if (!appState) {
-      return `/app/${appId}`;
+      return `/${appId}`;
     }
 
     // Cast to record for property access
     const state = appState as Record<string, unknown>;
     
     if (Object.keys(state).length === 0) {
-      return `/app/${appId}`;
+      return `/${appId}`;
     }
 
     // Build URL based on app type
     switch (appId) {
       case "finder":
         if (state.path && state.path !== "/") {
-          return `/app/finder${state.path}`;
+          return `/finder${state.path}`;
         }
-        return "/app/finder";
+        return "/finder";
 
       case "media-viewer":
         if (state.filePath) {
-          return `/app/media-viewer${state.filePath}`;
+          return `/media-viewer${state.filePath}`;
         }
-        return "/app/media-viewer";
+        return "/media-viewer";
 
       case "text-editor":
         if (state.filePath) {
-          return `/app/text-editor?file=${encodeURIComponent(state.filePath as string)}`;
+          return `/text-editor?file=${encodeURIComponent(state.filePath as string)}`;
         }
-        return "/app/text-editor";
+        return "/text-editor";
 
       case "settings":
         if (state.panel) {
-          return `/app/settings/${state.panel}`;
+          return `/settings/${state.panel}`;
         }
-        return "/app/settings";
+        return "/settings";
 
       case "camp":
         if (state.path && typeof state.path === 'string' && state.path.length > 0) {
-          return `/app/camp/${state.path}`;
+          return `/camp/${state.path}`;
         }
-        return "/app/camp";
+        return "/camp";
 
       default:
-        return `/app/${appId}`;
+        return `/${appId}`;
     }
   }, []);
 
@@ -101,7 +109,7 @@ export function useRouteSync() {
     // Only sync if we're on root or on an app route for this window
     // This allows internal navigation (e.g., Camp proposal clicks) to update URL
     const isOnRoot = pathname === "/";
-    const isOnThisAppRoute = pathname.startsWith(`/app/${focusedWindow.appId}`);
+    const isOnThisAppRoute = pathname.startsWith(`/${focusedWindow.appId}`);
     
     if (!isOnRoot && !isOnThisAppRoute) {
       // We're on some other page (shouldn't happen normally)
@@ -135,10 +143,17 @@ export function useRouteSync() {
         return;
       }
 
-      // If navigating to an app route
-      if (path.startsWith("/app/")) {
-        const appId = path.split("/")[2];
+      // Reserved routes that shouldn't be treated as app routes
+      const reservedRoutes = ["/api", "/s"];
+      if (reservedRoutes.some(r => path.startsWith(r))) {
+        return;
+      }
 
+      // Extract appId from path (first segment after /)
+      const segments = path.split("/").filter(Boolean);
+      const appId = segments[0];
+
+      if (appId) {
         // Check if a window for this app already exists
         const existingWindow = Array.from(windows.values()).find((w) => w.appId === appId);
 
@@ -159,4 +174,3 @@ export function useRouteSync() {
     buildUrlForWindow,
   };
 }
-

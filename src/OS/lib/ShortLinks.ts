@@ -129,36 +129,37 @@ class ShortLinksService {
 
   /**
    * Generate a shareable URL for current app state
+   * Uses clean URLs without /app/ prefix
    */
   buildSharePath(appId: string, state?: Record<string, unknown>): string {
     if (!state || Object.keys(state).length === 0) {
-      return `/app/${appId}`;
+      return `/${appId}`;
     }
 
     switch (appId) {
       case "finder":
         if (state.path && state.path !== "/") {
-          return `/app/finder${state.path}`;
+          return `/finder${state.path}`;
         }
-        return "/app/finder";
+        return "/finder";
 
       case "media-viewer":
         if (state.filePath) {
-          return `/app/media-viewer${state.filePath}`;
+          return `/media-viewer${state.filePath}`;
         }
-        return "/app/media-viewer";
+        return "/media-viewer";
 
       case "text-editor":
         if (state.filePath) {
-          return `/app/text-editor?file=${encodeURIComponent(state.filePath as string)}`;
+          return `/text-editor?file=${encodeURIComponent(state.filePath as string)}`;
         }
-        return "/app/text-editor";
+        return "/text-editor";
 
       case "settings":
         if (state.panel) {
-          return `/app/settings/${state.panel}`;
+          return `/settings/${state.panel}`;
         }
-        return "/app/settings";
+        return "/settings";
 
       default:
         // Generic: encode state as query params
@@ -169,10 +170,9 @@ class ShortLinksService {
           }
         });
         const queryString = params.toString();
-        return queryString ? `/app/${appId}?${queryString}` : `/app/${appId}`;
+        return queryString ? `/${appId}?${queryString}` : `/${appId}`;
     }
   }
 }
 
 export const shortLinks = new ShortLinksService();
-

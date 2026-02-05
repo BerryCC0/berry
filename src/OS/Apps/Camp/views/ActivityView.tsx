@@ -6,10 +6,10 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { appLauncher } from '@/OS/lib/AppLauncher';
 import { useActivityFeed } from '../hooks';
-import { ActivityItem, CommandPalette, Digest } from '../components';
+import { ActivityItem, Digest } from '../components';
 import styles from './ActivityView.module.css';
 
 interface ActivityViewProps {
@@ -18,7 +18,6 @@ interface ActivityViewProps {
 
 export function ActivityView({ onNavigate }: ActivityViewProps) {
   const { data: activities, isLoading, error } = useActivityFeed(50);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   /**
    * Open the Nouns Auction app with a specific noun
@@ -42,22 +41,11 @@ export function ActivityView({ onNavigate }: ActivityViewProps) {
   }
 
   return (
-    <>
-      <div className={styles.twoColumn}>
-        {/* Left column: Activity feed */}
-        <div className={styles.activityColumn}>
-          {/* Search bar - opens command palette */}
-          <div className={styles.searchBar}>
-            <button
-              className={styles.searchButton}
-              onClick={() => setIsCommandPaletteOpen(true)}
-            >
-              <span className={styles.searchPlaceholder}>Search...</span>
-            </button>
-          </div>
-          
-          {/* Activity list */}
-          <div className={styles.activityList}>
+    <div className={styles.twoColumn}>
+      {/* Left column: Activity feed */}
+      <div className={styles.activityColumn}>
+        {/* Activity list */}
+        <div className={styles.activityList}>
             {isLoading ? (
               <div className={styles.loading}>Loading activity...</div>
             ) : !activities || activities.length === 0 ? (
@@ -72,7 +60,7 @@ export function ActivityView({ onNavigate }: ActivityViewProps) {
                   allItems={activities}
                   onClickProposal={(id) => onNavigate(`proposal/${id}`)}
                   onClickVoter={(address) => onNavigate(`voter/${address}`)}
-                  onClickCandidate={(proposer, slug) => onNavigate(`candidate/${proposer}/${slug}`)}
+                  onClickCandidate={(proposer, slug) => onNavigate(`c/${slug}`)}
                   onClickAuction={handleClickAuction}
                 />
               ))
@@ -81,17 +69,9 @@ export function ActivityView({ onNavigate }: ActivityViewProps) {
         </div>
         
         {/* Right column: Digest (desktop only) */}
-        <div className={styles.digestColumn}>
-          <Digest onNavigate={onNavigate} />
-        </div>
+      <div className={styles.digestColumn}>
+        <Digest onNavigate={onNavigate} />
       </div>
-      
-      {/* Command Palette Modal */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        onNavigate={onNavigate}
-      />
-    </>
+    </div>
   );
 }
