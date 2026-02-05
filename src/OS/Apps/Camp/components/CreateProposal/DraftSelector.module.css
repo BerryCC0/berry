@@ -3,14 +3,14 @@
  */
 
 .container {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .label {
@@ -44,20 +44,36 @@
   cursor: not-allowed;
 }
 
+/* Empty state */
 .noDrafts {
-  padding: 16px;
+  padding: 20px;
   background: var(--berry-bg-tertiary);
   border: 1px dashed var(--berry-border);
   border-radius: 8px;
-  color: var(--berry-text-secondary);
-  font-size: 13px;
   text-align: center;
 }
 
+.noDraftsIcon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.noDraftsText {
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.noDraftsHint {
+  color: var(--berry-text-secondary);
+  font-size: 12px;
+}
+
+/* Drafts list */
 .draftsList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .dropdown {
@@ -69,14 +85,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--berry-bg-secondary);
   border: 1px solid var(--berry-border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--berry-text-primary);
   font-size: 13px;
   cursor: pointer;
   text-align: left;
+  transition: border-color 0.15s;
 }
 
 .dropdownButton:hover:not(:disabled) {
@@ -88,40 +105,53 @@
   cursor: not-allowed;
 }
 
-.dropdownLabel {
+.dropdownContent {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   flex: 1;
   overflow: hidden;
 }
 
 .dropdownTitle {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--berry-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dropdownDate {
-  color: var(--berry-text-secondary);
+.dropdownMeta {
   font-size: 11px;
+  color: var(--berry-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dropdownPlaceholder {
+  color: var(--berry-text-secondary);
 }
 
 .dropdownArrow {
   font-size: 10px;
   color: var(--berry-text-secondary);
+  margin-left: 12px;
 }
 
 .kycBadge {
+  display: inline-flex;
+  align-items: center;
   background: #22c55e;
   color: white;
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 500;
+  margin-left: 6px;
 }
 
+/* Dropdown menu */
 .dropdownMenu {
   position: absolute;
   top: 100%;
@@ -131,8 +161,8 @@
   background: var(--berry-bg-tertiary);
   border: 1px solid var(--berry-border);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-height: 300px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  max-height: 350px;
   overflow-y: auto;
   z-index: 100;
 }
@@ -149,7 +179,7 @@
 
 .draftInfo {
   flex: 1;
-  padding: 10px 12px;
+  padding: 12px 14px;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -159,84 +189,104 @@
 }
 
 .draftInfo.active {
-  background: var(--berry-bg-tertiary);
+  background: var(--berry-bg-secondary);
+  border-left: 3px solid var(--berry-primary);
 }
 
-.draftName {
+.draftHeader {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
-.draftTitleText {
-  font-weight: 500;
+.draftTitle {
+  font-weight: 600;
   color: var(--berry-text-primary);
-  font-size: 13px;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.renameButton {
-  background: none;
-  border: none;
-  padding: 2px;
-  cursor: pointer;
-  opacity: 0.6;
+.draftPreview {
   font-size: 12px;
-}
-
-.renameButton:hover {
-  opacity: 1;
+  color: var(--berry-text-secondary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .draftMeta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 11px;
-  color: var(--berry-text-secondary);
-}
-
-.proposalTitleSmall {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 150px;
-}
-
-.draftDate {
-  flex-shrink: 0;
+  color: var(--berry-text-tertiary);
 }
 
 .draftType {
-  padding: 2px 6px;
-  background: var(--berry-bg-tertiary);
+  padding: 2px 8px;
+  background: var(--berry-bg-secondary);
   border-radius: 4px;
   font-size: 10px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+}
+
+.draftActions {
+  color: var(--berry-text-secondary);
+}
+
+.draftDate {
+  color: var(--berry-text-secondary);
+}
+
+.renameButton {
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  cursor: pointer;
+  color: var(--berry-text-tertiary);
+  font-size: 11px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.renameButton:hover {
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
 }
 
 .draftTitleInput {
   flex: 1;
-  padding: 8px 12px;
-  background: var(--berry-bg);
+  padding: 12px 14px;
+  background: var(--berry-bg-secondary);
   border: 2px solid var(--berry-primary);
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--berry-text-primary);
-  font-size: 13px;
+  font-size: 14px;
   outline: none;
 }
 
+.draftTitleInput::placeholder {
+  color: var(--berry-text-tertiary);
+}
+
 .deleteButton {
-  width: 40px;
+  width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: none;
   border: none;
   border-left: 1px solid var(--berry-border);
-  color: var(--berry-text-secondary);
-  font-size: 18px;
+  color: var(--berry-text-tertiary);
+  font-size: 20px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -253,7 +303,7 @@
 
 .autoSaveIndicator {
   font-size: 11px;
-  color: var(--berry-text-secondary);
+  color: var(--berry-success, #22c55e);
   text-align: right;
+  padding-top: 2px;
 }
-

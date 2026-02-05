@@ -49,6 +49,37 @@ export function DraftSelector({
     return new Date(date).toLocaleDateString();
   };
 
+  const truncateText = (text: string, maxLength: number) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength).trim() + '...';
+  };
+
+  const getDescriptionPreview = (description: string) => {
+    if (!description) return null;
+    // Remove markdown formatting for preview
+    const plainText = description
+      .replace(/[#*_`~\[\]]/g, '')
+      .replace(/\n+/g, ' ')
+      .trim();
+    return truncateText(plainText, 80);
+  };
+
+  const getActionCount = (draft: ProposalDraft) => {
+    const count = draft.actions?.length || 0;
+    if (count === 0) return 'No transactions';
+    if (count === 1) return '1 transaction';
+    return `${count} transactions`;
+  };
+
+  const getProposalTypeLabel = (type: string) => {
+    switch (type) {
+      case 'timelock_v1': return 'Timelock V1';
+      case 'candidate': return 'Candidate';
+      default: return 'Standard';
+    }
+  };
+
   const startRename = (draftSlug: string, currentTitle: string) => {
     setEditingDraftSlug(draftSlug);
     setEditingTitle(currentTitle);
@@ -62,11 +93,19 @@ export function DraftSelector({
     setEditingTitle('');
   };
 
+  // Get display title - prefer proposal title, fall back to draft title
+  const getDisplayTitle = (draft: ProposalDraft) => {
+    if (draft.title && draft.title.trim()) {
+      return draft.title;
+    }
+    return draft.draft_title || 'Untitled Draft';
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <label className={styles.label}>
-          {drafts.length === 0 ? 'No Drafts Yet' : 'Saved Drafts'}
+          {drafts.length === 0 ? 'No Drafts Yet' : 'Your Drafts'}
           {drafts.length > 0 && <span className={styles.count}> ({drafts.length})</span>}
         </label>
         <button
@@ -81,7 +120,13 @@ export function DraftSelector({
 
       {drafts.length === 0 ? (
         <div className={styles.noDrafts}>
-          Start typing a proposal title to create your first draft. It will auto-save as you type!
+          <div className={styles.noDraftsIcon}>📝</div>
+          <div className={styles.noDraftsText}>
+            Start typing a proposal title to create your first draft.
+          </div>
+          <div className={styles.noDraftsHint}>
+            Drafts auto-save as you type!
+          </div>
         </div>
       ) : (
         <div className={styles.draftsList}>
@@ -92,22 +137,22 @@ export function DraftSelector({
               onClick={() => setShowDropdown(!showDropdown)}
               disabled={disabled}
             >
-              <span className={styles.dropdownLabel}>
+              <div className={styles.dropdownContent}>
                 {currentDraft ? (
                   <>
                     <span className={styles.dropdownTitle}>
-                      {currentDraft.draft_title}
+                      {getDisplayTitle(currentDraft)}
                     </span>
-                    {currentDraft.kyc_verified && <span className={styles.kycBadge}>KYC</span>}
-                    <span className={styles.dropdownDate}>
-                      · {formatRelativeTime(currentDraft.updated_at)}
+                    <span className={styles.dropdownMeta}>
+                      {getProposalTypeLabel(currentDraft.proposal_type)} · {getActionCount(currentDraft)} · {formatRelativeTime(currentDraft.updated_at)}
+                      {currentDraft.kyc_verified && <span className={styles.kycBadge}>KYC ✓</span>}
                     </span>
                   </>
                 ) : (
-                  'Select a draft...'
+                  <span className={styles.dropdownPlaceholder}>Select a draft to continue editing...</span>
                 )}
-              </span>
-              <span className={styles.dropdownArrow}>▼</span>
+              </div>
+              <span className={styles.dropdownArrow}>{showDropdown ? '▲' : '▼'}</span>
             </button>
 
             {showDropdown && (
@@ -126,6 +171,7 @@ export function DraftSelector({
                         }}
                         autoFocus
                         disabled={disabled}
+                        placeholder="Enter draft name..."
                       />
                     ) : (
                       <>
@@ -136,8 +182,27 @@ export function DraftSelector({
                             setShowDropdown(false);
                           }}
                         >
-                          <div className={styles.draftName}>
-                            <span className={styles.draftTitleText}>{draft.draft_title}</span>
+                          <div className={styles.draftHeader}>
+                            <span className={styles.draftTitle}>{getDisplayTitle(draft)}</span>
+                            {draft.kyc_verified && <span className={styles.kycBadge}>KYC</span>}
+                          </div>
+                          
+                          {draft.description && (
+                            <div className={styles.draftPreview}>
+                              {getDescriptionPreview(draft.description)}
+                            </div>
+                          )}
+                          
+                          <div className={styles.draftMeta}>
+                            <span className={styles.draftType}>
+                              {getProposalTypeLabel(draft.proposal_type)}
+                            </span>
+                            <span className={styles.draftActions}>
+                              {getActionCount(draft)}
+                            </span>
+                            <span className={styles.draftDate}>
+                              {formatRelativeTime(draft.updated_at)}
+                            </span>
                             <button
                               type="button"
                               className={styles.renameButton}
@@ -148,24 +213,8 @@ export function DraftSelector({
                               disabled={disabled}
                               title="Rename draft"
                             >
-                              Edit
+                              Rename
                             </button>
-                            {draft.kyc_verified && <span className={styles.kycBadge}>KYC</span>}
-                          </div>
-                          <div className={styles.draftMeta}>
-                            <span className={styles.proposalTitleSmall}>
-                              Proposal: {draft.title || 'Untitled'}
-                            </span>
-                            <span className={styles.draftDate}>
-                              {formatRelativeTime(draft.updated_at)}
-                            </span>
-                            <span className={styles.draftType}>
-                              {draft.proposal_type === 'timelock_v1' 
-                                ? 'TimelockV1' 
-                                : draft.proposal_type === 'candidate'
-                                  ? 'Candidate'
-                                  : 'Standard'}
-                            </span>
                           </div>
                         </div>
                         <button
@@ -173,7 +222,7 @@ export function DraftSelector({
                           className={styles.deleteButton}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (confirm(`Delete this draft: "${draft.draft_title}"?`)) {
+                            if (confirm(`Delete this draft?\n\n"${getDisplayTitle(draft)}"`)) {
                               onDelete(draft.draft_slug);
                             }
                           }}
@@ -192,7 +241,7 @@ export function DraftSelector({
 
           {currentDraft && (
             <div className={styles.autoSaveIndicator}>
-              Auto-saving as you type...
+              ✓ Auto-saving enabled
             </div>
           )}
         </div>
@@ -200,4 +249,3 @@ export function DraftSelector({
     </div>
   );
 }
-
