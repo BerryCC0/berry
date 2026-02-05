@@ -232,7 +232,7 @@ export function PersonaKYC({
       case 'error':
         return 'Retry Identity Verification';
       default:
-        return 'Verify Identity with KYC';
+        return 'KYC with Persona';
     }
   };
 
@@ -241,7 +241,7 @@ export function PersonaKYC({
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h3 className={styles.title}>Identity Verification</h3>
+          <h3 className={styles.title}>KYC with Persona</h3>
         </div>
         <div className={styles.infoBox}>
           <p className={styles.infoText}>
@@ -256,7 +256,7 @@ export function PersonaKYC({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Identity Verification</h3>
+        <h3 className={styles.title}>KYC with Persona</h3>
       </div>
 
       {kycStatus === 'completed' ? (
@@ -310,7 +310,7 @@ export function PersonaKYC({
           <div className={styles.modalOverlay} onClick={handleCancelKYC} />
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
-              <h3>Identity Verification</h3>
+              <h3>KYC with Persona</h3>
               <button
                 className={styles.closeButton}
                 onClick={handleCancelKYC}
