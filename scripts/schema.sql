@@ -7,6 +7,9 @@
 -- =====================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Enable pg_trgm extension for partial text search (ILIKE with trigram indexes)
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
 -- =====================================================
 -- CORE BERRY OS TABLES
 -- =====================================================
@@ -156,6 +159,88 @@ CREATE TABLE IF NOT EXISTS proposal_drafts (
 );
 
 -- =====================================================
+-- CAMP SEARCH TABLES
+-- =====================================================
+
+-- Voters (delegates) with cached ENS names for partial search
+CREATE TABLE IF NOT EXISTS voters (
+  address VARCHAR(42) PRIMARY KEY,                 -- Ethereum address (lowercase)
+  ens_name VARCHAR(255),                           -- Resolved ENS name
+  delegated_votes INTEGER DEFAULT 0,               -- Current voting power
+  nouns_represented INTEGER[] DEFAULT '{}',        -- Array of Noun IDs
+  total_votes INTEGER DEFAULT 0,                   -- Total votes cast
+  first_seen_at TIMESTAMP WITH TIME ZONE,          -- First activity timestamp
+  last_vote_at TIMESTAMP WITH TIME ZONE,           -- Last vote timestamp
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Proposals (cached from Goldsky for search)
+CREATE TABLE IF NOT EXISTS proposals (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  status VARCHAR(50) NOT NULL,
+  proposer VARCHAR(42) NOT NULL,
+  for_votes INTEGER DEFAULT 0,
+  against_votes INTEGER DEFAULT 0,
+  abstain_votes INTEGER DEFAULT 0,
+  quorum_votes INTEGER DEFAULT 0,
+  start_block BIGINT,
+  end_block BIGINT,
+  created_timestamp BIGINT,
+  execution_eta BIGINT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Proposal versions (version history)
+CREATE TABLE IF NOT EXISTS proposal_versions (
+  id VARCHAR(100) PRIMARY KEY,                     -- Goldsky version ID
+  proposal_id INTEGER NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+  version_number INTEGER NOT NULL,
+  title TEXT,
+  description TEXT,
+  update_message TEXT,
+  created_at BIGINT NOT NULL,                      -- Block timestamp
+  synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Candidates (proposal candidates)
+CREATE TABLE IF NOT EXISTS candidates (
+  id VARCHAR(255) PRIMARY KEY,                     -- proposer-slug
+  slug VARCHAR(255) NOT NULL,
+  proposer VARCHAR(42) NOT NULL,
+  title TEXT,
+  description TEXT,
+  canceled BOOLEAN DEFAULT FALSE,
+  created_timestamp BIGINT,
+  last_updated_timestamp BIGINT,
+  signature_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Candidate versions (version history)
+CREATE TABLE IF NOT EXISTS candidate_versions (
+  id VARCHAR(255) PRIMARY KEY,                     -- Goldsky version ID
+  candidate_id VARCHAR(255) NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  version_number INTEGER NOT NULL,
+  title TEXT,
+  description TEXT,
+  update_message TEXT,
+  created_at BIGINT NOT NULL,                      -- Block timestamp
+  synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Sync state tracking
+CREATE TABLE IF NOT EXISTS sync_state (
+  key VARCHAR(50) PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =====================================================
 -- INDEXES
 -- =====================================================
 
@@ -184,6 +269,20 @@ CREATE INDEX IF NOT EXISTS idx_nouns_winner ON nouns(winner_address);
 CREATE INDEX IF NOT EXISTS idx_proposal_drafts_wallet ON proposal_drafts(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_proposal_drafts_updated ON proposal_drafts(updated_at DESC);
 
+-- Camp search indexes (with trigram support for partial matching)
+CREATE INDEX IF NOT EXISTS idx_voters_ens ON voters(LOWER(ens_name));
+CREATE INDEX IF NOT EXISTS idx_voters_ens_gin ON voters USING gin(LOWER(ens_name) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_voters_power ON voters(delegated_votes DESC);
+CREATE INDEX IF NOT EXISTS idx_voters_address_gin ON voters USING gin(LOWER(address) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS idx_proposals_title_gin ON proposals USING gin(LOWER(title) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
+CREATE INDEX IF NOT EXISTS idx_proposals_created ON proposals(created_timestamp DESC);
+
+CREATE INDEX IF NOT EXISTS idx_candidates_title_gin ON candidates USING gin(LOWER(title) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_candidates_slug ON candidates(slug);
+CREATE INDEX IF NOT EXISTS idx_candidates_created ON candidates(created_timestamp DESC);
+
 -- =====================================================
 -- COMMENTS
 -- =====================================================
@@ -198,4 +297,10 @@ COMMENT ON TABLE app_states IS 'App-specific persisted state';
 COMMENT ON TABLE short_links IS 'Short URLs for sharing deep links to apps/content';
 COMMENT ON TABLE nouns IS 'Cached Nouns with pre-rendered SVGs, traits, and auction info';
 COMMENT ON TABLE proposal_drafts IS 'Saved proposal drafts for Camp governance app';
+COMMENT ON TABLE voters IS 'Cached Nouns DAO voters (delegates) with ENS names for partial search';
+COMMENT ON TABLE proposals IS 'Cached on-chain proposals from Goldsky subgraph';
+COMMENT ON TABLE proposal_versions IS 'Version history for proposals (updates tracked)';
+COMMENT ON TABLE candidates IS 'Proposal candidates (off-chain proposals seeking sponsorship)';
+COMMENT ON TABLE candidate_versions IS 'Version history for candidates (updates tracked)';
+COMMENT ON TABLE sync_state IS 'Tracks last sync timestamps for cron jobs';
 

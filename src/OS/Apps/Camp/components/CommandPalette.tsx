@@ -4,15 +4,16 @@
  * 
  * Features:
  * - Quick navigation to all Camp views
- * - Search across proposals, candidates, voters
+ * - Search across proposals, candidates, voters (with partial ENS matching)
  * - Keyboard navigation support
+ * - Uses /api/camp/search for database-backed partial text search
  */
 
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useAccount } from 'wagmi';
-import { useProposals, useCandidates, useVoters } from '../hooks';
+import { useAccount, useEnsAddress } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
 import { appLauncher } from '@/OS/lib/AppLauncher';
 import styles from './CommandPalette.module.css';
 
@@ -31,23 +32,112 @@ interface CommandItem {
   icon?: string;
 }
 
+// Search API response types
+interface SearchResults {
+  voters: Array<{
+    address: string;
+    ensName: string | null;
+    delegatedVotes: number;
+  }>;
+  proposals: Array<{
+    id: number;
+    title: string;
+    status: string;
+    proposer: string;
+  }>;
+  candidates: Array<{
+    id: string;
+    slug: string;
+    title: string | null;
+    proposer: string;
+  }>;
+}
+
+// Check if a string looks like an ENS name
+function isEnsName(input: string): boolean {
+  return input.includes('.') && !input.startsWith('0x');
+}
+
+// Check if a string looks like an Ethereum address
+function isEthAddress(input: string): boolean {
+  return input.startsWith('0x') && input.length >= 6;
+}
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPaletteProps) {
   const { isConnected } = useAccount();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   
-  // Fetch data for search
-  const { data: proposals } = useProposals(100, 'all', 'newest');
-  const { data: candidates } = useCandidates(50);
-  const { data: voters } = useVoters(50);
+  // Debounce the search query
+  const trimmedQuery = query.trim();
+  const debouncedQuery = useDebounce(trimmedQuery, 200);
+  
+  // Check if query looks like ENS or address for direct resolution
+  const isQueryEns = isEnsName(trimmedQuery);
+  const isQueryAddress = isEthAddress(trimmedQuery);
+  
+  // Resolve ENS name to address if query looks like a full ENS name (fallback)
+  const { data: resolvedAddress } = useEnsAddress({
+    name: isQueryEns && trimmedQuery.endsWith('.eth') ? trimmedQuery : undefined,
+    chainId: mainnet.id,
+  });
+  
+  // Fetch search results from API
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    
+    const controller = new AbortController();
+    
+    async function fetchResults() {
+      setIsSearching(true);
+      try {
+        const response = await fetch(
+          `/api/camp/search?q=${encodeURIComponent(debouncedQuery)}&limit=8`,
+          { signal: controller.signal }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data);
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error('[CommandPalette] Search error:', error);
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    }
+    
+    fetchResults();
+    
+    return () => controller.abort();
+  }, [debouncedQuery]);
   
   // Focus input when modal opens
   useEffect(() => {
     if (isOpen) {
       setQuery('');
       setSelectedIndex(0);
+      setSearchResults(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -155,44 +245,68 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
     return commands;
   }, [isConnected, onNavigate, onClose]);
   
-  // Build search results
-  const searchResults = useMemo<CommandItem[]>(() => {
-    if (!query.trim()) return [];
+  // Build search results from API response
+  const searchItems = useMemo<CommandItem[]>(() => {
+    if (!trimmedQuery || trimmedQuery.length < 2) return [];
     
-    const normalizedQuery = query.toLowerCase().trim();
+    const normalizedQuery = trimmedQuery.toLowerCase();
     const results: CommandItem[] = [];
     
-    // Search proposals
-    if (proposals) {
-      const matchingProposals = proposals.filter(p => 
-        p.id.includes(normalizedQuery) ||
-        p.title.toLowerCase().includes(normalizedQuery) ||
-        p.proposer.toLowerCase().includes(normalizedQuery)
-      ).slice(0, 5);
+    // If user typed a full ENS name that resolved to an address, add direct navigation
+    if (isQueryEns && resolvedAddress) {
+      results.push({
+        id: `voter-ens-${resolvedAddress}`,
+        label: trimmedQuery,
+        section: 'Voters',
+        meta: formatAddress(resolvedAddress),
+        action: () => { onNavigate(`voter/${resolvedAddress}`); onClose(); },
+      });
+    }
+    
+    // If user typed a full address, add direct navigation option
+    if (isQueryAddress && normalizedQuery.length === 42) {
+      results.push({
+        id: `voter-direct-${normalizedQuery}`,
+        label: formatAddress(normalizedQuery),
+        section: 'Voters',
+        meta: 'Go to voter',
+        action: () => { onNavigate(`voter/${normalizedQuery}`); onClose(); },
+      });
+    }
+    
+    // Add results from API search
+    if (searchResults) {
+      // Add voters (with ENS names from database)
+      searchResults.voters.forEach(v => {
+        // Skip if already added via direct ENS resolution
+        if (resolvedAddress && v.address.toLowerCase() === resolvedAddress.toLowerCase()) {
+          return;
+        }
+        results.push({
+          id: `voter-${v.address}`,
+          label: v.ensName || formatAddress(v.address),
+          section: 'Voters',
+          meta: v.ensName ? formatAddress(v.address) : `${v.delegatedVotes} votes`,
+          action: () => { onNavigate(`voter/${v.address}`); onClose(); },
+        });
+      });
       
-      matchingProposals.forEach(p => {
+      // Add proposals
+      searchResults.proposals.forEach(p => {
         results.push({
           id: `proposal-${p.id}`,
           label: p.title,
           section: 'Proposals',
-          meta: formatAddress(p.proposer),
-          icon: `Prop ${p.id}`,
+          meta: `Prop ${p.id}`,
+          icon: p.status,
           action: () => { onNavigate(`proposal/${p.id}`); onClose(); },
         });
       });
-    }
-    
-    // Search candidates
-    if (candidates) {
-      const matchingCandidates = candidates.filter(c => 
-        c.slug.toLowerCase().includes(normalizedQuery) ||
-        (c.title && c.title.toLowerCase().includes(normalizedQuery)) ||
-        c.proposer.toLowerCase().includes(normalizedQuery)
-      ).slice(0, 5);
       
-      matchingCandidates.forEach(c => {
+      // Add candidates
+      searchResults.candidates.forEach(c => {
         results.push({
-          id: `candidate-${c.proposer}-${c.slug}`,
+          id: `candidate-${c.id}`,
           label: c.title || formatSlugToTitle(c.slug),
           section: 'Candidates',
           meta: formatAddress(c.proposer),
@@ -201,27 +315,11 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
       });
     }
     
-    // Search voters
-    if (voters) {
-      const matchingVoters = voters.filter(v => 
-        v.id.toLowerCase().includes(normalizedQuery)
-      ).slice(0, 5);
-      
-      matchingVoters.forEach(v => {
-        results.push({
-          id: `voter-${v.id}`,
-          label: formatAddress(v.id),
-          section: 'Voters',
-          action: () => { onNavigate(`voter/${v.id}`); onClose(); },
-        });
-      });
-    }
-    
     return results;
-  }, [query, proposals, candidates, voters, onNavigate, onClose]);
+  }, [trimmedQuery, isQueryEns, isQueryAddress, resolvedAddress, searchResults, onNavigate, onClose]);
   
   // Combined items (search results or navigation)
-  const items = query.trim() ? searchResults : navigationCommands;
+  const items = query.trim() ? searchItems : navigationCommands;
   
   // Group items by section
   const groupedItems = useMemo(() => {
@@ -309,8 +407,12 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
         
         {/* Results list */}
         <div className={styles.list} ref={listRef}>
-          {groupedItems.length === 0 ? (
+          {isSearching && trimmedQuery.length >= 2 ? (
+            <div className={styles.empty}>Searching...</div>
+          ) : groupedItems.length === 0 && trimmedQuery.length >= 2 ? (
             <div className={styles.empty}>No results found</div>
+          ) : groupedItems.length === 0 ? (
+            <div className={styles.empty}>Type to search voters, proposals, candidates...</div>
           ) : (
             groupedItems.map(group => (
               <div key={group.section} className={styles.section}>

@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/sync-nouns",
       "schedule": "*/1 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-camp",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
