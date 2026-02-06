@@ -25,10 +25,13 @@ interface ProbeInitialState {
 export function Probe({ initialState, onStateChange }: AppComponentProps) {
   const probeState = initialState as ProbeInitialState | undefined;
 
-  // View state: null = grid, number = detail view for that Noun ID
-  const [selectedNounId, setSelectedNounId] = useState<number | null>(
-    probeState?.nounId ?? null
-  );
+  // Navigation history: tracks the user's actual clicks (null = grid, number = noun detail)
+  const initialEntry = probeState?.nounId ?? null;
+  const [history, setHistory] = useState<(number | null)[]>([initialEntry]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Derived: current view from history
+  const selectedNounId = history[historyIndex] ?? null;
 
   // Keep a stable ref to onStateChange to avoid infinite re-render loops
   const onStateChangeRef = useRef(onStateChange);
@@ -46,10 +49,33 @@ export function Probe({ initialState, onStateChange }: AppComponentProps) {
   // Handle deep link changes after initial mount
   useEffect(() => {
     if (probeState?.nounId !== undefined && probeState.nounId !== selectedNounId) {
-      setSelectedNounId(probeState.nounId);
+      // Push deep link as a new history entry
+      setHistory(prev => [...prev.slice(0, historyIndex + 1), probeState.nounId!]);
+      setHistoryIndex(prev => prev + 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [probeState?.nounId]);
+
+  // Navigate: push a new entry, truncating any forward history
+  const navigateTo = useCallback((entry: number | null) => {
+    setHistory(prev => [...prev.slice(0, historyIndex + 1), entry]);
+    setHistoryIndex(prev => prev + 1);
+  }, [historyIndex]);
+
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < history.length - 1;
+
+  const goBack = useCallback(() => {
+    if (historyIndex > 0) {
+      setHistoryIndex(prev => prev - 1);
+    }
+  }, [historyIndex]);
+
+  const goForward = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(prev => prev + 1);
+    }
+  }, [historyIndex, history.length]);
 
   // Filter & sort state
   const [filters, setFilters] = useState<ProbeFilters>({});
@@ -95,27 +121,20 @@ export function Probe({ initialState, onStateChange }: AppComponentProps) {
   }, []);
 
   const handleSelectNoun = useCallback((id: number) => {
-    setSelectedNounId(id);
-  }, []);
+    navigateTo(id);
+  }, [navigateTo]);
 
   const handleBack = useCallback(() => {
-    setSelectedNounId(null);
-  }, []);
-
-  const handleNavigateNoun = useCallback((id: number) => {
-    const maxId = auctionNounId ?? Infinity;
-    if (id >= 0 && id <= maxId) {
-      setSelectedNounId(id);
-    }
-  }, [auctionNounId]);
+    navigateTo(null);
+  }, [navigateTo]);
 
   const handleFilterByTrait = useCallback(
     (type: TraitType, value: number) => {
-      setSelectedNounId(null);
+      navigateTo(null);
       setFilters({ [type]: value });
       setSort("newest");
     },
-    []
+    [navigateTo]
   );
 
   // Detail view
@@ -125,7 +144,10 @@ export function Probe({ initialState, onStateChange }: AppComponentProps) {
         <NounDetail
           nounId={selectedNounId}
           onBack={handleBack}
-          onNavigate={handleNavigateNoun}
+          onGoBack={goBack}
+          onGoForward={goForward}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
           onFilterByTrait={handleFilterByTrait}
         />
       </div>
@@ -143,6 +165,10 @@ export function Probe({ initialState, onStateChange }: AppComponentProps) {
         colorIndex={colorIndex}
         ownerOptions={ownerOptions}
         settlerOptions={settlerOptions}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onGoBack={goBack}
+        onGoForward={goForward}
         onColorChange={setColorIndex}
         onFiltersChange={handleFiltersChange}
         onSortChange={handleSortChange}

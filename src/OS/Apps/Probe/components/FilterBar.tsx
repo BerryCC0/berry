@@ -25,6 +25,10 @@ interface FilterBarProps {
   colorIndex: number | null;
   ownerOptions: SelectOption[];
   settlerOptions: SelectOption[];
+  canGoBack: boolean;
+  canGoForward: boolean;
+  onGoBack: () => void;
+  onGoForward: () => void;
   onColorChange: (index: number | null) => void;
   onFiltersChange: (filters: ProbeFilters) => void;
   onSortChange: (sort: ProbeSort) => void;
@@ -58,6 +62,10 @@ export function FilterBar({
   colorIndex,
   ownerOptions,
   settlerOptions,
+  canGoBack,
+  canGoForward,
+  onGoBack,
+  onGoForward,
   onColorChange,
   onFiltersChange,
   onSortChange,
@@ -171,6 +179,24 @@ export function FilterBar({
           );
         })}
         <span className={styles.count}>{total.toLocaleString()} nouns</span>
+        <div className={styles.navButtons}>
+          <button
+            className={styles.navButton}
+            onClick={onGoBack}
+            disabled={!canGoBack}
+            title="Go back"
+          >
+            ←
+          </button>
+          <button
+            className={styles.navButton}
+            onClick={onGoForward}
+            disabled={!canGoForward}
+            title="Go forward"
+          >
+            →
+          </button>
+        </div>
       </div>
 
       {/* Filters: 2 rows x 4 columns */}

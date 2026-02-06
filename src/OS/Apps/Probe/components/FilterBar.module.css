@@ -57,6 +57,39 @@
   color: var(--berry-text-secondary);
 }
 
+/* ── Nav buttons (back/forward) ── */
+.navButtons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.navButton {
+  background: none;
+  border: 1px solid var(--berry-border);
+  border-radius: 3px;
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.navButton:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+}
+
+.navButton:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
 /* ── Filters grid: 2 rows x 4 columns ── */
 .filtersGrid {
   display: grid;

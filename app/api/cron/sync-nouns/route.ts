@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
         const isNounder = isNounderNoun(nounId);
         const auction = auctionMap.get(nounId);
 
-        let settledAt: string;
+        let settledAt: string | null;
         let settledByAddress: string;
         let settledTxHash: string;
         let winnerAddress: string | null;
@@ -182,28 +182,29 @@ export async function GET(request: NextRequest) {
 
         if (nounId <= 1) {
           // Genesis nouns - no settler
-          settledAt = new Date(0).toISOString();
+          settledAt = null;
           settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
           winnerAddress = isNounder ? NOUNDERS_MULTISIG : (auction?.bidder?.id || null);
           winningBid = auction ? (auction.amount !== '0' ? auction.amount : null) : null;
         } else if (isNounder && !auction) {
-          // Nounder noun
-          settledAt = new Date(0).toISOString();
-          settledByAddress = '0x' + '0'.repeat(40); // Will be updated by settler sync
+          // Nounder noun — settler will be found later via Etherscan
+          settledAt = null;
+          settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
           winnerAddress = NOUNDERS_MULTISIG;
           winningBid = null;
         } else if (auction) {
-          // Regular auctioned noun - settler will be updated separately
-          settledAt = new Date(parseInt(auction.endTime) * 1000).toISOString();
+          // Regular auctioned noun — settled_at will be set from the actual
+          // settle transaction timestamp when the settler is resolved
+          settledAt = null;
           settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
           winnerAddress = auction.bidder?.id || null;
           winningBid = auction.amount !== '0' ? auction.amount : null;
         } else {
           // Edge case
-          settledAt = new Date().toISOString();
+          settledAt = null;
           settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
           winnerAddress = noun.owner.id;

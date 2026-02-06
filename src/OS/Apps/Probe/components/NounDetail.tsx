@@ -25,7 +25,10 @@ import styles from './NounDetail.module.css';
 interface NounDetailProps {
   nounId: number;
   onBack: () => void;
-  onNavigate: (id: number) => void;
+  onGoBack: () => void;
+  onGoForward: () => void;
+  canGoBack: boolean;
+  canGoForward: boolean;
   onFilterByTrait: (type: TraitType, value: number) => void;
 }
 
@@ -43,6 +46,8 @@ function formatBidWei(weiStr: string | null): string {
 function formatDateTime(dateStr: string): string {
   try {
     const date = new Date(dateStr);
+    // Filter out placeholder epoch dates (1970-01-01)
+    if (isNaN(date.getTime()) || date.getTime() < 86400000) return '';
     const datePart = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -255,7 +260,7 @@ function BidsModal({ bids, onClose }: { bids: Bid[]; onClose: () => void }) {
   );
 }
 
-export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: NounDetailProps) {
+export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, canGoForward, onFilterByTrait }: NounDetailProps) {
   const { data: noun, isLoading, error } = useNounDetail(nounId);
   const { data: owner } = useNounOwner(nounId);
   const { auction } = useCurrentAuction();
@@ -362,17 +367,17 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
         <div className={styles.navButtons}>
           <button
             className={styles.navButton}
-            onClick={() => onNavigate(nounId - 1)}
-            disabled={nounId <= 0}
-            title="Previous Noun"
+            onClick={onGoBack}
+            disabled={!canGoBack}
+            title="Go back"
           >
             ←
           </button>
           <button
             className={styles.navButton}
-            onClick={() => onNavigate(nounId + 1)}
-            disabled={maxNounId !== null && nounId >= maxNounId}
-            title="Next Noun"
+            onClick={onGoForward}
+            disabled={!canGoForward}
+            title="Go forward"
           >
             →
           </button>
