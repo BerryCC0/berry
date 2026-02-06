@@ -16,6 +16,7 @@ interface NounGridProps {
   isLoading: boolean;
   isFetching: boolean;
   hasMore: boolean;
+  auctionNounId?: number | null;
   onLoadMore: () => void;
   onSelectNoun: (id: number) => void;
 }
@@ -26,6 +27,7 @@ export function NounGrid({
   isLoading,
   isFetching,
   hasMore,
+  auctionNounId,
   onLoadMore,
   onSelectNoun,
 }: NounGridProps) {
@@ -76,27 +78,31 @@ export function NounGrid({
   return (
     <div className={styles.scrollContainer} ref={scrollRef}>
       <div className={styles.grid}>
-        {nouns.map((noun) => (
-          <button
-            key={noun.id}
-            className={styles.nounCard}
-            onClick={() => onSelectNoun(noun.id)}
-            title={`Noun ${noun.id}`}
-          >
-            <NounImage
-              seed={{
-                background: noun.background,
-                body: noun.body,
-                accessory: noun.accessory,
-                head: noun.head,
-                glasses: noun.glasses,
-              }}
-              size={64}
-              className={styles.nounImage}
-            />
-            <span className={styles.nounId}>{noun.id}</span>
-          </button>
-        ))}
+        {nouns.map((noun) => {
+          const isAuction = noun.id === auctionNounId;
+          return (
+            <button
+              key={noun.id}
+              className={`${styles.nounCard} ${isAuction ? styles.auctionCard : ''}`}
+              onClick={() => onSelectNoun(noun.id)}
+              title={isAuction ? `Noun ${noun.id} — Active Auction` : `Noun ${noun.id}`}
+            >
+              {isAuction && <span className={styles.bidBadge}>BID</span>}
+              <NounImage
+                seed={{
+                  background: noun.background,
+                  body: noun.body,
+                  accessory: noun.accessory,
+                  head: noun.head,
+                  glasses: noun.glasses,
+                }}
+                size={64}
+                className={styles.nounImage}
+              />
+              <span className={styles.nounId}>{noun.id}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Infinite scroll sentinel */}

@@ -1,0 +1,195 @@
+/**
+ * ProbeSelect Styles
+ * Matches probe.wtf — Comic Sans Bold, thick black border,
+ * label inside top-left corner, large NONE value
+ */
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+/* ── Trigger ── */
+.trigger {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  padding: 6px 10px 8px;
+  min-height: 52px;
+  background: var(--berry-bg);
+  border: 2px solid #1a1a1a;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  transition: border-color 0.15s;
+}
+
+.trigger:hover {
+  border-color: #000;
+}
+
+.trigger.open {
+  border-color: #000;
+}
+
+/* Small label in top-left corner */
+.label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--berry-text-secondary);
+  letter-spacing: 0.3px;
+  pointer-events: none;
+}
+
+/* Large bold value */
+.value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-top: 8px;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  flex-shrink: 0;
+}
+
+/* Chevron on the right */
+.chevron {
+  font-size: 16px;
+  color: var(--berry-text-secondary);
+  margin-left: 8px;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.trigger.open .chevron {
+  transform: rotate(90deg);
+}
+
+/* ── Dropdown ── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: var(--berry-bg);
+  border: 2px solid #1a1a1a;
+  z-index: 200;
+  max-height: 300px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Search box ── */
+.searchBox {
+  padding: 6px 8px;
+  border-bottom: 2px solid #1a1a1a;
+}
+
+.searchInput {
+  width: 100%;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  outline: none;
+  text-transform: uppercase;
+}
+
+.searchInput::placeholder {
+  text-transform: none;
+  font-weight: 400;
+  color: var(--berry-text-secondary);
+}
+
+.searchInput:focus {
+  border-color: #999;
+}
+
+.list {
+  overflow-y: auto;
+  max-height: 260px;
+}
+
+.noResults {
+  padding: 16px 12px;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--berry-text-secondary);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── Options ── */
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.option:last-child {
+  border-bottom: none;
+}
+
+.option:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.option.selected {
+  background: var(--berry-bg-tertiary);
+}
+
+.optionIcon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  flex-shrink: 0;
+  border-radius: 0;
+}
+
+.optionLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

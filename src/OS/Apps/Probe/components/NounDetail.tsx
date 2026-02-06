@@ -258,8 +258,11 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
   const { auction } = useCurrentAuction();
   const [showBidsModal, setShowBidsModal] = useState(false);
 
+  // The highest noun ID that exists (the current auction noun)
+  const maxNounId = auction ? Number(auction.nounId) : null;
+
   // Check if this Noun is the one currently at auction
-  const isCurrentAuction = auction && Number(auction.nounId) === nounId && !auction.settled;
+  const isCurrentAuction = auction && maxNounId === nounId && !auction.settled;
 
   // Fetch bids from Goldsky subgraph (only when viewing the current auction noun)
   const { data: auctionData } = useAuctionById(isCurrentAuction ? String(nounId) : null);
@@ -301,11 +304,10 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
       <div className={styles.container}>
         <div className={styles.topBar}>
           <div className={styles.breadcrumb}>
-            <span className={styles.breadcrumbLink}>NOUNS</span>
+            <button className={styles.breadcrumbLink} onClick={onBack}>NOUNS</button>
             <span className={styles.breadcrumbSep}>/</span>
             <span className={styles.breadcrumbCurrent}>{nounId}</span>
           </div>
-          <button className={styles.exploreButton} onClick={onBack}>EXPLORE</button>
         </div>
         <div className={styles.loading}>
           {isLoading ? (
@@ -330,7 +332,7 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
       {/* Top navigation bar */}
       <div className={styles.topBar}>
         <div className={styles.breadcrumb}>
-          <span className={styles.breadcrumbLink}>NOUNS</span>
+          <button className={styles.breadcrumbLink} onClick={onBack}>NOUNS</button>
           <span className={styles.breadcrumbSep}>/</span>
           <span className={styles.breadcrumbCurrent}>{nounId}</span>
         </div>
@@ -346,12 +348,10 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
           <button
             className={styles.navButton}
             onClick={() => onNavigate(nounId + 1)}
+            disabled={maxNounId !== null && nounId >= maxNounId}
             title="Next Noun"
           >
             →
-          </button>
-          <button className={styles.exploreButton} onClick={onBack}>
-            EXPLORE
           </button>
         </div>
       </div>
