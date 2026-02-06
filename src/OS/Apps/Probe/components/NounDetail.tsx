@@ -2,15 +2,23 @@
  * NounDetail Component
  * Full-page Noun detail view inspired by probe.wtf
  * Background fills with the Noun's bg color, large image on right, info on left
+ * Shows live auction info + bid input when viewing the current auction Noun
  */
 
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useAccount } from 'wagmi';
+import { formatEther } from 'viem';
 import { NounImage } from '@/app/lib/nouns/components';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
 import { ImageData } from '@/app/lib/nouns/utils/image-data';
 import type { TraitType } from '@/app/lib/nouns/utils/trait-name-utils';
+import { useCurrentAuction, useAuctionTimeRemaining } from '@/app/lib/nouns/hooks';
+import { useBid } from '@/app/lib/nouns/hooks';
+import { useAuctionById, type Bid } from '@/OS/Apps/NounsAuction/hooks/useAuctionData';
+import { getMinimumNextBid, formatBidAmount } from '@/OS/Apps/NounsAuction/utils/auctionHelpers';
+import { getClientName, isBerryOSBid } from '@/OS/Apps/NounsAuction/utils/clientNames';
 import { useNounDetail, useNounOwner } from '../hooks/useNounDetail';
 import styles from './NounDetail.module.css';
 
@@ -26,7 +34,7 @@ function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-function formatBid(weiStr: string | null): string {
+function formatBidWei(weiStr: string | null): string {
   if (!weiStr || weiStr === '0') return '';
   const eth = Number(BigInt(weiStr)) / 1e18;
   return `Ξ ${eth.toFixed(2)}`;
@@ -51,17 +59,27 @@ function formatDateTime(dateStr: string): string {
   }
 }
 
+function formatBidTime(timestamp: string): string {
+  try {
+    const date = new Date(Number(timestamp) * 1000);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return '';
+  }
+}
+
 /**
  * Extract prominent colors from a Noun's traits for the color palette display
  */
 function getNounColors(noun: { background: number; body: number; head: number; glasses: number; accessory: number }): string[] {
   const colors: string[] = [];
-  
-  // Background color
   const bgHex = ImageData.bgcolors[noun.background];
   if (bgHex) colors.push(`#${bgHex}`);
-  
-  // Extract palette indices used by each trait part
+
   const parts = [
     ImageData.images.bodies[noun.body],
     ImageData.images.heads[noun.head],
@@ -69,7 +87,6 @@ function getNounColors(noun: { background: number; body: number; head: number; g
     ImageData.images.accessories[noun.accessory],
   ].filter(Boolean);
 
-  // Collect unique non-transparent colors from the first few rects of each part
   const seen = new Set<string>();
   if (bgHex) seen.add(bgHex);
 
@@ -79,7 +96,7 @@ function getNounColors(noun: { background: number; body: number; head: number; g
     const pairs = rects.match(/.{1,4}/g) || [];
     for (const pair of pairs) {
       const colorIndex = parseInt(pair.substring(2, 4), 16);
-      if (colorIndex === 0) continue; // transparent
+      if (colorIndex === 0) continue;
       const hex = ImageData.palette[colorIndex];
       if (hex && !seen.has(hex)) {
         seen.add(hex);
@@ -88,13 +105,173 @@ function getNounColors(noun: { background: number; body: number; head: number; g
       }
     }
   }
-
   return colors;
+}
+
+/**
+ * Live countdown display
+ */
+function AuctionCountdown({ endTime }: { endTime: bigint }) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const { hours, minutes, seconds, isEnded } = useAuctionTimeRemaining(endTime);
+
+  if (isEnded) return <span>ENDED</span>;
+  return <span>{hours}H {minutes}M {seconds}S</span>;
+}
+
+/**
+ * Bid input section for the current auction
+ */
+function BidSection({ nounId, currentBidWei }: { nounId: number; currentBidWei: bigint }) {
+  const { isConnected } = useAccount();
+  const { placeBid, isPending, isConfirming, isSuccess, error } = useBid();
+  const [bidAmount, setBidAmount] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const minBidWei = getMinimumNextBid(currentBidWei);
+  const minBidEth = Number(formatEther(minBidWei)).toFixed(4);
+
+  const handleBid = () => {
+    if (!bidAmount || parseFloat(bidAmount) <= 0) {
+      setValidationError('Enter a valid bid amount');
+      return;
+    }
+    if (parseFloat(bidAmount) < parseFloat(minBidEth)) {
+      setValidationError(`Minimum bid: Ξ ${minBidEth}`);
+      return;
+    }
+    setValidationError(null);
+    try {
+      placeBid(BigInt(nounId), bidAmount);
+      setBidAmount('');
+    } catch {
+      setValidationError('Invalid bid amount');
+    }
+  };
+
+  if (!isConnected) {
+    return (
+      <div className={styles.bidSection}>
+        <button className={styles.bidButtonFull} disabled>
+          LOGIN TO BID
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.bidSection}>
+      <div className={styles.bidInputRow}>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder={`Ξ ${minBidEth} OR MORE`}
+          value={bidAmount}
+          onChange={(e) => setBidAmount(e.target.value)}
+          disabled={isPending || isConfirming}
+          className={styles.bidInput}
+        />
+        <button
+          onClick={handleBid}
+          disabled={isPending || isConfirming || !bidAmount}
+          className={styles.bidButton}
+        >
+          {isPending || isConfirming ? '...' : 'BID'}
+        </button>
+      </div>
+      {validationError && <div className={styles.bidError}>{validationError}</div>}
+      {isSuccess && <div className={styles.bidSuccess}>Bid placed!</div>}
+      {error && <div className={styles.bidError}>{error.message || 'Transaction failed'}</div>}
+    </div>
+  );
+}
+
+/**
+ * Modal displaying all bids for the current auction
+ */
+function BidsModal({ bids, onClose }: { bids: Bid[]; onClose: () => void }) {
+  // Close on Escape
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>ALL BIDS</h2>
+          <button className={styles.modalClose} onClick={onClose}>×</button>
+        </div>
+        <div className={styles.modalBody}>
+          {bids.length === 0 ? (
+            <div className={styles.modalEmpty}>No bids yet</div>
+          ) : (
+            bids.map((bid) => {
+              const clientName = getClientName(bid.clientId);
+              const isBerry = isBerryOSBid(bid.clientId);
+              const time = formatBidTime(bid.blockTimestamp);
+
+              return (
+                <div key={bid.id} className={styles.modalBidRow}>
+                  <span className={styles.modalBidAmount}>
+                    Ξ {formatBidAmount(bid.amount)}
+                  </span>
+                  <span className={styles.modalBidSecondary}> BY </span>
+                  <span className={styles.modalBidAddress}>
+                    {truncateAddress(bid.bidder.id)}
+                  </span>
+                  {clientName && (
+                    <>
+                      <span className={styles.modalBidSecondary}> VIA </span>
+                      <span className={isBerry ? styles.modalBidBerry : styles.modalBidClient}>
+                        {clientName.toUpperCase()}
+                      </span>
+                    </>
+                  )}
+                  {time && (
+                    <span className={styles.modalBidTime}> ({time})</span>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: NounDetailProps) {
   const { data: noun, isLoading, error } = useNounDetail(nounId);
   const { data: owner } = useNounOwner(nounId);
+  const { auction } = useCurrentAuction();
+  const [showBidsModal, setShowBidsModal] = useState(false);
+
+  // Check if this Noun is the one currently at auction
+  const isCurrentAuction = auction && Number(auction.nounId) === nounId && !auction.settled;
+
+  // Fetch bids from Goldsky subgraph (only when viewing the current auction noun)
+  const { data: auctionData } = useAuctionById(isCurrentAuction ? String(nounId) : null);
+  const bids = auctionData?.auction?.bids ?? [];
+
+  // Reset modal when navigating to a different noun
+  useEffect(() => {
+    setShowBidsModal(false);
+  }, [nounId]);
+
+  const handleOpenBids = useCallback(() => setShowBidsModal(true), []);
+  const handleCloseBids = useCallback(() => setShowBidsModal(false), []);
 
   const traits = useMemo(() => {
     if (!noun) return null;
@@ -144,6 +321,10 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
     );
   }
 
+  const currentBidEth = isCurrentAuction
+    ? `Ξ ${Number(formatEther(auction.amount)).toFixed(2)}`
+    : null;
+
   return (
     <div className={styles.container} style={bgColor ? { background: bgColor } as React.CSSProperties : undefined}>
       {/* Top navigation bar */}
@@ -181,7 +362,7 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
         <div className={styles.infoSection}>
           <h1 className={styles.title}>NOUN {nounId}</h1>
 
-          {/* Auction / settlement info */}
+          {/* Auction info (live) or settlement info (historical) */}
           <div className={styles.infoBlock}>
             {noun.settled_by_address && (
               <div className={styles.infoRow}>
@@ -196,27 +377,61 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
                 )}
               </div>
             )}
-            {noun.winning_bid && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>WINNING BID: </span>
-                <span className={styles.infoValue}>{formatBid(noun.winning_bid)}</span>
-                {noun.winner_address && (
-                  <>
-                    <span className={styles.infoSecondary}> BY </span>
-                    <span className={styles.infoLink}>
-                      {noun.winner_ens || truncateAddress(noun.winner_address)}
-                    </span>
-                  </>
+
+            {isCurrentAuction ? (
+              <>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>AUCTION ENDS IN: </span>
+                  <span className={styles.infoValue}>
+                    <AuctionCountdown endTime={auction.endTime} />
+                  </span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>CURRENT BID: </span>
+                  <span className={styles.infoValue}>{currentBidEth}</span>
+                  {auction.bidder && auction.bidder !== '0x0000000000000000000000000000000000000000' && (
+                    <>
+                      <span className={styles.infoSecondary}> BY </span>
+                      <span className={styles.infoLink}>{truncateAddress(auction.bidder)}</span>
+                    </>
+                  )}
+                </div>
+                <div className={styles.infoRow}>
+                  <button className={styles.seeAllBids} onClick={handleOpenBids}>
+                    SEE ALL BIDS
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {noun.winning_bid && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>WINNING BID: </span>
+                    <span className={styles.infoValue}>{formatBidWei(noun.winning_bid)}</span>
+                    {noun.winner_address && (
+                      <>
+                        <span className={styles.infoSecondary}> BY </span>
+                        <span className={styles.infoLink}>
+                          {noun.winner_ens || truncateAddress(noun.winner_address)}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-            {owner && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>CURRENT OWNER: </span>
-                <span className={styles.infoLink}>{truncateAddress(owner)}</span>
-              </div>
+                {owner && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>CURRENT OWNER: </span>
+                    <span className={styles.infoLink}>{truncateAddress(owner)}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
+
+          {/* Bid input (only for current auction) */}
+          {isCurrentAuction && (
+            <BidSection nounId={nounId} currentBidWei={auction.amount} />
+          )}
 
           {/* Color palette */}
           {colors.length > 0 && (
@@ -279,6 +494,11 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
           )}
         </div>
       </div>
+
+      {/* Bids modal (centered in Probe window) */}
+      {showBidsModal && (
+        <BidsModal bids={bids} onClose={handleCloseBids} />
+      )}
     </div>
   );
 }

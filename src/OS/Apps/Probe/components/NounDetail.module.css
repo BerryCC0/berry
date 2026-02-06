@@ -9,12 +9,13 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  font-family: var(--berry-font-system);
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
   overflow: hidden;
   /* Default bg; overridden inline with Noun's background color */
   background: var(--berry-bg);
   /* Dark text for readability on Noun bg colors */
   color: #1a1a1a;
+  position: relative;
 }
 
 /* ── Top navigation bar ── */
@@ -84,7 +85,7 @@
   border: none;
   border-radius: 3px;
   color: #1a1a1a;
-  font-family: var(--berry-font-system);
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -102,25 +103,25 @@
 .content {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 3fr;
   overflow: hidden;
   min-height: 0;
 }
 
 /* ── Left: Info section ── */
 .infoSection {
-  padding: 32px 32px 32px 40px;
+  padding: 48px 32px 32px 40px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .title {
-  font-family: var(--berry-font-system);
-  font-size: 32px;
-  font-weight: 900;
-  letter-spacing: 1px;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0;
   margin: 0;
   color: #000;
 }
@@ -133,11 +134,12 @@
 }
 
 .infoRow {
-  font-size: 11px;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.2px;
   text-transform: uppercase;
-  line-height: 1.7;
+  line-height: 1.8;
   color: #1a1a1a;
 }
 
@@ -167,6 +169,273 @@
   text-transform: uppercase;
 }
 
+/* ── See all bids link ── */
+.seeAllBids {
+  background: none;
+  border: none;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s;
+}
+
+.seeAllBids:hover {
+  opacity: 0.6;
+}
+
+/* ── Bids modal ── */
+.modalOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.modalContent {
+  background: #fff;
+  border: 3px solid #000;
+  width: 90%;
+  max-width: 480px;
+  max-height: 70%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 2px solid #000;
+}
+
+.modalTitle {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #000;
+  margin: 0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #000;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.modalClose:hover {
+  opacity: 1;
+}
+
+.modalBody {
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modalEmpty {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 13px;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.modalBidRow {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.9;
+  color: #1a1a1a;
+}
+
+.modalBidAmount {
+  color: #000;
+}
+
+.modalBidSecondary {
+  opacity: 0.4;
+  font-weight: 400;
+}
+
+.modalBidAddress {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.modalBidClient {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+.modalBidBerry {
+  color: #e040fb;
+  font-weight: 700;
+}
+
+.modalBidTime {
+  opacity: 0.4;
+  font-weight: 400;
+}
+
+/* ── Bid section (current auction only) ── */
+.bidSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bidInputRow {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.bidInput {
+  flex: 1;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 0;
+  background: #fff;
+  color: #1a1a1a;
+  outline: none;
+  min-width: 0;
+}
+
+.bidInput::placeholder {
+  color: #999;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.bidInput:focus {
+  border-color: #999;
+}
+
+.bidInput:disabled {
+  opacity: 0.5;
+}
+
+/* Hide number input spinners */
+.bidInput::-webkit-outer-spin-button,
+.bidInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bidInput[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.bidButton {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding: 10px 28px;
+  background: #fadf16;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  white-space: nowrap;
+  position: relative;
+  box-shadow: 4px 4px 0 #000;
+  transition: box-shadow 0.1s, transform 0.1s;
+}
+
+.bidButton:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #000;
+}
+
+.bidButton:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.bidButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bidButtonFull {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding: 12px 32px;
+  background: #fadf16;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-align: center;
+  box-shadow: 4px 4px 0 #000;
+  transition: box-shadow 0.1s, transform 0.1s;
+}
+
+.bidButtonFull:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #000;
+}
+
+.bidButtonFull:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.bidButtonFull:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.bidError {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.bidSuccess {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
 /* ── Color palette ── */
 .colorsSection {
   display: flex;
@@ -175,7 +444,7 @@
 }
 
 .colorsTitle {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -189,8 +458,8 @@
 }
 
 .swatch {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
 }
 
@@ -210,7 +479,7 @@
 }
 
 .traitsTitle {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -222,9 +491,9 @@
 .traitRow {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 1.8;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.9;
 }
 
 .traitLabel {
@@ -232,18 +501,18 @@
   letter-spacing: 0.3px;
   color: #000;
   text-transform: uppercase;
-  font-size: 11px;
-  min-width: 100px;
+  font-size: 13px;
+  min-width: 110px;
 }
 
 .traitLink {
   background: none;
   border: none;
   color: #2563eb;
-  font-family: var(--berry-font-system);
-  font-size: 12px;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0;
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
