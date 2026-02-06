@@ -57,9 +57,16 @@ function escapeRegex(str: string): string {
 export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: CandidateDetailViewProps) {
   const { address, isConnected } = useAccount();
   const { data: candidate, isLoading, error, refetch } = useCandidate(proposer, slug);
+  
+  // Use actual proposer from candidate data (handles clean URLs where proposer prop is empty)
+  const actualProposer = candidate?.proposer || proposer;
+  
   const { data: ensName } = useEnsName({
-    address: proposer as `0x${string}`,
+    address: actualProposer as `0x${string}`,
     chainId: mainnet.id,
+    query: {
+      enabled: !!actualProposer,
+    },
   });
   
   const {
@@ -87,12 +94,15 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
     functionName: 'proposalThreshold',
   });
 
-  // Get proposer's voting power
+  // Get proposer's voting power (use actualProposer from candidate data)
   const { data: proposerVotingPower } = useReadContract({
     address: NOUNS_CONTRACTS.token.address,
     abi: NOUNS_CONTRACTS.token.abi,
     functionName: 'getCurrentVotes',
-    args: [proposer as `0x${string}`],
+    args: actualProposer ? [actualProposer as `0x${string}`] : undefined,
+    query: {
+      enabled: !!actualProposer,
+    },
   });
 
   const {
@@ -128,7 +138,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
 
   const handleSignal = async (support: 0 | 1 | 2) => {
     try {
-      await sendCandidateSignal(proposer, slug, support, signalReason);
+      await sendCandidateSignal(actualProposer, slug, support, signalReason);
     } catch (err) {
       console.error('Failed to send signal:', err);
     }
@@ -137,10 +147,10 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
   // Automatic simulation
   const simulation = useSimulation(candidate?.actions);
 
-  const proposerDisplay = ensName || `${proposer.slice(0, 6)}...${proposer.slice(-4)}`;
+  const proposerDisplay = ensName || (actualProposer ? `${actualProposer.slice(0, 6)}...${actualProposer.slice(-4)}` : '...');
   
   // Check if connected user is the candidate owner
-  const isOwner = isConnected && address?.toLowerCase() === proposer.toLowerCase();
+  const isOwner = isConnected && actualProposer && address?.toLowerCase() === actualProposer.toLowerCase();
   const isCanceled = candidate?.canceled === true;
 
   // Calculate voting power for promotion eligibility
@@ -157,7 +167,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
 
   const handleEdit = () => {
     // Navigate to create view with edit mode
-    onNavigate(`create/edit/${proposer}/${slug}`);
+    onNavigate(`create/edit/${actualProposer}/${slug}`);
   };
 
   const handleCancelClick = () => {
@@ -329,7 +339,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
           <span className={styles.metaLabel}>Proposer</span>
           <span 
             className={styles.metaValue}
-            onClick={() => onNavigate(`voter/${proposer}`)}
+            onClick={() => onNavigate(`voter/${actualProposer}`)}
             style={{ cursor: 'pointer' }}
           >
             {proposerDisplay}
@@ -350,7 +360,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
           {/* Sponsors Panel */}
           <SponsorsPanel
             signatures={candidate.signatures || []}
-            proposer={proposer}
+            proposer={actualProposer}
             threshold={threshold}
             onNavigate={onNavigate}
             onSponsorVotesChange={setTotalSponsorVotes}

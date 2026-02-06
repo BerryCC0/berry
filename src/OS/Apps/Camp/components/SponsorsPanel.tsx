@@ -178,7 +178,10 @@ export function SponsorsPanel({
     address: NOUNS_CONTRACTS.token.address,
     abi: NOUNS_CONTRACTS.token.abi,
     functionName: 'getCurrentVotes',
-    args: [proposer as `0x${string}`],
+    args: proposer ? [proposer as `0x${string}`] : undefined,
+    query: {
+      enabled: !!proposer,
+    },
   });
 
   const proposerVotes = proposerVotingPower ? Number(proposerVotingPower) : 0;
