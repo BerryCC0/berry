@@ -18,6 +18,72 @@ import { DelegateModal } from '../components/DelegateModal';
 import styles from './VoterDetailView.module.css';
 
 /**
+ * Estimate current block number
+ * Block 19,000,000 was Jan 17, 2024 (timestamp 1705500000)
+ * ~12 seconds per block since then
+ */
+function estimateCurrentBlock(): number {
+  const referenceBlock = 19000000;
+  const referenceTimestamp = 1705500000;
+  const secondsSinceReference = Math.floor(Date.now() / 1000) - referenceTimestamp;
+  const blocksSinceReference = Math.floor(secondsSinceReference / 12);
+  return referenceBlock + blocksSinceReference;
+}
+
+/**
+ * Calculate proposal status badge based on votes and block status
+ */
+function getProposalStatusBadge(
+  status: string,
+  forVotes: string,
+  againstVotes: string,
+  quorumVotes: string,
+  endBlock: string,
+  currentBlock: number
+): { label: string; className: string } | null {
+  const forVotesNum = Number(forVotes);
+  const againstVotesNum = Number(againstVotes);
+  const quorum = Number(quorumVotes) || 1;
+  
+  const isPending = ['PENDING', 'UPDATABLE'].includes(status);
+  const isQueued = status === 'QUEUED';
+  const isExecuted = status === 'EXECUTED';
+  const isCancelled = status === 'CANCELLED';
+  const isVetoed = status === 'VETOED';
+  
+  // Check if voting period has ended
+  const votingEnded = Number(endBlock) <= currentBlock;
+  
+  // isActive means status is ACTIVE/OBJECTION_PERIOD AND voting hasn't ended yet
+  const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(status) && !votingEnded;
+  
+  // Defeated: didn't meet quorum OR more against than for
+  const isDefeated = status === 'DEFEATED' || (
+    votingEnded && 
+    !isQueued && !isExecuted && !isCancelled && !isVetoed &&
+    (forVotesNum < quorum || againstVotesNum > forVotesNum)
+  );
+  
+  // Succeeded: voting ended, met quorum, more for than against
+  const isSucceeded = status === 'SUCCEEDED' || (
+    votingEnded &&
+    !isQueued && !isExecuted && !isCancelled && !isVetoed && !isDefeated &&
+    forVotesNum >= quorum && forVotesNum > againstVotesNum
+  );
+  
+  // Determine status - order matters!
+  if (isExecuted) return { label: 'EXECUTED', className: 'statusEXECUTED' };
+  if (isCancelled) return { label: 'CANCELLED', className: 'statusCANCELLED' };
+  if (isVetoed) return { label: 'VETOED', className: 'statusVETOED' };
+  if (isQueued) return { label: 'QUEUED', className: 'statusQUEUED' };
+  if (isDefeated) return { label: 'DEFEATED', className: 'statusDEFEATED' };
+  if (isSucceeded) return { label: 'SUCCEEDED', className: 'statusSUCCEEDED' };
+  if (isActive) return { label: 'ACTIVE', className: 'statusACTIVE' };
+  if (isPending) return { label: 'PENDING', className: 'statusPENDING' };
+  return null;
+}
+
+/**
  * Check if input looks like an ENS name (not a hex address)
  */
 function isEnsName(input: string): boolean {
@@ -41,7 +107,7 @@ function AddressLink({
   onClick 
 }: { 
   address: string; 
-  onClick?: () => void;
+  onClick?: (e?: React.MouseEvent) => void;
 }) {
   const { data: ensName } = useEnsName({
     address: address as `0x${string}`,
@@ -50,10 +116,16 @@ function AddressLink({
   
   const displayName = ensName || `${address.slice(0, 6)}...${address.slice(-4)}`;
   
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      onClick(e);
+    }
+  };
+  
   return (
     <span 
       className={styles.addressLink} 
-      onClick={onClick}
+      onClick={handleClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
@@ -70,6 +142,9 @@ type TabType = 'proposals' | 'candidates' | 'sponsored';
 export function VoterDetailView({ address: addressInput, onNavigate, onBack, showBackButton = true, isOwnAccount = false }: VoterDetailViewProps) {
   const [showDelegateModal, setShowDelegateModal] = useState(false);
   const [activityFilter, setActivityFilter] = useState<'all' | 'with-reason'>('all');
+  
+  // Estimate current block for status calculations
+  const currentBlock = useMemo(() => estimateCurrentBlock(), []);
   const [activeTab, setActiveTab] = useState<TabType>('proposals');
   
   // Determine if input is ENS name or address
@@ -286,45 +361,57 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
                   {proposals.length === 0 ? (
                     <div className={styles.emptyTab}>No proposals</div>
                   ) : (
-                    proposals.map((prop) => (
-                      <div
-                        key={prop.id}
-                        className={styles.proposalItem}
-                        onClick={() => onNavigate(`proposal/${prop.id}`)}
-                      >
-                        <div className={styles.proposalHeader}>
-                          <span className={styles.proposalId}>Prop {prop.id}</span>
-                          <span className={styles.proposalSponsors}>
-                            {prop.signers.length > 0 && (
-                              <>sponsored by {prop.signers.slice(0, 2).map((s, i) => (
-                                <span key={s}>
-                                  {i > 0 && ', '}
-                                  <AddressLink address={s} />
-                                </span>
-                              ))}
-                              {prop.signers.length > 2 && ` +${prop.signers.length - 2}`}
-                              </>
+                    proposals.map((prop) => {
+                      const statusBadge = getProposalStatusBadge(
+                        prop.status,
+                        prop.forVotes,
+                        prop.againstVotes,
+                        prop.quorumVotes,
+                        prop.endBlock,
+                        currentBlock
+                      );
+                      return (
+                        <div
+                          key={prop.id}
+                          className={styles.proposalItem}
+                          onClick={() => onNavigate(`proposal/${prop.id}`)}
+                        >
+                          <div className={styles.proposalHeader}>
+                            <span className={styles.proposalId}>Prop {prop.id}</span>
+                            <span className={styles.proposalSponsors}>
+                              {prop.signers.length > 0 && (
+                                <>sponsored by {prop.signers.slice(0, 2).map((s, i) => (
+                                  <span key={s}>
+                                    {i > 0 && ', '}
+                                    <AddressLink address={s} />
+                                  </span>
+                                ))}
+                                {prop.signers.length > 2 && ` +${prop.signers.length - 2}`}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                          <div className={styles.proposalTitle}>{prop.title}</div>
+                          <div className={styles.proposalMeta}>
+                            <span className={styles.proposalDate}>
+                              {new Date(Number(prop.createdTimestamp) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <span className={styles.proposalVotes}>
+                              {prop.forVotes} ↑ / {prop.quorumVotes}
+                              <span style={{ margin: '0 4px' }}>·</span>
+                              {prop.abstainVotes}
+                              <span style={{ margin: '0 4px' }}>·</span>
+                              {prop.againstVotes} ↓
+                            </span>
+                            {statusBadge && (
+                              <span className={`${styles.proposalStatus} ${styles[statusBadge.className]}`}>
+                                {statusBadge.label}
+                              </span>
                             )}
-                          </span>
+                          </div>
                         </div>
-                        <div className={styles.proposalTitle}>{prop.title}</div>
-                        <div className={styles.proposalMeta}>
-                          <span className={styles.proposalDate}>
-                            {new Date(Number(prop.createdTimestamp) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </span>
-                          <span className={styles.proposalVotes}>
-                            {prop.forVotes} ↑ / {prop.quorumVotes}
-                            <span style={{ margin: '0 4px' }}>·</span>
-                            {prop.abstainVotes}
-                            <span style={{ margin: '0 4px' }}>·</span>
-                            {prop.againstVotes} ↓
-                          </span>
-                          <span className={`${styles.proposalStatus} ${styles[`status${prop.status}`]}`}>
-                            {prop.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -338,7 +425,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
                       <div
                         key={cand.id}
                         className={styles.candidateItem}
-                        onClick={() => onNavigate(`candidate/${cand.slug}`)}
+                        onClick={() => onNavigate(`c/${cand.slug}`)}
                       >
                         <div className={styles.candidateTitle}>{cand.title}</div>
                         <div className={styles.candidateMeta}>
@@ -353,30 +440,52 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
               )}
 
               {activeTab === 'sponsored' && (
-                <div className={styles.sponsoredList}>
+                <div className={styles.proposalsList}>
                   {sponsored.length === 0 ? (
-                    <div className={styles.emptyTab}>No sponsored candidates</div>
+                    <div className={styles.emptyTab}>No sponsored proposals</div>
                   ) : (
-                    sponsored.map((sp) => (
-                      <div
-                        key={sp.id}
-                        className={styles.sponsoredItem}
-                        onClick={() => onNavigate(`candidate/${sp.slug}`)}
-                      >
-                        <div className={styles.sponsoredTitle}>{sp.title}</div>
-                        <div className={styles.sponsoredMeta}>
-                          <span className={styles.sponsoredProposer}>
-                            by <AddressLink address={sp.proposer} onClick={() => onNavigate(`voter/${sp.proposer}`)} />
-                          </span>
-                          <span className={styles.sponsoredDate}>
-                            {new Date(Number(sp.signedAt) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </span>
+                    sponsored.map((sp) => {
+                      const statusBadge = getProposalStatusBadge(
+                        sp.status,
+                        sp.forVotes,
+                        sp.againstVotes,
+                        sp.quorumVotes,
+                        sp.endBlock,
+                        currentBlock
+                      );
+                      return (
+                        <div
+                          key={sp.id}
+                          className={styles.proposalItem}
+                          onClick={() => onNavigate(`proposal/${sp.id}`)}
+                        >
+                          <div className={styles.proposalHeader}>
+                            <span className={styles.proposalId}>Prop {sp.id}</span>
+                            <span className={styles.proposalSponsors}>
+                              proposed by <AddressLink address={sp.proposer} onClick={(e) => { e?.stopPropagation(); onNavigate(`voter/${sp.proposer}`); }} />
+                            </span>
+                          </div>
+                          <div className={styles.proposalTitle}>{sp.title}</div>
+                          <div className={styles.proposalMeta}>
+                            <span className={styles.proposalDate}>
+                              {new Date(Number(sp.createdTimestamp) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <span className={styles.proposalVotes}>
+                              {sp.forVotes} ↑ / {sp.quorumVotes}
+                              <span style={{ margin: '0 4px' }}>·</span>
+                              {sp.abstainVotes}
+                              <span style={{ margin: '0 4px' }}>·</span>
+                              {sp.againstVotes} ↓
+                            </span>
+                            {statusBadge && (
+                              <span className={`${styles.proposalStatus} ${styles[statusBadge.className]}`}>
+                                {statusBadge.label}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        {sp.reason && (
-                          <div className={styles.sponsoredReason}>{sp.reason}</div>
-                        )}
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               )}

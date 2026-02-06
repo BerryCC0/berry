@@ -134,26 +134,28 @@ export function CrystalBall({}: AppComponentProps) {
         </div>
       </div>
 
-      {/* Settle Button */}
+      {/* Settle Button / Countdown */}
       <div className={styles.settleSection}>
-        {!isConnected ? (
-          <p className={styles.connectMessage}>Connect wallet to settle</p>
-        ) : canSettle ? (
-          <>
-            <button
-              className={styles.settleButton}
-              onClick={handleSettle}
-              disabled={isPending || isConfirming}
-            >
-              {isPending || isConfirming ? "Settling..." : "Settle Auction"}
-            </button>
-            {error && (
-              <p className={styles.error}>{error.message || "Transaction failed"}</p>
-            )}
-            {isSuccess && (
-              <p className={styles.success}>Auction settled!</p>
-            )}
-          </>
+        {canSettle ? (
+          isConnected ? (
+            <>
+              <button
+                className={styles.settleButton}
+                onClick={handleSettle}
+                disabled={isPending || isConfirming}
+              >
+                {isPending || isConfirming ? "Settling..." : "Settle Auction"}
+              </button>
+              {error && (
+                <p className={styles.error}>{error.message || "Transaction failed"}</p>
+              )}
+              {isSuccess && (
+                <p className={styles.success}>Auction settled!</p>
+              )}
+            </>
+          ) : (
+            <p className={styles.connectMessage}>Connect wallet to settle</p>
+          )
         ) : (
           <div className={styles.countdown}>
             <span className={styles.countdownTime}>{countdown}</span>

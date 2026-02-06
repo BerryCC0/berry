@@ -59,11 +59,13 @@ function VoterIdentity({ address }: { address: string }) {
   );
 }
 
+type DigestTab = 'digest' | 'proposals' | 'candidates' | 'voters';
+
 interface DigestProps {
   onNavigate: (path: string) => void;
+  activeTab?: DigestTab;
+  onTabChange?: (tab: DigestTab) => void;
 }
-
-type DigestTab = 'digest' | 'proposals' | 'candidates' | 'voters';
 
 /**
  * Format relative time (e.g., "Ends in 5 hours", "Starts in 2 days")
@@ -117,10 +119,14 @@ interface DigestSection {
   collapsed: boolean;
 }
 
-export function Digest({ onNavigate }: DigestProps) {
+export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: DigestProps) {
   const { address } = useAccount();
-  const [activeTab, setActiveTab] = useState<DigestTab>('digest');
+  const [internalTab, setInternalTab] = useState<DigestTab>('digest');
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['ongoing']));
+  
+  // Use controlled state if provided, otherwise use internal state
+  const activeTab = controlledTab ?? internalTab;
+  const setActiveTab = onTabChange ?? setInternalTab;
   
   // Fetch data
   const { data: proposals, isLoading: proposalsLoading, error: proposalsError } = useProposals(50, 'all', 'newest');

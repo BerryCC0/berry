@@ -84,6 +84,8 @@ const VOTER_QUERY = `
       againstVotes
       abstainVotes
       quorumVotes
+      startBlock
+      endBlock
       createdTimestamp
       signers {
         id
@@ -103,29 +105,27 @@ const VOTER_QUERY = `
   }
 `;
 
+// Query proposals where this address is a signer (sponsored the candidate that became this proposal)
 const SPONSORED_QUERY = `
   query Sponsored($signer: String!) {
-    proposalCandidateSignatures(
-      where: { signer: $signer, canceled: false }
+    proposals(
+      where: { signers_: { id: $signer } }
       orderBy: createdTimestamp
       orderDirection: desc
       first: 50
     ) {
       id
+      title
+      status
+      proposer { id }
+      signers { id }
+      forVotes
+      againstVotes
+      abstainVotes
+      quorumVotes
+      startBlock
+      endBlock
       createdTimestamp
-      reason
-      content {
-        proposalCandidate {
-          id
-          slug
-          proposer
-          latestVersion {
-            content {
-              title
-            }
-          }
-        }
-      }
     }
   }
 `;
@@ -182,6 +182,8 @@ interface ProposalSummary {
   againstVotes: string;
   abstainVotes: string;
   quorumVotes: string;
+  startBlock: string;
+  endBlock: string;
   createdTimestamp: string;
   signers: string[];
 }
@@ -194,13 +196,18 @@ interface CandidateSummary {
   createdTimestamp: string;
 }
 
-interface SponsoredCandidate {
+interface SponsoredProposal {
   id: string;
-  slug: string;
-  proposer: string;
   title: string;
-  signedAt: string;
-  reason: string;
+  status: string;
+  proposer: string;
+  forVotes: string;
+  againstVotes: string;
+  abstainVotes: string;
+  quorumVotes: string;
+  startBlock: string;
+  endBlock: string;
+  createdTimestamp: string;
 }
 
 interface VoterResult extends Voter {
@@ -210,10 +217,10 @@ interface VoterResult extends Voter {
   delegators: string[];
   proposals: ProposalSummary[];
   candidates: CandidateSummary[];
-  sponsored: SponsoredCandidate[];
+  sponsored: SponsoredProposal[];
 }
 
-async function fetchSponsored(address: string): Promise<SponsoredCandidate[]> {
+async function fetchSponsored(address: string): Promise<SponsoredProposal[]> {
   const response = await fetch(GOLDSKY_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -224,20 +231,25 @@ async function fetchSponsored(address: string): Promise<SponsoredCandidate[]> {
   });
 
   const json = await response.json();
-  if (json.errors) return [];
+  if (json.errors) {
+    console.error('Sponsored query error:', json.errors);
+    return [];
+  }
   
-  const signatures = json.data?.proposalCandidateSignatures || [];
-  return signatures.map((sig: any) => {
-    const candidate = sig.content?.proposalCandidate;
-    return {
-      id: candidate?.id || sig.id,
-      slug: candidate?.slug || '',
-      proposer: candidate?.proposer || '',
-      title: candidate?.latestVersion?.content?.title || 'Untitled',
-      signedAt: sig.createdTimestamp,
-      reason: sig.reason || '',
-    };
-  }).filter((s: SponsoredCandidate) => s.slug); // Filter out invalid entries
+  const proposals = json.data?.proposals || [];
+  return proposals.map((p: any) => ({
+    id: p.id,
+    title: p.title || 'Untitled Proposal',
+    status: p.status,
+    proposer: p.proposer?.id || '',
+    forVotes: p.forVotes,
+    againstVotes: p.againstVotes,
+    abstainVotes: p.abstainVotes,
+    quorumVotes: p.quorumVotes,
+    startBlock: p.startBlock,
+    endBlock: p.endBlock,
+    createdTimestamp: p.createdTimestamp,
+  }));
 }
 
 async function fetchVoter(address: string): Promise<VoterResult> {
@@ -284,6 +296,8 @@ async function fetchVoter(address: string): Promise<VoterResult> {
     againstVotes: p.againstVotes,
     abstainVotes: p.abstainVotes,
     quorumVotes: p.quorumVotes,
+    startBlock: p.startBlock,
+    endBlock: p.endBlock,
     createdTimestamp: p.createdTimestamp,
     signers: (p.signers || []).map((s: { id: string }) => s.id),
   }));

@@ -41,6 +41,7 @@ interface CampInitialState {
 }
 
 type TabId = 'activity' | 'proposals' | 'candidates' | 'voters' | 'account' | 'create';
+type DigestTabId = 'digest' | 'proposals' | 'candidates' | 'voters';
 
 export function Camp({ windowId, initialState, onStateChange }: AppComponentProps) {
   const { t } = useTranslation();
@@ -55,6 +56,9 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
   const [route, setRoute] = useState<CampRoute>(() => parseRoute(campState?.path));
   const [history, setHistory] = useState<CampRoute[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  
+  // Persist Digest tab selection across navigation
+  const [digestTab, setDigestTab] = useState<DigestTabId>('digest');
 
   // Update route when initialState changes (deep link)
   useEffect(() => {
@@ -149,7 +153,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
   const renderView = () => {
     switch (route.view) {
       case 'activity':
-        return <ActivityView onNavigate={navigate} />;
+        return <ActivityView onNavigate={navigate} digestTab={digestTab} onDigestTabChange={setDigestTab} />;
       
       case 'proposals':
         return <ProposalListView onNavigate={navigate} />;

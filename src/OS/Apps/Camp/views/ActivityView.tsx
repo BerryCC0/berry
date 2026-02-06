@@ -12,11 +12,15 @@ import { useActivityFeed } from '../hooks';
 import { ActivityItem, Digest } from '../components';
 import styles from './ActivityView.module.css';
 
+type DigestTabId = 'digest' | 'proposals' | 'candidates' | 'voters';
+
 interface ActivityViewProps {
   onNavigate: (path: string) => void;
+  digestTab?: DigestTabId;
+  onDigestTabChange?: (tab: DigestTabId) => void;
 }
 
-export function ActivityView({ onNavigate }: ActivityViewProps) {
+export function ActivityView({ onNavigate, digestTab, onDigestTabChange }: ActivityViewProps) {
   const { data: activities, isLoading, error } = useActivityFeed(50);
 
   /**
@@ -70,7 +74,7 @@ export function ActivityView({ onNavigate }: ActivityViewProps) {
         
         {/* Right column: Digest (desktop only) */}
       <div className={styles.digestColumn}>
-        <Digest onNavigate={onNavigate} />
+        <Digest onNavigate={onNavigate} activeTab={digestTab} onTabChange={onDigestTabChange} />
       </div>
     </div>
   );
