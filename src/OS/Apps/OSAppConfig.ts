@@ -24,6 +24,7 @@ const Camp = lazy(() => import("./Camp/Camp").then(m => ({ default: m.Camp })));
 const Treasury = lazy(() => import("./Treasury/Treasury").then(m => ({ default: m.Treasury })));
 const Nounspot = lazy(() => import("./Nounspot/Nounspot").then(m => ({ default: m.Nounspot })));
 const CrystalBall = lazy(() => import("./CrystalBall/CrystalBall").then(m => ({ default: m.CrystalBall })));
+const Probe = lazy(() => import("./Probe/Probe").then(m => ({ default: m.Probe })));
 
 /**
  * Finder - File browser
@@ -247,8 +248,7 @@ const campConfig: AppConfig = {
   singleton: true,
   showInDock: true,
   window: {
-    x: 20,
-    y: 32,
+    position: "top-left",
     width: 1100,
     height: 750,
     minWidth: 600,
@@ -315,8 +315,7 @@ const crystalBallConfig: AppConfig = {
   singleton: true,
   showInDock: true,
   window: {
-    x: 1000,
-    y: 200,
+    position: "bottom-right",
     width: 306,
     height: 560,
     minWidth: 306,
@@ -325,6 +324,29 @@ const crystalBallConfig: AppConfig = {
   },
   permissions: ["network"],
   component: CrystalBall,
+};
+
+/**
+ * Probe - Nouns explorer
+ * Browse all Nouns with trait filtering and detail views
+ */
+const probeConfig: AppConfig = {
+  id: "probe",
+  name: "Probe",
+  icon: getIcon("probe"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    position: "top-right",
+    width: 1100,
+    height: 750,
+    minWidth: 600,
+    minHeight: 450,
+    isResizable: true,
+  },
+  permissions: ["network"],
+  component: Probe,
 };
 
 /**
@@ -347,6 +369,7 @@ export const osAppConfigs: AppConfig[] = [
   treasuryConfig,
   nounspotConfig,
   crystalBallConfig,
+  probeConfig,
 ];
 
 /**

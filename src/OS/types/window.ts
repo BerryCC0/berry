@@ -3,6 +3,18 @@
  * Defines window state and configuration
  */
 
+/**
+ * Named position presets for viewport-responsive window placement.
+ * Resolved to pixel coordinates at launch time based on current viewport.
+ */
+export type WindowPositionPreset =
+  | 'center'        // Centered in viewport
+  | 'top-left'      // Top-left with padding
+  | 'top-right'     // Top-right with padding
+  | 'bottom-left'   // Bottom-left above dock
+  | 'bottom-right'  // Bottom-right above dock
+  | 'cascade';      // Default cascade behavior
+
 export interface WindowPosition {
   x: number;
   y: number;
@@ -55,7 +67,8 @@ export interface WindowConfig {
   icon: string;
 
   // Initial position & size
-  x?: number;
+  position?: WindowPositionPreset; // Preferred: viewport-responsive preset
+  x?: number;                      // Override: exact pixel position
   y?: number;
   width: number;
   height: number;

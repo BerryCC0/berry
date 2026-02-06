@@ -1,0 +1,74 @@
+/**
+ * FilterBar Styles
+ */
+
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  flex-shrink: 0;
+}
+
+.sortRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sortButton {
+  background: none;
+  border: none;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sortButton:hover {
+  color: var(--berry-text-primary);
+  background: var(--berry-bg-secondary);
+}
+
+.sortButton.active {
+  color: var(--berry-text-primary);
+  background: var(--berry-bg-tertiary);
+}
+
+.count {
+  margin-left: auto;
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+}
+
+.filtersRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.filterLabel {
+  font-family: var(--berry-font-system);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+}

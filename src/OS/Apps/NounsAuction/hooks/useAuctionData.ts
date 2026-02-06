@@ -158,6 +158,10 @@ async function fetchGoldsky<T>(query: string, variables?: Record<string, unknown
     throw new Error(json.errors[0].message);
   }
 
+  if (!json.data) {
+    throw new Error('No data returned from Goldsky');
+  }
+
   return json.data as T;
 }
 

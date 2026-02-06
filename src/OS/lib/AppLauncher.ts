@@ -7,7 +7,7 @@
 import { useWindowStore } from "@/OS/store/windowStore";
 import { useSettingsStore } from "@/OS/store/settingsStore";
 import { systemBus } from "@/OS/lib/EventBus";
-import { getCascadePosition } from "@/OS/lib/WindowManager";
+import { getCascadePosition, resolveWindowPosition } from "@/OS/lib/WindowManager";
 import type { AppConfig, AppInstance, LaunchOptions } from "@/OS/types/app";
 import type { WindowConfig } from "@/OS/types/window";
 
@@ -120,14 +120,17 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
     return null;
   }
 
-  // Calculate position - use provided coordinates, then config defaults, then cascade
+  // Calculate position
+  // Priority: LaunchOptions x/y > config.window.x/y > config.window.position preset > cascade
   let x = options.x ?? config.window.x;
   let y = options.y ?? config.window.y;
   
   if (x === undefined || y === undefined) {
-    const cascadePos = getCascadePosition(config.window.width, config.window.height);
-    x = x ?? cascadePos.x;
-    y = y ?? cascadePos.y;
+    const resolved = config.window.position
+      ? resolveWindowPosition(config.window.position, config.window.width, config.window.height)
+      : getCascadePosition(config.window.width, config.window.height);
+    x = x ?? resolved.x;
+    y = y ?? resolved.y;
   }
 
   // Create window config

@@ -1,0 +1,15 @@
+/**
+ * Probe App Styles
+ * Theme-compliant using --berry-* CSS variables
+ */
+
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+  overflow: hidden;
+}

@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET - List cached Nouns with optional filters
+ * 
+ * Query params:
+ *   limit, offset - Pagination (max 100)
+ *   settler       - Filter by settler address
+ *   winner        - Filter by auction winner address
+ *   background, body, accessory, head, glasses - Filter by trait index
+ *   sort          - "newest" (default) or "oldest"
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -66,48 +73,68 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Math.max(1, limitParam), 100); // Clamp between 1-100
   const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
   
-  // Optional filters
-  const settler = searchParams.get('settler')?.toLowerCase();
-  const winner = searchParams.get('winner')?.toLowerCase();
+  // Sort direction (whitelist to prevent injection)
+  const sortDesc = searchParams.get('sort') !== 'oldest';
+  
+  // Optional address filters
+  const settler = searchParams.get('settler')?.toLowerCase() || null;
+  const winner = searchParams.get('winner')?.toLowerCase() || null;
+  
+  // Trait filters (integer indices)
+  const background = parseTraitParam(searchParams.get('background'));
+  const body = parseTraitParam(searchParams.get('body'));
+  const accessory = parseTraitParam(searchParams.get('accessory'));
+  const head = parseTraitParam(searchParams.get('head'));
+  const glasses = parseTraitParam(searchParams.get('glasses'));
   
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    let nouns;
+    // Use tagged template with conditional fragments
+    // All params are safely interpolated by the neon driver
+    const nouns = sortDesc
+      ? await sql`
+          SELECT id, background, body, accessory, head, glasses,
+                 settled_by_address, settled_by_ens, settled_at,
+                 winning_bid, winner_address, winner_ens
+          FROM nouns
+          WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+            AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+            AND (${background}::int IS NULL OR background = ${background})
+            AND (${body}::int IS NULL OR body = ${body})
+            AND (${accessory}::int IS NULL OR accessory = ${accessory})
+            AND (${head}::int IS NULL OR head = ${head})
+            AND (${glasses}::int IS NULL OR glasses = ${glasses})
+          ORDER BY id DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `
+      : await sql`
+          SELECT id, background, body, accessory, head, glasses,
+                 settled_by_address, settled_by_ens, settled_at,
+                 winning_bid, winner_address, winner_ens
+          FROM nouns
+          WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+            AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+            AND (${background}::int IS NULL OR background = ${background})
+            AND (${body}::int IS NULL OR body = ${body})
+            AND (${accessory}::int IS NULL OR accessory = ${accessory})
+            AND (${head}::int IS NULL OR head = ${head})
+            AND (${glasses}::int IS NULL OR glasses = ${glasses})
+          ORDER BY id ASC
+          LIMIT ${limit} OFFSET ${offset}
+        `;
     
-    if (settler) {
-      nouns = await sql`
-        SELECT id, background, body, accessory, head, glasses,
-               settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM nouns
-        WHERE LOWER(settled_by_address) = ${settler}
-        ORDER BY id DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `;
-    } else if (winner) {
-      nouns = await sql`
-        SELECT id, background, body, accessory, head, glasses,
-               settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM nouns
-        WHERE LOWER(winner_address) = ${winner}
-        ORDER BY id DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `;
-    } else {
-      nouns = await sql`
-        SELECT id, background, body, accessory, head, glasses,
-               settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM nouns
-        ORDER BY id DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `;
-    }
-    
-    // Get total count
-    const countResult = await sql`SELECT COUNT(*) as count FROM nouns`;
+    // Get filtered count
+    const countResult = await sql`
+      SELECT COUNT(*) as count FROM nouns
+      WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+        AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+        AND (${background}::int IS NULL OR background = ${background})
+        AND (${body}::int IS NULL OR body = ${body})
+        AND (${accessory}::int IS NULL OR accessory = ${accessory})
+        AND (${head}::int IS NULL OR head = ${head})
+        AND (${glasses}::int IS NULL OR glasses = ${glasses})
+    `;
     const total = parseInt(countResult[0]?.count || '0');
     
     return NextResponse.json({
@@ -123,4 +150,13 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Parse a trait query param to a number or null
+ */
+function parseTraitParam(value: string | null): number | null {
+  if (value === null) return null;
+  const parsed = parseInt(value);
+  return isNaN(parsed) ? null : parsed;
 }

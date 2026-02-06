@@ -133,6 +133,23 @@
   color: var(--berry-text-secondary);
 }
 
+.optionContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optionIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 .optionLabel {
   font-weight: 500;
 }

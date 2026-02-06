@@ -36,6 +36,7 @@ export {
 export {
   windowManager,
   getCascadePosition,
+  resolveWindowPosition,
   getViewportBounds,
   tileWindows,
   stackWindows,

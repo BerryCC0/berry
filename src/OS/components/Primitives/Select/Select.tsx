@@ -12,6 +12,8 @@ export interface SelectOption {
   value: string;
   label: string;
   description?: string;
+  /** Optional icon URL (rendered as a small image to the left of the label) */
+  icon?: string;
 }
 
 interface SelectProps {
@@ -115,7 +117,13 @@ export function Select({
       >
         <span className={styles.triggerContent}>
           {selectedOption ? (
-            <span className={styles.triggerLabel}>{selectedOption.label}</span>
+            <>
+              {selectedOption.icon && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={selectedOption.icon} alt="" className={styles.optionIcon} />
+              )}
+              <span className={styles.triggerLabel}>{selectedOption.label}</span>
+            </>
           ) : (
             <span className={styles.triggerPlaceholder}>{placeholder}</span>
           )}
@@ -153,7 +161,13 @@ export function Select({
                 role="option"
                 aria-selected={value === option.value}
               >
-                <span className={styles.optionLabel}>{option.label}</span>
+                <span className={styles.optionContent}>
+                  {option.icon && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={option.icon} alt="" className={styles.optionIcon} />
+                  )}
+                  <span className={styles.optionLabel}>{option.label}</span>
+                </span>
                 {option.description && (
                   <span className={styles.optionDescription}>
                     {option.description}

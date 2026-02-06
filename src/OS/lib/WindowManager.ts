@@ -12,7 +12,7 @@
 
 import { useWindowStore } from "@/OS/store/windowStore";
 import { systemBus } from "./EventBus";
-import type { WindowState, WindowConfig } from "@/OS/types/window";
+import type { WindowState, WindowConfig, WindowPositionPreset } from "@/OS/types/window";
 
 /** Cascade offset for new windows */
 const CASCADE_OFFSET_X = 24;
@@ -78,6 +78,42 @@ export function getCascadePosition(width: number, height: number): { x: number; 
   }
   
   return { x, y };
+}
+
+/** Padding from viewport edges for position presets */
+const EDGE_PADDING = 20;
+
+/**
+ * Resolve a named position preset to pixel coordinates
+ * Uses the current viewport dimensions for responsive placement
+ */
+export function resolveWindowPosition(
+  preset: WindowPositionPreset,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  const vp = getViewportBounds();
+  switch (preset) {
+    case 'center':
+      return {
+        x: Math.max(0, (vp.width - width) / 2),
+        y: Math.max(vp.top, (vp.bottom + vp.top - height) / 2),
+      };
+    case 'top-left':
+      return { x: EDGE_PADDING, y: vp.top + EDGE_PADDING };
+    case 'top-right':
+      return { x: Math.max(0, vp.width - width - EDGE_PADDING), y: vp.top + EDGE_PADDING };
+    case 'bottom-left':
+      return { x: EDGE_PADDING, y: Math.max(vp.top, vp.bottom - height - EDGE_PADDING) };
+    case 'bottom-right':
+      return {
+        x: Math.max(0, vp.width - width - EDGE_PADDING),
+        y: Math.max(vp.top, vp.bottom - height - EDGE_PADDING),
+      };
+    case 'cascade':
+    default:
+      return getCascadePosition(width, height);
+  }
 }
 
 /**
@@ -300,6 +336,7 @@ export function focusPreviousWindow(): void {
 export const windowManager = {
   // Positioning
   getCascadePosition,
+  resolveWindowPosition,
   getViewportBounds,
   
   // Arrangement
