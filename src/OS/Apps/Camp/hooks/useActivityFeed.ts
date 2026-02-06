@@ -396,16 +396,24 @@ function processCoreData(data: CoreQueryResult, currentBlock: number | undefined
     });
   }
 
-  // Proposal creations - show active/pending proposals in the feed
+  // Proposal creations and outcomes
   // Use the actual Ethereum block number for accurate status calculation
+  // Average block time on Ethereum mainnet is ~12 seconds
+  const BLOCK_TIME_SECONDS = 12;
+  
   for (const proposal of data.proposals) {
     const startBlock = Number(proposal.startBlock);
     const endBlock = Number(proposal.endBlock);
     const forVotes = BigInt(proposal.forVotes);
     const againstVotes = BigInt(proposal.againstVotes);
     const quorumVotes = BigInt(proposal.quorumVotes);
+    const graphqlStatus = proposal.status?.toUpperCase();
     
     let derivedStatus: 'active' | 'pending' | 'succeeded' | 'defeated' | undefined;
+    let isCancelled = graphqlStatus === 'CANCELLED';
+    let isExecuted = graphqlStatus === 'EXECUTED';
+    let isQueued = graphqlStatus === 'QUEUED';
+    let votingEnded = false;
     
     // Use actual block number if available for accurate status
     if (currentBlock !== undefined) {
@@ -414,6 +422,7 @@ function processCoreData(data: CoreQueryResult, currentBlock: number | undefined
       } else if (currentBlock >= startBlock && currentBlock <= endBlock) {
         derivedStatus = 'active';
       } else {
+        votingEnded = true;
         // Voting period is over - check results
         if (forVotes > againstVotes && forVotes >= quorumVotes) {
           derivedStatus = 'succeeded';
@@ -423,28 +432,29 @@ function processCoreData(data: CoreQueryResult, currentBlock: number | undefined
       }
     } else {
       // Fallback: trust GraphQL status or use vote counts
-      const graphqlStatus = proposal.status?.toUpperCase();
-      
       if (graphqlStatus === 'PENDING') {
         derivedStatus = 'pending';
       } else if (graphqlStatus === 'ACTIVE') {
         derivedStatus = 'active';
       } else if (graphqlStatus === 'SUCCEEDED' || graphqlStatus === 'QUEUED' || graphqlStatus === 'EXECUTED') {
         derivedStatus = 'succeeded';
+        votingEnded = true;
       } else if (graphqlStatus === 'DEFEATED' || graphqlStatus === 'VETOED' || graphqlStatus === 'CANCELLED' || graphqlStatus === 'EXPIRED') {
         derivedStatus = 'defeated';
+        votingEnded = true;
       } else {
         // Last resort: check if there are votes
         const totalVotes = forVotes + againstVotes;
         if (totalVotes > BigInt(0)) {
           derivedStatus = forVotes > againstVotes && forVotes >= quorumVotes ? 'succeeded' : 'defeated';
+          votingEnded = true;
         } else {
           derivedStatus = 'pending';
         }
       }
     }
     
-    // Only show active or pending proposals in activity feed
+    // Show active or pending proposals as "created" in activity feed
     if (derivedStatus === 'active' || derivedStatus === 'pending') {
       items.push({
         id: `proposal-created-${proposal.id}`,
@@ -455,6 +465,80 @@ function processCoreData(data: CoreQueryResult, currentBlock: number | undefined
         proposalTitle: proposal.title,
         proposalStatus: derivedStatus,
       });
+    }
+    
+    // Show proposal outcomes when voting has ended
+    if (votingEnded) {
+      // Estimate the timestamp when voting ended
+      // Use current time and block to estimate when endBlock occurred
+      const now = Math.floor(Date.now() / 1000);
+      let endTimestamp: string;
+      
+      if (currentBlock !== undefined && currentBlock > endBlock) {
+        // Calculate how many blocks ago voting ended
+        const blocksAgo = currentBlock - endBlock;
+        const secondsAgo = blocksAgo * BLOCK_TIME_SECONDS;
+        endTimestamp = String(now - secondsAgo);
+      } else {
+        // Fallback: estimate based on voting duration from creation
+        // Nouns voting is typically ~5 days (36000 blocks)
+        const createdTime = Number(proposal.createdTimestamp);
+        const votingDelay = (startBlock - endBlock + (endBlock - startBlock)) * BLOCK_TIME_SECONDS; // Rough estimate
+        endTimestamp = String(createdTime + Math.abs(endBlock - startBlock) * BLOCK_TIME_SECONDS);
+      }
+      
+      // Determine the outcome type
+      if (isCancelled) {
+        items.push({
+          id: `proposal-cancelled-${proposal.id}`,
+          type: 'proposal_cancelled',
+          timestamp: endTimestamp,
+          actor: proposal.proposer.id,
+          proposalId: proposal.id,
+          proposalTitle: proposal.title,
+          proposalStatus: 'defeated',
+        });
+      } else if (isExecuted) {
+        items.push({
+          id: `proposal-executed-${proposal.id}`,
+          type: 'proposal_executed',
+          timestamp: endTimestamp,
+          actor: proposal.proposer.id,
+          proposalId: proposal.id,
+          proposalTitle: proposal.title,
+          proposalStatus: 'succeeded',
+        });
+      } else if (isQueued) {
+        items.push({
+          id: `proposal-queued-${proposal.id}`,
+          type: 'proposal_queued',
+          timestamp: endTimestamp,
+          actor: proposal.proposer.id,
+          proposalId: proposal.id,
+          proposalTitle: proposal.title,
+          proposalStatus: 'succeeded',
+        });
+      } else if (derivedStatus === 'succeeded') {
+        items.push({
+          id: `proposal-succeeded-${proposal.id}`,
+          type: 'proposal_succeeded',
+          timestamp: endTimestamp,
+          actor: proposal.proposer.id,
+          proposalId: proposal.id,
+          proposalTitle: proposal.title,
+          proposalStatus: 'succeeded',
+        });
+      } else if (derivedStatus === 'defeated') {
+        items.push({
+          id: `proposal-defeated-${proposal.id}`,
+          type: 'proposal_defeated',
+          timestamp: endTimestamp,
+          actor: proposal.proposer.id,
+          proposalId: proposal.id,
+          proposalTitle: proposal.title,
+          proposalStatus: 'defeated',
+        });
+      }
     }
   }
 

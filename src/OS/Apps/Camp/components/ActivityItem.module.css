@@ -136,6 +136,21 @@
   color: var(--berry-error);
 }
 
+.badge[data-type="cancelled"] {
+  background: color-mix(in srgb, var(--berry-error) 20%, transparent);
+  color: var(--berry-error);
+}
+
+.badge[data-type="queued"] {
+  background: color-mix(in srgb, var(--berry-warning, #f59e0b) 20%, transparent);
+  color: var(--berry-warning, #f59e0b);
+}
+
+.badge[data-type="executed"] {
+  background: color-mix(in srgb, var(--berry-success) 20%, transparent);
+  color: var(--berry-success);
+}
+
 .badge[data-type="candidate"] {
   background: #fff3e0;
   color: #e65100;

@@ -275,6 +275,7 @@ export type ActivityType =
   | 'proposal_voting_started'
   | 'proposal_succeeded'
   | 'proposal_defeated'
+  | 'proposal_cancelled'
   | 'candidate_created'
   | 'candidate_updated'
   | 'candidate_sponsored'

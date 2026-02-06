@@ -399,6 +399,45 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
           </div>
         );
 
+      case 'proposal_cancelled':
+        return (
+          <div className={styles.header}>
+            <span className={styles.badge} data-type="cancelled">Proposal {item.proposalId}</span>
+            {item.proposalTitle && (
+              <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
+                {item.proposalTitle}
+              </span>
+            )}
+            <span className={styles.action}>was cancelled</span>
+          </div>
+        );
+
+      case 'proposal_queued':
+        return (
+          <div className={styles.header}>
+            <span className={styles.badge} data-type="queued">Proposal {item.proposalId}</span>
+            {item.proposalTitle && (
+              <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
+                {item.proposalTitle}
+              </span>
+            )}
+            <span className={styles.action}>was queued for execution</span>
+          </div>
+        );
+
+      case 'proposal_executed':
+        return (
+          <div className={styles.header}>
+            <span className={styles.badge} data-type="executed">Proposal {item.proposalId}</span>
+            {item.proposalTitle && (
+              <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
+                {item.proposalTitle}
+              </span>
+            )}
+            <span className={styles.action}>was executed</span>
+          </div>
+        );
+
       case 'proposal_updated':
         return (
           <>
