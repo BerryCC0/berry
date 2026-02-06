@@ -50,7 +50,7 @@
   z-index: 1;
   background: #fadf16;
   color: #000;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 9px;
   font-weight: 700;
   padding: 1px 5px;
@@ -70,7 +70,7 @@
 }
 
 .nounId {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 9px;
   font-weight: 700;
   color: var(--berry-text-secondary);

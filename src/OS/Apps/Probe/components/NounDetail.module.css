@@ -9,7 +9,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   overflow: hidden;
   /* Default bg; overridden inline with Noun's background color */
   background: var(--berry-bg);
@@ -41,7 +41,7 @@
 .breadcrumbLink {
   background: none;
   border: none;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -97,7 +97,7 @@
   border: none;
   border-radius: 3px;
   color: #1a1a1a;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -144,7 +144,7 @@
 }
 
 .title {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 40px;
   font-weight: 700;
   letter-spacing: 0;
@@ -160,7 +160,7 @@
 }
 
 .infoRow {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.2px;
@@ -199,7 +199,7 @@
 .seeAllBids {
   background: none;
   border: none;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.2px;
@@ -248,7 +248,7 @@
 }
 
 .modalTitle {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0;
@@ -281,7 +281,7 @@
 }
 
 .modalEmpty {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 13px;
   font-weight: 700;
   color: #999;
@@ -292,7 +292,7 @@
 }
 
 .modalBidRow {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0;
@@ -345,7 +345,7 @@
 
 .bidInput {
   flex: 1;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0;
@@ -385,7 +385,7 @@
 }
 
 .bidButton {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 0;
@@ -417,7 +417,7 @@
 }
 
 .bidButtonFull {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 0;
@@ -449,14 +449,14 @@
 }
 
 .bidError {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 11px;
   font-weight: 700;
   color: #dc2626;
 }
 
 .bidSuccess {
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 11px;
   font-weight: 700;
   color: #16a34a;
@@ -535,7 +535,7 @@
   background: none;
   border: none;
   color: #2563eb;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
@@ -567,6 +567,36 @@
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
+}
+
+/* ── Mobile: stack image on top, info below ── */
+@media (max-width: 600px) {
+  .content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    overflow-y: auto;
+  }
+
+  .imageSection {
+    order: -1;
+    max-height: 45vw;
+    min-height: 140px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nounImage {
+    object-position: center center;
+  }
+
+  .infoSection {
+    padding: 20px 20px 32px;
+    overflow-y: visible;
+  }
+
+  .title {
+    font-size: 28px;
+  }
 }
 
 /* ── Loading state ── */

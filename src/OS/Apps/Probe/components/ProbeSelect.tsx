@@ -1,6 +1,6 @@
 /**
  * ProbeSelect Component
- * probe.wtf-styled dropdown — Comic Sans Bold, thick borders,
+ * probe.wtf-styled dropdown — Comic Neue Bold, thick borders,
  * label inside the trigger box, large NONE placeholder.
  * Includes a type-to-search input when the dropdown is open.
  */

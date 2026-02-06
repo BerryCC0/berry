@@ -1,6 +1,6 @@
 /**
  * ProbeSelect Styles
- * Matches probe.wtf — Comic Sans Bold, thick black border,
+ * Matches probe.wtf — Comic Neue Bold, thick black border,
  * label inside top-left corner, large NONE value
  */
 
@@ -21,7 +21,7 @@
   cursor: pointer;
   text-align: left;
   position: relative;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   transition: border-color 0.15s;
 }
 
@@ -38,7 +38,7 @@
   position: absolute;
   top: 4px;
   left: 8px;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 8px;
   font-weight: 700;
   text-transform: uppercase;
@@ -53,7 +53,7 @@
   align-items: center;
   gap: 8px;
   flex: 1;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 18px;
   font-weight: 700;
   text-transform: uppercase;
@@ -109,7 +109,7 @@
 
 .searchInput {
   width: 100%;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 12px;
   font-weight: 700;
   padding: 6px 8px;
@@ -137,7 +137,7 @@
 
 .noResults {
   padding: 16px 12px;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 12px;
   font-weight: 700;
   color: var(--berry-text-secondary);
@@ -155,7 +155,7 @@
   background: transparent;
   border: none;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Comic Neue', cursive;
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;

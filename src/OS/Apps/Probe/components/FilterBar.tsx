@@ -1,7 +1,7 @@
 /**
  * FilterBar Component
  * Trait filter dropdowns and sort controls for Probe
- * Styled to match probe.wtf — Comic Sans Bold, thick borders, 2-row grid
+ * Styled to match probe.wtf — Comic Neue Bold, thick borders, 2-row grid
  * All 8 filters are ProbeSelect dropdowns including OWNER and SETTLER
  */
 
