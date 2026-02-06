@@ -139,6 +139,55 @@ export async function generateMetadata({
     },
   };
 
+  // Probe app metadata
+  if (appId === 'probe') {
+    // Probe detail: /probe/1806
+    if (routeParams && routeParams.length > 0) {
+      const nounId = parseInt(routeParams[0]);
+      if (!isNaN(nounId) && nounId >= 0) {
+        const title = `Noun ${nounId} - Probe`;
+        const description = `Explore Noun ${nounId} on Probe — the Nouns explorer.`;
+        const ogImageUrl = `${baseUrl}/api/og/probe/${nounId}`;
+
+        return {
+          title: `${title} - Berry OS`,
+          description,
+          openGraph: {
+            title,
+            description,
+            images: [ogImageUrl],
+            type: 'website',
+          },
+          twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [ogImageUrl],
+          },
+        };
+      }
+    }
+
+    // Probe grid (no specific noun)
+    const ogImageUrl = `${baseUrl}/api/og/probe`;
+    return {
+      title: 'Probe - Berry OS',
+      description: 'Explore all Nouns — filter by traits, colors, owners, and more.',
+      openGraph: {
+        title: 'Probe — Nouns Explorer',
+        description: 'Explore all Nouns — filter by traits, colors, owners, and more.',
+        images: [ogImageUrl],
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'Probe — Nouns Explorer',
+        description: 'Explore all Nouns — filter by traits, colors, owners, and more.',
+        images: [ogImageUrl],
+      },
+    };
+  }
+
   // Check for Camp app with specific routes
   if (appId === 'camp' && routeParams && routeParams.length > 0) {
     const [routeType, ...rest] = routeParams;
