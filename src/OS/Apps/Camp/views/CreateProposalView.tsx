@@ -33,6 +33,8 @@ interface CreateProposalViewProps {
   // For editing existing candidates
   editCandidateProposer?: string;
   editCandidateSlug?: string;
+  // For loading a specific draft
+  initialDraftSlug?: string;
 }
 
 type ProposalState = 'idle' | 'confirming' | 'pending' | 'error' | 'success';
@@ -71,6 +73,7 @@ export function CreateProposalView({
   editProposalId,
   editCandidateProposer,
   editCandidateSlug,
+  initialDraftSlug,
 }: CreateProposalViewProps) {
   const { address, isConnected } = useAccount();
   const { writeContractAsync, isPending } = useWriteContract();
@@ -219,13 +222,25 @@ export function CreateProposalView({
     }
   }, [address, isEditMode]);
 
-  // Auto-load most recent draft when drafts are loaded (skip in edit mode)
+  // Auto-load draft when drafts are loaded (skip in edit mode)
+  // If initialDraftSlug is provided, load that specific draft; otherwise load most recent
   useEffect(() => {
     if (drafts.length > 0 && !draftSlug && address && !isEditMode) {
-      const mostRecent = drafts[0];
-      handleLoadDraft(mostRecent);
+      if (initialDraftSlug) {
+        // Find and load the specific draft
+        const targetDraft = drafts.find(d => d.draft_slug === initialDraftSlug);
+        if (targetDraft) {
+          handleLoadDraft(targetDraft);
+        } else {
+          // Fall back to most recent if not found
+          handleLoadDraft(drafts[0]);
+        }
+      } else {
+        // Load most recent draft
+        handleLoadDraft(drafts[0]);
+      }
     }
-  }, [drafts.length, address, isEditMode]);
+  }, [drafts.length, address, isEditMode, initialDraftSlug]);
 
   // Auto-save draft as user types (debounced)
   useEffect(() => {

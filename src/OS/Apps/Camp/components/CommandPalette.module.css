@@ -172,3 +172,175 @@
   color: var(--berry-text-tertiary);
   margin-left: 12px;
 }
+
+/* View Header (for drafts) */
+.viewHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-tertiary);
+}
+
+.backButton {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-primary);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.backButton:hover {
+  background: var(--berry-accent);
+  color: white;
+}
+
+.viewTitle {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+/* Drafts Section */
+.draftsSection {
+  padding: 0;
+}
+
+/* Draft Item */
+.draftItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.draftItem:last-child {
+  border-bottom: none;
+}
+
+.draftItem:hover,
+.draftItem.selected {
+  background: var(--berry-bg-tertiary);
+}
+
+.draftContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.draftTitle {
+  font-family: var(--berry-font-system);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draftPreview {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.draftMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
+.draftType {
+  padding: 2px 6px;
+  background: var(--berry-bg-primary);
+  border-radius: 3px;
+}
+
+.draftDate {
+  color: var(--berry-text-tertiary);
+}
+
+.draftDeleteButton {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--berry-text-tertiary);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 8px;
+}
+
+.draftDeleteButton:hover {
+  background: var(--berry-error);
+  color: white;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.emptyTitle {
+  font-family: var(--berry-font-system);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  margin-bottom: 8px;
+}
+
+.emptyDescription {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 16px;
+  max-width: 280px;
+}
+
+.emptyAction {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  background: var(--berry-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.emptyAction:hover {
+  opacity: 0.9;
+}

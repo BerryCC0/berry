@@ -5,6 +5,7 @@
  * Features:
  * - Quick navigation to all Camp views
  * - Search across proposals, candidates, voters (with partial ENS matching)
+ * - View and manage proposal drafts
  * - Keyboard navigation support
  * - Uses /api/camp/search for database-backed partial text search
  */
@@ -53,6 +54,19 @@ interface SearchResults {
   }>;
 }
 
+// Draft type (simplified from ProposalDraft)
+interface Draft {
+  id?: number;
+  draft_slug: string;
+  draft_title: string;
+  title: string;
+  description: string;
+  proposal_type: 'standard' | 'timelock_v1' | 'candidate';
+  updated_at?: string;
+}
+
+type PaletteView = 'main' | 'drafts';
+
 // Check if a string looks like an ENS name
 function isEnsName(input: string): boolean {
   return input.includes('.') && !input.startsWith('0x');
@@ -76,11 +90,14 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPaletteProps) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [view, setView] = useState<PaletteView>('main');
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   
@@ -100,7 +117,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
   
   // Fetch search results from API
   useEffect(() => {
-    if (debouncedQuery.length < 2) {
+    if (view !== 'main' || debouncedQuery.length < 2) {
       setSearchResults(null);
       return;
     }
@@ -130,7 +147,47 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
     fetchResults();
     
     return () => controller.abort();
-  }, [debouncedQuery]);
+  }, [debouncedQuery, view]);
+  
+  // Fetch drafts when switching to drafts view
+  useEffect(() => {
+    if (view === 'drafts' && address) {
+      loadDrafts();
+    }
+  }, [view, address]);
+  
+  const loadDrafts = async () => {
+    if (!address) return;
+    
+    setIsLoadingDrafts(true);
+    try {
+      const response = await fetch(`/api/proposals/drafts?wallet=${address}`);
+      const data = await response.json();
+      
+      if (data.success && data.drafts) {
+        setDrafts(data.drafts);
+      }
+    } catch (error) {
+      console.error('[CommandPalette] Failed to load drafts:', error);
+    } finally {
+      setIsLoadingDrafts(false);
+    }
+  };
+  
+  const handleDeleteDraft = async (draftSlug: string, draftTitle: string) => {
+    if (!address) return;
+    
+    if (!confirm(`Delete this draft?\n\n"${draftTitle}"`)) return;
+    
+    try {
+      await fetch(`/api/proposals/drafts?wallet=${address}&slug=${encodeURIComponent(draftSlug)}`, {
+        method: 'DELETE',
+      });
+      await loadDrafts();
+    } catch (error) {
+      console.error('[CommandPalette] Failed to delete draft:', error);
+    }
+  };
   
   // Focus input when modal opens
   useEffect(() => {
@@ -138,6 +195,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
       setQuery('');
       setSelectedIndex(0);
       setSearchResults(null);
+      setView('main');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -162,14 +220,8 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
     
     if (isConnected) {
       commands.push({
-        id: 'create-proposal',
-        label: 'Create Proposal...',
-        section: 'Proposals',
-        action: () => { onNavigate('create'); onClose(); },
-      });
-      commands.push({
-        id: 'create-candidate',
-        label: 'Create Candidate...',
+        id: 'draft-proposal',
+        label: 'Draft Proposal',
         section: 'Proposals',
         action: () => { onNavigate('create'); onClose(); },
       });
@@ -187,13 +239,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
         id: 'view-drafts',
         label: 'View Drafts',
         section: 'Connected account',
-        action: () => { onNavigate('account'); onClose(); },
-      });
-      commands.push({
-        id: 'edit-profile',
-        label: 'Edit Public Profile...',
-        section: 'Connected account',
-        action: () => { onNavigate('account'); onClose(); },
+        action: () => { setView('drafts'); setQuery(''); setSelectedIndex(0); },
       });
     }
     
@@ -293,8 +339,29 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
     return results;
   }, [trimmedQuery, isQueryEns, isQueryAddress, resolvedAddress, searchResults, onNavigate, onClose]);
   
-  // Combined items (search results or navigation)
-  const items = query.trim() ? searchItems : navigationCommands;
+  // Build draft items for drafts view
+  const draftItems = useMemo<CommandItem[]>(() => {
+    if (view !== 'drafts') return [];
+    
+    return drafts.map(draft => ({
+      id: `draft-${draft.draft_slug}`,
+      label: draft.title || draft.draft_title || 'Untitled Draft',
+      section: 'Your Drafts',
+      meta: formatRelativeTime(draft.updated_at),
+      action: () => { 
+        onNavigate(`create?draft=${encodeURIComponent(draft.draft_slug)}`); 
+        onClose(); 
+      },
+    }));
+  }, [view, drafts, onNavigate, onClose]);
+  
+  // Combined items based on current view
+  const items = useMemo(() => {
+    if (view === 'drafts') {
+      return draftItems;
+    }
+    return query.trim() ? searchItems : navigationCommands;
+  }, [view, query, draftItems, searchItems, navigationCommands]);
   
   // Group items by section
   const groupedItems = useMemo(() => {
@@ -337,10 +404,21 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
         break;
       case 'Escape':
         e.preventDefault();
-        onClose();
+        if (view === 'drafts') {
+          setView('main');
+          setSelectedIndex(0);
+        } else {
+          onClose();
+        }
+        break;
+      case 'Backspace':
+        if (query === '' && view === 'drafts') {
+          setView('main');
+          setSelectedIndex(0);
+        }
         break;
     }
-  }, [flatItems, selectedIndex, onClose]);
+  }, [flatItems, selectedIndex, onClose, view, query]);
   
   // Scroll selected item into view
   useEffect(() => {
@@ -362,13 +440,26 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        {/* Header for drafts view */}
+        {view === 'drafts' && (
+          <div className={styles.viewHeader}>
+            <button 
+              className={styles.backButton} 
+              onClick={() => { setView('main'); setSelectedIndex(0); }}
+            >
+              ← Back
+            </button>
+            <span className={styles.viewTitle}>Your Drafts</span>
+          </div>
+        )}
+        
         {/* Search input */}
         <div className={styles.inputWrapper}>
           <input
             ref={inputRef}
             type="text"
             className={styles.input}
-            placeholder="Navigate Camp..."
+            placeholder={view === 'drafts' ? 'Filter drafts...' : 'Navigate Camp...'}
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -382,7 +473,83 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
         
         {/* Results list */}
         <div className={styles.list} ref={listRef}>
-          {isSearching && trimmedQuery.length >= 2 ? (
+          {view === 'drafts' ? (
+            isLoadingDrafts ? (
+              <div className={styles.empty}>Loading drafts...</div>
+            ) : drafts.length === 0 ? (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>📝</div>
+                <div className={styles.emptyTitle}>No drafts yet</div>
+                <div className={styles.emptyDescription}>
+                  Start drafting a proposal and it will appear here.
+                </div>
+                <button 
+                  className={styles.emptyAction}
+                  onClick={() => { onNavigate('create'); onClose(); }}
+                >
+                  Draft Proposal
+                </button>
+              </div>
+            ) : (
+              <div className={styles.draftsSection}>
+                <div className={styles.sectionHeader}>
+                  Your Drafts ({drafts.length})
+                </div>
+                {drafts
+                  .filter(draft => {
+                    if (!query.trim()) return true;
+                    const q = query.toLowerCase();
+                    return (
+                      (draft.title?.toLowerCase().includes(q)) ||
+                      (draft.draft_title?.toLowerCase().includes(q)) ||
+                      (draft.description?.toLowerCase().includes(q))
+                    );
+                  })
+                  .map((draft, idx) => {
+                    const displayTitle = draft.title || draft.draft_title || 'Untitled Draft';
+                    const preview = draft.description 
+                      ? truncateText(draft.description.replace(/[#*_`~\[\]]/g, '').replace(/\n+/g, ' ').trim(), 60)
+                      : null;
+                    
+                    return (
+                      <div 
+                        key={draft.draft_slug}
+                        data-index={idx}
+                        className={`${styles.draftItem} ${idx === selectedIndex ? styles.selected : ''}`}
+                        onClick={() => { 
+                          onNavigate(`create?draft=${encodeURIComponent(draft.draft_slug)}`); 
+                          onClose(); 
+                        }}
+                        onMouseEnter={() => setSelectedIndex(idx)}
+                      >
+                        <div className={styles.draftContent}>
+                          <div className={styles.draftTitle}>{displayTitle}</div>
+                          {preview && <div className={styles.draftPreview}>{preview}</div>}
+                          <div className={styles.draftMeta}>
+                            <span className={styles.draftType}>
+                              {getProposalTypeLabel(draft.proposal_type)}
+                            </span>
+                            <span className={styles.draftDate}>
+                              {formatRelativeTime(draft.updated_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          className={styles.draftDeleteButton}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDraft(draft.draft_slug, displayTitle);
+                          }}
+                          title="Delete draft"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )
+          ) : isSearching && trimmedQuery.length >= 2 ? (
             <div className={styles.empty}>Searching...</div>
           ) : groupedItems.length === 0 && trimmedQuery.length >= 2 ? (
             <div className={styles.empty}>No results found</div>
@@ -420,7 +587,6 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
 }
 
 function formatAddress(address: string): string {
-  // TODO: Use ENS resolver
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
@@ -430,4 +596,36 @@ function formatSlugToTitle(slug: string): string {
     .replace(/-/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase())
     .replace(/^./, c => c.toUpperCase());
+}
+
+function formatRelativeTime(dateStr: string | undefined): string {
+  if (!dateStr) return '';
+  
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  
+  return date.toLocaleDateString();
+}
+
+function truncateText(text: string, maxLength: number): string {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength).trim() + '...';
+}
+
+function getProposalTypeLabel(type: string): string {
+  switch (type) {
+    case 'timelock_v1': return 'Timelock V1';
+    case 'candidate': return 'Candidate';
+    default: return 'Standard';
+  }
 }

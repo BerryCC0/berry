@@ -200,6 +200,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
           <CreateProposalView 
             onNavigate={navigate}
             onBack={goBack}
+            initialDraftSlug={route.draftSlug}
           />
         );
       

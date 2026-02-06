@@ -17,13 +17,17 @@ export type CampRoute =
   | { view: 'voter'; address: string }
   | { view: 'vote'; proposalId: string; voter: string }
   | { view: 'account' }
-  | { view: 'create' }
+  | { view: 'create'; draftSlug?: string }
   | { view: 'edit-candidate'; proposer: string; slug: string };
 
 export function parseRoute(path?: string): CampRoute {
   if (!path) return { view: 'activity' };
   
-  const parts = path.split('/').filter(Boolean);
+  // Parse query parameters
+  const [pathPart, queryPart] = path.split('?');
+  const queryParams = new URLSearchParams(queryPart || '');
+  
+  const parts = pathPart.split('/').filter(Boolean);
   
   if (parts.length === 0) return { view: 'activity' };
   
@@ -65,7 +69,9 @@ export function parseRoute(path?: string): CampRoute {
       if (parts[1] === 'edit' && parts[2] && parts[3]) {
         return { view: 'edit-candidate', proposer: parts[2], slug: parts.slice(3).join('/') };
       }
-      return { view: 'create' };
+      // Check for draft query parameter
+      const draftSlug = queryParams.get('draft');
+      return { view: 'create', draftSlug: draftSlug || undefined };
     default:
       return { view: 'activity' };
   }
@@ -93,7 +99,7 @@ export function routeToPath(route: CampRoute): string {
     case 'account':
       return 'account';
     case 'create':
-      return 'create';
+      return route.draftSlug ? `create?draft=${encodeURIComponent(route.draftSlug)}` : 'create';
     case 'edit-candidate':
       return `create/edit/${route.proposer}/${route.slug}`;
   }
