@@ -24,6 +24,19 @@ const AUCTION_HOUSE_ADDRESS = '0x830BD73E4184ceF73443C15111a1DF14e495C706';
 const AUCTION_SETTLED_TOPIC = '0xc9f72b276a388619c6d185d146697036241880c36654b1a3ffdad07c24038d99';
 const NOUNDERS_MULTISIG = '0x2573C60a6D127755aA2DC85e342F7da2378a0Cc5';
 
+async function resolveENS(address: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.ensideas.com/ens/resolve/${encodeURIComponent(address)}`
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.name || null;
+  } catch {
+    return null;
+  }
+}
+
 interface NounSeed {
   background: number;
   body: number;
@@ -76,6 +89,7 @@ export async function GET(request: NextRequest) {
     updated: 0,
     skipped: 0,
     errors: 0,
+    ensResolved: 0,
     duration: 0,
   };
 
@@ -276,11 +290,15 @@ export async function GET(request: NextRequest) {
           const txData = await txRes.json();
 
           if (txData.result?.from) {
+            const settlerAddress = txData.result.from.toLowerCase();
             // Etherscan returns timestamp in decimal (seconds since epoch)
             const timestamp = parseInt(log.timeStamp, 10);
+            // Resolve settler ENS name
+            const settlerEns = await resolveENS(settlerAddress);
             await sql`
               UPDATE nouns 
-              SET settled_by_address = ${txData.result.from.toLowerCase()},
+              SET settled_by_address = ${settlerAddress},
+                  settled_by_ens = ${settlerEns},
                   settled_tx_hash = ${log.transactionHash},
                   settled_at = ${new Date(timestamp * 1000).toISOString()}
               WHERE id = ${nounId}
@@ -296,11 +314,47 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Resolve missing ENS names for settlers and winners (limit 20 per run)
+    const missingEns = await sql`
+      (SELECT settled_by_address as address, 'settler' as type, id
+       FROM nouns
+       WHERE settled_by_address IS NOT NULL
+         AND settled_by_address != '0x0000000000000000000000000000000000000000'
+         AND settled_by_ens IS NULL
+       ORDER BY id DESC
+       LIMIT 10)
+      UNION ALL
+      (SELECT winner_address as address, 'winner' as type, id
+       FROM nouns
+       WHERE winner_address IS NOT NULL
+         AND winner_address != '0x0000000000000000000000000000000000000000'
+         AND winner_ens IS NULL
+       ORDER BY id DESC
+       LIMIT 10)
+    `;
+
+    for (const row of missingEns) {
+      try {
+        const ensName = await resolveENS(row.address);
+        if (ensName) {
+          if (row.type === 'settler') {
+            await sql`UPDATE nouns SET settled_by_ens = ${ensName} WHERE id = ${row.id}`;
+          } else {
+            await sql`UPDATE nouns SET winner_ens = ${ensName} WHERE id = ${row.id}`;
+          }
+          results.ensResolved++;
+        }
+        await new Promise(r => setTimeout(r, 100));
+      } catch {
+        // Skip ENS resolution errors
+      }
+    }
+
     results.duration = Date.now() - startTime;
 
     return NextResponse.json({
       success: true,
-      message: `Sync complete: ${results.inserted} inserted, ${results.updated} updated, ${results.skipped} skipped`,
+      message: `Sync complete: ${results.inserted} inserted, ${results.updated} updated, ${results.skipped} skipped, ${results.ensResolved} ENS resolved`,
       results,
     });
   } catch (error) {

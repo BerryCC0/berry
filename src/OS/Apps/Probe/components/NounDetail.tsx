@@ -78,7 +78,6 @@ function formatBidTime(timestamp: string): string {
 function getNounColors(noun: { background: number; body: number; head: number; glasses: number; accessory: number }): string[] {
   const colors: string[] = [];
   const bgHex = ImageData.bgcolors[noun.background];
-  if (bgHex) colors.push(`#${bgHex}`);
 
   const parts = [
     ImageData.images.bodies[noun.body],
@@ -101,10 +100,14 @@ function getNounColors(noun: { background: number; body: number; head: number; g
       if (hex && !seen.has(hex)) {
         seen.add(hex);
         colors.push(`#${hex}`);
-        if (colors.length >= 6) return colors;
+        if (colors.length >= 5) break;
       }
     }
   }
+
+  // Background color goes last
+  if (bgHex) colors.push(`#${bgHex}`);
+
   return colors;
 }
 
