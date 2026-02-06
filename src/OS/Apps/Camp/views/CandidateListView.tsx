@@ -11,14 +11,16 @@ import styles from './CandidateListView.module.css';
 
 interface CandidateListViewProps {
   onNavigate: (path: string) => void;
+  onBack: () => void;
 }
 
-export function CandidateListView({ onNavigate }: CandidateListViewProps) {
+export function CandidateListView({ onNavigate, onBack }: CandidateListViewProps) {
   const { data: candidates, isLoading, error } = useCandidates(50);
 
   if (error) {
     return (
       <div className={styles.error}>
+        <button className={styles.backButton} onClick={onBack}>← Back</button>
         <p>Failed to load candidates</p>
         <p className={styles.errorDetail}>{error.message}</p>
       </div>
@@ -27,6 +29,9 @@ export function CandidateListView({ onNavigate }: CandidateListViewProps) {
 
   return (
     <div className={styles.container}>
+      <div className={styles.navBar}>
+        <button className={styles.backButton} onClick={onBack}>← Back</button>
+      </div>
       <div className={styles.list}>
         {isLoading ? (
           <div className={styles.loading}>Loading candidates...</div>

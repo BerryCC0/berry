@@ -156,7 +156,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
         return <ActivityView onNavigate={navigate} digestTab={digestTab} onDigestTabChange={setDigestTab} />;
       
       case 'proposals':
-        return <ProposalListView onNavigate={navigate} />;
+        return <ProposalListView onNavigate={navigate} onBack={goBack} />;
       
       case 'proposal':
         return (
@@ -168,7 +168,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
         );
       
       case 'candidates':
-        return <CandidateListView onNavigate={navigate} />;
+        return <CandidateListView onNavigate={navigate} onBack={goBack} />;
       
       case 'candidate':
         return (
@@ -181,7 +181,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
         );
       
       case 'voters':
-        return <VoterListView onNavigate={navigate} />;
+        return <VoterListView onNavigate={navigate} onBack={goBack} />;
       
       case 'voter':
         return (

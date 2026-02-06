@@ -10,6 +10,31 @@
   overflow: hidden;
 }
 
+.navBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.backButton {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-primary);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.backButton:hover {
+  background: var(--berry-accent);
+  color: white;
+}
+
 .controls {
   display: flex;
   gap: 8px;
@@ -30,6 +55,61 @@
 .list {
   flex: 1;
   overflow-y: auto;
+  padding: 8px 12px;
+}
+
+/* Voter items - matching Digest styles */
+.voterItem {
+  padding: 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.voterItem:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.voterInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.voterIdentity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voterAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.voterAvatarPlaceholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--berry-bg-tertiary);
+}
+
+.voterName {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+}
+
+.voterVotes {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  flex-shrink: 0;
 }
 
 .loading,

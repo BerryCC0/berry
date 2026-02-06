@@ -37,6 +37,23 @@ const DELEGATES_QUERY = `
   }
 `;
 
+// Also fetch accounts (Noun holders) who may have delegated their votes
+const ACCOUNTS_QUERY = `
+  query Accounts($first: Int!, $skip: Int!) {
+    accounts(
+      first: $first
+      skip: $skip
+      where: { tokenBalance_gt: "0" }
+    ) {
+      id
+      tokenBalance
+      nouns {
+        id
+      }
+    }
+  }
+`;
+
 const PROPOSALS_QUERY = `
   query Proposals($first: Int!, $skip: Int!) {
     proposals(
@@ -143,6 +160,12 @@ interface DelegateData {
   tokenHoldersRepresentedAmount: number;
   nounsRepresented: { id: string }[];
   votes: { blockTimestamp: string }[];
+}
+
+interface AccountData {
+  id: string;
+  tokenBalance: string;
+  nouns: { id: string }[];
 }
 
 interface ProposalData {
@@ -346,6 +369,61 @@ async function syncVoters(sql: SqlFunction): Promise<{ inserted: number; updated
     } catch (error) {
       console.error(`Error syncing voter ${address}:`, error);
     }
+  }
+  
+  return results;
+}
+
+async function syncAccounts(sql: SqlFunction): Promise<{ inserted: number; updated: number }> {
+  const results = { inserted: 0, updated: 0 };
+  
+  // Fetch all accounts (Noun holders) from Goldsky
+  const accounts = await fetchAllPaginated<AccountData>(ACCOUNTS_QUERY, 'accounts', 1000);
+  
+  if (accounts.length === 0) return results;
+  
+  // Get existing voters
+  const existingVoters = await sql`SELECT address FROM voters` as { address: string }[];
+  const existingSet = new Set(existingVoters.map(v => v.address.toLowerCase()));
+  
+  // Filter to accounts not already in voters table
+  const newAccounts = accounts.filter(a => !existingSet.has(a.id.toLowerCase()));
+  
+  // Insert new accounts with ENS resolution (limit to 50 per run)
+  const toProcess = newAccounts.slice(0, 50);
+  
+  for (const account of toProcess) {
+    const address = account.id.toLowerCase();
+    const nounsRepresented = account.nouns.map(n => parseInt(n.id));
+    
+    // Try to resolve ENS
+    let ensName: string | null = null;
+    try {
+      const ensRes = await fetch(`https://api.ensideas.com/ens/resolve/${address}`);
+      if (ensRes.ok) {
+        const ensData = await ensRes.json();
+        ensName = ensData.name || null;
+      }
+    } catch {
+      // Skip ENS errors
+    }
+    
+    try {
+      await sql`
+        INSERT INTO voters (address, ens_name, delegated_votes, nouns_represented)
+        VALUES (${address}, ${ensName}, 0, ${nounsRepresented})
+        ON CONFLICT (address) DO UPDATE SET
+          ens_name = COALESCE(EXCLUDED.ens_name, voters.ens_name),
+          nouns_represented = EXCLUDED.nouns_represented,
+          updated_at = NOW()
+      `;
+      results.inserted++;
+    } catch (error) {
+      console.error(`Error syncing account ${address}:`, error);
+    }
+    
+    // Rate limit ENS resolution
+    await new Promise(r => setTimeout(r, 50));
   }
   
   return results;
@@ -574,6 +652,7 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const results = {
     voters: { inserted: 0, updated: 0 },
+    accounts: { inserted: 0, updated: 0 },
     proposals: { inserted: 0, updated: 0 },
     proposalVersions: { inserted: 0 },
     candidates: { inserted: 0, updated: 0 },
@@ -586,12 +665,21 @@ export async function GET(request: NextRequest) {
     const sql = neon(process.env.DATABASE_URL!);
 
     // Sync voters (delegates) with ENS names
-    console.log('[Sync Camp] Syncing voters...');
+    console.log('[Sync Camp] Syncing voters (delegates)...');
     try {
       results.voters = await syncVoters(sql);
     } catch (error) {
       console.error('[Sync Camp] Error syncing voters:', error);
       results.errors.push(`voters: ${String(error)}`);
+    }
+
+    // Sync accounts (Noun holders who may have delegated)
+    console.log('[Sync Camp] Syncing accounts (Noun holders)...');
+    try {
+      results.accounts = await syncAccounts(sql);
+    } catch (error) {
+      console.error('[Sync Camp] Error syncing accounts:', error);
+      results.errors.push(`accounts: ${String(error)}`);
     }
 
     // Sync proposals

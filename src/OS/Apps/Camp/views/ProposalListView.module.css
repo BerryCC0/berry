@@ -10,6 +10,31 @@
   overflow: hidden;
 }
 
+.navBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+}
+
+.backButton {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-primary);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.backButton:hover {
+  background: var(--berry-accent);
+  color: white;
+}
+
 .controls {
   display: flex;
   gap: 8px;
@@ -31,6 +56,154 @@
   flex: 1;
   overflow-y: auto;
   padding: 8px 12px;
+}
+
+/* Proposal items - matching Digest styles */
+.proposalItem {
+  padding: 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.proposalItem:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.proposalMeta {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.proposer {
+  color: var(--berry-link);
+}
+
+.proposalTitle {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+/* Vote bar */
+.voteBar {
+  position: relative;
+  height: 4px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 2px;
+  overflow: visible;
+  margin-bottom: 8px;
+  display: flex;
+}
+
+.forSection {
+  height: 100%;
+  background: var(--berry-success);
+  border-radius: 2px 0 0 2px;
+}
+
+.quorumSpace {
+  height: 100%;
+  background: transparent;
+}
+
+.abstainSection {
+  height: 100%;
+  background: var(--berry-text-tertiary);
+}
+
+.againstSection {
+  height: 100%;
+  background: var(--berry-error);
+  border-radius: 0 2px 2px 0;
+}
+
+.quorumMarker {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 8px;
+  background: var(--berry-text-secondary);
+  transform: translateX(-50%);
+}
+
+/* Proposal stats */
+.proposalStats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  flex-wrap: wrap;
+}
+
+.statusBadge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusBadge.ongoing {
+  background: rgba(var(--berry-success-rgb, 74, 222, 128), 0.2);
+  color: var(--berry-success);
+}
+
+.statusBadge.upcoming {
+  background: rgba(var(--berry-warning-rgb, 251, 191, 36), 0.2);
+  color: var(--berry-warning);
+}
+
+.statusBadge.updatable {
+  background: rgba(var(--berry-info-rgb, 96, 165, 250), 0.2);
+  color: var(--berry-info);
+}
+
+.statusBadge.queued {
+  background: rgba(var(--berry-success-rgb, 74, 222, 128), 0.2);
+  color: var(--berry-success);
+}
+
+.statusBadge.executed {
+  background: var(--berry-success);
+  color: white;
+}
+
+.statusBadge.succeeded {
+  background: rgba(var(--berry-success-rgb, 74, 222, 128), 0.2);
+  color: var(--berry-success);
+}
+
+.statusBadge.cancelled {
+  background: rgba(var(--berry-error-rgb, 239, 68, 68), 0.2);
+  color: var(--berry-error);
+}
+
+.statusBadge.defeated {
+  background: rgba(var(--berry-error-rgb, 239, 68, 68), 0.2);
+  color: var(--berry-error);
+}
+
+.statusBadge.rightAligned {
+  margin-left: auto;
+}
+
+.voteCount {
+  color: var(--berry-text-secondary);
+}
+
+.timeRemaining {
+  color: var(--berry-text-tertiary);
+  margin-left: auto;
 }
 
 .loading,

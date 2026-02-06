@@ -175,23 +175,6 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
       });
     }
     
-    // Topics section
-    commands.push({
-      id: 'browse-topics',
-      label: 'Browse Discussion Topics',
-      section: 'Topics',
-      action: () => { onNavigate('candidates'); onClose(); }, // Topics are like candidates
-    });
-    
-    if (isConnected) {
-      commands.push({
-        id: 'create-topic',
-        label: 'Create Discussion Topic...',
-        section: 'Topics',
-        action: () => { onNavigate('create'); onClose(); },
-      });
-    }
-    
     // Connected account section
     if (isConnected) {
       commands.push({
@@ -232,14 +215,6 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
       label: 'Treasury',
       section: 'DAO',
       action: () => { appLauncher.launch('treasury'); onClose(); },
-    });
-    
-    // Camp section
-    commands.push({
-      id: 'settings',
-      label: 'Settings',
-      section: 'Camp',
-      action: () => { appLauncher.launch('settings'); onClose(); },
     });
     
     return commands;
