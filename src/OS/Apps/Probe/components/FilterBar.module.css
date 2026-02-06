@@ -14,24 +14,29 @@
   font-family: 'Comic Neue', cursive;
 }
 
-/* ── Sort row ── */
+/* ── Sort row (matches NounDetail top bar) ── */
 .sortRow {
   display: flex;
   align-items: center;
   gap: 0;
   flex-wrap: wrap;
+  padding: 8px 16px;
+  margin: -6px -8px 0;
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .sortButton {
   background: none;
   border: none;
-  color: var(--berry-text-secondary);
+  color: #1a1a1a;
+  opacity: 0.5;
   font-family: 'Comic Neue', cursive;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.5px;
   cursor: pointer;
   padding: 2px 2px;
-  transition: color 0.15s;
+  transition: opacity 0.15s;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -42,51 +47,54 @@
 }
 
 .sortButton:hover {
-  color: var(--berry-text-primary);
+  opacity: 0.8;
 }
 
 .sortButton.active {
-  color: var(--berry-text-primary);
+  opacity: 1;
+  color: #1a1a1a;
 }
 
 .count {
   margin-left: auto;
   font-family: 'Comic Neue', cursive;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--berry-text-secondary);
+  letter-spacing: 0.5px;
+  color: #1a1a1a;
+  opacity: 0.5;
 }
 
 /* ── Nav buttons (back/forward) ── */
 .navButtons {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   margin-left: 6px;
 }
 
 .navButton {
-  background: none;
-  border: 1px solid var(--berry-border);
+  background: rgba(0, 0, 0, 0.1);
+  border: none;
   border-radius: 3px;
-  color: var(--berry-text-primary);
-  font-size: 12px;
-  width: 22px;
-  height: 22px;
+  color: #1a1a1a;
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background 0.15s;
 }
 
 .navButton:hover:not(:disabled) {
-  background: var(--berry-bg-secondary);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .navButton:disabled {
-  opacity: 0.2;
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
