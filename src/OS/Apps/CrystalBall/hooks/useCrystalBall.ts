@@ -3,8 +3,8 @@
  * Watches for new blocks and generates predicted next Noun
  */
 
-import { useState, useEffect } from 'react';
-import { useBlockNumber, useBlock, useReadContract } from 'wagmi';
+import { useState, useEffect, useCallback } from 'react';
+import { useBlock, useReadContract, useWatchBlockNumber } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import { getNounSeedFromBlockHash, type NounSeed } from '../utils/seedFromBlockHash';
@@ -31,6 +31,8 @@ function isAuctionEnded(endTime: number | null, settled: boolean): boolean {
 }
 
 export function useCrystalBall() {
+  const [currentBlockNumber, setCurrentBlockNumber] = useState<bigint | null>(null);
+  
   const [state, setState] = useState<CrystalBallState>({
     seed: null,
     nextNounId: null,
@@ -42,16 +44,22 @@ export function useCrystalBall() {
     error: null,
   });
 
-  // Watch for new blocks on mainnet
-  const { data: blockNumber } = useBlockNumber({
+  // Watch for new blocks in real-time
+  useWatchBlockNumber({
     chainId: mainnet.id,
-    watch: true,
+    emitOnBegin: true,
+    onBlockNumber(blockNumber) {
+      setCurrentBlockNumber(blockNumber);
+    },
   });
 
   // Get block details for the hash
-  const { data: block } = useBlock({
+  const { data: block, refetch: refetchBlock } = useBlock({
     chainId: mainnet.id,
-    blockNumber: blockNumber,
+    blockNumber: currentBlockNumber ?? undefined,
+    query: {
+      enabled: !!currentBlockNumber,
+    },
   });
 
   // Get current auction to determine next noun ID and auction status
@@ -60,7 +68,17 @@ export function useCrystalBall() {
     abi: NOUNS_CONTRACTS.auctionHouse.abi,
     functionName: 'auction',
     chainId: mainnet.id,
+    query: {
+      refetchInterval: 12000, // Refresh auction data periodically
+    },
   });
+
+  // Refetch block when blockNumber changes
+  useEffect(() => {
+    if (currentBlockNumber) {
+      refetchBlock();
+    }
+  }, [currentBlockNumber, refetchBlock]);
 
   // Generate seed when block or auction changes
   useEffect(() => {
@@ -100,9 +118,16 @@ export function useCrystalBall() {
   // Compute if auction can be settled
   const canSettle = isAuctionEnded(state.auctionEndTime, state.auctionSettled);
 
+  // Manual refresh function
+  const refresh = useCallback(() => {
+    refetchBlock();
+    refetchAuction();
+  }, [refetchBlock, refetchAuction]);
+
   return {
     ...state,
     canSettle,
     refetchAuction,
+    refresh,
   };
 }
