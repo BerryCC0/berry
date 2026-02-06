@@ -6,7 +6,8 @@
 import { ImageResponse } from 'next/og';
 import { neon } from '@neondatabase/serverless';
 
-export const runtime = 'edge';
+// Use Node.js runtime — edge has issues with large SVG payloads
+export const runtime = 'nodejs';
 
 // Cache the font fetch so it's only done once per cold start
 let fontData: ArrayBuffer | null = null;
@@ -19,16 +20,24 @@ async function getComicNeueFont(): Promise<ArrayBuffer> {
   return fontData;
 }
 
+/**
+ * Safely encode SVG string to a base64 data URI using Buffer (Node.js).
+ */
+function svgToDataUri(svg: string): string {
+  const b64 = Buffer.from(svg, 'utf-8').toString('base64');
+  return `data:image/svg+xml;base64,${b64}`;
+}
+
 export async function GET() {
   try {
     const font = await getComicNeueFont();
     const sql = neon(process.env.DATABASE_URL!);
 
-    // Fetch the 24 most recent nouns (fills a 6x4 grid)
+    // Fetch 12 most recent nouns (6x2 grid — keeps payload manageable)
     const nouns = await sql`
-      SELECT id, svg, background FROM nouns
+      SELECT id, svg FROM nouns
       ORDER BY id DESC
-      LIMIT 24
+      LIMIT 12
     `;
 
     return new ImageResponse(
@@ -40,7 +49,7 @@ export async function GET() {
             width: '100%',
             height: '100%',
             background: '#e8e4dc',
-            fontFamily: '"Comic Neue", cursive',
+            fontFamily: '"Comic Neue"',
           }}
         >
           {/* Header */}
@@ -49,36 +58,31 @@ export async function GET() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '20px 32px 12px',
+              padding: '24px 40px 16px',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: 12,
-              }}
-            >
-              <span style={{ fontSize: 42, fontWeight: 800, color: '#1a1a1a' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
+              <span style={{ fontSize: 48, fontWeight: 700, color: '#1a1a1a' }}>
                 Probe
               </span>
-              <span style={{ fontSize: 22, color: '#666', fontWeight: 600 }}>
+              <span style={{ fontSize: 24, color: '#666', fontWeight: 700 }}>
                 Nouns Explorer
               </span>
             </div>
-            <span style={{ fontSize: 20, color: 'rgba(0,0,0,0.35)', fontWeight: 600 }}>
+            <span style={{ fontSize: 22, color: 'rgba(0,0,0,0.35)', fontWeight: 700 }}>
               Berry OS
             </span>
           </div>
 
-          {/* Noun Grid: 6 columns x 4 rows */}
+          {/* Noun Grid: 6 columns x 2 rows */}
           <div
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              padding: '4px 24px 24px',
-              gap: 6,
+              padding: '8px 32px 32px',
+              gap: 10,
               flex: 1,
+              alignContent: 'flex-start',
             }}
           >
             {nouns.map((noun) => (
@@ -88,21 +92,20 @@ export async function GET() {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  width: 182,
-                  height: 128,
-                  borderRadius: 6,
+                  width: 176,
+                  borderRadius: 8,
                   overflow: 'hidden',
                   background: '#fff',
                   border: '2px solid rgba(0,0,0,0.08)',
+                  padding: '6px 6px 4px',
                 }}
               >
                 <img
-                  src={`data:image/svg+xml;base64,${btoa(noun.svg)}`}
-                  width={110}
-                  height={110}
-                  style={{ imageRendering: 'pixelated' }}
+                  src={svgToDataUri(noun.svg)}
+                  width={160}
+                  height={160}
                 />
-                <span style={{ fontSize: 13, color: '#666', fontWeight: 700, marginTop: -2 }}>
+                <span style={{ fontSize: 16, color: '#555', fontWeight: 700, marginTop: 2 }}>
                   {noun.id}
                 </span>
               </div>
@@ -138,10 +141,9 @@ export async function GET() {
             width: '100%',
             height: '100%',
             background: '#e8e4dc',
-            fontFamily: 'cursive',
           }}
         >
-          <span style={{ fontSize: 72, fontWeight: 800, color: '#1a1a1a' }}>Probe</span>
+          <span style={{ fontSize: 72, fontWeight: 700, color: '#1a1a1a' }}>Probe</span>
           <span style={{ fontSize: 32, color: '#666', marginTop: 12 }}>Nouns Explorer</span>
           <span style={{ fontSize: 20, color: 'rgba(0,0,0,0.35)', marginTop: 24 }}>Berry OS</span>
         </div>

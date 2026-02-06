@@ -1,15 +1,20 @@
 /**
  * Dynamic OG Image for Probe Noun Detail
- * Shows a single Noun large with its ID and traits
+ * Shows a single Noun large with its ID and auction info
  */
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { neon } from '@neondatabase/serverless';
-import { ImageData } from '@/app/lib/nouns/utils/image-data';
-import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
 
-export const runtime = 'edge';
+// Use Node.js runtime — edge has issues with large SVG payloads + ImageData import
+export const runtime = 'nodejs';
+
+// Background colors (matches ImageData.bgcolors — inlined to avoid huge import)
+const BG_COLORS: Record<number, { hex: string; name: string }> = {
+  0: { hex: 'd5d7e1', name: 'Cool' },
+  1: { hex: 'e1d7d5', name: 'Warm' },
+};
 
 // Cache the font fetch so it's only done once per cold start
 let fontData: ArrayBuffer | null = null;
@@ -20,6 +25,14 @@ async function getComicNeueFont(): Promise<ArrayBuffer> {
   );
   fontData = await res.arrayBuffer();
   return fontData;
+}
+
+/**
+ * Safely encode SVG string to a base64 data URI using Buffer (Node.js).
+ */
+function svgToDataUri(svg: string): string {
+  const b64 = Buffer.from(svg, 'utf-8').toString('base64');
+  return `data:image/svg+xml;base64,${b64}`;
 }
 
 export async function GET(
@@ -38,7 +51,7 @@ export async function GET(
     const sql = neon(process.env.DATABASE_URL!);
 
     const result = await sql`
-      SELECT id, svg, background, body, accessory, head, glasses,
+      SELECT id, svg, background,
              winning_bid, winner_address, winner_ens
       FROM nouns WHERE id = ${nounId}
     `;
@@ -48,17 +61,8 @@ export async function GET(
     }
 
     const noun = result[0];
-    const bgHex = ImageData.bgcolors[noun.background] || 'd5d7e1';
-    const bgColor = `#${bgHex}`;
-
-    // Get trait names (background is "Warm" or "Cool")
-    const traits = [
-      { label: 'HEAD', value: getTraitName('head', noun.head) },
-      { label: 'GLASSES', value: getTraitName('glasses', noun.glasses) },
-      { label: 'ACCESSORY', value: getTraitName('accessory', noun.accessory) },
-      { label: 'BODY', value: getTraitName('body', noun.body) },
-      { label: 'BACKGROUND', value: getTraitName('background', noun.background) },
-    ];
+    const bg = BG_COLORS[noun.background] || BG_COLORS[0];
+    const bgColor = `#${bg.hex}`;
 
     // Format winning bid
     let bidDisplay = '';
@@ -68,7 +72,7 @@ export async function GET(
     }
 
     const ownerDisplay = noun.winner_ens || (noun.winner_address
-      ? `${noun.winner_address.slice(0, 6)}…${noun.winner_address.slice(-4)}`
+      ? `${noun.winner_address.slice(0, 6)}...${noun.winner_address.slice(-4)}`
       : '');
 
     return new ImageResponse(
@@ -79,7 +83,7 @@ export async function GET(
             width: '100%',
             height: '100%',
             background: bgColor,
-            fontFamily: '"Comic Neue", cursive',
+            fontFamily: '"Comic Neue"',
           }}
         >
           {/* Left side: Noun image */}
@@ -94,10 +98,9 @@ export async function GET(
             }}
           >
             <img
-              src={`data:image/svg+xml;base64,${btoa(noun.svg)}`}
+              src={svgToDataUri(noun.svg)}
               width={480}
               height={480}
-              style={{ imageRendering: 'pixelated', borderRadius: 12 }}
             />
           </div>
 
@@ -113,38 +116,36 @@ export async function GET(
             }}
           >
             {/* Noun ID */}
-            <div style={{ display: 'flex', fontSize: 64, fontWeight: 800, color: '#1a1a1a' }}>
+            <div style={{ display: 'flex', fontSize: 64, fontWeight: 700, color: '#1a1a1a' }}>
               Noun {noun.id}
             </div>
 
             {/* Bid + Owner */}
-            {(bidDisplay || ownerDisplay) && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8, marginBottom: 8 }}>
-                {bidDisplay && (
-                  <div style={{ display: 'flex', fontSize: 28, color: '#333', fontWeight: 700 }}>
-                    {bidDisplay}
-                  </div>
-                )}
-                {ownerDisplay && (
-                  <div style={{ display: 'flex', fontSize: 20, color: '#555' }}>
-                    Won by {ownerDisplay}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Traits */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
-              {traits.map((trait) => (
-                <div key={trait.label} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontSize: 14, color: '#888', fontWeight: 700, letterSpacing: 0.5, width: 100 }}>
-                    {trait.label}
-                  </span>
-                  <span style={{ fontSize: 20, color: '#333', fontWeight: 600 }}>
-                    {trait.value}
-                  </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8, marginBottom: 8 }}>
+              {bidDisplay ? (
+                <div style={{ display: 'flex', fontSize: 28, color: '#333', fontWeight: 700 }}>
+                  {bidDisplay}
                 </div>
-              ))}
+              ) : (
+                <div style={{ display: 'flex', fontSize: 28, color: '#333', fontWeight: 700 }}>
+                  Nounders
+                </div>
+              )}
+              {ownerDisplay ? (
+                <div style={{ display: 'flex', fontSize: 20, color: '#555' }}>
+                  Won by {ownerDisplay}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Background trait */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 12 }}>
+              <span style={{ fontSize: 14, color: '#888', fontWeight: 700, letterSpacing: 0.5 }}>
+                BACKGROUND
+              </span>
+              <span style={{ fontSize: 20, color: '#333', fontWeight: 700 }}>
+                {bg.name}
+              </span>
             </div>
 
             {/* Branding */}
@@ -154,7 +155,7 @@ export async function GET(
                 marginTop: 'auto',
                 fontSize: 18,
                 color: 'rgba(0,0,0,0.3)',
-                fontWeight: 600,
+                fontWeight: 700,
               }}
             >
               Probe — Berry OS
