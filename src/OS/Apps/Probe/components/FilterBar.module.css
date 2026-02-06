@@ -18,11 +18,20 @@
 .sortRow {
   display: flex;
   align-items: center;
-  gap: 0;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
   padding: 8px 16px;
   margin: -6px -8px 0;
   background: rgba(0, 0, 0, 0.06);
+}
+
+.sortButtons {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .sortButton {
@@ -65,12 +74,19 @@
   opacity: 0.5;
 }
 
+@media (max-width: 600px) {
+  .count {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
 /* ── Nav buttons (back/forward) ── */
 .navButtons {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: 6px;
+  flex-shrink: 0;
 }
 
 .navButton {

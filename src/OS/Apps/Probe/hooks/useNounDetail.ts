@@ -75,3 +75,27 @@ export function useNounOwner(id: number | null) {
     staleTime: 5 * 60 * 1000, // 5 minutes - owners can change
   });
 }
+
+/**
+ * Resolve an Ethereum address to an ENS name
+ */
+export function useENSName(address: string | null) {
+  return useQuery<string | null>({
+    queryKey: ['ens', address?.toLowerCase()],
+    queryFn: async () => {
+      if (!address) return null;
+      try {
+        const response = await fetch(
+          `https://api.ensideas.com/ens/resolve/${encodeURIComponent(address)}`
+        );
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.name || null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!address && address !== '0x0000000000000000000000000000000000000000',
+    staleTime: 30 * 60 * 1000, // 30 minutes
+  });
+}

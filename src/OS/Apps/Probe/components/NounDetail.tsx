@@ -19,7 +19,7 @@ import { useBid } from '@/app/lib/nouns/hooks';
 import { useAuctionById, type Bid } from '@/OS/Apps/NounsAuction/hooks/useAuctionData';
 import { getMinimumNextBid, formatBidAmount } from '@/OS/Apps/NounsAuction/utils/auctionHelpers';
 import { getClientName, isBerryOSBid } from '@/OS/Apps/NounsAuction/utils/clientNames';
-import { useNounDetail, useNounOwner } from '../hooks/useNounDetail';
+import { useNounDetail, useNounOwner, useENSName } from '../hooks/useNounDetail';
 import styles from './NounDetail.module.css';
 
 interface NounDetailProps {
@@ -30,6 +30,12 @@ interface NounDetailProps {
   canGoBack: boolean;
   canGoForward: boolean;
   onFilterByTrait: (type: TraitType, value: number) => void;
+}
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+function isValidAddress(address: string | null | undefined): boolean {
+  return !!address && address !== ZERO_ADDRESS && address !== '';
 }
 
 function truncateAddress(address: string): string {
@@ -263,6 +269,7 @@ function BidsModal({ bids, onClose }: { bids: Bid[]; onClose: () => void }) {
 export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, canGoForward, onFilterByTrait }: NounDetailProps) {
   const { data: noun, isLoading, error } = useNounDetail(nounId);
   const { data: owner } = useNounOwner(nounId);
+  const { data: ownerEns } = useENSName(owner ?? null);
   const { auction } = useCurrentAuction();
   const [showBidsModal, setShowBidsModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -292,8 +299,8 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
   // Check if this Noun is the one currently at auction
   const isCurrentAuction = auction && maxNounId === nounId && !auction.settled;
 
-  // Fetch bids from Goldsky subgraph (only when viewing the current auction noun)
-  const { data: auctionData } = useAuctionById(isCurrentAuction ? String(nounId) : null);
+  // Fetch bids from Goldsky subgraph (for all nouns, not just current auction)
+  const { data: auctionData } = useAuctionById(String(nounId));
   const bids = auctionData?.auction?.bids ?? [];
 
   // Reset modal when navigating to a different noun
@@ -409,13 +416,13 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
 
           {/* Auction info (live) or settlement info (historical) */}
           <div className={styles.infoBlock}>
-            {noun.settled_by_address && (
+            {isValidAddress(noun.settled_by_address) && (
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>SETTLED BY: </span>
                 <span className={styles.infoLink}>
                   {noun.settled_by_ens || truncateAddress(noun.settled_by_address)}
                 </span>
-                {noun.settled_at && (
+                {noun.settled_at && formatDateTime(noun.settled_at) && (
                   <span className={styles.infoSecondary}>
                     {' '}{formatDateTime(noun.settled_at)}
                   </span>
@@ -434,17 +441,12 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>CURRENT BID: </span>
                   <span className={styles.infoValue}>{currentBidEth}</span>
-                  {auction.bidder && auction.bidder !== '0x0000000000000000000000000000000000000000' && (
+                  {isValidAddress(auction.bidder) && (
                     <>
                       <span className={styles.infoSecondary}> BY </span>
                       <span className={styles.infoLink}>{truncateAddress(auction.bidder)}</span>
                     </>
                   )}
-                </div>
-                <div className={styles.infoRow}>
-                  <button className={styles.seeAllBids} onClick={handleOpenBids}>
-                    SEE ALL BIDS
-                  </button>
                 </div>
               </>
             ) : (
@@ -453,23 +455,32 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
                   <div className={styles.infoRow}>
                     <span className={styles.infoLabel}>WINNING BID: </span>
                     <span className={styles.infoValue}>{formatBidWei(noun.winning_bid)}</span>
-                    {noun.winner_address && (
+                    {isValidAddress(noun.winner_address) && (
                       <>
                         <span className={styles.infoSecondary}> BY </span>
                         <span className={styles.infoLink}>
-                          {noun.winner_ens || truncateAddress(noun.winner_address)}
+                          {noun.winner_ens || truncateAddress(noun.winner_address!)}
                         </span>
                       </>
                     )}
                   </div>
                 )}
-                {owner && (
+                {isValidAddress(owner) && (
                   <div className={styles.infoRow}>
                     <span className={styles.infoLabel}>CURRENT OWNER: </span>
-                    <span className={styles.infoLink}>{truncateAddress(owner)}</span>
+                    <span className={styles.infoLink}>
+                      {ownerEns || truncateAddress(owner!)}
+                    </span>
                   </div>
                 )}
               </>
+            )}
+            {bids.length > 0 && (
+              <div className={styles.infoRow}>
+                <button className={styles.seeAllBids} onClick={handleOpenBids}>
+                  SEE ALL BIDS
+                </button>
+              </div>
             )}
           </div>
 

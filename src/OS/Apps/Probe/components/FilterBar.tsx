@@ -148,37 +148,37 @@ export function FilterBar({
 
   return (
     <div className={styles.filterBar}>
-      {/* Sort options */}
+      {/* Top bar: sort buttons left, nav right */}
       <div className={styles.sortRow}>
-        <button
-          className={`${styles.sortButton} ${isDefault ? styles.active : ''}`}
-          onClick={onReset}
-        >
-          RESET
-        </button>
-        {sortToggles.map(({ sorts, labels }) => {
-          const isActive = sort === sorts[0] || sort === sorts[1];
-          // Show opposite label when active (what clicking will switch to)
-          // Show default label when inactive (what clicking will activate)
-          let label: string;
-          if (sort === sorts[0]) {
-            label = labels[1]; // show opposite
-          } else if (sort === sorts[1]) {
-            label = labels[0]; // show opposite
-          } else {
-            label = labels[0]; // show default direction
-          }
-          return (
-            <button
-              key={sorts[0]}
-              className={`${styles.sortButton} ${isActive ? styles.active : ''}`}
-              onClick={() => handleSortToggle(sorts)}
-            >
-              {label}
-            </button>
-          );
-        })}
-        <span className={styles.count}>{total.toLocaleString()} nouns</span>
+        <div className={styles.sortButtons}>
+          <button
+            className={`${styles.sortButton} ${isDefault ? styles.active : ''}`}
+            onClick={onReset}
+          >
+            RESET
+          </button>
+          {sortToggles.map(({ sorts, labels }) => {
+            const isActive = sort === sorts[0] || sort === sorts[1];
+            let label: string;
+            if (sort === sorts[0]) {
+              label = labels[1];
+            } else if (sort === sorts[1]) {
+              label = labels[0];
+            } else {
+              label = labels[0];
+            }
+            return (
+              <button
+                key={sorts[0]}
+                className={`${styles.sortButton} ${isActive ? styles.active : ''}`}
+                onClick={() => handleSortToggle(sorts)}
+              >
+                {label}
+              </button>
+            );
+          })}
+          <span className={styles.count}>{total.toLocaleString()} nouns</span>
+        </div>
         <div className={styles.navButtons}>
           <button
             className={styles.navButton}
