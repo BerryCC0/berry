@@ -314,8 +314,13 @@ export function CreateProposalView({
       setDraftTitle(autoTitle);
     }
     
-    // Don't save completely empty drafts
-    if (!draftTitle && !title.trim()) {
+    // Check if there are any non-empty actions to save
+    const hasActions = actionTemplateStates.some(
+      state => state.templateId || state.generatedActions.length > 0
+    );
+    
+    // Don't save completely empty drafts (no title AND no description AND no actions)
+    if (!draftTitle && !title.trim() && !description.trim() && !hasActions) {
       setSaveStatus('unsaved');
       return;
     }
