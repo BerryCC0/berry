@@ -426,6 +426,10 @@ export function ActionTemplateEditor({
   }, [fieldValues, generatedActions, selectedTemplate]);
 
   const handleTemplateSelect = (templateId: string) => {
+    // Mark as initialized when user manually selects a template
+    // This ensures sync back to parent works even when starting fresh
+    initializedRef.current = true;
+    
     if (templateId === '') {
       setSelectedTemplate(null);
       setSelectedCategory('');

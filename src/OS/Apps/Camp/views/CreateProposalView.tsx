@@ -19,7 +19,7 @@ import {
 import { Select } from '@/src/OS/components/Primitives/Select/Select';
 import type { ActionTemplateState, ProposalDraft } from '../utils/types';
 import { generateSlugFromTitle, generateUniqueSlug, generateSlug, generateSlugWithConflictCheck } from '../utils/slugGenerator';
-import { parseActionsToTemplates, generateActionsFromTemplate } from '../utils/actionTemplates';
+import { parseActionsToTemplates, generateActionsFromTemplate, ACTION_TEMPLATES, type ActionTemplateType } from '../utils/actionTemplates';
 import { useNounHolderStatus } from '../utils/hooks/useNounHolderStatus';
 import { useCandidate } from '../hooks/useCandidates';
 import { useSimulation } from '../hooks/useSimulation';
@@ -125,6 +125,11 @@ export function CreateProposalView({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [kycVerified, setKycVerified] = useState(false);
   const [kycInquiryId, setKycInquiryId] = useState<string | undefined>();
+  const [serverKycStatus, setServerKycStatus] = useState<{
+    checked: boolean;
+    verified: boolean;
+    status: string | null;
+  }>({ checked: false, verified: false, status: null });
 
   // Draft management
   const [drafts, setDrafts] = useState<ProposalDraft[]>([]);
@@ -132,17 +137,62 @@ export function CreateProposalView({
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('unsaved');
   const [editDataLoaded, setEditDataLoaded] = useState(false);
   
-  // Extract recipient address from action templates for KYC
-  // Only show KYC when at least one action has a recipient address
-  const recipientAddressForKYC = useMemo(() => {
-    for (const template of actionTemplateStates) {
-      const recipient = template.fieldValues?.recipient;
-      if (recipient && typeof recipient === 'string' && recipient.startsWith('0x') && recipient.length === 42) {
-        return recipient;
+  // Check if any selected template has a recipient field (for showing KYC)
+  // and extract the recipient address if filled in
+  const { hasRecipientTemplate, recipientAddress } = useMemo(() => {
+    for (const templateState of actionTemplateStates) {
+      // Skip templates without a selected type
+      if (!templateState.templateId || templateState.templateId === 'custom') continue;
+      
+      // Check if this template has a recipient field
+      const template = ACTION_TEMPLATES[templateState.templateId as ActionTemplateType];
+      if (template) {
+        const hasRecipientField = template.fields.some(field => field.name === 'recipient');
+        if (hasRecipientField) {
+          // Return the recipient address if filled in, otherwise empty string
+          const recipient = templateState.fieldValues?.recipient || '';
+          return { hasRecipientTemplate: true, recipientAddress: recipient };
+        }
       }
     }
-    return null;
+    return { hasRecipientTemplate: false, recipientAddress: '' };
   }, [actionTemplateStates]);
+
+  // Check server-side KYC status when recipient address changes
+  useEffect(() => {
+    const checkServerKycStatus = async () => {
+      // Only check if we have a valid recipient address (0x + 40 hex chars)
+      if (!recipientAddress || !/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
+        setServerKycStatus({ checked: false, verified: false, status: null });
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/kyc/status?wallet=${recipientAddress}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setServerKycStatus({
+            checked: true,
+            verified: data.verified,
+            status: data.status,
+          });
+          // If server says verified, update local state too
+          if (data.verified) {
+            setKycVerified(true);
+            setKycInquiryId(data.inquiryId);
+          }
+        } else {
+          setServerKycStatus({ checked: true, verified: false, status: null });
+        }
+      } catch (error) {
+        console.error('Failed to check KYC status:', error);
+        setServerKycStatus({ checked: true, verified: false, status: null });
+      }
+    };
+
+    checkServerKycStatus();
+  }, [recipientAddress]);
   
   // Update modal state
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -887,14 +937,15 @@ export function CreateProposalView({
               />
             </div>
 
-            {/* KYC Verification - Only show when action has a recipient address */}
-            {proposalType !== 'candidate' && recipientAddressForKYC && (
+            {/* KYC Verification - Show for proposals (not candidates) when a recipient template is selected */}
+            {proposalType !== 'candidate' && hasRecipientTemplate && (
               <PersonaKYC
                 onComplete={handleKYCComplete}
                 onError={handleKYCError}
                 disabled={isCreating}
-                walletAddress={recipientAddressForKYC}
+                walletAddress={recipientAddress}
                 proposalTitle={title}
+                serverVerified={serverKycStatus.verified}
               />
             )}
           </div>
@@ -934,8 +985,8 @@ export function CreateProposalView({
           )}
         </div>
 
-        {/* KYC Warning for proposals with recipient addresses */}
-        {proposalType !== 'candidate' && recipientAddressForKYC && !kycVerified && (
+        {/* KYC Warning for proposals (not candidates) with recipient templates */}
+        {proposalType !== 'candidate' && hasRecipientTemplate && !kycVerified && (
           <div className={styles.warning}>
             <strong>KYC Not Completed:</strong> You can still submit this proposal, but if it succeeds and you haven&apos;t completed KYC, it may not be executed.
           </div>

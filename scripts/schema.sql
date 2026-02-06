@@ -240,6 +240,18 @@ CREATE TABLE IF NOT EXISTS sync_state (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- KYC verifications (server-side Persona webhook data)
+CREATE TABLE IF NOT EXISTS kyc_verifications (
+  id SERIAL PRIMARY KEY,
+  inquiry_id VARCHAR(100) UNIQUE NOT NULL,           -- Persona inquiry ID
+  reference_id VARCHAR(255),                          -- Reference ID from SDK
+  wallet_address VARCHAR(42),                         -- Recipient wallet address
+  status VARCHAR(50) NOT NULL,                        -- Persona inquiry status
+  verified_at TIMESTAMP WITH TIME ZONE,               -- When verification completed
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- =====================================================
 -- INDEXES
 -- =====================================================
@@ -283,6 +295,11 @@ CREATE INDEX IF NOT EXISTS idx_candidates_title_gin ON candidates USING gin(LOWE
 CREATE INDEX IF NOT EXISTS idx_candidates_slug ON candidates(slug);
 CREATE INDEX IF NOT EXISTS idx_candidates_created ON candidates(created_timestamp DESC);
 
+-- KYC verification indexes
+CREATE INDEX IF NOT EXISTS idx_kyc_wallet ON kyc_verifications(LOWER(wallet_address));
+CREATE INDEX IF NOT EXISTS idx_kyc_status ON kyc_verifications(status);
+CREATE INDEX IF NOT EXISTS idx_kyc_created ON kyc_verifications(created_at DESC);
+
 -- =====================================================
 -- COMMENTS
 -- =====================================================
@@ -303,4 +320,5 @@ COMMENT ON TABLE proposal_versions IS 'Version history for proposals (updates tr
 COMMENT ON TABLE candidates IS 'Proposal candidates (off-chain proposals seeking sponsorship)';
 COMMENT ON TABLE candidate_versions IS 'Version history for candidates (updates tracked)';
 COMMENT ON TABLE sync_state IS 'Tracks last sync timestamps for cron jobs';
+COMMENT ON TABLE kyc_verifications IS 'Server-side KYC verification records from Persona webhooks';
 
