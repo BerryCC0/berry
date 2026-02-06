@@ -628,15 +628,6 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
               <div className={styles.header}>
                 <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
                 <span className={styles.action}>auction started</span>
-                <span 
-                  className={styles.badge} 
-                  data-type="auction" 
-                  onClick={handleAuctionClick}
-                  role="button"
-                  tabIndex={0}
-                >
-                  Live
-                </span>
               </div>
               {item.settler && (
                 <div className={styles.header}>
