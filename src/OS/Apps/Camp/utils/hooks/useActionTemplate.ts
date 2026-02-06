@@ -42,7 +42,7 @@ export function useActionTemplate(): UseActionTemplateReturn {
   const [generatedActions, setGeneratedActions] = useState<ProposalAction[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
-  // Set selected template and reset field values
+  // Set selected template, preserving field values for fields that exist in both templates
   const setSelectedTemplate = useCallback((templateId: ActionTemplateType | null) => {
     if (!templateId) {
       setSelectedTemplateState(null);
@@ -56,12 +56,17 @@ export function useActionTemplate(): UseActionTemplateReturn {
     if (template) {
       setSelectedTemplateState(template);
       
-      // Initialize field values with empty strings
-      const initialValues: TemplateFieldValues = {};
-      template.fields.forEach(field => {
-        initialValues[field.name] = '';
+      // Initialize field values, preserving values for fields that exist in both templates
+      // This allows switching between similar templates (e.g., treasury-eth to treasury-usdc)
+      // without requiring users to re-enter the recipient address
+      setFieldValues(prevValues => {
+        const newValues: TemplateFieldValues = {};
+        template.fields.forEach(field => {
+          // Preserve existing value if the field name matches
+          newValues[field.name] = prevValues[field.name] || '';
+        });
+        return newValues;
       });
-      setFieldValues(initialValues);
       setGeneratedActions([]);
       setValidationErrors([]);
     }
