@@ -73,6 +73,36 @@ export function FilterBar({
     !!filters.settler ||
     !!filters.winner;
 
+  const isDefault = !hasFilters && sort === 'newest';
+
+  /**
+   * Sort toggle definitions.
+   * Each category has two directions. The button shows what clicking will DO:
+   * - If the category is not active, it shows the default direction label
+   * - If the category is active, it shows the opposite direction label (toggle)
+   */
+  const sortToggles: { sorts: [ProbeSort, ProbeSort]; labels: [string, string] }[] = [
+    { sorts: ['smallest', 'largest'], labels: ['SMALLEST', 'LARGEST'] },
+    { sorts: ['most_colorful', 'least_colorful'], labels: ['MOST COLORFUL', 'LEAST COLORFUL'] },
+    { sorts: ['newest', 'oldest'], labels: ['MOST RECENT', 'OLDEST'] },
+    { sorts: ['brightest', 'darkest'], labels: ['BRIGHTEST', 'DARKEST'] },
+  ];
+
+  const handleSortToggle = useCallback(
+    (sorts: [ProbeSort, ProbeSort]) => {
+      // If already in this category, toggle direction
+      if (sort === sorts[0]) {
+        onSortChange(sorts[1]);
+      } else if (sort === sorts[1]) {
+        onSortChange(sorts[0]);
+      } else {
+        // Activate with default direction
+        onSortChange(sorts[0]);
+      }
+    },
+    [sort, onSortChange]
+  );
+
   // Memoize SelectOption arrays with trait preview icons
   const headOptions = useMemo(() => toSelectOptions(traitOptions.heads, 'head'), [traitOptions.heads]);
   const glassesOptions = useMemo(() => toSelectOptions(traitOptions.glasses, 'glasses'), [traitOptions.glasses]);
@@ -113,23 +143,33 @@ export function FilterBar({
       {/* Sort options */}
       <div className={styles.sortRow}>
         <button
-          className={`${styles.sortButton} ${!hasFilters && sort === 'newest' ? styles.active : ''}`}
+          className={`${styles.sortButton} ${isDefault ? styles.active : ''}`}
           onClick={onReset}
         >
           RESET
         </button>
-        <button
-          className={`${styles.sortButton} ${sort === 'newest' ? styles.active : ''}`}
-          onClick={() => onSortChange('newest')}
-        >
-          MOST RECENT
-        </button>
-        <button
-          className={`${styles.sortButton} ${sort === 'oldest' ? styles.active : ''}`}
-          onClick={() => onSortChange('oldest')}
-        >
-          OLDEST
-        </button>
+        {sortToggles.map(({ sorts, labels }) => {
+          const isActive = sort === sorts[0] || sort === sorts[1];
+          // Show opposite label when active (what clicking will switch to)
+          // Show default label when inactive (what clicking will activate)
+          let label: string;
+          if (sort === sorts[0]) {
+            label = labels[1]; // show opposite
+          } else if (sort === sorts[1]) {
+            label = labels[0]; // show opposite
+          } else {
+            label = labels[0]; // show default direction
+          }
+          return (
+            <button
+              key={sorts[0]}
+              className={`${styles.sortButton} ${isActive ? styles.active : ''}`}
+              onClick={() => handleSortToggle(sorts)}
+            >
+              {label}
+            </button>
+          );
+        })}
         <span className={styles.count}>{total.toLocaleString()} nouns</span>
       </div>
 

@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { ImageData } from '@/app/lib/nouns/utils/image-data';
 import { buildSVG } from '@/app/lib/nouns/utils/svg-builder';
+import { computeAllNounMetrics } from '@/app/lib/nouns/utils/noun-metrics';
 
 const GOLDSKY_ENDPOINT = 'https://api.goldsky.com/api/public/project_cldf2o9pqagp43svvbk5u3kmo/subgraphs/nouns/prod/gn';
 const AUCTION_HOUSE_ADDRESS = '0x830BD73E4184ceF73443C15111a1DF14e495C706';
@@ -195,12 +196,17 @@ export async function GET(request: NextRequest) {
           winningBid = null;
         }
 
+        // Compute sort metrics (area, color_count, brightness)
+        const metrics = computeAllNounMetrics(seed);
+
         await sql`
           INSERT INTO nouns (id, background, body, accessory, head, glasses, svg,
-            settled_by_address, settled_at, settled_tx_hash, winning_bid, winner_address)
+            settled_by_address, settled_at, settled_tx_hash, winning_bid, winner_address,
+            area, color_count, brightness)
           VALUES (${nounId}, ${seed.background}, ${seed.body}, ${seed.accessory},
             ${seed.head}, ${seed.glasses}, ${svg}, ${settledByAddress}, ${settledAt},
-            ${settledTxHash}, ${winningBid}, ${winnerAddress})
+            ${settledTxHash}, ${winningBid}, ${winnerAddress},
+            ${metrics.area}, ${metrics.color_count}, ${metrics.brightness})
           ON CONFLICT (id) DO NOTHING
         `;
 

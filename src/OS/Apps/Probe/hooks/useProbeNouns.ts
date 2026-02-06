@@ -20,7 +20,11 @@ export interface ProbeFilters {
   winner?: string | null;
 }
 
-export type ProbeSort = 'newest' | 'oldest';
+export type ProbeSort =
+  | 'newest' | 'oldest'
+  | 'smallest' | 'largest'
+  | 'most_colorful' | 'least_colorful'
+  | 'brightest' | 'darkest';
 
 interface ProbeNounsResponse {
   nouns: NounListItem[];

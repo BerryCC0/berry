@@ -56,6 +56,17 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * Valid sort options
+ */
+const VALID_SORTS = [
+  'newest', 'oldest',
+  'smallest', 'largest',
+  'most_colorful', 'least_colorful',
+  'brightest', 'darkest',
+] as const;
+type SortOption = typeof VALID_SORTS[number];
+
+/**
  * GET - List cached Nouns with optional filters
  * 
  * Query params:
@@ -63,7 +74,8 @@ export async function POST(request: NextRequest) {
  *   settler       - Filter by settler address
  *   winner        - Filter by auction winner address
  *   background, body, accessory, head, glasses - Filter by trait index
- *   sort          - "newest" (default) or "oldest"
+ *   sort          - "newest" (default), "oldest", "smallest", "largest",
+ *                   "most_colorful", "least_colorful", "brightest", "darkest"
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -73,8 +85,11 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Math.max(1, limitParam), 100); // Clamp between 1-100
   const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
   
-  // Sort direction (whitelist to prevent injection)
-  const sortDesc = searchParams.get('sort') !== 'oldest';
+  // Sort option (whitelist to prevent injection)
+  const sortParam = searchParams.get('sort') || 'newest';
+  const sort: SortOption = VALID_SORTS.includes(sortParam as SortOption)
+    ? (sortParam as SortOption)
+    : 'newest';
   
   // Optional address filters
   const settler = searchParams.get('settler')?.toLowerCase() || null;
@@ -90,39 +105,14 @@ export async function GET(request: NextRequest) {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     
-    // Use tagged template with conditional fragments
-    // All params are safely interpolated by the neon driver
-    const nouns = sortDesc
-      ? await sql`
-          SELECT id, background, body, accessory, head, glasses,
-                 settled_by_address, settled_by_ens, settled_at,
-                 winning_bid, winner_address, winner_ens
-          FROM nouns
-          WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
-            AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
-            AND (${background}::int IS NULL OR background = ${background})
-            AND (${body}::int IS NULL OR body = ${body})
-            AND (${accessory}::int IS NULL OR accessory = ${accessory})
-            AND (${head}::int IS NULL OR head = ${head})
-            AND (${glasses}::int IS NULL OR glasses = ${glasses})
-          ORDER BY id DESC
-          LIMIT ${limit} OFFSET ${offset}
-        `
-      : await sql`
-          SELECT id, background, body, accessory, head, glasses,
-                 settled_by_address, settled_by_ens, settled_at,
-                 winning_bid, winner_address, winner_ens
-          FROM nouns
-          WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
-            AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
-            AND (${background}::int IS NULL OR background = ${background})
-            AND (${body}::int IS NULL OR body = ${body})
-            AND (${accessory}::int IS NULL OR accessory = ${accessory})
-            AND (${head}::int IS NULL OR head = ${head})
-            AND (${glasses}::int IS NULL OR glasses = ${glasses})
-          ORDER BY id ASC
-          LIMIT ${limit} OFFSET ${offset}
-        `;
+    // First get matching IDs in the desired sort order.
+    // We query the filtered set from a CTE then sort+paginate.
+    // Each sort option needs its own tagged template because
+    // ORDER BY columns can't be parameterized.
+    const nouns = await queryWithSort(
+      sql, sort, limit, offset,
+      settler, winner, background, body, accessory, head, glasses
+    );
     
     // Get filtered count
     const countResult = await sql`
@@ -149,6 +139,168 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch nouns' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Run the filtered query with the appropriate ORDER BY clause.
+ * Each sort variant is a separate tagged template for SQL safety.
+ */
+async function queryWithSort(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sql: any,
+  sort: SortOption,
+  limit: number,
+  offset: number,
+  settler: string | null,
+  winner: string | null,
+  background: number | null,
+  body: number | null,
+  accessory: number | null,
+  head: number | null,
+  glasses: number | null,
+) {
+  // Shared WHERE clause is repeated in each branch because
+  // neon tagged templates don't support dynamic ORDER BY.
+  // Each branch only differs in the ORDER BY clause.
+
+  switch (sort) {
+    case 'oldest':
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY id ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    case 'smallest':
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY area ASC NULLS LAST, id ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    case 'largest':
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY area DESC NULLS LAST, id DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    case 'most_colorful':
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY color_count DESC NULLS LAST, id DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    case 'least_colorful':
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY color_count ASC NULLS LAST, id ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    case 'brightest':
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY brightness DESC NULLS LAST, id DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    case 'darkest':
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY brightness ASC NULLS LAST, id ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+
+    case 'newest':
+    default:
+      return sql`
+        SELECT id, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns
+        WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+          AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${background}::int IS NULL OR background = ${background})
+          AND (${body}::int IS NULL OR body = ${body})
+          AND (${accessory}::int IS NULL OR accessory = ${accessory})
+          AND (${head}::int IS NULL OR head = ${head})
+          AND (${glasses}::int IS NULL OR glasses = ${glasses})
+        ORDER BY id DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
   }
 }
 

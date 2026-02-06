@@ -133,6 +133,11 @@ CREATE TABLE IF NOT EXISTS nouns (
   winner_address VARCHAR(42),                      -- Winning bidder address
   winner_ens VARCHAR(255),                         -- Winner's ENS (if resolved)
   
+  -- Computed metrics (for Probe sort filters)
+  area INTEGER,                                    -- Total non-transparent pixels
+  color_count INTEGER,                             -- Unique palette colors used
+  brightness INTEGER,                              -- Average perceived brightness (0-255)
+  
   -- Metadata
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -276,6 +281,9 @@ CREATE INDEX IF NOT EXISTS idx_short_links_expires ON short_links(expires_at) WH
 CREATE INDEX IF NOT EXISTS idx_nouns_settled_at ON nouns(settled_at DESC);
 CREATE INDEX IF NOT EXISTS idx_nouns_settler ON nouns(settled_by_address);
 CREATE INDEX IF NOT EXISTS idx_nouns_winner ON nouns(winner_address);
+CREATE INDEX IF NOT EXISTS idx_nouns_area ON nouns(area);
+CREATE INDEX IF NOT EXISTS idx_nouns_color_count ON nouns(color_count DESC);
+CREATE INDEX IF NOT EXISTS idx_nouns_brightness ON nouns(brightness DESC);
 
 -- Proposal drafts indexes
 CREATE INDEX IF NOT EXISTS idx_proposal_drafts_wallet ON proposal_drafts(wallet_address);
