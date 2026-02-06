@@ -89,6 +89,37 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+.shareButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 3px;
+  color: #1a1a1a;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 0 8px;
+  height: 28px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-left: 2px;
+}
+
+.shareButton:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.shareButton:active {
+  transform: scale(0.97);
+}
+
+.shareButton svg {
+  flex-shrink: 0;
+}
+
 .navButton:disabled {
   opacity: 0.25;
   cursor: not-allowed;

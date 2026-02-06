@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { formatEther } from 'viem';
 import { NounImage } from '@/app/lib/nouns/components';
@@ -257,6 +257,26 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
   const { data: owner } = useNounOwner(nounId);
   const { auction } = useCurrentAuction();
   const [showBidsModal, setShowBidsModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copyTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleShare = useCallback(async () => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const fullUrl = `${baseUrl}/probe/${nounId}`;
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = fullUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+    setCopied(true);
+    if (copyTimeout.current) clearTimeout(copyTimeout.current);
+    copyTimeout.current = setTimeout(() => setCopied(false), 2000);
+  }, [nounId]);
 
   // The highest noun ID that exists (the current auction noun)
   const maxNounId = auction ? Number(auction.nounId) : null;
@@ -352,6 +372,23 @@ export function NounDetail({ nounId, onBack, onNavigate, onFilterByTrait }: Noun
             title="Next Noun"
           >
             →
+          </button>
+          <button
+            className={styles.shareButton}
+            onClick={handleShare}
+            title={copied ? 'Copied!' : 'Copy link'}
+          >
+            {copied ? (
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8l3 3 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M11 2H5a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M6 5h4M6 8h4M6 11h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            )}
+            <span>{copied ? 'COPIED' : 'SHARE'}</span>
           </button>
         </div>
       </div>

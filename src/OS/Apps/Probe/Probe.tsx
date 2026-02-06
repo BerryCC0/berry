@@ -5,7 +5,7 @@
  * Nouns explorer — browse all Nouns with trait filtering and detail views
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import type { AppComponentProps } from "@/OS/types/app";
 import type { TraitType } from "@/app/lib/nouns/utils/trait-name-utils";
 import { useCurrentAuction } from "@/app/lib/nouns/hooks";
@@ -18,9 +18,38 @@ import { NounGrid } from "./components/NounGrid";
 import { NounDetail } from "./components/NounDetail";
 import styles from "./Probe.module.css";
 
-export function Probe({}: AppComponentProps) {
+interface ProbeInitialState {
+  nounId?: number;
+}
+
+export function Probe({ initialState, onStateChange }: AppComponentProps) {
+  const probeState = initialState as ProbeInitialState | undefined;
+
   // View state: null = grid, number = detail view for that Noun ID
-  const [selectedNounId, setSelectedNounId] = useState<number | null>(null);
+  const [selectedNounId, setSelectedNounId] = useState<number | null>(
+    probeState?.nounId ?? null
+  );
+
+  // Keep a stable ref to onStateChange to avoid infinite re-render loops
+  const onStateChangeRef = useRef(onStateChange);
+  onStateChangeRef.current = onStateChange;
+
+  // Sync URL when selected noun changes
+  useEffect(() => {
+    if (selectedNounId !== null) {
+      onStateChangeRef.current?.({ nounId: selectedNounId });
+    } else {
+      onStateChangeRef.current?.({});
+    }
+  }, [selectedNounId]);
+
+  // Handle deep link changes after initial mount
+  useEffect(() => {
+    if (probeState?.nounId !== undefined && probeState.nounId !== selectedNounId) {
+      setSelectedNounId(probeState.nounId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [probeState?.nounId]);
 
   // Filter & sort state
   const [filters, setFilters] = useState<ProbeFilters>({});

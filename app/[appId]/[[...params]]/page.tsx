@@ -249,6 +249,16 @@ function buildInitialState(
       }
       break;
 
+    case "probe":
+      // /probe/1806 → open Noun detail view for ID 1806
+      if (safeParams.length > 0) {
+        const nounId = parseInt(safeParams[0], 10);
+        if (!isNaN(nounId)) {
+          state.nounId = nounId;
+        }
+      }
+      break;
+
     default:
       // Generic: pass sanitized search params as state
       Object.entries(safeSearchParams).forEach(([key, value]) => {
