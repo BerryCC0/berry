@@ -132,6 +132,18 @@ export function CreateProposalView({
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('unsaved');
   const [editDataLoaded, setEditDataLoaded] = useState(false);
   
+  // Extract recipient address from action templates for KYC
+  // Only show KYC when at least one action has a recipient address
+  const recipientAddressForKYC = useMemo(() => {
+    for (const template of actionTemplateStates) {
+      const recipient = template.fieldValues?.recipient;
+      if (recipient && typeof recipient === 'string' && recipient.startsWith('0x') && recipient.length === 42) {
+        return recipient;
+      }
+    }
+    return null;
+  }, [actionTemplateStates]);
+  
   // Update modal state
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateReason, setUpdateReason] = useState('');
@@ -875,13 +887,13 @@ export function CreateProposalView({
               />
             </div>
 
-            {/* KYC Verification - Only show for standard and timelock proposals */}
-            {proposalType !== 'candidate' && (
+            {/* KYC Verification - Only show when action has a recipient address */}
+            {proposalType !== 'candidate' && recipientAddressForKYC && (
               <PersonaKYC
                 onComplete={handleKYCComplete}
                 onError={handleKYCError}
                 disabled={isCreating}
-                walletAddress={address}
+                walletAddress={recipientAddressForKYC}
                 proposalTitle={title}
               />
             )}
@@ -922,8 +934,8 @@ export function CreateProposalView({
           )}
         </div>
 
-        {/* KYC Warning for non-candidate proposals */}
-        {proposalType !== 'candidate' && !kycVerified && (
+        {/* KYC Warning for proposals with recipient addresses */}
+        {proposalType !== 'candidate' && recipientAddressForKYC && !kycVerified && (
           <div className={styles.warning}>
             <strong>KYC Not Completed:</strong> You can still submit this proposal, but if it succeeds and you haven&apos;t completed KYC, it may not be executed.
           </div>
