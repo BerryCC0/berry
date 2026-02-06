@@ -47,7 +47,7 @@ const VOTER_QUERY = `
       tokenHoldersRepresented(first: 20) {
         id
       }
-      votes(orderBy: blockTimestamp, orderDirection: desc, first: 50) {
+      votes(orderBy: blockTimestamp, orderDirection: desc, first: 500) {
         id
         proposal {
           id
@@ -74,6 +74,57 @@ const VOTER_QUERY = `
       }
       delegate {
         id
+      }
+    }
+    proposals(where: { proposer: $id }, orderBy: createdTimestamp, orderDirection: desc, first: 50) {
+      id
+      title
+      status
+      forVotes
+      againstVotes
+      abstainVotes
+      quorumVotes
+      createdTimestamp
+      signers {
+        id
+      }
+    }
+    proposalCandidates(where: { proposer: $id, canceled: false }, orderBy: createdTimestamp, orderDirection: desc, first: 50) {
+      id
+      slug
+      proposer
+      createdTimestamp
+      latestVersion {
+        content {
+          title
+        }
+      }
+    }
+  }
+`;
+
+const SPONSORED_QUERY = `
+  query Sponsored($signer: String!) {
+    proposalCandidateSignatures(
+      where: { signer: $signer, canceled: false }
+      orderBy: createdTimestamp
+      orderDirection: desc
+      first: 50
+    ) {
+      id
+      createdTimestamp
+      reason
+      content {
+        proposalCandidate {
+          id
+          slug
+          proposer
+          latestVersion {
+            content {
+              title
+            }
+          }
+        }
       }
     }
   }
@@ -123,29 +174,94 @@ async function fetchVoters(
   }));
 }
 
+interface ProposalSummary {
+  id: string;
+  title: string;
+  status: string;
+  forVotes: string;
+  againstVotes: string;
+  abstainVotes: string;
+  quorumVotes: string;
+  createdTimestamp: string;
+  signers: string[];
+}
+
+interface CandidateSummary {
+  id: string;
+  slug: string;
+  proposer: string;
+  title: string;
+  createdTimestamp: string;
+}
+
+interface SponsoredCandidate {
+  id: string;
+  slug: string;
+  proposer: string;
+  title: string;
+  signedAt: string;
+  reason: string;
+}
+
 interface VoterResult extends Voter {
   recentVotes: any[];
   nounsOwned: NounWithSeed[];
-  delegatingTo: string | null; // Address this account is delegating to
-  delegators: string[]; // Addresses delegating to this account
+  delegatingTo: string | null;
+  delegators: string[];
+  proposals: ProposalSummary[];
+  candidates: CandidateSummary[];
+  sponsored: SponsoredCandidate[];
 }
 
-async function fetchVoter(address: string): Promise<VoterResult> {
+async function fetchSponsored(address: string): Promise<SponsoredCandidate[]> {
   const response = await fetch(GOLDSKY_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      query: VOTER_QUERY,
-      variables: { id: address.toLowerCase() },
+      query: SPONSORED_QUERY,
+      variables: { signer: address.toLowerCase() },
     }),
   });
 
   const json = await response.json();
+  if (json.errors) return [];
+  
+  const signatures = json.data?.proposalCandidateSignatures || [];
+  return signatures.map((sig: any) => {
+    const candidate = sig.content?.proposalCandidate;
+    return {
+      id: candidate?.id || sig.id,
+      slug: candidate?.slug || '',
+      proposer: candidate?.proposer || '',
+      title: candidate?.latestVersion?.content?.title || 'Untitled',
+      signedAt: sig.createdTimestamp,
+      reason: sig.reason || '',
+    };
+  }).filter((s: SponsoredCandidate) => s.slug); // Filter out invalid entries
+}
+
+async function fetchVoter(address: string): Promise<VoterResult> {
+  // Fetch main voter data and sponsored candidates in parallel
+  const [voterResponse, sponsored] = await Promise.all([
+    fetch(GOLDSKY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: VOTER_QUERY,
+        variables: { id: address.toLowerCase() },
+      }),
+    }),
+    fetchSponsored(address),
+  ]);
+
+  const json = await voterResponse.json();
   if (json.errors) throw new Error(json.errors[0].message);
   
   // Handle case where delegate doesn't exist (user has never voted/delegated)
   const d = json.data?.delegate;
   const account = json.data?.account;
+  const proposalsData = json.data?.proposals || [];
+  const candidatesData = json.data?.proposalCandidates || [];
   
   // If neither delegate nor account exists, throw error
   if (!d && !account) throw new Error('Voter not found');
@@ -158,6 +274,28 @@ async function fetchVoter(address: string): Promise<VoterResult> {
   
   // Get who is delegating to this account
   const delegators: string[] = (d?.tokenHoldersRepresented || []).map((h: { id: string }) => h.id);
+  
+  // Map proposals
+  const proposals: ProposalSummary[] = proposalsData.map((p: any) => ({
+    id: p.id,
+    title: p.title || 'Untitled Proposal',
+    status: p.status,
+    forVotes: p.forVotes,
+    againstVotes: p.againstVotes,
+    abstainVotes: p.abstainVotes,
+    quorumVotes: p.quorumVotes,
+    createdTimestamp: p.createdTimestamp,
+    signers: (p.signers || []).map((s: { id: string }) => s.id),
+  }));
+  
+  // Map candidates
+  const candidates: CandidateSummary[] = candidatesData.map((c: any) => ({
+    id: c.id,
+    slug: c.slug,
+    proposer: c.proposer,
+    title: c.latestVersion?.content?.title || 'Untitled Candidate',
+    createdTimestamp: c.createdTimestamp,
+  }));
   
   return {
     id: d?.id || address.toLowerCase(),
@@ -178,6 +316,9 @@ async function fetchVoter(address: string): Promise<VoterResult> {
     nounsOwned,
     delegatingTo,
     delegators,
+    proposals,
+    candidates,
+    sponsored,
   };
 }
 

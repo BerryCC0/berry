@@ -65,9 +65,12 @@ function AddressLink({
 // Quorum is approximately 127 votes (10% of ~1270 total Nouns)
 const QUORUM_VOTES = 127;
 
+type TabType = 'proposals' | 'candidates' | 'sponsored';
+
 export function VoterDetailView({ address: addressInput, onNavigate, onBack, showBackButton = true, isOwnAccount = false }: VoterDetailViewProps) {
   const [showDelegateModal, setShowDelegateModal] = useState(false);
   const [activityFilter, setActivityFilter] = useState<'all' | 'with-reason'>('all');
+  const [activeTab, setActiveTab] = useState<TabType>('proposals');
   
   // Determine if input is ENS name or address
   const inputIsEns = useMemo(() => isEnsName(addressInput), [addressInput]);
@@ -114,6 +117,11 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   
   // Show delegate button if viewing own account and they OWN Nouns
   const canDelegate = isOwnAccount && nounsOwned.length > 0;
+
+  // Get proposals, candidates, and sponsored
+  const proposals = voter?.proposals || [];
+  const candidates = voter?.candidates || [];
+  const sponsored = voter?.sponsored || [];
 
   // Calculate vote stats
   const recentVotes = voter?.recentVotes || [];
@@ -182,6 +190,9 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
         <div className={styles.leftColumn}>
           {/* Profile Header */}
           <div className={styles.profileHeader}>
+            {ensAvatar && (
+              <img src={ensAvatar} alt="" className={styles.avatar} />
+            )}
             <div className={styles.profileMain}>
               <h1 className={styles.name}>{displayName}</h1>
               <span className={styles.address}>{address.slice(0, 6)}...{address.slice(-4)}</span>
@@ -197,22 +208,6 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
               )}
             </div>
           </div>
-
-          {/* Nouns Grid */}
-          {nounsRepresented.length > 0 && (
-            <div className={styles.nounsGrid}>
-              {nounsRepresented.map((noun) => (
-                <div key={noun.id} className={styles.nounCard}>
-                  {noun.seed ? (
-                    <NounImage seed={noun.seed} size={48} className={styles.nounImage} />
-                  ) : (
-                    <div className={styles.nounImagePlaceholder} />
-                  )}
-                  <span className={styles.nounId}>{noun.id}</span>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Delegation Info */}
           {delegatingTo && !isSelfDelegated && (
@@ -243,6 +238,150 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
               </div>
             </div>
           )}
+
+          {/* Nouns Grid */}
+          {nounsRepresented.length > 0 && (
+            <div className={styles.nounsGrid}>
+              {[...nounsRepresented]
+                .sort((a, b) => Number(a.id) - Number(b.id))
+                .map((noun) => (
+                <div key={noun.id} className={styles.nounCard}>
+                  {noun.seed ? (
+                    <NounImage seed={noun.seed} size={48} className={styles.nounImage} />
+                  ) : (
+                    <div className={styles.nounImagePlaceholder} />
+                  )}
+                  <span className={styles.nounId}>{noun.id}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className={styles.tabsSection}>
+            <div className={styles.tabList}>
+              <button
+                className={`${styles.tab} ${activeTab === 'proposals' ? styles.tabActive : ''}`}
+                onClick={() => setActiveTab('proposals')}
+              >
+                Proposals ({proposals.length})
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'candidates' ? styles.tabActive : ''}`}
+                onClick={() => setActiveTab('candidates')}
+              >
+                Candidates ({candidates.length})
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'sponsored' ? styles.tabActive : ''}`}
+                onClick={() => setActiveTab('sponsored')}
+              >
+                Sponsored ({sponsored.length})
+              </button>
+            </div>
+
+            <div className={styles.tabContent}>
+              {activeTab === 'proposals' && (
+                <div className={styles.proposalsList}>
+                  {proposals.length === 0 ? (
+                    <div className={styles.emptyTab}>No proposals</div>
+                  ) : (
+                    proposals.map((prop) => (
+                      <div
+                        key={prop.id}
+                        className={styles.proposalItem}
+                        onClick={() => onNavigate(`proposal/${prop.id}`)}
+                      >
+                        <div className={styles.proposalHeader}>
+                          <span className={styles.proposalId}>Prop {prop.id}</span>
+                          <span className={styles.proposalSponsors}>
+                            {prop.signers.length > 0 && (
+                              <>sponsored by {prop.signers.slice(0, 2).map((s, i) => (
+                                <span key={s}>
+                                  {i > 0 && ', '}
+                                  <AddressLink address={s} />
+                                </span>
+                              ))}
+                              {prop.signers.length > 2 && ` +${prop.signers.length - 2}`}
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        <div className={styles.proposalTitle}>{prop.title}</div>
+                        <div className={styles.proposalMeta}>
+                          <span className={styles.proposalDate}>
+                            {new Date(Number(prop.createdTimestamp) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                          <span className={styles.proposalVotes}>
+                            {prop.forVotes} ↑ / {prop.quorumVotes}
+                            <span style={{ margin: '0 4px' }}>·</span>
+                            {prop.abstainVotes}
+                            <span style={{ margin: '0 4px' }}>·</span>
+                            {prop.againstVotes} ↓
+                          </span>
+                          <span className={`${styles.proposalStatus} ${styles[`status${prop.status}`]}`}>
+                            {prop.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'candidates' && (
+                <div className={styles.candidatesList}>
+                  {candidates.length === 0 ? (
+                    <div className={styles.emptyTab}>No candidates</div>
+                  ) : (
+                    candidates.map((cand) => (
+                      <div
+                        key={cand.id}
+                        className={styles.candidateItem}
+                        onClick={() => onNavigate(`candidate/${cand.slug}`)}
+                      >
+                        <div className={styles.candidateTitle}>{cand.title}</div>
+                        <div className={styles.candidateMeta}>
+                          <span className={styles.candidateDate}>
+                            {new Date(Number(cand.createdTimestamp) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'sponsored' && (
+                <div className={styles.sponsoredList}>
+                  {sponsored.length === 0 ? (
+                    <div className={styles.emptyTab}>No sponsored candidates</div>
+                  ) : (
+                    sponsored.map((sp) => (
+                      <div
+                        key={sp.id}
+                        className={styles.sponsoredItem}
+                        onClick={() => onNavigate(`candidate/${sp.slug}`)}
+                      >
+                        <div className={styles.sponsoredTitle}>{sp.title}</div>
+                        <div className={styles.sponsoredMeta}>
+                          <span className={styles.sponsoredProposer}>
+                            by <AddressLink address={sp.proposer} onClick={() => onNavigate(`voter/${sp.proposer}`)} />
+                          </span>
+                          <span className={styles.sponsoredDate}>
+                            {new Date(Number(sp.signedAt) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        {sp.reason && (
+                          <div className={styles.sponsoredReason}>{sp.reason}</div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* RIGHT COLUMN */}
