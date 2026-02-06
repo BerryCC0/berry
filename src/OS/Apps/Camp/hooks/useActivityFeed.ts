@@ -338,6 +338,7 @@ interface ProposalUpdatesQueryResult {
 
 const AUCTION_HOUSE = '0x830bd73e4184cef73443c15111a1df14e495c706';
 const NOUNS_DAO = '0x0bc3807ec262cb779b38d65b38158acc3bfede10';
+const NOUNS_TREASURY = '0xb1a32fc9f9d8b2cf86c068cae13108809547ef71'; // nouns.eth
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 // ============================================================================
@@ -554,8 +555,12 @@ function processNounsData(data: NounsQueryResult): { items: ActivityItem[]; auct
     const from = transfer.previousHolder.id.toLowerCase();
     const to = transfer.newHolder.id.toLowerCase();
     
+    // Skip minting (from zero), auction settlements (from auction house), and burns (to zero)
     if (from === ZERO_ADDRESS || from === AUCTION_HOUSE.toLowerCase()) continue;
     if (to === ZERO_ADDRESS) continue;
+    
+    // Skip treasury (nouns.eth) transferring to auction house - this happens when new auctions start
+    if (from === NOUNS_TREASURY.toLowerCase() && to === AUCTION_HOUSE.toLowerCase()) continue;
     
     items.push({
       id: `transfer-${transfer.id}`,
