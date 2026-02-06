@@ -412,7 +412,8 @@ export function ActionTemplateEditor({
     if (!initializedRef.current) return;
     
     const newState: ActionTemplateState = {
-      templateId: selectedTemplate?.id || 'custom',
+      // Use empty string when no template is selected (not 'custom')
+      templateId: selectedTemplate?.id || '',
       fieldValues: fieldValues,
       generatedActions: generatedActions
     };
