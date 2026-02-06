@@ -28,6 +28,7 @@ export function ProbeSelect({
 }: ProbeSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [dropdownOffset, setDropdownOffset] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -59,7 +60,6 @@ export function ProbeSelect({
   // Focus search input when dropdown opens, clear search when it closes
   useEffect(() => {
     if (isOpen) {
-      // Small delay to ensure the input is rendered
       requestAnimationFrame(() => searchRef.current?.focus());
     } else {
       setSearch('');
@@ -79,7 +79,15 @@ export function ProbeSelect({
       <button
         type="button"
         className={`${styles.trigger} ${isOpen ? styles.open : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isOpen && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const dropdownWidth = Math.max(window.innerWidth * 0.5, 180);
+            const overflow = rect.left + dropdownWidth - window.innerWidth + 8;
+            setDropdownOffset(overflow > 0 ? -overflow : 0);
+          }
+          setIsOpen(!isOpen);
+        }}
       >
         <span className={styles.label}>{label}</span>
         <span className={styles.value}>
@@ -99,7 +107,10 @@ export function ProbeSelect({
       </button>
 
       {isOpen && (
-        <div className={styles.dropdown}>
+        <div
+          className={styles.dropdown}
+          style={dropdownOffset ? { left: dropdownOffset } : undefined}
+        >
           {showSearch && (
             <div className={styles.searchBox}>
               <input

@@ -197,7 +197,7 @@
 /* ── Mobile: wider dropdowns ── */
 @media (max-width: 600px) {
   .dropdown {
-    width: 50vw;
+    width: 40vw;
     min-width: 180px;
     max-width: calc(100vw - 16px);
     right: auto;
