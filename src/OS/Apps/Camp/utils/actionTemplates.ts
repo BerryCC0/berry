@@ -1056,15 +1056,14 @@ export function generateActionsFromTemplate(
 
   switch (templateId) {
     // Treasury Transfers
+    // Direct ETH transfer: Treasury executes a call to recipient with value
+    // This is simpler and doesn't require calling Treasury.sendETH() which needs admin
     case 'treasury-eth':
       return [{
-        target: TREASURY_ADDRESS,
-        value: '0',
-        signature: 'sendETH(address,uint256)',
-        calldata: encodeSendETH(
-          fieldValues.recipient as Address,
-          parseEther(fieldValues.amount || '0')
-        )
+        target: fieldValues.recipient as Address,
+        value: parseEther(fieldValues.amount || '0').toString(),
+        signature: '',
+        calldata: '0x'
       }];
 
     case 'treasury-usdc':
@@ -1622,7 +1621,24 @@ function matchActionToTemplate(
   value: string
 ): ActionTemplateState | null {
   
-  // Treasury ETH transfer
+  // Treasury ETH transfer (direct value transfer with no function call)
+  // Detected by: empty signature, empty calldata, and non-zero value
+  if (!signature && (!calldata || calldata === '0x') && value && value !== '0') {
+    try {
+      return {
+        templateId: 'treasury-eth',
+        fieldValues: {
+          recipient: target, // Target is the recipient
+          amount: formatUnits(BigInt(value), 18)
+        },
+        generatedActions: []
+      };
+    } catch {
+      // Fall through if parsing fails
+    }
+  }
+  
+  // Legacy: Treasury ETH transfer via sendETH (for backwards compatibility)
   if (target === TREASURY_ADDRESS.toLowerCase() && signature === 'sendETH(address,uint256)') {
     const decoded = decodeCalldata(calldata, ['address', 'uint256']);
     if (decoded) {
