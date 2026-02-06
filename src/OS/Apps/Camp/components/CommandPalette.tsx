@@ -478,7 +478,6 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
               <div className={styles.empty}>Loading drafts...</div>
             ) : drafts.length === 0 ? (
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📝</div>
                 <div className={styles.emptyTitle}>No drafts yet</div>
                 <div className={styles.emptyDescription}>
                   Start drafting a proposal and it will appear here.
