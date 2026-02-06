@@ -1,5 +1,6 @@
 /**
  * NounDetail Styles
+ * Full-bleed layout inspired by probe.wtf
  */
 
 .container {
@@ -7,20 +8,22 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--berry-bg);
   color: var(--berry-text-primary);
   font-family: var(--berry-font-system);
   overflow: hidden;
+  /* Default bg; overridden inline with Noun's background color */
+  background: var(--berry-bg);
 }
 
-/* Top navigation bar */
+/* ── Top navigation bar ── */
 .topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--berry-border);
+  padding: 8px 16px;
   flex-shrink: 0;
+  /* Semi-transparent so the Noun bg color bleeds through */
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .breadcrumb {
@@ -33,12 +36,13 @@
 }
 
 .breadcrumbLink {
-  color: var(--berry-text-secondary);
+  color: var(--berry-text-primary);
+  opacity: 0.6;
 }
 
 .breadcrumbSep {
-  color: var(--berry-text-secondary);
-  opacity: 0.5;
+  color: var(--berry-text-primary);
+  opacity: 0.3;
 }
 
 .breadcrumbCurrent {
@@ -52,8 +56,8 @@
 }
 
 .navButton {
-  background: var(--berry-bg-secondary);
-  border: 1px solid var(--berry-border);
+  background: rgba(0, 0, 0, 0.15);
+  border: none;
   border-radius: 3px;
   color: var(--berry-text-primary);
   font-size: 14px;
@@ -67,7 +71,7 @@
 }
 
 .navButton:hover:not(:disabled) {
-  background: var(--berry-bg-tertiary);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .navButton:disabled {
@@ -76,115 +80,148 @@
 }
 
 .exploreButton {
-  background: var(--berry-bg-secondary);
-  border: 1px solid var(--berry-border);
+  background: rgba(0, 0, 0, 0.15);
+  border: none;
   border-radius: 3px;
   color: var(--berry-text-primary);
   font-family: var(--berry-font-system);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   cursor: pointer;
   margin-left: 4px;
   transition: background 0.15s;
 }
 
 .exploreButton:hover {
-  background: var(--berry-bg-tertiary);
+  background: rgba(0, 0, 0, 0.25);
 }
 
-.backButton {
-  composes: exploreButton;
-}
-
-/* Main content area */
+/* ── Main content ── */
 .content {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  overflow-y: auto;
+  overflow: hidden;
   min-height: 0;
 }
 
-/* Left: Info section */
+/* ── Left: Info section ── */
 .infoSection {
-  padding: 24px;
+  padding: 32px 32px 32px 40px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .title {
   font-family: var(--berry-font-system);
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 900;
   letter-spacing: 1px;
   margin: 0;
+  color: var(--berry-text-primary);
 }
 
-/* Info block */
+/* Auction / settlement info */
 .infoBlock {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .infoRow {
   font-size: 11px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  line-height: 1.6;
 }
 
 .infoLabel {
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  color: var(--berry-text-secondary);
-  text-transform: uppercase;
-  font-size: 10px;
+  color: var(--berry-text-primary);
 }
 
 .infoValue {
   color: var(--berry-text-primary);
+}
+
+.infoLink {
+  color: var(--berry-accent, #4a9eff);
+  cursor: pointer;
+}
+
+.infoLink:hover {
+  text-decoration: underline;
+}
+
+.infoSecondary {
+  color: var(--berry-text-primary);
+  opacity: 0.6;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+/* ── Color palette ── */
+.colorsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.colorsTitle {
   font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--berry-text-primary);
+  opacity: 0.6;
 }
 
-.infoValue a,
-.infoValue .link {
-  color: var(--berry-accent, #6366f1);
-  text-decoration: none;
+.colorSwatches {
+  display: flex;
+  gap: 0;
 }
 
-.infoDate {
-  color: var(--berry-text-secondary);
-  font-size: 10px;
+.swatch {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
-/* Traits section */
+.swatch:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.swatch:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+/* ── Traits section ── */
 .traitsSection {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  border-top: 1px solid var(--berry-border);
-  padding-top: 16px;
+  gap: 4px;
 }
 
 .traitsTitle {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  color: var(--berry-text-primary);
+  opacity: 0.6;
   margin-bottom: 4px;
 }
 
 .traitRow {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
   font-size: 11px;
+  line-height: 1.8;
 }
 
 .traitLabel {
@@ -192,8 +229,8 @@
   letter-spacing: 0.3px;
   color: var(--berry-text-primary);
   text-transform: uppercase;
-  font-size: 10px;
-  min-width: 80px;
+  font-size: 11px;
+  min-width: 90px;
 }
 
 .traitLink {
@@ -215,26 +252,26 @@
   text-decoration: underline;
 }
 
-/* Right: Image section */
+/* ── Right: Image section ── */
 .imageSection {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 24px;
+  align-items: flex-end;
+  justify-content: flex-end;
   overflow: hidden;
+  position: relative;
 }
 
 .nounImage {
   width: 100%;
-  max-width: 400px;
-  height: auto;
-  aspect-ratio: 1;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom right;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 }
 
-/* Loading state */
+/* ── Loading state ── */
 .loading {
   flex: 1;
   display: flex;
