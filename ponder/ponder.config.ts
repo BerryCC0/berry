@@ -1,4 +1,5 @@
-import { createConfig } from "ponder";
+import { createConfig, rateLimit } from "ponder";
+import { http } from "viem";
 
 import { NounsTokenABI } from "../app/lib/nouns/abis/NounsToken";
 import { NounsAuctionHouseABI } from "../app/lib/nouns/abis/NounsAuctionHouse";
@@ -20,7 +21,10 @@ export default createConfig({
   chains: {
     mainnet: {
       id: 1,
-      rpc: process.env.PONDER_RPC_URL_1,
+      rpc: rateLimit(http(process.env.PONDER_RPC_URL_1), {
+        requestsPerSecond: 10,
+        browser: false,
+      }),
     },
   },
   contracts: {
