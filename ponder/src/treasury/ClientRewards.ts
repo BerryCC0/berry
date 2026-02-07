@@ -25,18 +25,34 @@ ponder.on("ClientRewards:ClientRegistered", async ({ event, context }) => {
 });
 
 ponder.on("ClientRewards:ClientUpdated", async ({ event, context }) => {
-  await context.db
-    .update(clients, { clientId: Number(event.args.clientId) })
-    .set({
-      name: event.args.name,
-      description: event.args.description,
-    });
+  await context.db.insert(clients).values({
+    clientId: Number(event.args.clientId),
+    name: event.args.name,
+    description: event.args.description,
+    approved: false,
+    totalRewarded: 0n,
+    totalWithdrawn: 0n,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+  }).onConflictDoUpdate({
+    name: event.args.name,
+    description: event.args.description,
+  });
 });
 
 ponder.on("ClientRewards:ClientApprovalSet", async ({ event, context }) => {
-  await context.db
-    .update(clients, { clientId: Number(event.args.clientId) })
-    .set({ approved: event.args.approved });
+  await context.db.insert(clients).values({
+    clientId: Number(event.args.clientId),
+    name: "",
+    description: "",
+    approved: event.args.approved,
+    totalRewarded: 0n,
+    totalWithdrawn: 0n,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+  }).onConflictDoUpdate({
+    approved: event.args.approved,
+  });
 });
 
 // =============================================================================
@@ -52,13 +68,22 @@ ponder.on("ClientRewards:ClientRewarded", async ({ event, context }) => {
     blockTimestamp: event.block.timestamp,
   });
 
-  // Update total rewarded
-  const client = await context.db.find(clients, { clientId: Number(event.args.clientId) });
-  if (client) {
-    await context.db.update(clients, { clientId: Number(event.args.clientId) }).set({
-      totalRewarded: client.totalRewarded + event.args.amount,
-    });
-  }
+  // Upsert client and accumulate total rewarded
+  const existing = await context.db.find(clients, { clientId: Number(event.args.clientId) });
+  const prevRewarded = existing?.totalRewarded ?? 0n;
+
+  await context.db.insert(clients).values({
+    clientId: Number(event.args.clientId),
+    name: existing?.name ?? "",
+    description: existing?.description ?? "",
+    approved: existing?.approved ?? false,
+    totalRewarded: prevRewarded + event.args.amount,
+    totalWithdrawn: existing?.totalWithdrawn ?? 0n,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+  }).onConflictDoUpdate({
+    totalRewarded: prevRewarded + event.args.amount,
+  });
 });
 
 ponder.on("ClientRewards:ClientBalanceWithdrawal", async ({ event, context }) => {
@@ -71,12 +96,22 @@ ponder.on("ClientRewards:ClientBalanceWithdrawal", async ({ event, context }) =>
     blockTimestamp: event.block.timestamp,
   });
 
-  const withdrawClient = await context.db.find(clients, { clientId: Number(event.args.clientId) });
-  if (withdrawClient) {
-    await context.db.update(clients, { clientId: Number(event.args.clientId) }).set({
-      totalWithdrawn: withdrawClient.totalWithdrawn + event.args.amount,
-    });
-  }
+  // Upsert client and accumulate total withdrawn
+  const existing = await context.db.find(clients, { clientId: Number(event.args.clientId) });
+  const prevWithdrawn = existing?.totalWithdrawn ?? 0n;
+
+  await context.db.insert(clients).values({
+    clientId: Number(event.args.clientId),
+    name: existing?.name ?? "",
+    description: existing?.description ?? "",
+    approved: existing?.approved ?? false,
+    totalRewarded: existing?.totalRewarded ?? 0n,
+    totalWithdrawn: prevWithdrawn + event.args.amount,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+  }).onConflictDoUpdate({
+    totalWithdrawn: prevWithdrawn + event.args.amount,
+  });
 });
 
 // =============================================================================
