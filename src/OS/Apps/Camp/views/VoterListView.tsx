@@ -10,6 +10,7 @@ import { useState, useMemo } from 'react';
 import { useEnsName, useEnsAvatar } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useVoters } from '../hooks';
+import { BerryLoader } from '../components/BerryLoader';
 import type { Voter, VoterSort } from '../types';
 import styles from './VoterListView.module.css';
 
@@ -109,7 +110,7 @@ export function VoterListView({ onNavigate, onBack }: VoterListViewProps) {
 
       <div className={styles.list}>
         {isLoading ? (
-          <div className={styles.loading}>Loading voters...</div>
+          <BerryLoader />
         ) : filteredVoters.length > 0 ? (
           filteredVoters.map(voter => renderVoterItem(voter))
         ) : (

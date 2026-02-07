@@ -313,6 +313,7 @@ export interface ActivityItem {
   support?: number;
   votes?: string;
   reason?: string;
+  clientId?: number;
   
   // Noun transfer/delegation specific
   nounId?: string;

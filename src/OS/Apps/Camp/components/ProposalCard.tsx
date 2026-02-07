@@ -6,6 +6,7 @@
 'use client';
 
 import { useTranslation } from '@/OS/lib/i18n';
+import { getClientName } from '@/OS/lib/clientNames';
 import type { Proposal, ProposalStatus } from '../types';
 import styles from './ProposalCard.module.css';
 
@@ -57,7 +58,14 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
   return (
     <div className={styles.card} onClick={onClick} role="button" tabIndex={0}>
       <div className={styles.header}>
-        <span className={styles.id}>#{proposal.id}</span>
+        <span className={styles.headerLeft}>
+          <span className={styles.id}>#{proposal.id}</span>
+          {proposal.clientId != null && proposal.clientId !== 0 && (
+            <span className={styles.clientBadge}>
+              via {getClientName(proposal.clientId)}
+            </span>
+          )}
+        </span>
         <span className={`${styles.status} ${styles[proposal.status.toLowerCase()]}`}>
           {statusText}
         </span>

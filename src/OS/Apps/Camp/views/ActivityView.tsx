@@ -10,6 +10,7 @@ import { useCallback } from 'react';
 import { appLauncher } from '@/OS/lib/AppLauncher';
 import { useActivityFeed } from '../hooks';
 import { ActivityItem, Digest } from '../components';
+import { BerryLoader } from '../components/BerryLoader';
 import styles from './ActivityView.module.css';
 
 type DigestTabId = 'digest' | 'proposals' | 'candidates' | 'voters';
@@ -51,7 +52,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange }: Activ
         {/* Activity list */}
         <div className={styles.activityList}>
             {isLoading ? (
-              <div className={styles.loading}>Loading activity...</div>
+              <BerryLoader />
             ) : !activities || activities.length === 0 ? (
               <div className={styles.empty}>
                 <p>No activity found</p>

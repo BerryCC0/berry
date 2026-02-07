@@ -54,6 +54,7 @@ function processVotes(votes: any[]): ActivityItem[] {
     support: v.support,
     votes: String(v.votes),
     reason: v.reason || undefined,
+    clientId: v.client_id ?? undefined,
   }));
 }
 
@@ -128,6 +129,7 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
         proposalId: String(p.id),
         proposalTitle: p.title,
         proposalStatus: derivedStatus,
+        clientId: p.client_id ?? undefined,
       });
     }
 

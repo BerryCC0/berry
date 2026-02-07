@@ -8,7 +8,7 @@
 import { useTranslation } from '@/OS/lib/i18n';
 import type { Bid } from '../hooks/useAuctionData';
 import { formatBidAmount } from '../utils/auctionHelpers';
-import { getClientName, isBerryOSBid } from '../utils/clientNames';
+import { getClientName, isBerryOSClient } from '@/OS/lib/clientNames';
 import { BidderDisplay } from './BidderDisplay';
 import styles from './BidHistory.module.css';
 
@@ -70,7 +70,7 @@ export function BidHistory({ bids, isNounderNoun = false, loading = false }: Bid
         <div className={styles.bidsList}>
           {bids.map((bid) => {
             const clientName = getClientName(bid.clientId);
-            const isBerryBid = isBerryOSBid(bid.clientId);
+            const isBerryBid = isBerryOSClient(bid.clientId);
             
             return (
               <div key={bid.id} className={styles.bidItem}>

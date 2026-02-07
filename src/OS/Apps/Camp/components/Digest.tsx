@@ -10,6 +10,8 @@ import { useState, useMemo } from 'react';
 import { useAccount, useBlockNumber, useEnsName, useEnsAvatar } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useProposals, useCandidates, useVoter, useVoters } from '../hooks';
+import { getClientName } from '@/OS/lib/clientNames';
+import { BerryLoader } from './BerryLoader';
 import type { Proposal, Candidate, Voter } from '../types';
 import styles from './Digest.module.css';
 
@@ -329,6 +331,9 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
       >
         <div className={styles.proposalMeta}>
           Prop {proposal.id} by <span className={styles.proposer}><ENSName address={proposal.proposer} /></span>
+          {proposal.clientId != null && proposal.clientId !== 0 && (
+            <span className={styles.clientBadge}>via {getClientName(proposal.clientId)}</span>
+          )}
         </div>
         
         <div className={styles.proposalTitle}>{proposal.title}</div>
@@ -424,7 +429,7 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
   const renderTabContent = () => {
     switch (activeTab) {
       case 'proposals':
-        if (proposalsLoading) return <div className={styles.loading}>Loading proposals...</div>;
+        if (proposalsLoading) return <BerryLoader />;
         if (proposalsError) return <div className={styles.error}>Failed to load proposals</div>;
         return (
           <div className={styles.listContent}>
@@ -436,7 +441,7 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
         );
       
       case 'candidates':
-        if (candidatesLoading) return <div className={styles.loading}>Loading candidates...</div>;
+        if (candidatesLoading) return <BerryLoader />;
         if (candidatesError) return <div className={styles.error}>Failed to load candidates</div>;
         return (
           <div className={styles.listContent}>
@@ -448,7 +453,7 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
         );
       
       case 'voters':
-        if (votersLoading) return <div className={styles.loading}>Loading voters...</div>;
+        if (votersLoading) return <BerryLoader />;
         if (votersError) return <div className={styles.error}>Failed to load voters</div>;
         return (
           <div className={styles.listContent}>
@@ -461,7 +466,7 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
       
       case 'digest':
       default:
-        if (isLoading) return <div className={styles.loading}>Loading...</div>;
+        if (isLoading) return <BerryLoader />;
         if (hasError) return <div className={styles.error}>Failed to load data</div>;
         return (
           <>

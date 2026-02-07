@@ -216,6 +216,7 @@ interface ProposalVote {
   support: number;
   votes: string;
   reason: string | null;
+  clientId?: number;
   blockTimestamp: string;
 }
 
@@ -306,6 +307,7 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVo
       support: v.support,
       votes: String(v.votes),
       reason: v.reason,
+      clientId: v.client_id ?? undefined,
       blockTimestamp: String(v.block_timestamp),
     })),
     feedback: (p.feedback || []).map((f: any) => ({

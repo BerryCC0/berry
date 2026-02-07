@@ -17,6 +17,7 @@ import {
   PersonaKYC,
 } from '../components/CreateProposal';
 import { Select } from '@/src/OS/components/Primitives/Select/Select';
+import { BerryLoader } from '../components/BerryLoader';
 import type { ActionTemplateState, ProposalDraft } from '../utils/types';
 import { generateSlugFromTitle, generateUniqueSlug, generateSlug, generateSlugWithConflictCheck } from '../utils/slugGenerator';
 import { parseActionsToTemplates, generateActionsFromTemplate, ACTION_TEMPLATES, type ActionTemplateType } from '../utils/actionTemplates';
@@ -898,7 +899,7 @@ export function CreateProposalView({
   if (isEditingCandidate && isLoadingCandidate) {
     return (
       <div className={styles.loading}>
-        <p>Loading candidate data...</p>
+        <BerryLoader />
       </div>
     );
   }
@@ -906,7 +907,7 @@ export function CreateProposalView({
   if (isEditingProposal && isLoadingProposal) {
     return (
       <div className={styles.loading}>
-        <p>Loading proposal data...</p>
+        <BerryLoader />
       </div>
     );
   }

@@ -64,6 +64,12 @@
   font-size: 13px;
 }
 
+.clientBadge {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  font-style: italic;
+}
+
 .proposal {
   margin-top: 6px;
   font-size: 13px;

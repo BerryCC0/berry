@@ -1,4 +1,5 @@
 export { ActivityItem } from './ActivityItem';
+export { BerryLoader } from './BerryLoader';
 export { CommandPalette } from './CommandPalette';
 export { Digest } from './Digest';
 export { ProposalCard } from './ProposalCard';

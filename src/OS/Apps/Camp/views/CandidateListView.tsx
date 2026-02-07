@@ -7,6 +7,7 @@
 
 import { useCandidates } from '../hooks/useCandidates';
 import { CandidateCard } from '../components/CandidateCard';
+import { BerryLoader } from '../components/BerryLoader';
 import styles from './CandidateListView.module.css';
 
 interface CandidateListViewProps {
@@ -34,7 +35,7 @@ export function CandidateListView({ onNavigate, onBack }: CandidateListViewProps
       </div>
       <div className={styles.list}>
         {isLoading ? (
-          <div className={styles.loading}>Loading candidates...</div>
+          <BerryLoader />
         ) : candidates && candidates.length > 0 ? (
           candidates.map(candidate => (
             <CandidateCard

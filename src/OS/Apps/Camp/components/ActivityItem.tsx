@@ -18,6 +18,7 @@ import { formatEther } from 'viem';
 import { NounImageById } from '@/app/lib/nouns/components';
 import { useTranslation, useContentTranslation } from '@/OS/lib/i18n';
 import { getSupportLabel, getSupportColor, type ActivityItem as ActivityItemType } from '../types';
+import { getClientName } from '@/OS/lib/clientNames';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { parseRepost, parseReply } from '../utils/repostParser';
 import styles from './ActivityItem.module.css';
@@ -300,6 +301,11 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
                   ({item.votes} {item.votes === '1' ? 'vote' : 'votes'})
                 </span>
               )}
+              {item.clientId != null && item.clientId !== 0 && (
+                <span className={styles.clientBadge}>
+                  via {getClientName(item.clientId)}
+                </span>
+              )}
             </div>
             {item.proposalTitle && (
               <div className={styles.proposal} onClick={handleProposalClick} role="button" tabIndex={0}>
@@ -354,6 +360,11 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             {item.proposalTitle && (
               <span className={styles.titleLink} onClick={handleProposalClick} role="button" tabIndex={0}>
                 {item.proposalTitle}
+              </span>
+            )}
+            {item.clientId != null && item.clientId !== 0 && (
+              <span className={styles.clientBadge}>
+                via {getClientName(item.clientId)}
               </span>
             )}
           </div>

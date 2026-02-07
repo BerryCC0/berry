@@ -10,6 +10,8 @@ import { useState, useMemo } from 'react';
 import { useEnsName, useBlockNumber } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useProposals } from '../hooks';
+import { getClientName } from '@/OS/lib/clientNames';
+import { BerryLoader } from '../components/BerryLoader';
 import type { Proposal, ProposalFilter, ProposalSort } from '../types';
 import styles from './ProposalListView.module.css';
 
@@ -168,6 +170,9 @@ export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) 
       >
         <div className={styles.proposalMeta}>
           Prop {proposal.id} by <span className={styles.proposer}><ENSName address={proposal.proposer} /></span>
+          {proposal.clientId != null && proposal.clientId !== 0 && (
+            <span className={styles.clientBadge}>via {getClientName(proposal.clientId)}</span>
+          )}
         </div>
         
         <div className={styles.proposalTitle}>{proposal.title}</div>
@@ -256,7 +261,7 @@ export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) 
 
       <div className={styles.list}>
         {isLoading ? (
-          <div className={styles.loading}>Loading proposals...</div>
+          <BerryLoader />
         ) : proposals && proposals.length > 0 ? (
           proposals.map(proposal => renderProposalItem(proposal))
         ) : (

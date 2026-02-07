@@ -18,7 +18,7 @@ import { useCurrentAuction, useAuctionTimeRemaining } from '@/app/lib/nouns/hook
 import { useBid } from '@/app/lib/nouns/hooks';
 import { useAuctionById, type Bid } from '@/OS/Apps/NounsAuction/hooks/useAuctionData';
 import { getMinimumNextBid, formatBidAmount } from '@/OS/Apps/NounsAuction/utils/auctionHelpers';
-import { getClientName, isBerryOSBid } from '@/OS/Apps/NounsAuction/utils/clientNames';
+import { getClientName, isBerryOSClient } from '@/OS/lib/clientNames';
 import { useNounDetail, useNounOwner, useENSName } from '../hooks/useNounDetail';
 import styles from './NounDetail.module.css';
 
@@ -217,7 +217,7 @@ function BidSection({ nounId, currentBidWei }: { nounId: number; currentBidWei: 
 function BidRow({ bid }: { bid: Bid }) {
   const { data: ensName } = useENSName(bid.bidder.id);
   const clientName = getClientName(bid.clientId);
-  const isBerry = isBerryOSBid(bid.clientId);
+  const isBerry = isBerryOSClient(bid.clientId);
   const time = formatBidTime(bid.blockTimestamp);
 
   return (
@@ -552,7 +552,7 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
           {noun.svg ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={`data:image/svg+xml,${encodeURIComponent(noun.svg)}`}
+              src={`data:image/svg+xml;base64,${noun.svg}`}
               alt={`Noun ${nounId}`}
               className={styles.nounImage}
             />

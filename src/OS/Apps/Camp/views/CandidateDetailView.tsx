@@ -18,6 +18,7 @@ import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
 import { SponsorsPanel } from '../components/SponsorsPanel';
 import { VoterRow } from '../components/VoterRow';
+import { BerryLoader } from '../components/BerryLoader';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import styles from './CandidateDetailView.module.css';
 
@@ -217,7 +218,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
     return (
       <div className={styles.loading}>
         <button className={styles.backButton} onClick={onBack}>Back</button>
-        <p>Loading candidate...</p>
+        <BerryLoader />
       </div>
     );
   }

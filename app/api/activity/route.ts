@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       // Votes
       sql`
         SELECT v.id, v.voter, v.proposal_id, v.support, v.votes, v.reason,
-               v.block_timestamp, p.title as proposal_title
+               v.client_id, v.block_timestamp, p.title as proposal_title
         FROM ponder_live.votes v
         LEFT JOIN ponder_live.proposals p ON v.proposal_id = p.id
         WHERE v.block_timestamp >= ${since}
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       // Proposals created
       sql`
         SELECT id, title, proposer, created_timestamp, start_block, end_block,
-               status, for_votes, against_votes, quorum_votes
+               status, for_votes, against_votes, quorum_votes, client_id
         FROM ponder_live.proposals
         WHERE created_timestamp >= ${since}
         ORDER BY created_timestamp DESC

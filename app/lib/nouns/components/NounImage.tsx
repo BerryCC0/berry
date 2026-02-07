@@ -106,9 +106,9 @@ export function NounImageById({ id, size = 320, className, style, fallback, onCl
     );
   }
 
-  // If we have cached SVG, use it directly as data URL
+  // If we have cached SVG (stored as base64), use it directly as data URL
   if (noun.svg) {
-    const dataUrl = `data:image/svg+xml,${encodeURIComponent(noun.svg)}`;
+    const dataUrl = `data:image/svg+xml;base64,${noun.svg}`;
     return (
       <img
         src={dataUrl}

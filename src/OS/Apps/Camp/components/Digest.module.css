@@ -123,6 +123,13 @@
   color: var(--berry-link);
 }
 
+.clientBadge {
+  font-size: 10px;
+  color: var(--berry-text-tertiary);
+  font-style: italic;
+  margin-left: 4px;
+}
+
 .sponsors {
   color: var(--berry-text-tertiary);
 }

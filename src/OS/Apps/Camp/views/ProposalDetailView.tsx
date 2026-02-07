@@ -18,7 +18,8 @@ import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
 import { VoterRow } from '../components/VoterRow';
-import { getClientName } from '@/src/OS/Apps/NounsAuction/utils/clientNames';
+import { BerryLoader } from '../components/BerryLoader';
+import { getClientName } from '@/OS/lib/clientNames';
 import { decodeTransactions, type DecodedTransaction } from '../utils/transactionDecoder';
 import styles from './ProposalDetailView.module.css';
 
@@ -415,6 +416,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
       votes: string;
       reason: string | null;
       timestamp: string;
+      clientId?: number;
     }> = [];
 
     // Add votes
@@ -427,6 +429,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
         votes: v.votes,
         reason: v.reason,
         timestamp: v.blockTimestamp,
+        clientId: v.clientId,
       });
     }
 
@@ -462,7 +465,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
     return (
       <div className={styles.loading}>
         <button className={styles.backButton} onClick={onBack}>← Back</button>
-        <p>Loading proposal...</p>
+        <BerryLoader />
       </div>
     );
   }
@@ -911,6 +914,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
                     votes={item.votes}
                     reason={item.reason}
                     timestamp={item.timestamp}
+                    clientId={item.clientId}
                     isFeedback={item.type === 'feedback'}
                     onNavigate={onNavigate}
                   />

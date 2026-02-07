@@ -82,6 +82,14 @@
   color: var(--berry-link);
 }
 
+.clientBadge {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-tertiary);
+  font-style: italic;
+  margin-left: 4px;
+}
+
 .proposalTitle {
   font-family: var(--berry-font-system);
   font-size: 13px;

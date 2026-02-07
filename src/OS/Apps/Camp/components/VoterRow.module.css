@@ -63,6 +63,25 @@
   border-radius: 3px;
 }
 
+.clientBadge {
+  font-size: 9px;
+  padding: 1px 4px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  color: var(--berry-text-secondary);
+  display: inline-block;
+  font-family: var(--berry-font-system);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-radius: 3px;
+}
+
+.berryBadge {
+  background: var(--berry-accent);
+  border-color: var(--berry-accent);
+  color: white;
+}
+
 .reason {
   margin-top: 8px;
   font-family: var(--berry-font-system);

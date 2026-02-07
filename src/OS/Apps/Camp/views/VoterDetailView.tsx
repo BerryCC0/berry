@@ -15,6 +15,7 @@ import { getSupportLabel, getSupportColor } from '../types';
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { DelegateModal } from '../components/DelegateModal';
+import { BerryLoader } from '../components/BerryLoader';
 import styles from './VoterDetailView.module.css';
 
 /**
@@ -245,7 +246,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
         {showBackButton && (
           <button className={styles.backButton} onClick={onBack}>← Back</button>
         )}
-        <p>{isResolvingEns ? 'Resolving ENS name...' : 'Loading voter...'}</p>
+        <BerryLoader />
       </div>
     );
   }

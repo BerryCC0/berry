@@ -22,11 +22,24 @@
   margin-bottom: 6px;
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .id {
   font-family: var(--berry-font-system);
   font-size: 11px;
   color: var(--berry-text-secondary);
   font-weight: bold;
+}
+
+.clientBadge {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-tertiary);
+  font-style: italic;
 }
 
 .status {

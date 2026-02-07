@@ -8,6 +8,7 @@
 import { useEnsName } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { useTranslation } from '@/OS/lib/i18n';
+import { getClientName, isBerryOSClient } from '@/OS/lib/clientNames';
 import { getSupportColor } from '../types';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import styles from './VoterRow.module.css';
@@ -18,6 +19,7 @@ interface VoterRowProps {
   votes: string;
   reason?: string | null;
   timestamp: string;
+  clientId?: number;
   isFeedback?: boolean;
   onNavigate: (path: string) => void;
 }
@@ -28,6 +30,7 @@ export function VoterRow({
   votes, 
   reason, 
   timestamp,
+  clientId,
   isFeedback = false,
   onNavigate 
 }: VoterRowProps) {
@@ -70,6 +73,11 @@ export function VoterRow({
         <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
         <span className={styles.date}>{dateStr}</span>
         {isFeedback && <span className={styles.badge}>{t('camp.vote.signal')}</span>}
+        {!isFeedback && clientId != null && clientId !== 0 && (
+          <span className={`${styles.clientBadge} ${isBerryOSClient(clientId) ? styles.berryBadge : ''}`}>
+            {getClientName(clientId)}
+          </span>
+        )}
       </div>
       {reason && (
         <MarkdownRenderer 
