@@ -9,8 +9,21 @@ import {
 import { computeAllNounMetrics } from "../../../app/lib/nouns/utils/noun-metrics";
 import { NounsDescriptorV3ABI } from "../../../app/lib/nouns/abis/NounsDescriptorV3";
 
-const DESCRIPTOR_V3_ADDRESS = "0x33a9c445fb4fb21f2c030a6b2d3e2f12d017bfac" as const;
-const DESCRIPTOR_V3_START_BLOCK = 20059934n;
+// Descriptor contracts -- each has the same generateSVGImage((uint48,uint48,uint48,uint48,uint48)) signature.
+// The "artReadyBlock" is the block at which all trait art was fully uploaded.
+const DESCRIPTORS = [
+  { address: "0x0Cfdb3Ba1694c2bb2CFACB0339ad7b1Ae5932B63" as const, artReadyBlock: 12_985_698n },  // V1
+  { address: "0x6229c811D04501523C6058bfAAc29c91bb586268" as const, artReadyBlock: 15_141_364n },  // V2
+  { address: "0x33a9c445fb4fb21f2c030a6b2d3e2f12d017bfac" as const, artReadyBlock: 20_584_386n },  // V3
+] as const;
+
+/** Pick the most recent descriptor whose art is available at the given block. */
+function getDescriptorForBlock(blockNumber: bigint) {
+  for (let i = DESCRIPTORS.length - 1; i >= 0; i--) {
+    if (blockNumber >= DESCRIPTORS[i].artReadyBlock) return DESCRIPTORS[i];
+  }
+  return null;
+}
 
 // =============================================================================
 // NounCreated -- insert a new Noun with seed traits + metrics + SVG
@@ -29,13 +42,14 @@ ponder.on("NounsToken:NounCreated", async ({ event, context }) => {
   // Compute area, colorCount, brightness from seed (pure computation, no RPC)
   const metrics = computeAllNounMetrics(seedObj);
 
-  // Try to fetch SVG from NounsDescriptorV3 (only exists after block 20059934)
+  // Fetch SVG from the appropriate descriptor for this block era
   let svg = "";
-  if (event.block.number >= DESCRIPTOR_V3_START_BLOCK) {
+  const descriptor = getDescriptorForBlock(event.block.number);
+  if (descriptor) {
     try {
       svg = await context.client.readContract({
         abi: NounsDescriptorV3ABI,
-        address: DESCRIPTOR_V3_ADDRESS,
+        address: descriptor.address,
         functionName: "generateSVGImage",
         args: [seed],
       }) as string;
