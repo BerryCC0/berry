@@ -20,7 +20,10 @@ export default createConfig({
   chains: {
     mainnet: {
       id: 1,
-      rpc: process.env.PONDER_RPC_URL_1,
+      rpc: {
+        url: process.env.PONDER_RPC_URL_1!,
+        maxRequestsPerSecond: 5,
+      },
     },
   },
   contracts: {
