@@ -123,10 +123,10 @@ CREATE TABLE IF NOT EXISTS nouns (
   svg TEXT NOT NULL,
   
   -- Settler info (who called settleCurrentAndCreateNewAuction)
-  settled_by_address VARCHAR(42) NOT NULL,         -- Address that settled the auction
+  settled_by_address VARCHAR(42),                   -- Address that settled the auction
   settled_by_ens VARCHAR(255),                     -- ENS name (if resolved)
-  settled_at TIMESTAMP WITH TIME ZONE NOT NULL,    -- When auction was settled
-  settled_tx_hash VARCHAR(66) NOT NULL,            -- Transaction hash
+  settled_at TIMESTAMP WITH TIME ZONE,             -- When auction was settled
+  settled_tx_hash VARCHAR(66),                     -- Transaction hash
   
   -- Auction winner (who won the bid)
   winning_bid NUMERIC(78, 0),                      -- Wei (NULL for Nounder nouns)

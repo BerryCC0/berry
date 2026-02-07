@@ -14,7 +14,7 @@ let fontData: ArrayBuffer | null = null;
 async function getComicNeueFont(): Promise<ArrayBuffer> {
   if (fontData) return fontData;
   const res = await fetch(
-    'https://fonts.gstatic.com/s/comicneue/v8/4UaErEJDsxBrF37olUeD_wHLwpteLwtHJlc.woff2'
+    'https://fonts.gstatic.com/s/comicneue/v9/4UaErEJDsxBrF37olUeD_xHMwps.ttf'
   );
   fontData = await res.arrayBuffer();
   return fontData;

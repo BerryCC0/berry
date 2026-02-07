@@ -7,6 +7,8 @@
 import type { Metadata } from "next";
 import { osAppConfigs } from "@/OS/Apps/OSAppConfig";
 import { GOLDSKY_ENDPOINT } from "@/app/lib/nouns/constants";
+import { neon } from '@neondatabase/serverless';
+import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -145,12 +147,35 @@ export async function generateMetadata({
     if (routeParams && routeParams.length > 0) {
       const nounId = parseInt(routeParams[0]);
       if (!isNaN(nounId) && nounId >= 0) {
-        const title = `Noun ${nounId} - Probe`;
-        const description = `Explore Noun ${nounId} on Probe — the Nouns explorer.`;
         const ogImageUrl = `${baseUrl}/api/og/probe/${nounId}`;
 
+        // Fetch trait info from DB for rich description
+        let description = `Probe the colors and stats for Noun ${nounId}.`;
+        try {
+          const sql = neon(process.env.DATABASE_URL!);
+          const rows = await sql`
+            SELECT head, glasses, accessory, body, background
+            FROM nouns WHERE id = ${nounId}
+          `;
+          if (rows.length > 0) {
+            const n = rows[0];
+            const traits = [
+              getTraitName('head', n.head),
+              getTraitName('glasses', n.glasses),
+              getTraitName('accessory', n.accessory),
+              getTraitName('body', n.body),
+              getTraitName('background', n.background),
+            ];
+            description = `Noun ${nounId} — ${traits.join(', ')}`;
+          }
+        } catch {
+          // Fall back to generic description
+        }
+
+        const title = `Noun ${nounId}`;
+
         return {
-          title: `${title} - Berry OS`,
+          title: `${title} - Probe - Berry OS`,
           description,
           openGraph: {
             title,

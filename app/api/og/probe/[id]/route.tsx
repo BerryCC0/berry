@@ -1,19 +1,20 @@
 /**
  * Dynamic OG Image for Probe Noun Detail
- * Shows a single Noun large with its ID and auction info
+ * Layout: berryos.wtf top-left, Noun title, trait list on left, noun image on right
  */
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
 
 // Use Node.js runtime — edge has issues with large SVG payloads + ImageData import
 export const runtime = 'nodejs';
 
-// Background colors (matches ImageData.bgcolors — inlined to avoid huge import)
-const BG_COLORS: Record<number, { hex: string; name: string }> = {
-  0: { hex: 'd5d7e1', name: 'Cool' },
-  1: { hex: 'e1d7d5', name: 'Warm' },
+// Background colors (matches ImageData.bgcolors)
+const BG_COLORS: Record<number, { hex: string }> = {
+  0: { hex: 'd5d7e1' },
+  1: { hex: 'e1d7d5' },
 };
 
 // Cache the font fetch so it's only done once per cold start
@@ -21,7 +22,7 @@ let fontData: ArrayBuffer | null = null;
 async function getComicNeueFont(): Promise<ArrayBuffer> {
   if (fontData) return fontData;
   const res = await fetch(
-    'https://fonts.gstatic.com/s/comicneue/v8/4UaErEJDsxBrF37olUeD_wHLwpteLwtHJlc.woff2'
+    'https://fonts.gstatic.com/s/comicneue/v9/4UaErEJDsxBrF37olUeD_xHMwps.ttf'
   );
   fontData = await res.arrayBuffer();
   return fontData;
@@ -51,8 +52,7 @@ export async function GET(
     const sql = neon(process.env.DATABASE_URL!);
 
     const result = await sql`
-      SELECT id, svg, background,
-             winning_bid, winner_address, winner_ens
+      SELECT id, svg, background, body, accessory, head, glasses
       FROM nouns WHERE id = ${nounId}
     `;
 
@@ -64,16 +64,14 @@ export async function GET(
     const bg = BG_COLORS[noun.background] || BG_COLORS[0];
     const bgColor = `#${bg.hex}`;
 
-    // Format winning bid
-    let bidDisplay = '';
-    if (noun.winning_bid) {
-      const ethValue = Number(BigInt(noun.winning_bid)) / 1e18;
-      bidDisplay = `Ξ ${ethValue.toFixed(2)}`;
-    }
-
-    const ownerDisplay = noun.winner_ens || (noun.winner_address
-      ? `${noun.winner_address.slice(0, 6)}...${noun.winner_address.slice(-4)}`
-      : '');
+    // Resolve all trait names
+    const traits = [
+      { label: 'HEAD', value: getTraitName('head', noun.head) },
+      { label: 'GLASSES', value: getTraitName('glasses', noun.glasses) },
+      { label: 'ACCESSORY', value: getTraitName('accessory', noun.accessory) },
+      { label: 'BODY', value: getTraitName('body', noun.body) },
+      { label: 'BACKGROUND', value: getTraitName('background', noun.background) },
+    ];
 
     return new ImageResponse(
       (
@@ -84,82 +82,120 @@ export async function GET(
             height: '100%',
             background: bgColor,
             fontFamily: '"Comic Neue"',
+            padding: 0,
           }}
         >
-          {/* Left side: Noun image */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 630,
-              height: '100%',
-              padding: 40,
-            }}
-          >
-            <img
-              src={svgToDataUri(noun.svg)}
-              width={480}
-              height={480}
-            />
-          </div>
-
-          {/* Right side: Info */}
+          {/* Left side: Info */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              flex: 1,
-              padding: '40px 48px 40px 0',
-              gap: 8,
+              width: 620,
+              padding: '56px 0 56px 64px',
             }}
           >
-            {/* Noun ID */}
-            <div style={{ display: 'flex', fontSize: 64, fontWeight: 700, color: '#1a1a1a' }}>
-              Noun {noun.id}
-            </div>
-
-            {/* Bid + Owner */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8, marginBottom: 8 }}>
-              {bidDisplay ? (
-                <div style={{ display: 'flex', fontSize: 28, color: '#333', fontWeight: 700 }}>
-                  {bidDisplay}
-                </div>
-              ) : (
-                <div style={{ display: 'flex', fontSize: 28, color: '#333', fontWeight: 700 }}>
-                  Nounders
-                </div>
-              )}
-              {ownerDisplay ? (
-                <div style={{ display: 'flex', fontSize: 20, color: '#555' }}>
-                  Won by {ownerDisplay}
-                </div>
-              ) : null}
-            </div>
-
-            {/* Background trait */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 12 }}>
-              <span style={{ fontSize: 14, color: '#888', fontWeight: 700, letterSpacing: 0.5 }}>
-                BACKGROUND
-              </span>
-              <span style={{ fontSize: 20, color: '#333', fontWeight: 700 }}>
-                {bg.name}
-              </span>
-            </div>
-
-            {/* Branding */}
+            {/* berryos.wtf branding */}
             <div
               style={{
                 display: 'flex',
-                marginTop: 'auto',
-                fontSize: 18,
-                color: 'rgba(0,0,0,0.3)',
+                fontSize: 22,
+                color: 'rgba(0,0,0,0.35)',
                 fontWeight: 700,
+                marginBottom: 20,
               }}
             >
-              Probe — Berry OS
+              berryos.wtf
             </div>
+
+            {/* Noun ID */}
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 72,
+                fontWeight: 700,
+                color: '#1a1a1a',
+                lineHeight: 1,
+              }}
+            >
+              Noun {noun.id}
+            </div>
+
+            {/* Divider line */}
+            <div
+              style={{
+                display: 'flex',
+                width: 440,
+                height: 3,
+                background: 'rgba(0,0,0,0.12)',
+                marginTop: 24,
+                marginBottom: 28,
+                borderRadius: 2,
+              }}
+            />
+
+            {/* Trait list */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              {traits.map((trait) => (
+                <div
+                  key={trait.label}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 12,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 16,
+                      color: 'rgba(0,0,0,0.38)',
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                      width: 140,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {trait.label}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 24,
+                      color: '#1a1a1a',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {trait.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right side: Noun image */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 1,
+              padding: 32,
+            }}
+          >
+            <img
+              src={svgToDataUri(noun.svg)}
+              width={500}
+              height={500}
+              style={{
+                borderRadius: 16,
+                imageRendering: 'pixelated',
+              }}
+            />
           </div>
         </div>
       ),
