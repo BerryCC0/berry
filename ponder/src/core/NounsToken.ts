@@ -58,7 +58,17 @@ ponder.on("NounsToken:NounCreated", async ({ event, context }) => {
     burned: false,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
-  }).onConflictDoNothing();
+  }).onConflictDoUpdate({
+    background: seedObj.background,
+    body: seedObj.body,
+    accessory: seedObj.accessory,
+    head: seedObj.head,
+    glasses: seedObj.glasses,
+    svg,
+    area: metrics.area,
+    colorCount: metrics.color_count,
+    brightness: metrics.brightness,
+  });
 });
 
 // =============================================================================
@@ -88,10 +98,34 @@ ponder.on("NounsToken:Transfer", async ({ event, context }) => {
     txHash: event.transaction.hash,
   });
 
-  // Update owner on the noun record
-  await context.db
-    .update(nouns, { id: Number(tokenId) })
-    .set({ owner: to });
+  // For mints (from 0x0), Transfer fires BEFORE NounCreated in the same tx,
+  // so the noun record doesn't exist yet. Insert a placeholder that NounCreated
+  // will fill in with seed/metrics/SVG data via onConflictDoUpdate.
+  const isMint = from === "0x0000000000000000000000000000000000000000";
+
+  if (isMint) {
+    await context.db
+      .insert(nouns)
+      .values({
+        id: Number(tokenId),
+        background: 0,
+        body: 0,
+        accessory: 0,
+        head: 0,
+        glasses: 0,
+        svg: "",
+        owner: to,
+        burned: false,
+        blockNumber: event.block.number,
+        blockTimestamp: event.block.timestamp,
+      })
+      .onConflictDoNothing();
+  } else {
+    // Regular transfer -- noun record guaranteed to exist
+    await context.db
+      .update(nouns, { id: Number(tokenId) })
+      .set({ owner: to });
+  }
 });
 
 // =============================================================================
