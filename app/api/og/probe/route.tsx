@@ -4,7 +4,7 @@
  */
 
 import { ImageResponse } from 'next/og';
-import { neon } from '@neondatabase/serverless';
+import { ponderSql } from '@/app/lib/ponder-db';
 
 // Use Node.js runtime — edge has issues with large SVG payloads
 export const runtime = 'nodejs';
@@ -31,11 +31,11 @@ function svgToDataUri(svg: string): string {
 export async function GET() {
   try {
     const font = await getComicNeueFont();
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = ponderSql();
 
     // Fetch 12 most recent nouns (6x2 grid — keeps payload manageable)
     const nouns = await sql`
-      SELECT id, svg FROM legacy_nouns
+      SELECT id, svg FROM ponder_live.nouns
       ORDER BY id DESC
       LIMIT 12
     `;

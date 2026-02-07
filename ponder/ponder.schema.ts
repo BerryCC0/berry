@@ -1,4 +1,13 @@
-import { onchainTable, index } from "ponder";
+import {
+  onchainTable,
+  onchainView,
+  index,
+  relations,
+  eq,
+  or,
+  gt,
+  desc,
+} from "ponder";
 
 // =============================================================================
 // SUBGRAPH 1: CORE PROTOCOL
@@ -311,6 +320,7 @@ export const candidateSignatures = onchainTable(
   "candidate_signatures",
   (t) => ({
     id: t.text().primaryKey(),
+    candidateId: t.text().notNull(),
     signer: t.hex().notNull(),
     sig: t.hex().notNull(),
     expirationTimestamp: t.bigint().notNull(),
@@ -325,6 +335,7 @@ export const candidateSignatures = onchainTable(
   }),
   (table) => ({
     signerIdx: index().on(table.signer),
+    candidateIdx: index().on(table.candidateId),
   })
 );
 
@@ -350,6 +361,7 @@ export const candidateFeedback = onchainTable(
   "candidate_feedback",
   (t) => ({
     id: t.text().primaryKey(),
+    candidateId: t.text().notNull(),
     msgSender: t.hex().notNull(),
     proposer: t.hex().notNull(),
     slug: t.text().notNull(),
@@ -357,6 +369,9 @@ export const candidateFeedback = onchainTable(
     reason: t.text(),
     blockNumber: t.bigint().notNull(),
     blockTimestamp: t.bigint().notNull(),
+  }),
+  (table) => ({
+    candidateIdx: index().on(table.candidateId),
   })
 );
 
@@ -583,3 +598,133 @@ export const streams = onchainTable("streams", (t) => ({
   blockNumber: t.bigint().notNull(),
   blockTimestamp: t.bigint().notNull(),
 }));
+
+// =============================================================================
+// ENS CACHE
+// =============================================================================
+
+/** Cached ENS name lookups -- populated lazily by API layer */
+export const ensNames = onchainTable("ens_names", (t) => ({
+  address: t.hex().primaryKey(),
+  name: t.text(),
+  resolvedAt: t.bigint().notNull(),
+}));
+
+// =============================================================================
+// RELATIONS
+// =============================================================================
+
+export const nounsRelations = relations(nouns, ({ one, many }) => ({
+  auction: one(auctions, { fields: [nouns.id], references: [auctions.nounId] }),
+  transfers: many(transfers),
+  bids: many(auctionBids),
+}));
+
+export const auctionsRelations = relations(auctions, ({ one, many }) => ({
+  noun: one(nouns, { fields: [auctions.nounId], references: [nouns.id] }),
+  bids: many(auctionBids),
+}));
+
+export const auctionBidsRelations = relations(auctionBids, ({ one }) => ({
+  noun: one(nouns, { fields: [auctionBids.nounId], references: [nouns.id] }),
+  auction: one(auctions, { fields: [auctionBids.nounId], references: [auctions.nounId] }),
+}));
+
+export const transfersRelations = relations(transfers, ({ one }) => ({
+  noun: one(nouns, { fields: [transfers.tokenId], references: [nouns.id] }),
+}));
+
+export const proposalsRelations = relations(proposals, ({ many }) => ({
+  votes: many(votes),
+  versions: many(proposalVersions),
+  feedback: many(proposalFeedback),
+}));
+
+export const proposalVersionsRelations = relations(proposalVersions, ({ one }) => ({
+  proposal: one(proposals, { fields: [proposalVersions.proposalId], references: [proposals.id] }),
+}));
+
+export const votesRelations = relations(votes, ({ one }) => ({
+  proposal: one(proposals, { fields: [votes.proposalId], references: [proposals.id] }),
+  voter: one(voters, { fields: [votes.voter], references: [voters.address] }),
+}));
+
+export const proposalFeedbackRelations = relations(proposalFeedback, ({ one }) => ({
+  proposal: one(proposals, { fields: [proposalFeedback.proposalId], references: [proposals.id] }),
+}));
+
+export const votersRelations = relations(voters, ({ many }) => ({
+  votes: many(votes),
+  delegationsReceived: many(delegations),
+}));
+
+export const delegationsRelations = relations(delegations, ({ one }) => ({
+  toVoter: one(voters, { fields: [delegations.toDelegate], references: [voters.address] }),
+}));
+
+export const candidatesRelations = relations(candidates, ({ many }) => ({
+  versions: many(candidateVersions),
+  signatures: many(candidateSignatures),
+  feedback: many(candidateFeedback),
+}));
+
+export const candidateVersionsRelations = relations(candidateVersions, ({ one }) => ({
+  candidate: one(candidates, { fields: [candidateVersions.candidateId], references: [candidates.id] }),
+}));
+
+export const candidateSignaturesRelations = relations(candidateSignatures, ({ one }) => ({
+  candidate: one(candidates, { fields: [candidateSignatures.candidateId], references: [candidates.id] }),
+}));
+
+export const candidateFeedbackRelations = relations(candidateFeedback, ({ one }) => ({
+  candidate: one(candidates, { fields: [candidateFeedback.candidateId], references: [candidates.id] }),
+}));
+
+// =============================================================================
+// VIEWS
+// =============================================================================
+
+/** Active proposals (PENDING, ACTIVE, UPDATABLE, OBJECTION_PERIOD) */
+export const activeProposals = onchainView("active_proposals").as((qb) =>
+  qb
+    .select()
+    .from(proposals)
+    .where(
+      or(
+        eq(proposals.status, "PENDING"),
+        eq(proposals.status, "ACTIVE"),
+        eq(proposals.status, "UPDATABLE"),
+        eq(proposals.status, "OBJECTION_PERIOD"),
+      ),
+    ),
+);
+
+/** Top delegates with voting power > 0 */
+export const topDelegates = onchainView("top_delegates").as((qb) =>
+  qb
+    .select()
+    .from(voters)
+    .where(gt(voters.delegatedVotes, 0))
+    .orderBy(desc(voters.delegatedVotes)),
+);
+
+/** Auction history with noun data */
+export const auctionHistory = onchainView("auction_history").as((qb) =>
+  qb
+    .select({
+      nounId: auctions.nounId,
+      startTime: auctions.startTime,
+      endTime: auctions.endTime,
+      winner: auctions.winner,
+      amount: auctions.amount,
+      settled: auctions.settled,
+      settlerAddress: auctions.settlerAddress,
+      background: nouns.background,
+      body: nouns.body,
+      accessory: nouns.accessory,
+      head: nouns.head,
+      glasses: nouns.glasses,
+    })
+    .from(auctions)
+    .innerJoin(nouns, eq(auctions.nounId, nouns.id)),
+);

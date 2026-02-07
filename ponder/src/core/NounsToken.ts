@@ -6,21 +6,55 @@ import {
   voters,
   tokenConfigChanges,
 } from "ponder:schema";
+import { computeAllNounMetrics } from "../../../app/lib/nouns/utils/noun-metrics";
+import { NounsDescriptorV3ABI } from "../../../app/lib/nouns/abis/NounsDescriptorV3";
+
+const DESCRIPTOR_V3_ADDRESS = "0x33a9c445fb4fb21f2c030a6b2d3e2f12d017bfac" as const;
+const DESCRIPTOR_V3_START_BLOCK = 20059934n;
 
 // =============================================================================
-// NounCreated -- insert a new Noun with seed traits
+// NounCreated -- insert a new Noun with seed traits + metrics + SVG
 // =============================================================================
 ponder.on("NounsToken:NounCreated", async ({ event, context }) => {
   const { tokenId, seed } = event.args;
 
-  await context.db.insert(nouns).values({
-    id: Number(tokenId),
+  const seedObj = {
     background: Number(seed.background),
     body: Number(seed.body),
     accessory: Number(seed.accessory),
     head: Number(seed.head),
     glasses: Number(seed.glasses),
-    svg: "", // SVG rendering deferred -- populated via separate process or on-chain call
+  };
+
+  // Compute area, colorCount, brightness from seed (pure computation, no RPC)
+  const metrics = computeAllNounMetrics(seedObj);
+
+  // Try to fetch SVG from NounsDescriptorV3 (only exists after block 20059934)
+  let svg = "";
+  if (event.block.number >= DESCRIPTOR_V3_START_BLOCK) {
+    try {
+      svg = await context.client.readContract({
+        abi: NounsDescriptorV3ABI,
+        address: DESCRIPTOR_V3_ADDRESS,
+        functionName: "generateSVGImage",
+        args: [seed],
+      }) as string;
+    } catch {
+      // Descriptor call failed, leave SVG empty
+    }
+  }
+
+  await context.db.insert(nouns).values({
+    id: Number(tokenId),
+    background: seedObj.background,
+    body: seedObj.body,
+    accessory: seedObj.accessory,
+    head: seedObj.head,
+    glasses: seedObj.glasses,
+    svg,
+    area: metrics.area,
+    colorCount: metrics.color_count,
+    brightness: metrics.brightness,
     burned: false,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,

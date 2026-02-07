@@ -8,9 +8,8 @@
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { ponderSql } from '@/app/lib/ponder-db';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
-import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 
 // Use Node.js runtime — edge has issues with large SVG payloads + ImageData import
 export const runtime = 'nodejs';
@@ -70,32 +69,6 @@ function formatTimestamp(unixSeconds: number): string {
   });
 }
 
-/** Fetch auction data from the Goldsky subgraph */
-async function fetchAuction(nounId: number) {
-  try {
-    const res = await fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `query ($id: ID!) {
-          auction(id: $id) {
-            id amount settled startTime endTime
-            bids(orderBy: amount, orderDirection: desc, first: 1) {
-              amount
-              bidder { id }
-            }
-          }
-        }`,
-        variables: { id: String(nounId) },
-      }),
-    });
-    const json = await res.json();
-    return json.data?.auction ?? null;
-  } catch {
-    return null;
-  }
-}
-
 /** Resolve ENS name for an address (best-effort) */
 async function resolveENS(address: string): Promise<string | null> {
   try {
@@ -122,18 +95,28 @@ export async function GET(
   }
 
   try {
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = ponderSql();
 
     // Fetch everything in parallel
-    const [fontResult, dbResult, auctionResult] = await Promise.all([
+    const [fontResult, dbResult, auctionResult, bidsResult] = await Promise.all([
       getComicNeueFont(),
       sql`
         SELECT id, svg, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM legacy_nouns WHERE id = ${nounId}
+        FROM ponder_live.nouns WHERE id = ${nounId}
       `,
-      fetchAuction(nounId),
+      sql`
+        SELECT noun_id, start_time, end_time, winner, amount, settled
+        FROM ponder_live.auctions WHERE noun_id = ${nounId}
+      `,
+      sql`
+        SELECT bidder, amount
+        FROM ponder_live.auction_bids
+        WHERE noun_id = ${nounId}
+        ORDER BY amount DESC
+        LIMIT 1
+      `,
     ]);
 
     const font = fontResult;
@@ -143,7 +126,7 @@ export async function GET(
     }
 
     const noun = dbResult[0];
-    const auction = auctionResult;
+    const auction = auctionResult[0] || null;
     const bg = BG_COLORS[noun.background] || BG_COLORS[0];
     const bgColor = `#${bg.hex}`;
 
@@ -183,11 +166,12 @@ export async function GET(
           : null;
 
       if (bid) {
+        const topBid = bidsResult[0];
         const winnerName = noun.winner_ens
           || (noun.winner_address && noun.winner_address !== ZERO_ADDRESS
             ? truncateAddress(noun.winner_address)
-            : auction.bids?.[0]?.bidder?.id
-              ? truncateAddress(auction.bids[0].bidder.id)
+            : topBid?.bidder
+              ? truncateAddress(topBid.bidder)
               : null);
         infoLines.push({
           label: 'WINNING BID',
@@ -196,11 +180,11 @@ export async function GET(
       }
     } else if (isActive) {
       // Active auction: show current bid + end time
-      const topBid = auction.bids?.[0];
+      const topBid = bidsResult[0];
       if (topBid && topBid.amount !== '0') {
-        let bidderName = truncateAddress(topBid.bidder.id);
+        let bidderName = truncateAddress(topBid.bidder);
         // Quick ENS resolve for the top bidder
-        const ens = await resolveENS(topBid.bidder.id);
+        const ens = await resolveENS(topBid.bidder);
         if (ens) bidderName = ens;
         infoLines.push({
           label: 'CURRENT BID',
@@ -208,8 +192,8 @@ export async function GET(
         });
       }
 
-      if (auction.endTime) {
-        const endTs = parseInt(auction.endTime);
+      if (auction.end_time) {
+        const endTs = parseInt(auction.end_time);
         const now = Math.floor(Date.now() / 1000);
         if (endTs > now) {
           infoLines.push({

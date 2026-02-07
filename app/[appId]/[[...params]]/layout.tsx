@@ -7,7 +7,7 @@
 import type { Metadata } from "next";
 import { osAppConfigs } from "@/OS/Apps/OSAppConfig";
 import { GOLDSKY_ENDPOINT } from "@/app/lib/nouns/constants";
-import { neon } from '@neondatabase/serverless';
+import { ponderSql } from '@/app/lib/ponder-db';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
 
 interface LayoutProps {
@@ -152,10 +152,10 @@ export async function generateMetadata({
         // Fetch trait info from DB for rich description
         let description = `Probe the colors and stats for Noun ${nounId}.`;
         try {
-          const sql = neon(process.env.DATABASE_URL!);
+          const sql = ponderSql();
           const rows = await sql`
             SELECT head, glasses, accessory, body, background
-            FROM legacy_nouns WHERE id = ${nounId}
+            FROM ponder_live.nouns WHERE id = ${nounId}
           `;
           if (rows.length > 0) {
             const n = rows[0];

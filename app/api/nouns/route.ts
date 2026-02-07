@@ -2,12 +2,12 @@
  * Nouns List API Route
  * GET /api/nouns - List all cached Nouns
  * POST /api/nouns - Batch fetch multiple Nouns by IDs
+ *
+ * Queries Ponder's ponder_live schema for zero-downtime deployments
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
-
-// Note: Nouns lib is at app/lib/nouns - import if needed
+import { ponderSql } from '@/app/lib/ponder-db';
 
 /**
  * POST - Batch fetch multiple Nouns by IDs
@@ -17,34 +17,35 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const ids: string[] = body.ids;
-    
+
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ nouns: {} });
     }
-    
+
     // Limit to 100 IDs per request
     const limitedIds = ids.slice(0, 100).map(id => parseInt(id)).filter(id => !isNaN(id));
-    
+
     if (limitedIds.length === 0) {
       return NextResponse.json({ nouns: {} });
     }
-    
-    const sql = neon(process.env.DATABASE_URL!);
-    
+
+    const sql = ponderSql();
+
     const nouns = await sql`
       SELECT id, background, body, accessory, head, glasses,
              settled_by_address, settled_by_ens, settled_at,
-             winning_bid, winner_address, winner_ens
-      FROM legacy_nouns
+             winning_bid, winner_address, winner_ens,
+             owner, svg, area, color_count, brightness, burned
+      FROM ponder_live.nouns
       WHERE id = ANY(${limitedIds})
     `;
-    
+
     // Return as a map keyed by ID for easy lookup
     const nounsMap: Record<string, typeof nouns[0]> = {};
     for (const noun of nouns) {
       nounsMap[noun.id.toString()] = noun;
     }
-    
+
     return NextResponse.json({ nouns: nounsMap });
   } catch (error) {
     console.error('[API] Failed to batch fetch nouns:', error);
@@ -68,7 +69,7 @@ type SortOption = typeof VALID_SORTS[number];
 
 /**
  * GET - List cached Nouns with optional filters
- * 
+ *
  * Query params:
  *   limit, offset - Pagination (max 100)
  *   settler       - Filter by settler address
@@ -79,44 +80,40 @@ type SortOption = typeof VALID_SORTS[number];
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  
+
   // Pagination
   const limitParam = parseInt(searchParams.get('limit') || '50');
-  const limit = Math.min(Math.max(1, limitParam), 100); // Clamp between 1-100
+  const limit = Math.min(Math.max(1, limitParam), 100);
   const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
-  
+
   // Sort option (whitelist to prevent injection)
   const sortParam = searchParams.get('sort') || 'newest';
   const sort: SortOption = VALID_SORTS.includes(sortParam as SortOption)
     ? (sortParam as SortOption)
     : 'newest';
-  
+
   // Optional address filters
   const settler = searchParams.get('settler')?.toLowerCase() || null;
   const winner = searchParams.get('winner')?.toLowerCase() || null;
-  
+
   // Trait filters (integer indices)
   const background = parseTraitParam(searchParams.get('background'));
   const body = parseTraitParam(searchParams.get('body'));
   const accessory = parseTraitParam(searchParams.get('accessory'));
   const head = parseTraitParam(searchParams.get('head'));
   const glasses = parseTraitParam(searchParams.get('glasses'));
-  
+
   try {
-    const sql = neon(process.env.DATABASE_URL!);
-    
-    // First get matching IDs in the desired sort order.
-    // We query the filtered set from a CTE then sort+paginate.
-    // Each sort option needs its own tagged template because
-    // ORDER BY columns can't be parameterized.
+    const sql = ponderSql();
+
     const nouns = await queryWithSort(
       sql, sort, limit, offset,
       settler, winner, background, body, accessory, head, glasses
     );
-    
+
     // Get filtered count
     const countResult = await sql`
-      SELECT COUNT(*) as count FROM legacy_nouns
+      SELECT COUNT(*) as count FROM ponder_live.nouns
       WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
         AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
         AND (${background}::int IS NULL OR background = ${background})
@@ -126,7 +123,7 @@ export async function GET(request: NextRequest) {
         AND (${glasses}::int IS NULL OR glasses = ${glasses})
     `;
     const total = parseInt(countResult[0]?.count || '0');
-    
+
     return NextResponse.json({
       nouns,
       total,
@@ -144,7 +141,6 @@ export async function GET(request: NextRequest) {
 
 /**
  * Run the filtered query with the appropriate ORDER BY clause.
- * Each sort variant is a separate tagged template for SQL safety.
  */
 async function queryWithSort(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,17 +156,14 @@ async function queryWithSort(
   head: number | null,
   glasses: number | null,
 ) {
-  // Shared WHERE clause is repeated in each branch because
-  // neon tagged templates don't support dynamic ORDER BY.
-  // Each branch only differs in the ORDER BY clause.
-
   switch (sort) {
     case 'oldest':
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -186,8 +179,9 @@ async function queryWithSort(
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -203,8 +197,9 @@ async function queryWithSort(
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -220,8 +215,9 @@ async function queryWithSort(
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -237,8 +233,9 @@ async function queryWithSort(
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -254,8 +251,9 @@ async function queryWithSort(
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -271,8 +269,9 @@ async function queryWithSort(
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -289,8 +288,9 @@ async function queryWithSort(
       return sql`
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
-               winning_bid, winner_address, winner_ens
-        FROM legacy_nouns
+               winning_bid, winner_address, winner_ens,
+               owner, svg, area, color_count, brightness, burned
+        FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})

@@ -82,8 +82,11 @@ ponder.on("NounsDAOData:ProposalCandidateCanceled", async ({ event, context }) =
 ponder.on("NounsDAOData:SignatureAdded", async ({ event, context }) => {
   const { signer, sig, expirationTimestamp, proposer, slug, proposalIdToUpdate, encodedPropHash, sigDigest, reason } = event.args;
 
+  const candidateId = `${proposer.toLowerCase()}-${slug}`;
+
   await context.db.insert(candidateSignatures).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
+    candidateId,
     signer,
     sig,
     expirationTimestamp,
@@ -98,7 +101,6 @@ ponder.on("NounsDAOData:SignatureAdded", async ({ event, context }) => {
   });
 
   // Increment signature count on candidate
-  const candidateId = `${proposer.toLowerCase()}-${slug}`;
   const candidate = await context.db.find(candidates, { id: candidateId });
   if (candidate) {
     await context.db.update(candidates, { id: candidateId }).set({
@@ -124,8 +126,11 @@ ponder.on("NounsDAOData:FeedbackSent", async ({ event, context }) => {
 });
 
 ponder.on("NounsDAOData:CandidateFeedbackSent", async ({ event, context }) => {
+  const candidateId = `${event.args.proposer.toLowerCase()}-${event.args.slug}`;
+
   await context.db.insert(candidateFeedback).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
+    candidateId,
     msgSender: event.args.msgSender,
     proposer: event.args.proposer,
     slug: event.args.slug,
