@@ -43,6 +43,10 @@ function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+function etherscanUrl(address: string): string {
+  return `https://etherscan.io/address/${address}`;
+}
+
 function formatBidWei(weiStr: string | null): string {
   if (!weiStr || weiStr === '0') return '';
   const eth = Number(BigInt(weiStr)) / 1e18;
@@ -242,9 +246,9 @@ function BidsModal({ bids, onClose }: { bids: Bid[]; onClose: () => void }) {
                     Ξ {formatBidAmount(bid.amount)}
                   </span>
                   <span className={styles.modalBidSecondary}> BY </span>
-                  <span className={styles.modalBidAddress}>
+                  <a href={etherscanUrl(bid.bidder.id)} target="_blank" rel="noopener noreferrer" className={styles.modalBidAddress}>
                     {truncateAddress(bid.bidder.id)}
-                  </span>
+                  </a>
                   {clientName && (
                     <>
                       <span className={styles.modalBidSecondary}> VIA </span>
@@ -430,9 +434,9 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
             {isValidAddress(noun.settled_by_address) && (
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>SETTLED BY: </span>
-                <span className={styles.infoLink}>
+                <a href={etherscanUrl(noun.settled_by_address)} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>
                   {noun.settled_by_ens || truncateAddress(noun.settled_by_address)}
-                </span>
+                </a>
                 {noun.settled_at && formatDateTime(noun.settled_at) && (
                   <span className={styles.infoSecondary}>
                     {' '}{formatDateTime(noun.settled_at)}
@@ -455,7 +459,7 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
                   {isValidAddress(auction.bidder) && (
                     <>
                       <span className={styles.infoSecondary}> BY </span>
-                      <span className={styles.infoLink}>{truncateAddress(auction.bidder)}</span>
+                      <a href={etherscanUrl(auction.bidder)} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>{truncateAddress(auction.bidder)}</a>
                     </>
                   )}
                 </div>
@@ -466,12 +470,12 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
                   <div className={styles.infoRow}>
                     <span className={styles.infoLabel}>WINNING BID: </span>
                     <span className={styles.infoValue}>{winningBidDisplay}</span>
-                    {winnerDisplayName && (
+                    {winnerDisplayName && isValidAddress(winnerAddress) && (
                       <>
                         <span className={styles.infoSecondary}> BY </span>
-                        <span className={styles.infoLink}>
+                        <a href={etherscanUrl(winnerAddress!)} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>
                           {winnerDisplayName}
-                        </span>
+                        </a>
                       </>
                     )}
                   </div>
@@ -479,9 +483,9 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
                 {isValidAddress(owner) && (
                   <div className={styles.infoRow}>
                     <span className={styles.infoLabel}>CURRENT OWNER: </span>
-                    <span className={styles.infoLink}>
+                    <a href={etherscanUrl(owner!)} target="_blank" rel="noopener noreferrer" className={styles.infoLink}>
                       {ownerEns || truncateAddress(owner!)}
-                    </span>
+                    </a>
                   </div>
                 )}
               </>
