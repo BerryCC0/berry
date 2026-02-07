@@ -1,12 +1,16 @@
 /**
  * Dynamic OG Image for Probe Noun Detail
- * Layout: berryos.wtf top-left, Noun title, trait list on left, noun image on right
+ * Layout: berryos.wtf top-left, Noun title, trait list + auction info on left, noun image on right
+ *
+ * Note: OG images are static PNGs cached by social platforms, so countdowns
+ * are shown as absolute timestamps rather than live timers.
  */
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
+import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 
 // Use Node.js runtime — edge has issues with large SVG payloads + ImageData import
 export const runtime = 'nodejs';
@@ -16,6 +20,8 @@ const BG_COLORS: Record<number, { hex: string }> = {
   0: { hex: 'd5d7e1' },
   1: { hex: 'e1d7d5' },
 };
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 // Cache the font fetch so it's only done once per cold start
 let fontData: ArrayBuffer | null = null;
@@ -28,12 +34,80 @@ async function getComicNeueFont(): Promise<ArrayBuffer> {
   return fontData;
 }
 
-/**
- * Safely encode SVG string to a base64 data URI using Buffer (Node.js).
- */
 function svgToDataUri(svg: string): string {
   const b64 = Buffer.from(svg, 'utf-8').toString('base64');
   return `data:image/svg+xml;base64,${b64}`;
+}
+
+function truncateAddress(addr: string): string {
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+function formatEth(wei: string): string {
+  const eth = Number(BigInt(wei)) / 1e18;
+  return `Ξ ${eth.toFixed(2)}`;
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime()) || d.getTime() < 86400000) return '';
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function formatTimestamp(unixSeconds: number): string {
+  const d = new Date(unixSeconds * 1000);
+  return d.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+/** Fetch auction data from the Goldsky subgraph */
+async function fetchAuction(nounId: number) {
+  try {
+    const res = await fetch(GOLDSKY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query ($id: ID!) {
+          auction(id: $id) {
+            id amount settled startTime endTime
+            bids(orderBy: amount, orderDirection: desc, first: 1) {
+              amount
+              bidder { id }
+            }
+          }
+        }`,
+        variables: { id: String(nounId) },
+      }),
+    });
+    const json = await res.json();
+    return json.data?.auction ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve ENS name for an address (best-effort) */
+async function resolveENS(address: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api.ensideas.com/ens/resolve/${encodeURIComponent(address)}`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.name || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(
@@ -48,23 +122,32 @@ export async function GET(
   }
 
   try {
-    const font = await getComicNeueFont();
     const sql = neon(process.env.DATABASE_URL!);
 
-    const result = await sql`
-      SELECT id, svg, background, body, accessory, head, glasses
-      FROM nouns WHERE id = ${nounId}
-    `;
+    // Fetch everything in parallel
+    const [fontResult, dbResult, auctionResult] = await Promise.all([
+      getComicNeueFont(),
+      sql`
+        SELECT id, svg, background, body, accessory, head, glasses,
+               settled_by_address, settled_by_ens, settled_at,
+               winning_bid, winner_address, winner_ens
+        FROM nouns WHERE id = ${nounId}
+      `,
+      fetchAuction(nounId),
+    ]);
 
-    if (result.length === 0) {
+    const font = fontResult;
+
+    if (dbResult.length === 0) {
       return new Response('Noun not found', { status: 404 });
     }
 
-    const noun = result[0];
+    const noun = dbResult[0];
+    const auction = auctionResult;
     const bg = BG_COLORS[noun.background] || BG_COLORS[0];
     const bgColor = `#${bg.hex}`;
 
-    // Resolve all trait names
+    // Resolve trait names
     const traits = [
       { label: 'HEAD', value: getTraitName('head', noun.head) },
       { label: 'GLASSES', value: getTraitName('glasses', noun.glasses) },
@@ -72,6 +155,72 @@ export async function GET(
       { label: 'BODY', value: getTraitName('body', noun.body) },
       { label: 'BACKGROUND', value: getTraitName('background', noun.background) },
     ];
+
+    // --- Build auction / settlement info lines ---
+    const infoLines: { label: string; value: string }[] = [];
+
+    const isSettled = auction?.settled === true;
+    const isActive = auction && !auction.settled;
+
+    if (isSettled) {
+      // Settled noun: show settler + winning bid
+      const settlerAddr = noun.settled_by_address;
+      const settlerValid = settlerAddr && settlerAddr !== ZERO_ADDRESS;
+      if (settlerValid) {
+        const settlerName = noun.settled_by_ens || truncateAddress(settlerAddr);
+        const settledDate = noun.settled_at ? formatDate(noun.settled_at) : '';
+        infoLines.push({
+          label: 'SETTLED BY',
+          value: settledDate ? `${settlerName} on ${settledDate}` : settlerName,
+        });
+      }
+
+      // Winning bid
+      const bid = noun.winning_bid
+        ? formatEth(noun.winning_bid)
+        : auction.amount && auction.amount !== '0'
+          ? formatEth(auction.amount)
+          : null;
+
+      if (bid) {
+        const winnerName = noun.winner_ens
+          || (noun.winner_address && noun.winner_address !== ZERO_ADDRESS
+            ? truncateAddress(noun.winner_address)
+            : auction.bids?.[0]?.bidder?.id
+              ? truncateAddress(auction.bids[0].bidder.id)
+              : null);
+        infoLines.push({
+          label: 'WINNING BID',
+          value: winnerName ? `${bid} by ${winnerName}` : bid,
+        });
+      }
+    } else if (isActive) {
+      // Active auction: show current bid + end time
+      const topBid = auction.bids?.[0];
+      if (topBid && topBid.amount !== '0') {
+        let bidderName = truncateAddress(topBid.bidder.id);
+        // Quick ENS resolve for the top bidder
+        const ens = await resolveENS(topBid.bidder.id);
+        if (ens) bidderName = ens;
+        infoLines.push({
+          label: 'CURRENT BID',
+          value: `${formatEth(topBid.amount)} by ${bidderName}`,
+        });
+      }
+
+      if (auction.endTime) {
+        const endTs = parseInt(auction.endTime);
+        const now = Math.floor(Date.now() / 1000);
+        if (endTs > now) {
+          infoLines.push({
+            label: 'AUCTION ENDS',
+            value: formatTimestamp(endTs),
+          });
+        } else {
+          infoLines.push({ label: 'AUCTION', value: 'Ended — awaiting settlement' });
+        }
+      }
+    }
 
     return new ImageResponse(
       (
@@ -91,8 +240,8 @@ export async function GET(
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              width: 620,
-              padding: '56px 0 56px 64px',
+              width: 580,
+              padding: '44px 0 44px 52px',
             }}
           >
             {/* berryos.wtf branding */}
@@ -100,9 +249,9 @@ export async function GET(
               style={{
                 display: 'flex',
                 fontSize: 22,
-                color: 'rgba(0,0,0,0.35)',
+                color: 'rgba(0,0,0,0.4)',
                 fontWeight: 700,
-                marginBottom: 20,
+                marginBottom: 14,
               }}
             >
               berryos.wtf
@@ -112,7 +261,7 @@ export async function GET(
             <div
               style={{
                 display: 'flex',
-                fontSize: 72,
+                fontSize: 76,
                 fontWeight: 700,
                 color: '#1a1a1a',
                 lineHeight: 1,
@@ -125,11 +274,11 @@ export async function GET(
             <div
               style={{
                 display: 'flex',
-                width: 440,
+                width: 420,
                 height: 3,
-                background: 'rgba(0,0,0,0.12)',
-                marginTop: 24,
-                marginBottom: 28,
+                background: 'rgba(0,0,0,0.14)',
+                marginTop: 18,
+                marginBottom: 20,
                 borderRadius: 2,
               }}
             />
@@ -139,7 +288,7 @@ export async function GET(
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 10,
+                gap: 7,
               }}
             >
               {traits.map((trait) => (
@@ -154,7 +303,7 @@ export async function GET(
                   <span
                     style={{
                       fontSize: 16,
-                      color: 'rgba(0,0,0,0.38)',
+                      color: 'rgba(0,0,0,0.5)',
                       fontWeight: 700,
                       letterSpacing: 1,
                       width: 140,
@@ -175,6 +324,53 @@ export async function GET(
                 </div>
               ))}
             </div>
+
+            {/* Auction / settlement info */}
+            {infoLines.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 7,
+                  marginTop: 18,
+                  paddingTop: 16,
+                  borderTop: '2px solid rgba(0,0,0,0.1)',
+                }}
+              >
+                {infoLines.map((line) => (
+                  <div
+                    key={line.label}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 10,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 15,
+                        color: 'rgba(0,0,0,0.5)',
+                        fontWeight: 700,
+                        letterSpacing: 1,
+                        width: 140,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {line.label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 20,
+                        color: '#222',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {line.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right side: Noun image */}
@@ -184,13 +380,13 @@ export async function GET(
               alignItems: 'center',
               justifyContent: 'center',
               flex: 1,
-              padding: 32,
+              padding: 16,
             }}
           >
             <img
               src={svgToDataUri(noun.svg)}
-              width={500}
-              height={500}
+              width={580}
+              height={580}
               style={{
                 borderRadius: 16,
                 imageRendering: 'pixelated',
