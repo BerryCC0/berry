@@ -270,6 +270,10 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
   const { data: noun, isLoading, error } = useNounDetail(nounId);
   const { data: owner } = useNounOwner(nounId);
   const { data: ownerEns } = useENSName(owner ?? null);
+  // Live ENS fallback for winner if DB hasn't been backfilled yet
+  const winnerAddress = noun?.winner_address ?? null;
+  const { data: winnerEnsLive } = useENSName(!noun?.winner_ens && isValidAddress(winnerAddress) ? winnerAddress : null);
+  const winnerDisplayName = noun?.winner_ens || winnerEnsLive || (isValidAddress(winnerAddress) ? truncateAddress(winnerAddress!) : null);
   const { auction } = useCurrentAuction();
   const [showBidsModal, setShowBidsModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -362,6 +366,13 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
     ? `Ξ ${Number(formatEther(auction.amount)).toFixed(2)}`
     : null;
 
+  // Winning bid: prefer DB value, fall back to subgraph auction amount
+  const winningBidDisplay = noun.winning_bid
+    ? formatBidWei(noun.winning_bid)
+    : auctionData?.auction?.amount && auctionData.auction.amount !== '0'
+      ? `Ξ ${Number(formatEther(BigInt(auctionData.auction.amount))).toFixed(2)}`
+      : null;
+
   return (
     <div className={styles.container} style={bgColor ? { background: bgColor } as React.CSSProperties : undefined}>
       {/* Top navigation bar */}
@@ -451,15 +462,15 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
               </>
             ) : (
               <>
-                {noun.winning_bid && (
+                {winningBidDisplay && (
                   <div className={styles.infoRow}>
                     <span className={styles.infoLabel}>WINNING BID: </span>
-                    <span className={styles.infoValue}>{formatBidWei(noun.winning_bid)}</span>
-                    {isValidAddress(noun.winner_address) && (
+                    <span className={styles.infoValue}>{winningBidDisplay}</span>
+                    {winnerDisplayName && (
                       <>
                         <span className={styles.infoSecondary}> BY </span>
                         <span className={styles.infoLink}>
-                          {noun.winner_ens || truncateAddress(noun.winner_address!)}
+                          {winnerDisplayName}
                         </span>
                       </>
                     )}

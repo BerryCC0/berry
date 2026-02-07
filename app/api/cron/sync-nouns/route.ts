@@ -128,15 +128,18 @@ export async function GET(request: NextRequest) {
       owner: { id: string };
     }> }>(nounsQuery, { ids: idsToCheck });
 
-    // Fetch recent auctions
+    // Fetch recent auctions with bids to determine actual winner
     const auctionsQuery = `
       query GetRecentAuctions($first: Int!) {
         auctions(first: $first, orderBy: startTime, orderDirection: desc, where: { settled: true }) {
           id
           noun { id }
           amount
-          bidder { id }
           endTime
+          bids(orderBy: amount, orderDirection: desc, first: 1) {
+            bidder { id }
+            amount
+          }
         }
       }
     `;
@@ -144,8 +147,8 @@ export async function GET(request: NextRequest) {
       id: string;
       noun: { id: string };
       amount: string;
-      bidder: { id: string } | null;
       endTime: string;
+      bids: Array<{ bidder: { id: string }; amount: string }>;
     }> }>(auctionsQuery, { first: 50 });
 
     const auctionMap = new Map(auctions.map(a => [parseInt(a.noun.id), a]));
@@ -180,34 +183,38 @@ export async function GET(request: NextRequest) {
         let winnerAddress: string | null;
         let winningBid: string | null;
 
+        // The auction winner is the highest bidder (from bids array),
+        // NOT auction.bidder (which can be the auction house contract)
+        // and NOT noun.owner (which is the current holder, may have been transferred)
+        const highestBidder = auction?.bids?.[0]?.bidder?.id || null;
+
         if (nounId <= 1) {
           // Genesis nouns - no settler
           settledAt = null;
           settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
-          winnerAddress = isNounder ? NOUNDERS_MULTISIG : (auction?.bidder?.id || null);
+          winnerAddress = isNounder ? NOUNDERS_MULTISIG : highestBidder;
           winningBid = auction ? (auction.amount !== '0' ? auction.amount : null) : null;
         } else if (isNounder && !auction) {
-          // Nounder noun — settler will be found later via Etherscan
+          // Nounder noun — no auction, awarded to Nounders
           settledAt = null;
           settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
           winnerAddress = NOUNDERS_MULTISIG;
           winningBid = null;
         } else if (auction) {
-          // Regular auctioned noun — settled_at will be set from the actual
-          // settle transaction timestamp when the settler is resolved
+          // Regular auctioned noun — winner is the highest bidder
           settledAt = null;
           settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
-          winnerAddress = auction.bidder?.id || null;
+          winnerAddress = highestBidder;
           winningBid = auction.amount !== '0' ? auction.amount : null;
         } else {
-          // Edge case
+          // No auction data available
           settledAt = null;
           settledByAddress = '0x' + '0'.repeat(40);
           settledTxHash = '0x' + '0'.repeat(64);
-          winnerAddress = noun.owner.id;
+          winnerAddress = null;
           winningBid = null;
         }
 
@@ -292,8 +299,10 @@ export async function GET(request: NextRequest) {
 
           if (txData.result?.from) {
             const settlerAddress = txData.result.from.toLowerCase();
-            // Etherscan returns timestamp in decimal (seconds since epoch)
-            const timestamp = parseInt(log.timeStamp, 10);
+            // Etherscan getLogs returns timeStamp as hex
+            const timestamp = log.timeStamp.startsWith('0x')
+              ? parseInt(log.timeStamp, 16)
+              : parseInt(log.timeStamp, 10);
             // Resolve settler ENS name
             const settlerEns = await resolveENS(settlerAddress);
             await sql`
