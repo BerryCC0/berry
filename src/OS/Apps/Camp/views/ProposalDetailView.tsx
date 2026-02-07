@@ -11,6 +11,7 @@ import { mainnet } from 'wagmi/chains';
 import { useTranslation } from '@/OS/lib/i18n';
 import { useProposal, useSignal } from '../hooks';
 import { useSimulation } from '../hooks/useSimulation';
+import { useProposalActions } from '../utils/hooks/useProposalActions';
 import { useVote } from '@/app/lib/nouns/hooks';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import { ShareButton } from '../components/ShareButton';
@@ -192,6 +193,9 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
     reset: resetSignal,
   } = useSignal(address);
   
+  // Proposal management actions (for proposers)
+  const proposalActions = useProposalActions();
+  
   // Check if user has already voted
   const { data: voteReceipt } = useReadContract({
     address: NOUNS_CONTRACTS.governor.address,
@@ -252,6 +256,11 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Proposer action states
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [proposerActionError, setProposerActionError] = useState<string | null>(null);
+  const [proposerActionSuccess, setProposerActionSuccess] = useState<string | null>(null);
   
   // Determine if voting is active
   const isActive = proposal?.status === 'ACTIVE' || proposal?.status === 'OBJECTION_PERIOD';
@@ -316,6 +325,78 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
   
   const isActionPending = actionMode === 'vote' ? isPending : signalPending;
   const isActionConfirming = actionMode === 'vote' ? isConfirming : signalConfirming;
+  
+  // Proposer action handlers
+  const handleCancelProposal = async () => {
+    setProposerActionError(null);
+    try {
+      await proposalActions.cancelProposal(proposalId);
+      setProposerActionSuccess('Proposal cancelled successfully');
+      setShowCancelConfirm(false);
+      setTimeout(() => refetch(), 2000);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes('user rejected')) {
+          setProposerActionError('Transaction was rejected');
+        } else {
+          setProposerActionError(err.message);
+        }
+      } else {
+        setProposerActionError('Failed to cancel proposal');
+      }
+    }
+  };
+  
+  const handleQueueProposal = async () => {
+    setProposerActionError(null);
+    try {
+      await proposalActions.queueProposal(proposalId);
+      setProposerActionSuccess('Proposal queued successfully');
+      setTimeout(() => refetch(), 2000);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes('user rejected')) {
+          setProposerActionError('Transaction was rejected');
+        } else {
+          setProposerActionError(err.message);
+        }
+      } else {
+        setProposerActionError('Failed to queue proposal');
+      }
+    }
+  };
+  
+  const handleExecuteProposal = async () => {
+    setProposerActionError(null);
+    try {
+      await proposalActions.executeProposal(proposalId);
+      setProposerActionSuccess('Proposal executed successfully');
+      setTimeout(() => refetch(), 2000);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes('user rejected')) {
+          setProposerActionError('Transaction was rejected');
+        } else {
+          setProposerActionError(err.message);
+        }
+      } else {
+        setProposerActionError('Failed to execute proposal');
+      }
+    }
+  };
+  
+  const handleEditProposal = () => {
+    // Navigate to create view with edit mode for this proposal
+    onNavigate(`create/edit-proposal/${proposalId}`);
+  };
+  
+  // Clear proposer action success after a delay
+  useEffect(() => {
+    if (proposerActionSuccess) {
+      const timer = setTimeout(() => setProposerActionSuccess(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [proposerActionSuccess]);
   
   // Only simulate for proposals that could still be executed
   const shouldSkipSimulation = proposal ? SKIP_SIMULATION_STATUSES.includes(proposal.status) : false;
@@ -505,6 +586,87 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack }: ProposalD
                   : `Voting ends in ${formatTimeRemaining(timeRemaining.seconds)}`
                 }
               </span>
+            </div>
+          )}
+          
+          {/* Proposer Actions - Show for proposal owner */}
+          {proposal && proposalActions.isProposer(proposal, address) && (
+            <div className={styles.proposerActions}>
+              <span className={styles.proposerActionsLabel}>Proposer</span>
+              
+              {/* Success/Error Messages */}
+              {proposerActionSuccess && (
+                <div className={styles.successMessage}>{proposerActionSuccess}</div>
+              )}
+              {proposerActionError && (
+                <div className={styles.errorMessage}>{proposerActionError}</div>
+              )}
+              
+              {/* Edit - during updateable period */}
+              {proposalActions.canUpdate(proposal, address) && (
+                <button
+                  className={styles.editButton}
+                  onClick={handleEditProposal}
+                  disabled={proposalActions.isPending || proposalActions.isConfirming}
+                >
+                  Edit Proposal
+                </button>
+              )}
+              
+              {/* Queue - after succeeded */}
+              {proposalActions.canQueue(proposal) && (
+                <button
+                  className={styles.queueButton}
+                  onClick={handleQueueProposal}
+                  disabled={proposalActions.isPending || proposalActions.isConfirming}
+                >
+                  {proposalActions.isPending || proposalActions.isConfirming ? 'Queueing...' : 'Queue Proposal'}
+                </button>
+              )}
+              
+              {/* Execute - after queued and ETA passed */}
+              {proposalActions.canExecute(proposal) && (
+                <button
+                  className={styles.executeButton}
+                  onClick={handleExecuteProposal}
+                  disabled={proposalActions.isPending || proposalActions.isConfirming}
+                >
+                  {proposalActions.isPending || proposalActions.isConfirming ? 'Executing...' : 'Execute Proposal'}
+                </button>
+              )}
+              
+              {/* Cancel - while pending/active/updatable */}
+              {proposalActions.canCancel(proposal, address) && (
+                <>
+                  {!showCancelConfirm ? (
+                    <button
+                      className={styles.cancelProposalButton}
+                      onClick={() => setShowCancelConfirm(true)}
+                      disabled={proposalActions.isPending || proposalActions.isConfirming}
+                    >
+                      Cancel Proposal
+                    </button>
+                  ) : (
+                    <div className={styles.confirmCancel}>
+                      <span className={styles.confirmText}>Are you sure?</span>
+                      <button
+                        className={styles.confirmYes}
+                        onClick={handleCancelProposal}
+                        disabled={proposalActions.isPending || proposalActions.isConfirming}
+                      >
+                        {proposalActions.isPending || proposalActions.isConfirming ? 'Cancelling...' : 'Yes, Cancel'}
+                      </button>
+                      <button
+                        className={styles.confirmNo}
+                        onClick={() => setShowCancelConfirm(false)}
+                        disabled={proposalActions.isPending || proposalActions.isConfirming}
+                      >
+                        No
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
           

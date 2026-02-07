@@ -18,7 +18,8 @@ export type CampRoute =
   | { view: 'vote'; proposalId: string; voter: string }
   | { view: 'account' }
   | { view: 'create'; draftSlug?: string }
-  | { view: 'edit-candidate'; proposer: string; slug: string };
+  | { view: 'edit-candidate'; proposer: string; slug: string }
+  | { view: 'edit-proposal'; proposalId: string };
 
 export function parseRoute(path?: string): CampRoute {
   if (!path) return { view: 'activity' };
@@ -65,9 +66,13 @@ export function parseRoute(path?: string): CampRoute {
     case 'account':
       return { view: 'account' };
     case 'create':
-      // Check for edit mode: create/edit/{proposer}/{slug}
+      // Check for edit candidate mode: create/edit/{proposer}/{slug}
       if (parts[1] === 'edit' && parts[2] && parts[3]) {
         return { view: 'edit-candidate', proposer: parts[2], slug: parts.slice(3).join('/') };
+      }
+      // Check for edit proposal mode: create/edit-proposal/{proposalId}
+      if (parts[1] === 'edit-proposal' && parts[2]) {
+        return { view: 'edit-proposal', proposalId: parts[2] };
       }
       // Check for draft query parameter
       const draftSlug = queryParams.get('draft');
@@ -102,6 +107,8 @@ export function routeToPath(route: CampRoute): string {
       return route.draftSlug ? `create?draft=${encodeURIComponent(route.draftSlug)}` : 'create';
     case 'edit-candidate':
       return `create/edit/${route.proposer}/${route.slug}`;
+    case 'edit-proposal':
+      return `create/edit-proposal/${route.proposalId}`;
   }
 }
 
@@ -131,6 +138,7 @@ export interface Proposal {
   createdTimestamp: string;
   createdBlock: string;
   executionETA?: string;
+  eta?: string; // Alias for executionETA (timelock ETA)
   totalSupply?: string;
   // Actions (for simulation)
   actions?: ProposalAction[];
@@ -138,6 +146,8 @@ export interface Proposal {
   clientId?: number;
   // Signers who sponsored the proposal candidate
   signers?: string[];
+  // Update period end block (for editable proposals)
+  updatePeriodEndBlock?: string;
 }
 
 export type ProposalStatus =

@@ -243,6 +243,7 @@ const PROPOSAL_QUERY = `
       createdTimestamp
       createdBlock
       executionETA
+      updatePeriodEndBlock
       totalSupply
       clientId
       targets

@@ -766,3 +766,161 @@
 .signalAbstain:hover:not(:disabled) {
   background: var(--berry-bg-secondary);
 }
+
+/* Proposer Actions Toolbar */
+.proposerActions {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.proposerActionsLabel {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.proposerActions .successMessage {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--berry-success) 15%, transparent);
+  border: 1px solid var(--berry-success);
+  border-radius: 4px;
+  color: var(--berry-success);
+}
+
+.proposerActions .errorMessage {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--berry-error) 15%, transparent);
+  border: 1px solid var(--berry-error);
+  border-radius: 4px;
+  color: var(--berry-error);
+}
+
+.editButton,
+.queueButton,
+.executeButton,
+.cancelProposalButton {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.editButton:disabled,
+.queueButton:disabled,
+.executeButton:disabled,
+.cancelProposalButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editButton {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-border);
+  color: var(--berry-text-primary);
+}
+
+.editButton:hover:not(:disabled) {
+  background: var(--berry-accent);
+  border-color: var(--berry-accent);
+  color: white;
+}
+
+.queueButton {
+  background: color-mix(in srgb, var(--berry-warning) 15%, transparent);
+  border-color: var(--berry-warning);
+  color: var(--berry-warning);
+}
+
+.queueButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--berry-warning) 30%, transparent);
+}
+
+.executeButton {
+  background: color-mix(in srgb, var(--berry-success) 15%, transparent);
+  border-color: var(--berry-success);
+  color: var(--berry-success);
+}
+
+.executeButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--berry-success) 30%, transparent);
+}
+
+.cancelProposalButton {
+  background: color-mix(in srgb, var(--berry-error) 10%, transparent);
+  border-color: var(--berry-error);
+  color: var(--berry-error);
+}
+
+.cancelProposalButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--berry-error) 25%, transparent);
+}
+
+.confirmCancel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--berry-error) 10%, transparent);
+  border: 1px solid var(--berry-error);
+  border-radius: 4px;
+}
+
+.confirmText {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-error);
+  flex: 1;
+}
+
+.confirmYes,
+.confirmNo {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.confirmYes:disabled,
+.confirmNo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmYes {
+  background: var(--berry-error);
+  border-color: var(--berry-error);
+  color: white;
+}
+
+.confirmYes:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--berry-error) 80%, black);
+}
+
+.confirmNo {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-border);
+  color: var(--berry-text-primary);
+}
+
+.confirmNo:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+}

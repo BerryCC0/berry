@@ -214,6 +214,15 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
           />
         );
       
+      case 'edit-proposal':
+        return (
+          <CreateProposalView 
+            onNavigate={navigate}
+            onBack={goBack}
+            editProposalId={route.proposalId}
+          />
+        );
+      
       default:
         return <ActivityView onNavigate={navigate} />;
     }

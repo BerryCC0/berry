@@ -22,8 +22,10 @@ import { generateSlugFromTitle, generateUniqueSlug, generateSlug, generateSlugWi
 import { parseActionsToTemplates, generateActionsFromTemplate, ACTION_TEMPLATES, type ActionTemplateType } from '../utils/actionTemplates';
 import { useNounHolderStatus } from '../utils/hooks/useNounHolderStatus';
 import { useCandidate } from '../hooks/useCandidates';
+import { useProposal } from '../hooks/useProposals';
 import { useSimulation } from '../hooks/useSimulation';
 import { SimulationStatus } from '../components/SimulationStatus';
+import { NounsDAOLogicV3ABI } from '@/app/lib/nouns/abis/NounsDAOLogicV3';
 import styles from './CreateProposalView.module.css';
 
 interface CreateProposalViewProps {
@@ -78,10 +80,12 @@ export function CreateProposalView({
   const { address, isConnected } = useAccount();
   const { writeContractAsync, isPending } = useWriteContract();
 
-  // Determine if we're in edit mode
-  const isEditMode = Boolean(editCandidateProposer && editCandidateSlug);
+  // Determine if we're in edit mode (candidate or proposal)
+  const isEditingCandidate = Boolean(editCandidateProposer && editCandidateSlug);
+  const isEditingProposal = Boolean(editProposalId);
+  const isEditMode = isEditingCandidate || isEditingProposal;
   
-  // Fetch candidate data if editing
+  // Fetch candidate data if editing candidate
   const { 
     data: editingCandidate, 
     isLoading: isLoadingCandidate,
@@ -90,6 +94,13 @@ export function CreateProposalView({
     editCandidateProposer || '', 
     editCandidateSlug || ''
   );
+  
+  // Fetch proposal data if editing proposal
+  const {
+    data: editingProposal,
+    isLoading: isLoadingProposal,
+    error: proposalError,
+  } = useProposal(editProposalId || null);
 
   // Check if user has voting power
   const { hasVotingPower, votes } = useNounHolderStatus();
@@ -210,9 +221,9 @@ export function CreateProposalView({
   
   const simulation = useSimulation(simulationActions);
 
-  // Populate form with candidate data when editing
+  // Populate form with candidate data when editing a candidate
   useEffect(() => {
-    if (isEditMode && editingCandidate && !editDataLoaded) {
+    if (isEditingCandidate && editingCandidate && !editDataLoaded) {
       // Extract title from description (assuming # Title format)
       const descriptionText = editingCandidate.description || '';
       let extractedTitle = editingCandidate.title || '';
@@ -275,7 +286,73 @@ export function CreateProposalView({
       
       setEditDataLoaded(true);
     }
-  }, [isEditMode, editingCandidate, editDataLoaded, editCandidateSlug]);
+  }, [isEditingCandidate, editingCandidate, editDataLoaded, editCandidateSlug]);
+
+  // Populate form with proposal data when editing a proposal
+  useEffect(() => {
+    if (isEditingProposal && editingProposal && !editDataLoaded) {
+      // Extract title from description (assuming # Title format)
+      const descriptionText = editingProposal.description || '';
+      let extractedTitle = editingProposal.title || '';
+      let extractedDescription = descriptionText;
+      
+      // If description starts with # Title, extract it
+      const titleMatch = descriptionText.match(/^#\s*(.+?)(?:\n|$)/);
+      if (titleMatch) {
+        extractedTitle = titleMatch[1].trim();
+        extractedDescription = descriptionText.replace(/^#\s*.+?\n\n?/, '').trim();
+      }
+      
+      setTitle(extractedTitle);
+      setDescription(extractedDescription);
+      setProposalType('standard'); // Set to standard type when editing proposal
+      
+      // Parse proposal actions back to template states
+      if (editingProposal.actions && editingProposal.actions.length > 0) {
+        try {
+          const parsedTemplates = parseActionsToTemplates(editingProposal.actions);
+          
+          // Regenerate actions for each template to ensure consistency
+          const templatesWithActions = parsedTemplates.map(template => {
+            if (template.templateId !== 'custom' && template.templateId !== '') {
+              try {
+                const regeneratedActions = generateActionsFromTemplate(
+                  template.templateId,
+                  template.fieldValues
+                );
+                return {
+                  ...template,
+                  generatedActions: regeneratedActions
+                };
+              } catch {
+                // If regeneration fails, keep the original parsed template
+                return template;
+              }
+            }
+            return template;
+          });
+          
+          setActionTemplateStates(templatesWithActions);
+        } catch (err) {
+          console.error('Failed to parse proposal actions:', err);
+          // Fall back to custom template with raw actions
+          const fallbackTemplates: ActionTemplateState[] = editingProposal.actions.map(action => ({
+            templateId: 'custom' as const,
+            fieldValues: {
+              target: action.target,
+              value: action.value,
+              signature: action.signature,
+              calldata: action.calldata
+            },
+            generatedActions: [action]
+          }));
+          setActionTemplateStates(fallbackTemplates);
+        }
+      }
+      
+      setEditDataLoaded(true);
+    }
+  }, [isEditingProposal, editingProposal, editDataLoaded]);
 
   // Load drafts on mount (skip in edit mode)
   useEffect(() => {
@@ -730,6 +807,69 @@ export function CreateProposalView({
     }
   };
 
+  // Handler for updating an existing proposal during the updateable period
+  const handleUpdateProposal = async () => {
+    if (!validateForm()) return;
+    if (!editProposalId) return;
+
+    setErrorMessage(null);
+    setProposalState('confirming');
+
+    try {
+      const allActions = flattenActionTemplates(actionTemplateStates);
+      const targets = allActions.map(action => action.target as `0x${string}`);
+      const values = allActions.map(action => BigInt(action.value));
+      const signatures = allActions.map(action => action.signature);
+      const calldatas = allActions.map(action => {
+        const data = action.calldata;
+        return (data.startsWith('0x') ? data : `0x${data}`) as `0x${string}`;
+      });
+      const fullDescription = `# ${title}\n\n${description}`;
+
+      setProposalState('pending');
+      
+      // Use the full NounsDAOLogicV3 ABI for updateProposal
+      await writeContractAsync({
+        address: NOUNS_ADDRESSES.governor as `0x${string}`,
+        abi: NounsDAOLogicV3ABI,
+        functionName: 'updateProposal',
+        args: [
+          BigInt(editProposalId),
+          targets,
+          values,
+          signatures,
+          calldatas,
+          fullDescription,
+          'Updated via Berry', // updateMessage
+        ],
+      });
+
+      setProposalState('success');
+      setErrorMessage('Proposal updated successfully!');
+
+      // Navigate back to proposal detail after success
+      setTimeout(() => {
+        onNavigate(`proposal/${editProposalId}`);
+      }, 2000);
+    } catch (err: unknown) {
+      setProposalState('error');
+
+      if (err instanceof Error) {
+        if (err.message.includes('user rejected')) {
+          setErrorMessage('Transaction was rejected');
+        } else if (err.message.includes('Only the proposer')) {
+          setErrorMessage('Only the proposer can update this proposal');
+        } else if (err.message.includes('updatable period')) {
+          setErrorMessage('The proposal is no longer in the updateable period');
+        } else {
+          setErrorMessage(err.message);
+        }
+      } else {
+        setErrorMessage('Failed to update proposal. Please try again.');
+      }
+    }
+  };
+
   const isCreating = isPending || proposalState === 'pending' || timelockV1State === 'pending' || candidateState === 'pending';
 
   // Show wallet connection prompt if not connected
@@ -754,20 +894,37 @@ export function CreateProposalView({
     );
   }
 
-  // Show loading state while fetching candidate data
-  if (isEditMode && isLoadingCandidate) {
+  // Show loading state while fetching candidate or proposal data
+  if (isEditingCandidate && isLoadingCandidate) {
     return (
       <div className={styles.loading}>
         <p>Loading candidate data...</p>
       </div>
     );
   }
+  
+  if (isEditingProposal && isLoadingProposal) {
+    return (
+      <div className={styles.loading}>
+        <p>Loading proposal data...</p>
+      </div>
+    );
+  }
 
-  // Show error if candidate not found
-  if (isEditMode && candidateError) {
+  // Show error if candidate or proposal not found
+  if (isEditingCandidate && candidateError) {
     return (
       <div className={styles.error}>
         <p>Failed to load candidate</p>
+        <button className={styles.backButton} onClick={onBack}>Go Back</button>
+      </div>
+    );
+  }
+  
+  if (isEditingProposal && proposalError) {
+    return (
+      <div className={styles.error}>
+        <p>Failed to load proposal</p>
         <button className={styles.backButton} onClick={onBack}>Go Back</button>
       </div>
     );
@@ -781,7 +938,7 @@ export function CreateProposalView({
           ← Back
         </button>
         <h2 className={styles.pageTitle}>
-          {isEditMode ? 'Edit Candidate' : 'Create'}
+          {isEditingProposal ? 'Edit Proposal' : isEditingCandidate ? 'Edit Candidate' : 'Create'}
         </h2>
         {!isEditMode && draftTitle && (
           <div className={styles.draftIndicator}>
@@ -795,9 +952,14 @@ export function CreateProposalView({
             {saveStatus === 'error' && <span className={styles.errorIndicator}>Save failed</span>}
           </div>
         )}
-        {isEditMode && editCandidateSlug && (
+        {isEditingCandidate && editCandidateSlug && (
           <div className={styles.editIndicator}>
             <span className={styles.editSlug}>/{editCandidateSlug}</span>
+          </div>
+        )}
+        {isEditingProposal && editProposalId && (
+          <div className={styles.editIndicator}>
+            <span className={styles.editSlug}>Proposal #{editProposalId}</span>
           </div>
         )}
       </div>
@@ -961,7 +1123,9 @@ export function CreateProposalView({
           <button
             className={styles.submitButton}
             onClick={() => {
-              if (proposalType === 'candidate' || isEditMode) {
+              if (isEditingProposal) {
+                handleUpdateProposal();
+              } else if (proposalType === 'candidate' || isEditingCandidate) {
                 handleSubmitCandidate();
               } else {
                 handleSubmitProposal(proposalType === 'timelock_v1');
@@ -971,13 +1135,15 @@ export function CreateProposalView({
           >
             {isCreating 
               ? (isEditMode ? 'Updating...' : 'Creating...')
-              : isEditMode
-                ? 'Update Candidate'
-                : proposalType === 'candidate'
-                  ? 'Create Candidate'
-                  : proposalType === 'timelock_v1' 
-                    ? 'Propose on TimelockV1' 
-                    : 'Create Proposal'}
+              : isEditingProposal
+                ? 'Update Proposal'
+                : isEditingCandidate
+                  ? 'Update Candidate'
+                  : proposalType === 'candidate'
+                    ? 'Create Candidate'
+                    : proposalType === 'timelock_v1' 
+                      ? 'Propose on TimelockV1' 
+                      : 'Create Proposal'}
           </button>
           {isEditMode && (
             <button
