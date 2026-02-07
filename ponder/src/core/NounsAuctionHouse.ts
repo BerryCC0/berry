@@ -11,6 +11,11 @@ import { resolveAndStoreEns, batchResolveAndStoreEns } from "../helpers/ens";
 // =============================================================================
 ponder.on("NounsAuctionHouse:AuctionCreated", async ({ event, context }) => {
   const { nounId, startTime, endTime } = event.args;
+  const settler = event.transaction.from;
+
+  // Resolve ENS for the settler (the person who called settleAuctionAndCreateNew)
+  const ensMap = await batchResolveAndStoreEns(context, [settler]);
+  const settlerEns = ensMap.get(settler.toLowerCase()) ?? null;
 
   await context.db.insert(auctions).values({
     nounId: Number(nounId),
@@ -19,6 +24,22 @@ ponder.on("NounsAuctionHouse:AuctionCreated", async ({ event, context }) => {
     settled: false,
     blockNumber: event.block.number,
   }).onConflictDoNothing();
+
+  // Write the settler to the newly minted noun -- this is the person who
+  // triggered settleAuctionAndCreateNew, minting this noun in the process.
+  // The noun record already exists (Transfer + NounCreated fire before AuctionCreated).
+  try {
+    await context.db
+      .update(nouns, { id: Number(nounId) })
+      .set({
+        settledByAddress: settler,
+        settledByEns: settlerEns,
+        settledAt: event.block.timestamp,
+        settledTxHash: event.transaction.hash,
+      });
+  } catch {
+    // Noun may not exist yet for the very first auction
+  }
 });
 
 // =============================================================================

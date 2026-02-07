@@ -232,11 +232,29 @@ async function fetchProposals(
   });
   if (filter !== 'all') params.set('filter', filter);
 
-  const response = await fetch(`/api/proposals?${params}`);
+  // Fetch proposals and current block in parallel
+  const [response, currentBlock] = await Promise.all([
+    fetch(`/api/proposals?${params}`),
+    getCurrentBlock(),
+  ]);
+
   if (!response.ok) throw new Error('Failed to fetch proposals');
 
   const json = await response.json();
-  return (json.proposals || []).map(mapProposal);
+  return (json.proposals || []).map((p: any) => {
+    const mapped = mapProposal(p);
+    // Compute real-time status from block data (PENDING->ACTIVE, ACTIVE->DEFEATED/SUCCEEDED)
+    mapped.status = calculateStatusFallback(
+      mapped.status,
+      mapped.startBlock,
+      mapped.endBlock,
+      mapped.forVotes,
+      mapped.againstVotes,
+      mapped.quorumVotes,
+      currentBlock
+    );
+    return mapped;
+  });
 }
 
 async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVote[]; feedback: ProposalFeedback[] }> {

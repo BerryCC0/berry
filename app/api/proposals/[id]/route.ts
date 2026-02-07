@@ -28,7 +28,7 @@ export async function GET(
                start_block, end_block, proposal_threshold, quorum_votes,
                for_votes, against_votes, abstain_votes,
                execution_eta, signers, update_period_end_block,
-               objection_period_end_block, on_timelock_v1,
+               objection_period_end_block, on_timelock_v_1,
                client_id, created_timestamp, created_block, tx_hash
         FROM ponder_live.proposals
         WHERE id = ${proposalId}
