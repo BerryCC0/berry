@@ -7,6 +7,4 @@ const app = new Hono();
 
 app.use("/graphql", graphql({ db, schema }));
 
-app.get("/ready", (c) => c.text("ok"));
-
 export default app;
