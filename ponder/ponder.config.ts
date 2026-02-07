@@ -22,7 +22,7 @@ export default createConfig({
     mainnet: {
       id: 1,
       rpc: rateLimit(http(process.env.PONDER_RPC_URL_1), {
-        requestsPerSecond: 10,
+        requestsPerSecond: 50,
         browser: false,
       }),
     },
