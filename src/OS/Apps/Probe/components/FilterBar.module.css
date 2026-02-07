@@ -22,7 +22,7 @@
   gap: 4px;
   padding: 8px 16px;
   margin: -6px -8px 0;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--berry-bg-secondary);
 }
 
 .sortButtons {
@@ -37,7 +37,7 @@
 .sortButton {
   background: none;
   border: none;
-  color: #1a1a1a;
+  color: var(--berry-text-primary);
   opacity: 0.5;
   font-family: 'Comic Neue', cursive;
   font-size: 11px;
@@ -61,7 +61,7 @@
 
 .sortButton.active {
   opacity: 1;
-  color: #1a1a1a;
+  color: var(--berry-text-primary);
 }
 
 .count {
@@ -70,7 +70,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #1a1a1a;
+  color: var(--berry-text-primary);
   opacity: 0.5;
 }
 
@@ -90,10 +90,10 @@
 }
 
 .navButton {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--berry-bg-secondary);
   border: none;
   border-radius: 3px;
-  color: #1a1a1a;
+  color: var(--berry-text-primary);
   font-size: 14px;
   width: 28px;
   height: 28px;
@@ -106,7 +106,7 @@
 }
 
 .navButton:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--berry-bg-tertiary);
 }
 
 .navButton:disabled {
