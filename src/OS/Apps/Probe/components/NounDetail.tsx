@@ -212,7 +212,40 @@ function BidSection({ nounId, currentBidWei }: { nounId: number; currentBidWei: 
 }
 
 /**
- * Modal displaying all bids for the current auction
+ * Single bid row with ENS resolution
+ */
+function BidRow({ bid }: { bid: Bid }) {
+  const { data: ensName } = useENSName(bid.bidder.id);
+  const clientName = getClientName(bid.clientId);
+  const isBerry = isBerryOSBid(bid.clientId);
+  const time = formatBidTime(bid.blockTimestamp);
+
+  return (
+    <div className={styles.modalBidRow}>
+      <span className={styles.modalBidAmount}>
+        Ξ {formatBidAmount(bid.amount)}
+      </span>
+      <span className={styles.modalBidSecondary}> BY </span>
+      <a href={etherscanUrl(bid.bidder.id)} target="_blank" rel="noopener noreferrer" className={styles.modalBidAddress}>
+        {ensName || truncateAddress(bid.bidder.id)}
+      </a>
+      {clientName && (
+        <>
+          <span className={styles.modalBidSecondary}> VIA </span>
+          <span className={isBerry ? styles.modalBidBerry : styles.modalBidClient}>
+            {clientName.toUpperCase()}
+          </span>
+        </>
+      )}
+      {time && (
+        <span className={styles.modalBidTime}> ({time})</span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Modal displaying all bids for the auction
  */
 function BidsModal({ bids, onClose }: { bids: Bid[]; onClose: () => void }) {
   // Close on Escape
@@ -235,34 +268,7 @@ function BidsModal({ bids, onClose }: { bids: Bid[]; onClose: () => void }) {
           {bids.length === 0 ? (
             <div className={styles.modalEmpty}>No bids yet</div>
           ) : (
-            bids.map((bid) => {
-              const clientName = getClientName(bid.clientId);
-              const isBerry = isBerryOSBid(bid.clientId);
-              const time = formatBidTime(bid.blockTimestamp);
-
-              return (
-                <div key={bid.id} className={styles.modalBidRow}>
-                  <span className={styles.modalBidAmount}>
-                    Ξ {formatBidAmount(bid.amount)}
-                  </span>
-                  <span className={styles.modalBidSecondary}> BY </span>
-                  <a href={etherscanUrl(bid.bidder.id)} target="_blank" rel="noopener noreferrer" className={styles.modalBidAddress}>
-                    {truncateAddress(bid.bidder.id)}
-                  </a>
-                  {clientName && (
-                    <>
-                      <span className={styles.modalBidSecondary}> VIA </span>
-                      <span className={isBerry ? styles.modalBidBerry : styles.modalBidClient}>
-                        {clientName.toUpperCase()}
-                      </span>
-                    </>
-                  )}
-                  {time && (
-                    <span className={styles.modalBidTime}> ({time})</span>
-                  )}
-                </div>
-              );
-            })
+            bids.map((bid) => <BidRow key={bid.id} bid={bid} />)
           )}
         </div>
       </div>
