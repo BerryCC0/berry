@@ -18,4 +18,4 @@ WORKDIR /app/ponder
 # Ponder uses port 42069 by default
 EXPOSE 42069
 
-CMD ["npx", "ponder", "start"]
+CMD ["npx", "ponder", "start", "--schema", "ponder"]
