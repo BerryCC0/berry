@@ -6,7 +6,6 @@
 
 import type { Metadata } from "next";
 import { osAppConfigs } from "@/OS/Apps/OSAppConfig";
-import { GOLDSKY_ENDPOINT } from "@/app/lib/nouns/constants";
 import { ponderSql } from '@/app/lib/ponder-db';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
 
@@ -15,38 +14,32 @@ interface LayoutProps {
   params: Promise<{ appId: string; params?: string[] }>;
 }
 
-// Fetch proposal data for metadata
+// Fetch proposal data for metadata from Ponder
 async function fetchProposalMeta(id: string) {
   try {
-    const response = await fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `query { proposal(id: "${id}") { id, title, description, status } }`,
-      }),
-      next: { revalidate: 60 },
-    });
-    const json = await response.json();
-    return json.data?.proposal;
+    const sql = ponderSql();
+    const rows = await sql`
+      SELECT id, title, description, status
+      FROM ponder_live.proposals
+      WHERE id = ${parseInt(id)}
+    `;
+    return rows[0] || null;
   } catch {
     return null;
   }
 }
 
-// Fetch candidate data for metadata by proposer + slug
+// Fetch candidate data for metadata by proposer + slug from Ponder
 async function fetchCandidateMeta(proposer: string, slug: string) {
   try {
-    const id = `${proposer.toLowerCase()}-${slug}`;
-    const response = await fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `query { proposalCandidate(id: "${id}") { slug, proposer, latestVersion { content { title, description } } } }`,
-      }),
-      next: { revalidate: 60 },
-    });
-    const json = await response.json();
-    return json.data?.proposalCandidate;
+    const candidateId = `${proposer.toLowerCase()}-${slug}`;
+    const sql = ponderSql();
+    const rows = await sql`
+      SELECT id, slug, proposer, title, description
+      FROM ponder_live.candidates
+      WHERE id = ${candidateId}
+    `;
+    return rows[0] || null;
   } catch {
     return null;
   }
@@ -55,16 +48,14 @@ async function fetchCandidateMeta(proposer: string, slug: string) {
 // Fetch candidate data for metadata by slug only (clean URL format)
 async function fetchCandidateMetaBySlug(slug: string) {
   try {
-    const response = await fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `query { proposalCandidates(where: { slug: "${slug}" }, first: 1) { slug, proposer, latestVersion { content { title, description } } } }`,
-      }),
-      next: { revalidate: 60 },
-    });
-    const json = await response.json();
-    return json.data?.proposalCandidates?.[0] || null;
+    const sql = ponderSql();
+    const rows = await sql`
+      SELECT id, slug, proposer, title, description
+      FROM ponder_live.candidates
+      WHERE slug = ${slug}
+      LIMIT 1
+    `;
+    return rows[0] || null;
   } catch {
     return null;
   }
@@ -252,8 +243,8 @@ export async function generateMetadata({
       const candidate = await fetchCandidateMetaBySlug(slug);
       
       if (candidate) {
-        const title = candidate.latestVersion?.content?.title || candidate.slug.replace(/-/g, ' ');
-        const rawDescription = candidate.latestVersion?.content?.description || '';
+        const title = candidate.title || candidate.slug.replace(/-/g, ' ');
+        const rawDescription = candidate.description || '';
         const proposer = candidate.proposer || '';
         const description = extractDescription(rawDescription) || `Proposal candidate by ${proposer.slice(0, 6)}...${proposer.slice(-4)}`;
         const ogImageUrl = `${baseUrl}/api/og/candidate/${proposer}/${slug}`;
@@ -284,8 +275,8 @@ export async function generateMetadata({
       const candidate = await fetchCandidateMeta(proposer, slug);
       
       if (candidate) {
-        const title = candidate.latestVersion?.content?.title || candidate.slug.replace(/-/g, ' ');
-        const rawDescription = candidate.latestVersion?.content?.description || '';
+        const title = candidate.title || candidate.slug.replace(/-/g, ' ');
+        const rawDescription = candidate.description || '';
         const description = extractDescription(rawDescription) || `Proposal candidate by ${proposer.slice(0, 6)}...${proposer.slice(-4)}`;
         const ogImageUrl = `${baseUrl}/api/og/candidate/${proposer}/${slug}`;
         

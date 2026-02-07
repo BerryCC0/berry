@@ -1,12 +1,11 @@
 /**
  * useAuctionData Hook
- * Fetches auction data from Goldsky subgraph
+ * Fetches auction data from Ponder API
  */
 
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 
 // Types
 export interface Bid {
@@ -49,121 +48,53 @@ export interface Auction {
   bids: Bid[];
 }
 
-// GraphQL Queries
-const CURRENT_AUCTION_QUERY = `
-  query CurrentAuction {
-    auctions(
-      first: 1
-      orderBy: startTime
-      orderDirection: desc
-    ) {
-      id
-      amount
-      startTime
-      endTime
-      settled
-      noun {
-        id
-        seed {
-          id
-          background
-          body
-          accessory
-          head
-          glasses
-        }
-        owner {
-          id
-        }
-      }
-      bids(orderBy: amount, orderDirection: desc) {
-        id
-        amount
-        blockTimestamp
-        txHash
-        clientId
-        bidder {
-          id
-        }
-      }
-    }
-  }
-`;
+// ============================================================================
+// API RESPONSE MAPPING
+// ============================================================================
 
-const AUCTION_BY_ID_QUERY = `
-  query AuctionById($id: ID!) {
-    auction(id: $id) {
-      id
-      amount
-      startTime
-      endTime
-      settled
-      noun {
-        id
-        seed {
-          id
-          background
-          body
-          accessory
-          head
-          glasses
-        }
-        owner {
-          id
-        }
-      }
-      bids(orderBy: amount, orderDirection: desc) {
-        id
-        amount
-        blockTimestamp
-        txHash
-        clientId
-        bidder {
-          id
-        }
-      }
-    }
-  }
-`;
+function mapAuctionResponse(json: any): Auction | null {
+  const a = json.auction;
+  const n = json.noun;
+  const bids = json.bids || [];
 
-const NOUN_BY_ID_QUERY = `
-  query NounById($id: ID!) {
-    noun(id: $id) {
-      id
-      seed {
-        id
-        background
-        body
-        accessory
-        head
-        glasses
-      }
-      owner {
-        id
-      }
-    }
-  }
-`;
+  if (!a) return null;
 
-async function fetchGoldsky<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-  const response = await fetch(GOLDSKY_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-
-  const json = await response.json();
-
-  if (json.errors) {
-    throw new Error(json.errors[0].message);
-  }
-
-  if (!json.data) {
-    throw new Error('No data returned from Goldsky');
-  }
-
-  return json.data as T;
+  return {
+    id: String(a.noun_id),
+    amount: String(a.amount || '0'),
+    startTime: String(a.start_time),
+    endTime: String(a.end_time),
+    settled: a.settled || false,
+    noun: n ? {
+      id: String(n.id),
+      seed: {
+        id: String(n.id),
+        background: n.background,
+        body: n.body,
+        accessory: n.accessory,
+        head: n.head,
+        glasses: n.glasses,
+      },
+      owner: n.owner ? { id: n.owner } : null,
+    } : {
+      id: String(a.noun_id),
+      seed: { id: String(a.noun_id), background: 0, body: 0, accessory: 0, head: 0, glasses: 0 },
+      owner: null,
+    },
+    bids: bids.map((b: any) => ({
+      id: b.id,
+      amount: String(b.amount),
+      blockTimestamp: String(b.block_timestamp),
+      txHash: b.tx_hash || '',
+      clientId: b.client_id ?? null,
+      bidder: { id: b.bidder },
+    })),
+  };
 }
+
+// ============================================================================
+// HOOKS
+// ============================================================================
 
 /**
  * Fetch current auction with polling
@@ -171,21 +102,34 @@ async function fetchGoldsky<T>(query: string, variables?: Record<string, unknown
 export function useCurrentAuction(pollInterval: number = 5000) {
   return useQuery<{ auctions: Auction[] }, Error>({
     queryKey: ['nouns', 'currentAuction'],
-    queryFn: () => fetchGoldsky<{ auctions: Auction[] }>(CURRENT_AUCTION_QUERY),
+    queryFn: async () => {
+      const response = await fetch('/api/auction');
+      if (!response.ok) throw new Error('Failed to fetch current auction');
+
+      const json = await response.json();
+      const auction = mapAuctionResponse(json);
+      return { auctions: auction ? [auction] : [] };
+    },
     refetchInterval: pollInterval,
     staleTime: 2000,
   });
 }
 
 /**
- * Fetch auction by ID
+ * Fetch auction by ID (noun ID)
  */
 export function useAuctionById(auctionId: string | null) {
   return useQuery<{ auction: Auction | null }, Error>({
     queryKey: ['nouns', 'auction', auctionId],
-    queryFn: () => fetchGoldsky<{ auction: Auction | null }>(AUCTION_BY_ID_QUERY, { id: auctionId }),
+    queryFn: async () => {
+      const response = await fetch(`/api/auction?id=${auctionId}`);
+      if (!response.ok) throw new Error('Auction not found');
+
+      const json = await response.json();
+      return { auction: mapAuctionResponse(json) };
+    },
     enabled: !!auctionId,
-    staleTime: 60000, // Historical auctions are stable
+    staleTime: 60000,
   });
 }
 
@@ -195,9 +139,27 @@ export function useAuctionById(auctionId: string | null) {
 export function useNounById(nounId: string | null) {
   return useQuery<{ noun: Noun | null }, Error>({
     queryKey: ['nouns', 'noun', nounId],
-    queryFn: () => fetchGoldsky<{ noun: Noun | null }>(NOUN_BY_ID_QUERY, { id: nounId }),
+    queryFn: async () => {
+      const response = await fetch(`/api/nouns/${nounId}`);
+      if (!response.ok) return { noun: null };
+
+      const n = await response.json();
+      return {
+        noun: n ? {
+          id: String(n.id),
+          seed: {
+            id: String(n.id),
+            background: n.background,
+            body: n.body,
+            accessory: n.accessory,
+            head: n.head,
+            glasses: n.glasses,
+          },
+          owner: n.owner ? { id: n.owner } : null,
+        } : null,
+      };
+    },
     enabled: !!nounId,
-    staleTime: Infinity, // Noun data is immutable
+    staleTime: Infinity,
   });
 }
-

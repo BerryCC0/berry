@@ -30,7 +30,7 @@ interface CandidateDetailViewProps {
 
 /**
  * Strip the title from the description
- * Goldsky returns description with title at the start (e.g., "# Title\n\nDescription...")
+ * The API returns description with title at the start (e.g., "# Title\n\nDescription...")
  */
 function stripTitleFromDescription(description: string, title: string): string {
   let stripped = description;

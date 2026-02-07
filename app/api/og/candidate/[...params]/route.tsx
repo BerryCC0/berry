@@ -1,81 +1,43 @@
 /**
  * Dynamic OG Image for Candidates
  * Generates rich preview images for candidate links
+ *
+ * Now queries Ponder's ponder_live schema instead of Goldsky
  */
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { mainnet } from 'viem/chains';
-import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
+import { ponderSql } from '@/app/lib/ponder-db';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
-// Viem client for ENS resolution
-const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: http('https://eth.llamarpc.com'),
-});
-
-const CANDIDATE_QUERY = `
-  query Candidate($id: ID!) {
-    proposalCandidate(id: $id) {
-      id
-      slug
-      proposer
-      createdTimestamp
-      canceled
-      latestVersion {
-        content {
-          title
-          description
-        }
-      }
-    }
-    candidateFeedbacks(
-      where: { candidate_: { id: $id } }
-      first: 100
-    ) {
-      supportDetailed
-      votes
-    }
-  }
-`;
-
-interface CandidateData {
-  id: string;
-  slug: string;
-  proposer: string;
-  createdTimestamp: string;
-  canceled: boolean;
-  latestVersion?: {
-    content?: {
-      title?: string;
-      description?: string;
-    };
-  };
-}
-
-interface FeedbackData {
-  supportDetailed: number;
-  votes: string;
-}
-
-async function fetchCandidate(proposer: string, slug: string): Promise<{ candidate: CandidateData | null; feedbacks: FeedbackData[] }> {
+async function fetchCandidate(proposer: string, slug: string) {
   try {
-    const id = `${proposer.toLowerCase()}-${slug}`;
-    const response = await fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: CANDIDATE_QUERY,
-        variables: { id },
-      }),
-    });
-    const json = await response.json();
+    const candidateId = `${proposer.toLowerCase()}-${slug}`;
+    const sql = ponderSql();
+
+    // Fetch candidate
+    const candidateRows = await sql`
+      SELECT id, slug, proposer, title, description,
+             created_timestamp, canceled
+      FROM ponder_live.candidates
+      WHERE id = ${candidateId}
+    `;
+
+    if (candidateRows.length === 0) {
+      return { candidate: null, feedbacks: [] };
+    }
+
+    // Fetch feedback for this candidate
+    const feedbackRows = await sql`
+      SELECT support
+      FROM ponder_live.candidate_feedback
+      WHERE candidate_id = ${candidateId}
+    `;
+
     return {
-      candidate: json.data?.proposalCandidate || null,
-      feedbacks: json.data?.candidateFeedbacks || [],
+      candidate: candidateRows[0],
+      feedbacks: feedbackRows,
     };
   } catch {
     return { candidate: null, feedbacks: [] };
@@ -88,17 +50,18 @@ function formatAddress(address: string): string {
 
 async function resolveENS(address: string): Promise<string> {
   try {
-    const ensName = await publicClient.getEnsName({
-      address: address as `0x${string}`,
-    });
-    return ensName || formatAddress(address);
+    const res = await fetch(`https://api.ensideas.com/ens/resolve/${address.toLowerCase()}`);
+    if (!res.ok) return formatAddress(address);
+    const data = await res.json();
+    return data.name || formatAddress(address);
   } catch {
     return formatAddress(address);
   }
 }
 
-function formatDate(timestamp: string): string {
-  const date = new Date(Number(timestamp) * 1000);
+function formatDate(timestamp: string | number): string {
+  const ts = typeof timestamp === 'string' ? Number(timestamp) : timestamp;
+  const date = new Date(ts * 1000);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
@@ -108,7 +71,7 @@ function extractFundingRequest(description: string): string | null {
     /request(?:s|ing)?\s+(?:of\s+)?([\d,\.]+)\s*(eth|usdc|weth|dai)/i,
     /([\d,\.]+)\s*(eth|usdc|weth|dai)\s+request/i,
   ];
-  
+
   for (const pattern of patterns) {
     const match = description.match(pattern);
     if (match) {
@@ -123,7 +86,7 @@ export async function GET(
   { params }: { params: Promise<{ params: string[] }> }
 ) {
   const { params: routeParams } = await params;
-  
+
   // Expect [proposer, ...slug]
   if (!routeParams || routeParams.length < 2) {
     return new ImageResponse(
@@ -175,23 +138,23 @@ export async function GET(
     );
   }
 
-  const title = candidate.latestVersion?.content?.title || candidate.slug.replace(/-/g, ' ');
-  const description = candidate.latestVersion?.content?.description || '';
+  const title = candidate.title || candidate.slug.replace(/-/g, ' ');
+  const description = candidate.description || '';
   const fundingRequest = extractFundingRequest(description);
-  const isCanceled = candidate.canceled;
-  
+  const isCanceled = candidate.canceled === true || candidate.canceled === 'true';
+
   // Resolve ENS name for proposer
   const proposerDisplay = await resolveENS(candidate.proposer);
 
-  // Calculate feedback totals
-  let forVotes = 0;
-  let againstVotes = 0;
-  let abstainVotes = 0;
+  // Calculate feedback totals (count of feedback signals, not weighted votes)
+  let forCount = 0;
+  let againstCount = 0;
+  let abstainCount = 0;
   for (const f of feedbacks) {
-    const votes = Number(f.votes);
-    if (f.supportDetailed === 1) forVotes += votes;
-    else if (f.supportDetailed === 0) againstVotes += votes;
-    else if (f.supportDetailed === 2) abstainVotes += votes;
+    const s = Number(f.support);
+    if (s === 1) forCount++;
+    else if (s === 0) againstCount++;
+    else if (s === 2) abstainCount++;
   }
   const totalFeedback = feedbacks.length;
 
@@ -249,7 +212,7 @@ export async function GET(
 
         {/* Proposer and Date */}
         <div style={{ display: 'flex', fontSize: 22, color: '#9ca3af', marginBottom: 32 }}>
-          Created {formatDate(candidate.createdTimestamp)} by {proposerDisplay}
+          Created {formatDate(candidate.created_timestamp)} by {proposerDisplay}
         </div>
 
         {/* Funding Request (if found) */}
@@ -274,9 +237,9 @@ export async function GET(
         {totalFeedback > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', marginTop: 'auto' }}>
             <div style={{ display: 'flex', gap: 32, fontSize: 24 }}>
-              <span style={{ color: '#4ade80' }}>For {forVotes}</span>
-              {abstainVotes > 0 && <span style={{ color: '#9ca3af' }}>Abstain {abstainVotes}</span>}
-              {againstVotes > 0 && <span style={{ color: '#f87171' }}>Against {againstVotes}</span>}
+              <span style={{ color: '#4ade80' }}>For {forCount}</span>
+              {abstainCount > 0 && <span style={{ color: '#9ca3af' }}>Abstain {abstainCount}</span>}
+              {againstCount > 0 && <span style={{ color: '#f87171' }}>Against {againstCount}</span>}
             </div>
           </div>
         )}

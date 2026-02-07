@@ -313,7 +313,7 @@ export function NounDetail({ nounId, onBack, onGoBack, onGoForward, canGoBack, c
   // Check if this Noun is the one currently at auction
   const isCurrentAuction = auction && maxNounId === nounId && !auction.settled;
 
-  // Fetch bids from Goldsky subgraph (for all nouns, not just current auction)
+  // Fetch bids from Ponder API (for all nouns, not just current auction)
   const { data: auctionData } = useAuctionById(String(nounId));
   const bids = auctionData?.auction?.bids ?? [];
 

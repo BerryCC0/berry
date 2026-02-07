@@ -5,6 +5,7 @@ import {
   nouns,
   auctionConfigChanges,
 } from "ponder:schema";
+import { resolveAndStoreEns, batchResolveAndStoreEns } from "../helpers/ens";
 // =============================================================================
 // AuctionCreated
 // =============================================================================
@@ -25,6 +26,9 @@ ponder.on("NounsAuctionHouse:AuctionCreated", async ({ event, context }) => {
 // =============================================================================
 ponder.on("NounsAuctionHouse:AuctionBid", async ({ event, context }) => {
   const { nounId, sender, value, extended } = event.args;
+
+  // Resolve ENS for bidder
+  await resolveAndStoreEns(context, sender);
 
   await context.db.insert(auctionBids).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
@@ -67,6 +71,11 @@ ponder.on("NounsAuctionHouse:AuctionSettled", async ({ event, context }) => {
   const { nounId, winner, amount } = event.args;
   const settler = event.transaction.from;
 
+  // Resolve ENS for winner and settler
+  const ensMap = await batchResolveAndStoreEns(context, [winner, settler]);
+  const winnerEns = ensMap.get(winner.toLowerCase()) ?? null;
+  const settlerEns = ensMap.get(settler.toLowerCase()) ?? null;
+
   // Update auction record
   await context.db
     .update(auctions, { nounId: Number(nounId) })
@@ -77,13 +86,15 @@ ponder.on("NounsAuctionHouse:AuctionSettled", async ({ event, context }) => {
       settlerAddress: settler,
     });
 
-  // Update noun record with auction result (ENS resolved lazily in API layer)
+  // Update noun record with auction result + resolved ENS names
   await context.db
     .update(nouns, { id: Number(nounId) })
     .set({
       winningBid: amount,
       winnerAddress: winner,
+      winnerEns,
       settledByAddress: settler,
+      settledByEns: settlerEns,
       settledAt: event.block.timestamp,
       settledTxHash: event.transaction.hash,
     });

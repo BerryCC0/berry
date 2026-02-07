@@ -8,7 +8,7 @@ import {
   cancelledSignatures,
   daoConfigChanges,
 } from "ponder:schema";
-import { extractTitle } from "../helpers/ens";
+import { extractTitle, resolveAndStoreEns } from "../helpers/ens";
 
 // =============================================================================
 // PROPOSAL LIFECYCLE
@@ -16,6 +16,9 @@ import { extractTitle } from "../helpers/ens";
 
 ponder.on("NounsDAO:ProposalCreated", async ({ event, context }) => {
   const { id, proposer, targets, values, signatures, calldatas, startBlock, endBlock, description } = event.args;
+
+  // Resolve ENS for proposer
+  await resolveAndStoreEns(context, proposer);
 
   await context.db.insert(proposals).values({
     id: Number(id),
@@ -42,6 +45,9 @@ ponder.on("NounsDAO:ProposalCreated", async ({ event, context }) => {
 // Overload 1: Full proposal data with requirements (V2-era)
 ponder.on("NounsDAO:ProposalCreatedWithRequirements(uint256 id, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 startBlock, uint256 endBlock, uint256 proposalThreshold, uint256 quorumVotes, string description)", async ({ event, context }) => {
   const { id, proposer, targets, values, signatures, calldatas, startBlock, endBlock, proposalThreshold, quorumVotes, description } = event.args;
+
+  // Resolve ENS for proposer
+  await resolveAndStoreEns(context, proposer);
 
   await context.db
     .insert(proposals)
@@ -199,6 +205,9 @@ ponder.on("NounsDAO:ProposalObjectionPeriodSet", async ({ event, context }) => {
 ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
   const { voter, proposalId, support, votes: voteCount, reason } = event.args;
 
+  // Resolve ENS for voter
+  const ensName = await resolveAndStoreEns(context, voter);
+
   await context.db.insert(votes).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
     voter,
@@ -231,16 +240,18 @@ ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
     }
   }
 
-  // Update voter stats
+  // Update voter stats (with ENS)
   const existingVoter = await context.db.find(voters, { address: voter });
   if (existingVoter) {
     await context.db.update(voters, { address: voter }).set({
       totalVotes: existingVoter.totalVotes + 1,
       lastVoteAt: event.block.timestamp,
+      ensName,
     });
   } else {
     await context.db.insert(voters).values({
       address: voter,
+      ensName,
       delegatedVotes: 0,
       totalVotes: 1,
       lastVoteAt: event.block.timestamp,
@@ -259,6 +270,9 @@ ponder.on("NounsDAO:VoteCastWithClientId", async ({ event, context }) => {
 });
 
 ponder.on("NounsDAO:RefundableVote", async ({ event, context }) => {
+  // Resolve ENS for voter
+  await resolveAndStoreEns(context, event.args.voter);
+
   await context.db.insert(voteRefunds).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
     voter: event.args.voter,
@@ -274,6 +288,9 @@ ponder.on("NounsDAO:RefundableVote", async ({ event, context }) => {
 // =============================================================================
 
 ponder.on("NounsDAO:SignatureCancelled", async ({ event, context }) => {
+  // Resolve ENS for signer
+  await resolveAndStoreEns(context, event.args.signer);
+
   await context.db.insert(cancelledSignatures).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
     signer: event.args.signer,

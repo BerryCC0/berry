@@ -4,7 +4,7 @@
  */
 
 // Constants
-export { BERRY_CLIENT_ID, GOLDSKY_ENDPOINT, NOUNS_CHAIN_ID } from './constants';
+export { BERRY_CLIENT_ID, NOUNS_CHAIN_ID } from './constants';
 
 // Contracts
 export {

@@ -74,6 +74,7 @@ type SortOption = typeof VALID_SORTS[number];
  *   limit, offset - Pagination (max 100)
  *   settler       - Filter by settler address
  *   winner        - Filter by auction winner address
+ *   owner         - Filter by current owner address
  *   background, body, accessory, head, glasses - Filter by trait index
  *   sort          - "newest" (default), "oldest", "smallest", "largest",
  *                   "most_colorful", "least_colorful", "brightest", "darkest"
@@ -95,6 +96,7 @@ export async function GET(request: NextRequest) {
   // Optional address filters
   const settler = searchParams.get('settler')?.toLowerCase() || null;
   const winner = searchParams.get('winner')?.toLowerCase() || null;
+  const owner = searchParams.get('owner')?.toLowerCase() || null;
 
   // Trait filters (integer indices)
   const background = parseTraitParam(searchParams.get('background'));
@@ -108,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     const nouns = await queryWithSort(
       sql, sort, limit, offset,
-      settler, winner, background, body, accessory, head, glasses
+      settler, winner, owner, background, body, accessory, head, glasses
     );
 
     // Get filtered count
@@ -116,6 +118,7 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(*) as count FROM ponder_live.nouns
       WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
         AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+        AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
         AND (${background}::int IS NULL OR background = ${background})
         AND (${body}::int IS NULL OR body = ${body})
         AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -150,6 +153,7 @@ async function queryWithSort(
   offset: number,
   settler: string | null,
   winner: string | null,
+  owner: string | null,
   background: number | null,
   body: number | null,
   accessory: number | null,
@@ -166,6 +170,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -184,6 +189,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -202,6 +208,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -220,6 +227,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -238,6 +246,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -256,6 +265,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -274,6 +284,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})
@@ -293,6 +304,7 @@ async function queryWithSort(
         FROM ponder_live.nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+          AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
           AND (${background}::int IS NULL OR background = ${background})
           AND (${body}::int IS NULL OR body = ${body})
           AND (${accessory}::int IS NULL OR accessory = ${accessory})

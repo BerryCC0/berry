@@ -3,8 +3,6 @@
  * Generate URL-safe slugs from proposal titles
  */
 
-import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
-
 /**
  * Generate a URL-safe slug from a title
  * Converts "My Proposal Title!" to "my-proposal-title"
@@ -46,17 +44,9 @@ export const generateSlug = generateSlugFromTitle;
 async function checkSlugExists(proposer: string, slug: string): Promise<boolean> {
   try {
     const id = `${proposer.toLowerCase()}-${slug}`;
-    const response = await fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `query CheckSlug($id: ID!) { proposalCandidate(id: $id) { id } }`,
-        variables: { id },
-      }),
-    });
-    
-    const json = await response.json();
-    return !!json.data?.proposalCandidate;
+    const response = await fetch(`/api/candidates/${encodeURIComponent(id)}`);
+    // 200 means it exists, 404 means it doesn't
+    return response.ok;
   } catch {
     // If check fails, assume it might exist to be safe
     return true;

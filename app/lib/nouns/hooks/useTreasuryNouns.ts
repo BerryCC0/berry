@@ -1,9 +1,11 @@
 /**
  * Treasury Nouns Hook
- * Fetch Nouns owned by the treasury
+ * Fetch Nouns owned by the treasury from Ponder API
  */
 
-import { useNounsQuery } from './useNounsQuery';
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { NOUNS_ADDRESSES } from '../contracts';
 
 interface TreasuryNoun {
@@ -21,25 +23,30 @@ interface TreasuryNounsData {
   nouns: TreasuryNoun[];
 }
 
-const TREASURY_NOUNS_QUERY = `
-  query TreasuryNouns($owner: ID!) {
-    nouns(
-      where: { owner: $owner }
-      orderBy: id
-      orderDirection: desc
-      first: 1000
-    ) {
-      id
-      seed {
-        background
-        body
-        accessory
-        head
-        glasses
-      }
-    }
-  }
-`;
+async function fetchNounsByOwner(ownerAddress: string): Promise<TreasuryNounsData> {
+  const params = new URLSearchParams({
+    owner: ownerAddress,
+    limit: '100',
+    sort: 'newest',
+  });
+
+  const response = await fetch(`/api/nouns?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch treasury nouns');
+
+  const json = await response.json();
+  const nouns: TreasuryNoun[] = (json.nouns || []).map((n: any) => ({
+    id: String(n.id),
+    seed: {
+      background: n.background,
+      body: n.body,
+      accessory: n.accessory,
+      head: n.head,
+      glasses: n.glasses,
+    },
+  }));
+
+  return { nouns };
+}
 
 /**
  * Fetch Nouns owned by the V2 treasury
@@ -47,11 +54,10 @@ const TREASURY_NOUNS_QUERY = `
 export function useTreasuryNouns() {
   const treasuryAddress = NOUNS_ADDRESSES.treasury.toLowerCase();
 
-  return useNounsQuery<TreasuryNounsData>(
-    ['treasury-nouns', treasuryAddress],
-    TREASURY_NOUNS_QUERY,
-    { owner: treasuryAddress }
-  );
+  return useQuery<TreasuryNounsData>({
+    queryKey: ['treasury-nouns', treasuryAddress],
+    queryFn: () => fetchNounsByOwner(treasuryAddress),
+  });
 }
 
 /**
@@ -60,12 +66,10 @@ export function useTreasuryNouns() {
 export function useTreasuryV1Nouns() {
   const treasuryV1Address = NOUNS_ADDRESSES.treasuryV1.toLowerCase();
 
-  return useNounsQuery<TreasuryNounsData>(
-    ['treasury-v1-nouns', treasuryV1Address],
-    TREASURY_NOUNS_QUERY,
-    { owner: treasuryV1Address }
-  );
+  return useQuery<TreasuryNounsData>({
+    queryKey: ['treasury-v1-nouns', treasuryV1Address],
+    queryFn: () => fetchNounsByOwner(treasuryV1Address),
+  });
 }
 
 export type { TreasuryNoun };
-

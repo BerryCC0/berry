@@ -2,8 +2,11 @@ import { Hono } from "hono";
 import { db, publicClients } from "ponder:api";
 import schema from "ponder:schema";
 import { graphql, eq, desc, asc, and, or, gt, sql, count, like } from "ponder";
-import { resolveEns, batchResolveEns } from "./ens";
+import { resolveEns, batchResolveEns, initEnsResolver } from "./ens";
 import { NounsDAOLogicV3ABI } from "../../../app/lib/nouns/abis/NounsDAOLogicV3";
+
+// Initialize ENS resolver with DB access for ens_names table lookups
+initEnsResolver(db);
 
 const NOUNS_DAO_ADDRESS = "0x6f3E6272A167e8AcCb32072d08E0957F9c79223d" as const;
 

@@ -6,7 +6,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 import { getNounDataUrl, type NounSeed } from '@/app/lib/nouns/render';
 
 export interface NounWithSVG {
@@ -15,79 +14,35 @@ export interface NounWithSVG {
   svgDataUrl: string | null;
 }
 
-const NOUNS_BY_OWNER_QUERY = `
-  query NounsByOwner($owner: ID!) {
-    account(id: $owner) {
-      id
-      nouns(first: 1000) {
-        id
-        seed {
-          background
-          body
-          accessory
-          head
-          glasses
-        }
-      }
-    }
-  }
-`;
-
-interface NounData {
-  id: string;
-  seed: {
-    background: string;
-    body: string;
-    accessory: string;
-    head: string;
-    glasses: string;
-  };
-}
-
-interface QueryResult {
-  account: {
-    id: string;
-    nouns: NounData[];
-  } | null;
-}
-
 async function fetchNounsByOwner(ownerAddress: string): Promise<NounWithSVG[]> {
-  const response = await fetch(GOLDSKY_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: NOUNS_BY_OWNER_QUERY,
-      variables: { owner: ownerAddress.toLowerCase() },
-    }),
+  const params = new URLSearchParams({
+    owner: ownerAddress.toLowerCase(),
+    limit: '100',
+    sort: 'oldest',
   });
 
+  const response = await fetch(`/api/nouns?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch nouns');
+
   const json = await response.json();
-  if (json.errors) throw new Error(json.errors[0].message);
-
-  const account = json.data?.account as QueryResult['account'];
-  if (!account || !account.nouns) {
-    return [];
-  }
-
-  // Convert to NounWithSVG format with data URLs for rendering
-  const nouns = account.nouns.map((noun) => {
+  const nouns = (json.nouns || []).map((noun: any) => {
     const seed: NounSeed = {
-      background: Number(noun.seed.background),
-      body: Number(noun.seed.body),
-      accessory: Number(noun.seed.accessory),
-      head: Number(noun.seed.head),
-      glasses: Number(noun.seed.glasses),
+      background: Number(noun.background),
+      body: Number(noun.body),
+      accessory: Number(noun.accessory),
+      head: Number(noun.head),
+      glasses: Number(noun.glasses),
     };
 
     return {
-      id: noun.id,
+      id: String(noun.id),
       seed,
       svgDataUrl: getNounDataUrl(seed),
     };
   });
 
-  // Sort numerically by ID (GraphQL returns lexicographic order)
-  return nouns.sort((a, b) => Number(a.id) - Number(b.id));
+  // Sort numerically by ID
+  return nouns.sort((a: NounWithSVG, b: NounWithSVG) => Number(a.id) - Number(b.id));
 }
 
 /**
@@ -100,7 +55,7 @@ export function useNounSelector(ownerAddress: string | undefined) {
     queryKey: ['nouns-by-owner', ownerAddress],
     queryFn: () => fetchNounsByOwner(ownerAddress!),
     enabled: !!ownerAddress,
-    staleTime: 30_000, // Cache for 30 seconds
+    staleTime: 30_000,
   });
 
   return {

@@ -10,11 +10,6 @@
 export const BERRY_CLIENT_ID = 11;
 
 /**
- * Goldsky Subgraph endpoint for Nouns data
- */
-export const GOLDSKY_ENDPOINT = 'https://api.goldsky.com/api/public/project_cldf2o9pqagp43svvbk5u3kmo/subgraphs/nouns/prod/gn';
-
-/**
  * Chain configuration - Nouns is on Ethereum Mainnet
  */
 export const NOUNS_CHAIN_ID = 1;

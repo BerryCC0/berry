@@ -17,7 +17,7 @@ import styles from './SponsorsPanel.module.css';
 interface SponsorsPanelProps {
   signatures: CandidateSignature[];
   proposer: string;
-  threshold: number; // This is proposalThreshold from Goldsky - actual requirement is > threshold
+  threshold: number; // This is proposalThreshold - actual requirement is > threshold
   onNavigate: (path: string) => void;
   onSponsorVotesChange?: (totalSponsorVotes: number) => void;
   // Candidate data needed for sponsoring

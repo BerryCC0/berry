@@ -9,7 +9,7 @@ import {
   dunaMessages,
   dataConfigChanges,
 } from "ponder:schema";
-import { extractTitle } from "../helpers/ens";
+import { extractTitle, resolveAndStoreEns } from "../helpers/ens";
 
 // =============================================================================
 // CANDIDATES
@@ -17,6 +17,9 @@ import { extractTitle } from "../helpers/ens";
 
 ponder.on("NounsDAOData:ProposalCandidateCreated", async ({ event, context }) => {
   const { msgSender, targets, values, signatures, calldatas, description, slug, proposalIdToUpdate, encodedProposalHash } = event.args;
+
+  // Resolve ENS for candidate proposer
+  await resolveAndStoreEns(context, msgSender);
 
   const candidateId = `${msgSender.toLowerCase()}-${slug}`;
 
@@ -82,6 +85,9 @@ ponder.on("NounsDAOData:ProposalCandidateCanceled", async ({ event, context }) =
 ponder.on("NounsDAOData:SignatureAdded", async ({ event, context }) => {
   const { signer, sig, expirationTimestamp, proposer, slug, proposalIdToUpdate, encodedPropHash, sigDigest, reason } = event.args;
 
+  // Resolve ENS for signature signer
+  await resolveAndStoreEns(context, signer);
+
   const candidateId = `${proposer.toLowerCase()}-${slug}`;
 
   await context.db.insert(candidateSignatures).values({
@@ -114,6 +120,9 @@ ponder.on("NounsDAOData:SignatureAdded", async ({ event, context }) => {
 // =============================================================================
 
 ponder.on("NounsDAOData:FeedbackSent", async ({ event, context }) => {
+  // Resolve ENS for feedback sender
+  await resolveAndStoreEns(context, event.args.msgSender);
+
   await context.db.insert(proposalFeedback).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
     msgSender: event.args.msgSender,
@@ -126,6 +135,9 @@ ponder.on("NounsDAOData:FeedbackSent", async ({ event, context }) => {
 });
 
 ponder.on("NounsDAOData:CandidateFeedbackSent", async ({ event, context }) => {
+  // Resolve ENS for feedback sender
+  await resolveAndStoreEns(context, event.args.msgSender);
+
   const candidateId = `${event.args.proposer.toLowerCase()}-${event.args.slug}`;
 
   await context.db.insert(candidateFeedback).values({

@@ -1,21 +1,15 @@
 /**
  * Dynamic OG Image for Proposals
  * Generates rich preview images for proposal links
+ *
+ * Now queries Ponder's ponder_live schema instead of Goldsky
  */
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { mainnet } from 'viem/chains';
-import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
+import { ponderSql } from '@/app/lib/ponder-db';
 
-export const runtime = 'edge';
-
-// Viem client for ENS resolution
-const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: http('https://eth.llamarpc.com'),
-});
+export const runtime = 'nodejs';
 
 // Proposal status colors
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -32,52 +26,17 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   UPDATABLE: { bg: '#8b5cf6', text: '#fff' },
 };
 
-const PROPOSAL_QUERY = `
-  query Proposal($id: ID!) {
-    proposal(id: $id) {
-      id
-      title
-      description
-      status
-      proposer { id }
-      createdTimestamp
-      startBlock
-      endBlock
-      forVotes
-      againstVotes
-      abstainVotes
-      quorumVotes
-    }
-  }
-`;
-
-interface ProposalData {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  proposer: { id: string };
-  createdTimestamp: string;
-  startBlock: string;
-  endBlock: string;
-  forVotes: string;
-  againstVotes: string;
-  abstainVotes: string;
-  quorumVotes: string;
-}
-
-async function fetchProposal(id: string): Promise<ProposalData | null> {
+async function fetchProposal(id: string) {
   try {
-    const response = await fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: PROPOSAL_QUERY,
-        variables: { id },
-      }),
-    });
-    const json = await response.json();
-    return json.data?.proposal || null;
+    const sql = ponderSql();
+    const rows = await sql`
+      SELECT id, title, description, status, proposer,
+             created_timestamp, start_block, end_block,
+             for_votes, against_votes, abstain_votes, quorum_votes
+      FROM ponder_live.proposals
+      WHERE id = ${parseInt(id)}
+    `;
+    return rows[0] || null;
   } catch {
     return null;
   }
@@ -89,17 +48,18 @@ function formatAddress(address: string): string {
 
 async function resolveENS(address: string): Promise<string> {
   try {
-    const ensName = await publicClient.getEnsName({
-      address: address as `0x${string}`,
-    });
-    return ensName || formatAddress(address);
+    const res = await fetch(`https://api.ensideas.com/ens/resolve/${address.toLowerCase()}`);
+    if (!res.ok) return formatAddress(address);
+    const data = await res.json();
+    return data.name || formatAddress(address);
   } catch {
     return formatAddress(address);
   }
 }
 
-function formatDate(timestamp: string): string {
-  const date = new Date(Number(timestamp) * 1000);
+function formatDate(timestamp: string | number): string {
+  const ts = typeof timestamp === 'string' ? Number(timestamp) : timestamp;
+  const date = new Date(ts * 1000);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
@@ -118,17 +78,16 @@ async function getCurrentBlock(): Promise<number> {
     const json = await response.json();
     return parseInt(json.result, 16);
   } catch {
-    // Fallback: estimate from timestamp (genesis ~Jul 30, 2015)
     return Math.floor((Date.now() / 1000 - 1438269988) / 12);
   }
 }
 
 function formatTimeRemaining(blocksRemaining: number): string {
   if (blocksRemaining <= 0) return 'Ended';
-  
+
   const secondsRemaining = blocksRemaining * 12;
   const hours = Math.floor(secondsRemaining / 3600);
-  
+
   if (hours >= 24) {
     const days = Math.floor(hours / 24);
     return `${days} day${days > 1 ? 's' : ''} left`;
@@ -141,13 +100,12 @@ function formatTimeRemaining(blocksRemaining: number): string {
 }
 
 function extractFundingRequest(description: string): string | null {
-  // Look for common patterns like "Requesting X ETH" or "X USDC"
   const patterns = [
     /requesting\s+([\d,\.]+)\s*(eth|usdc|weth|dai)/i,
     /request(?:s|ing)?\s+(?:of\s+)?([\d,\.]+)\s*(eth|usdc|weth|dai)/i,
     /([\d,\.]+)\s*(eth|usdc|weth|dai)\s+request/i,
   ];
-  
+
   for (const pattern of patterns) {
     const match = description.match(pattern);
     if (match) {
@@ -165,7 +123,6 @@ export async function GET(
   const proposal = await fetchProposal(id);
 
   if (!proposal) {
-    // Return a simple fallback image
     return new ImageResponse(
       (
         <div
@@ -190,23 +147,23 @@ export async function GET(
 
   const status = proposal.status || 'PENDING';
   const statusColors = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
-  const forVotes = Number(proposal.forVotes);
-  const againstVotes = Number(proposal.againstVotes);
-  const abstainVotes = Number(proposal.abstainVotes);
-  const quorumVotes = Number(proposal.quorumVotes);
-  const fundingRequest = extractFundingRequest(proposal.description);
-  
+  const forVotes = Number(proposal.for_votes);
+  const againstVotes = Number(proposal.against_votes);
+  const abstainVotes = Number(proposal.abstain_votes);
+  const quorumVotes = Number(proposal.quorum_votes);
+  const fundingRequest = extractFundingRequest(proposal.description || '');
+
   // Calculate time remaining for active proposals
   let timeRemaining: string | null = null;
   if (status === 'ACTIVE' || status === 'OBJECTION_PERIOD') {
     const currentBlock = await getCurrentBlock();
-    const endBlockNum = Number(proposal.endBlock);
+    const endBlockNum = Number(proposal.end_block);
     const blocksRemaining = endBlockNum - currentBlock;
     timeRemaining = formatTimeRemaining(blocksRemaining);
   }
-  
+
   // Resolve ENS name for proposer
-  const proposerDisplay = await resolveENS(proposal.proposer.id);
+  const proposerDisplay = await resolveENS(proposal.proposer);
 
   // Calculate vote bar widths
   const maxVotes = Math.max(forVotes, againstVotes + abstainVotes, quorumVotes) || 1;
@@ -262,12 +219,12 @@ export async function GET(
             overflow: 'hidden',
           }}
         >
-          {proposal.title.length > 80 ? proposal.title.slice(0, 80) + '...' : proposal.title}
+          {(proposal.title || '').length > 80 ? proposal.title.slice(0, 80) + '...' : proposal.title}
         </div>
 
         {/* Proposer and Date */}
         <div style={{ display: 'flex', fontSize: 22, color: '#9ca3af', marginBottom: 32 }}>
-          Proposed {formatDate(proposal.createdTimestamp)} by {proposerDisplay}
+          Proposed {formatDate(proposal.created_timestamp)} by {proposerDisplay}
         </div>
 
         {/* Funding Request (if found) */}

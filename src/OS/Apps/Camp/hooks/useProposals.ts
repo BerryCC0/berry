@@ -1,12 +1,11 @@
 /**
  * useProposals Hook
- * Fetches proposals from Goldsky with on-chain status verification
+ * Fetches proposals from Ponder API with on-chain status verification
  */
 
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { GOLDSKY_ENDPOINT } from '@/app/lib/nouns/constants';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import type { Proposal, ProposalStatus, ProposalFilter, ProposalSort } from '../types';
 
@@ -40,7 +39,7 @@ const PROPOSAL_STATE_MAP: Record<number, ProposalStatus> = {
 async function getCurrentBlock(): Promise<number> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+    const timeout = setTimeout(() => controller.abort(), 2000);
 
     const response = await fetch(ETH_RPC, {
       method: 'POST',
@@ -58,29 +57,25 @@ async function getCurrentBlock(): Promise<number> {
 
     const json = await response.json();
     const block = parseInt(json.result, 16);
-    // Sanity check - block should be at least 20M as of 2024
     if (block > 20000000) {
       return block;
     }
     throw new Error('Invalid block number');
   } catch {
-    // Fallback: estimate from timestamp (12 sec/block, genesis ~2015-07-30)
     return Math.floor((Date.now() / 1000 - 1438269988) / 12);
   }
 }
 
 /**
  * Get proposal state directly from the Nouns DAO contract
- * This is the authoritative source for proposal status
  */
 async function getOnChainState(proposalId: string): Promise<ProposalStatus | null> {
   try {
-    // Encode the call: state(uint256 proposalId)
     const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
     const callData = STATE_FUNCTION_SELECTOR + paddedId;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
     const response = await fetch(ETH_RPC, {
       method: 'POST',
@@ -110,32 +105,10 @@ async function getOnChainState(proposalId: string): Promise<ProposalStatus | nul
 }
 
 /**
- * Batch get proposal states from the contract
- */
-async function getOnChainStates(proposalIds: string[]): Promise<Map<string, ProposalStatus>> {
-  const results = new Map<string, ProposalStatus>();
-  
-  // Batch calls using Promise.all (limit concurrency)
-  const batchSize = 10;
-  for (let i = 0; i < proposalIds.length; i += batchSize) {
-    const batch = proposalIds.slice(i, i + batchSize);
-    const states = await Promise.all(batch.map(id => getOnChainState(id)));
-    batch.forEach((id, idx) => {
-      if (states[idx]) {
-        results.set(id, states[idx]!);
-      }
-    });
-  }
-  
-  return results;
-}
-
-/**
  * Calculate status as fallback when contract call fails
- * Uses block numbers to determine status
  */
 function calculateStatusFallback(
-  goldskyStatus: string,
+  indexedStatus: string,
   startBlock: string,
   endBlock: string,
   forVotes: string,
@@ -143,230 +116,89 @@ function calculateStatusFallback(
   quorumVotes: string,
   currentBlock: number
 ): ProposalStatus {
-  const status = goldskyStatus as ProposalStatus;
+  const status = indexedStatus as ProposalStatus;
   const start = Number(startBlock);
   const end = Number(endBlock);
-  
+
   // Final states are always trusted
   if (['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED', 'QUEUED'].includes(status)) {
     return status;
   }
-  
-  // If Goldsky says ACTIVE, trust it (it's been indexed from chain events)
+
   if (status === 'ACTIVE' || status === 'OBJECTION_PERIOD') {
     return status;
   }
-  
-  // If we don't have a valid current block, trust Goldsky
+
   if (currentBlock <= 0 || currentBlock < start) {
-    // If Goldsky says PENDING but we have votes, something is off - trust Goldsky
     if (status === 'PENDING' || status === 'UPDATABLE') {
       return status;
     }
   }
-  
-  // Calculate based on block numbers only if we have valid data
+
   if (currentBlock > 0) {
     if (currentBlock < start) {
       return 'PENDING';
     }
-    
+
     if (currentBlock >= start && currentBlock <= end) {
       return 'ACTIVE';
     }
-    
-    // After voting ended
+
     if (currentBlock > end) {
       const forVotesNum = Number(forVotes);
       const againstVotesNum = Number(againstVotes);
       const quorumNum = Number(quorumVotes);
-      
+
       if (forVotesNum < quorumNum || againstVotesNum > forVotesNum) {
         return 'DEFEATED';
       }
-      
+
       return 'SUCCEEDED';
     }
   }
-  
+
   return status;
 }
 
-const PROPOSALS_QUERY = `
-  query Proposals($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
-    proposals(
-      first: $first
-      skip: $skip
-      orderBy: $orderBy
-      orderDirection: $orderDirection
-    ) {
-      id
-      title
-      description
-      status
-      proposer {
-        id
-      }
-      forVotes
-      againstVotes
-      abstainVotes
-      quorumVotes
-      startBlock
-      endBlock
-      createdTimestamp
-      createdBlock
-      executionETA
-      totalSupply
-    }
-  }
-`;
+// ============================================================================
+// API RESPONSE MAPPING
+// ============================================================================
 
-const PROPOSAL_QUERY = `
-  query Proposal($id: ID!) {
-    proposal(id: $id) {
-      id
-      title
-      description
-      status
-      proposer {
-        id
-      }
-      signers {
-        id
-      }
-      forVotes
-      againstVotes
-      abstainVotes
-      quorumVotes
-      startBlock
-      endBlock
-      createdTimestamp
-      createdBlock
-      executionETA
-      updatePeriodEndBlock
-      totalSupply
-      clientId
-      targets
-      values
-      signatures
-      calldatas
-      votes(orderBy: votes, orderDirection: desc, first: 100) {
-        id
-        voter {
-          id
-        }
-        supportDetailed
-        votes
-        reason
-        blockTimestamp
-      }
-      feedbackPosts(orderBy: createdTimestamp, orderDirection: desc, first: 100) {
-        id
-        voter {
-          id
-        }
-        supportDetailed
-        votes
-        reason
-        createdTimestamp
-      }
-    }
-  }
-`;
-
-interface ProposalQueryResult {
-  proposals: Array<{
-    id: string;
-    title: string;
-    description: string;
-    status: string;
-    proposer: { id: string };
-    forVotes: string;
-    againstVotes: string;
-    abstainVotes: string;
-    quorumVotes: string;
-    startBlock: string;
-    endBlock: string;
-    createdTimestamp: string;
-    createdBlock: string;
-    executionETA?: string;
-    totalSupply?: string;
-  }>;
+/**
+ * Map a proposal row from our API (snake_case) to the Proposal type (camelCase)
+ */
+function mapProposal(p: any): Proposal {
+  return {
+    id: String(p.id),
+    title: p.title || '',
+    description: p.description || '',
+    status: p.status as ProposalStatus,
+    proposer: p.proposer || '',
+    forVotes: String(p.for_votes ?? '0'),
+    againstVotes: String(p.against_votes ?? '0'),
+    abstainVotes: String(p.abstain_votes ?? '0'),
+    quorumVotes: String(p.quorum_votes ?? '0'),
+    startBlock: String(p.start_block ?? '0'),
+    endBlock: String(p.end_block ?? '0'),
+    createdTimestamp: String(p.created_timestamp ?? '0'),
+    createdBlock: String(p.created_block ?? '0'),
+    executionETA: p.execution_eta ? String(p.execution_eta) : undefined,
+    totalSupply: p.total_supply ? String(p.total_supply) : undefined,
+    clientId: p.client_id ?? undefined,
+    signers: p.signers || [],
+    updatePeriodEndBlock: p.update_period_end_block ? String(p.update_period_end_block) : undefined,
+    actions: p.targets?.map((target: string, i: number) => ({
+      target,
+      value: p.values?.[i] || '0',
+      signature: p.signatures?.[i] || '',
+      calldata: p.calldatas?.[i] || '0x',
+    })) || undefined,
+  };
 }
 
-async function fetchProposals(
-  first: number,
-  skip: number,
-  filter: ProposalFilter,
-  sort: ProposalSort
-): Promise<Proposal[]> {
-  const orderBy = sort === 'ending_soon' ? 'endBlock' : 'createdBlock';
-  const orderDirection = sort === 'oldest' ? 'asc' : 'desc';
-
-  // Fetch proposals and current block in parallel
-  const [proposalsResponse, currentBlock] = await Promise.all([
-    fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: PROPOSALS_QUERY,
-        variables: { first, skip, orderBy, orderDirection },
-      }),
-    }),
-    getCurrentBlock(),
-  ]);
-
-  const json = await proposalsResponse.json();
-  if (json.errors) throw new Error(json.errors[0].message);
-
-  const data = json.data as ProposalQueryResult;
-  
-  // Only fetch on-chain state for proposals where Goldsky might be stale
-  // Skip for: final states, ACTIVE (Goldsky is reliable for this)
-  const proposalIds = data.proposals
-    .filter(p => !['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED', 'ACTIVE', 'OBJECTION_PERIOD', 'QUEUED'].includes(p.status))
-    .map(p => p.id);
-  
-  // Only make on-chain calls if we have proposals that need verification
-  const onChainStates = proposalIds.length > 0 
-    ? await getOnChainStates(proposalIds.slice(0, 5)) // Limit to 5 to keep it fast
-    : new Map<string, ProposalStatus>();
-  
-  let proposals = data.proposals.map(p => {
-    // Use on-chain state if available, otherwise use Goldsky + fallback calculation
-    const onChainStatus = onChainStates.get(p.id);
-    const status = onChainStatus || calculateStatusFallback(
-      p.status,
-      p.startBlock,
-      p.endBlock,
-      p.forVotes,
-      p.againstVotes,
-      p.quorumVotes,
-      currentBlock
-    );
-    
-    return {
-      ...p,
-      proposer: p.proposer.id,
-      status,
-    };
-  });
-
-  // Client-side filtering
-  if (filter !== 'all') {
-    const statusMap: Record<string, string[]> = {
-      active: ['ACTIVE', 'OBJECTION_PERIOD'],
-      pending: ['PENDING', 'UPDATABLE'],
-      succeeded: ['SUCCEEDED', 'QUEUED'],
-      defeated: ['DEFEATED', 'VETOED', 'CANCELLED'],
-      executed: ['EXECUTED'],
-    };
-    const allowedStatuses = statusMap[filter] || [];
-    proposals = proposals.filter(p => allowedStatuses.includes(p.status));
-  }
-
-  return proposals;
-}
+// ============================================================================
+// FETCH FUNCTIONS
+// ============================================================================
 
 interface ProposalFeedback {
   id: string;
@@ -387,88 +219,91 @@ interface ProposalVote {
   blockTimestamp: string;
 }
 
+async function fetchProposals(
+  first: number,
+  skip: number,
+  filter: ProposalFilter,
+  sort: ProposalSort
+): Promise<Proposal[]> {
+  const params = new URLSearchParams({
+    limit: String(first),
+    offset: String(skip),
+    sort,
+  });
+  if (filter !== 'all') params.set('filter', filter);
+
+  const response = await fetch(`/api/proposals?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch proposals');
+
+  const json = await response.json();
+  return (json.proposals || []).map(mapProposal);
+}
+
 async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVote[]; feedback: ProposalFeedback[] }> {
-  // Fetch proposal, current block, and on-chain state in parallel
-  const [proposalResponse, currentBlock, onChainStatus] = await Promise.all([
-    fetch(GOLDSKY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: PROPOSAL_QUERY,
-        variables: { id },
-      }),
-    }),
+  // Fetch proposal from API, current block, and on-chain state in parallel
+  const [apiResponse, currentBlock, onChainStatus] = await Promise.all([
+    fetch(`/api/proposals/${id}`),
     getCurrentBlock(),
     getOnChainState(id),
   ]);
 
-  const json = await proposalResponse.json();
-  if (json.errors) throw new Error(json.errors[0].message);
-  if (!json.data?.proposal) throw new Error('Proposal not found');
+  if (!apiResponse.ok) throw new Error('Failed to fetch proposal');
+  const json = await apiResponse.json();
+  if (!json.proposal) throw new Error('Proposal not found');
 
-  const p = json.data.proposal;
-  
-  // Build actions array from parallel arrays
-  const actions = p.targets?.map((target: string, i: number) => ({
-    target,
-    value: p.values?.[i] || '0',
-    signature: p.signatures?.[i] || '',
-    calldata: p.calldatas?.[i] || '0x',
-  })) || [];
-  
-  // Determine status: prefer on-chain state, but sanity check against Goldsky
+  const p = json.proposal;
+  const proposal = mapProposal(p);
+
+  // Determine status: prefer on-chain state for real-time accuracy
   let status: ProposalStatus;
-  
+
   if (onChainStatus) {
-    // Sanity check: if Goldsky says ACTIVE but on-chain says something final,
-    // verify against block numbers before trusting
-    const goldskyIsActive = p.status === 'ACTIVE' || p.status === 'OBJECTION_PERIOD';
+    const indexedIsActive = proposal.status === 'ACTIVE' || proposal.status === 'OBJECTION_PERIOD';
     const onChainIsFinal = ['SUCCEEDED', 'DEFEATED', 'EXPIRED'].includes(onChainStatus);
-    
-    if (goldskyIsActive && onChainIsFinal && currentBlock <= Number(p.endBlock)) {
-      // Voting hasn't ended yet, trust Goldsky's ACTIVE status
-      status = p.status as ProposalStatus;
+
+    if (indexedIsActive && onChainIsFinal && currentBlock <= Number(proposal.endBlock)) {
+      status = proposal.status;
     } else {
       status = onChainStatus;
     }
   } else {
     status = calculateStatusFallback(
-      p.status,
-      p.startBlock,
-      p.endBlock,
-      p.forVotes,
-      p.againstVotes,
-      p.quorumVotes,
+      proposal.status,
+      proposal.startBlock,
+      proposal.endBlock,
+      proposal.forVotes,
+      proposal.againstVotes,
+      proposal.quorumVotes,
       currentBlock
     );
   }
-  
+
   return {
-    ...p,
-    proposer: p.proposer.id,
+    ...proposal,
     status,
-    actions,
-    clientId: p.clientId ?? undefined,
-    signers: (p.signers || []).map((s: { id: string }) => s.id),
     votes: (p.votes || []).map((v: any) => ({
       id: v.id,
-      voter: v.voter.id,
-      proposalId: id,
-      support: v.supportDetailed,
-      votes: v.votes,
+      voter: v.voter,
+      proposalId: String(v.proposal_id ?? id),
+      support: v.support,
+      votes: String(v.votes),
       reason: v.reason,
-      blockTimestamp: v.blockTimestamp,
+      blockTimestamp: String(v.block_timestamp),
     })),
-    feedback: (p.feedbackPosts || []).map((f: any) => ({
+    feedback: (p.feedback || []).map((f: any) => ({
       id: f.id,
-      voter: f.voter.id,
-      support: f.supportDetailed,
-      votes: f.votes,
+      voter: f.msg_sender,
+      support: f.support,
+      votes: String(f.votes ?? '0'),
       reason: f.reason,
-      createdTimestamp: f.createdTimestamp,
+      createdTimestamp: String(f.block_timestamp),
     })),
   };
 }
+
+// ============================================================================
+// HOOKS
+// ============================================================================
 
 export function useProposals(
   first: number = 20,
@@ -478,7 +313,7 @@ export function useProposals(
   return useQuery({
     queryKey: ['camp', 'proposals', first, filter, sort],
     queryFn: () => fetchProposals(first, 0, filter, sort),
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
   });
 }
 
@@ -487,8 +322,7 @@ export function useProposal(id: string | null) {
     queryKey: ['camp', 'proposal', id],
     queryFn: () => fetchProposal(id!),
     enabled: !!id,
-    staleTime: 10000, // 10 seconds - keep fresh
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 10000,
+    refetchOnMount: 'always',
   });
 }
-
