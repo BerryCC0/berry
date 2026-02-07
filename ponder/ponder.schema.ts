@@ -609,6 +609,7 @@ export const streams = onchainTable("streams", (t) => ({
 export const ensNames = onchainTable("ens_names", (t) => ({
   address: t.hex().primaryKey(),
   name: t.text(),
+  avatar: t.text(),
   resolvedAt: t.bigint().notNull(),
 }));
 

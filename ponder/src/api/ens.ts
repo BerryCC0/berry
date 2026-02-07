@@ -9,8 +9,14 @@
 import { eq } from "ponder";
 import { ensNames } from "ponder:schema";
 
+/** Resolved ENS data returned by the API-layer resolver */
+export interface EnsData {
+  name: string | null;
+  avatar: string | null;
+}
+
 // In-memory cache that persists for the lifetime of the Ponder API process
-const ensCache = new Map<string, { name: string | null; resolvedAt: number }>();
+const ensCache = new Map<string, { data: EnsData; resolvedAt: number }>();
 const ENS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const MAX_CACHE_SIZE = 10_000;
 
@@ -26,18 +32,18 @@ export function initEnsResolver(db: any) {
 }
 
 /**
- * Resolve a single address to its ENS name.
+ * Resolve a single address to its ENS name and avatar.
  * 1. Check in-memory cache
  * 2. Check ens_names DB table (populated during indexing)
  * 3. Fall back to ensideas.com HTTP
  */
-export async function resolveEns(address: string): Promise<string | null> {
+export async function resolveEns(address: string): Promise<EnsData> {
   const lower = address.toLowerCase();
 
   // 1. In-memory cache
   const cached = ensCache.get(lower);
   if (cached && Date.now() - cached.resolvedAt < ENS_CACHE_TTL) {
-    return cached.name;
+    return cached.data;
   }
 
   // 2. DB lookup (ens_names table populated during indexing)
@@ -50,9 +56,12 @@ export async function resolveEns(address: string): Promise<string | null> {
         .limit(1);
 
       if (rows.length > 0) {
-        const name = rows[0].name ?? null;
-        setCacheEntry(lower, name);
-        return name;
+        const data: EnsData = {
+          name: rows[0].name ?? null,
+          avatar: rows[0].avatar ?? null,
+        };
+        setCacheEntry(lower, data);
+        return data;
       }
     } catch {
       // DB query failed, fall through to HTTP
@@ -63,27 +72,32 @@ export async function resolveEns(address: string): Promise<string | null> {
   try {
     const res = await fetch(`https://api.ensideas.com/ens/resolve/${lower}`);
     if (!res.ok) {
-      setCacheEntry(lower, null);
-      return null;
+      const data: EnsData = { name: null, avatar: null };
+      setCacheEntry(lower, data);
+      return data;
     }
-    const data = (await res.json()) as { name?: string };
-    const name = data.name || null;
-    setCacheEntry(lower, name);
-    return name;
+    const json = (await res.json()) as { name?: string; avatar?: string };
+    const data: EnsData = {
+      name: json.name || null,
+      avatar: json.avatar || null,
+    };
+    setCacheEntry(lower, data);
+    return data;
   } catch {
-    setCacheEntry(lower, null);
-    return null;
+    const data: EnsData = { name: null, avatar: null };
+    setCacheEntry(lower, data);
+    return data;
   }
 }
 
 /**
- * Batch-resolve multiple addresses to ENS names.
- * Returns a map of address -> ENS name (or null).
+ * Batch-resolve multiple addresses to ENS data (name + avatar).
+ * Returns a map of lowercase address -> EnsData.
  */
 export async function batchResolveEns(
   addresses: string[],
-): Promise<Map<string, string | null>> {
-  const results = new Map<string, string | null>();
+): Promise<Map<string, EnsData>> {
+  const results = new Map<string, EnsData>();
   const uniqueAddresses = [...new Set(addresses.map((a) => a.toLowerCase()))];
 
   // Resolve in parallel with concurrency limit
@@ -97,11 +111,11 @@ export async function batchResolveEns(
   return results;
 }
 
-function setCacheEntry(address: string, name: string | null) {
+function setCacheEntry(address: string, data: EnsData) {
   // Evict oldest entries if cache is too large
   if (ensCache.size >= MAX_CACHE_SIZE) {
     const firstKey = ensCache.keys().next().value;
     if (firstKey) ensCache.delete(firstKey);
   }
-  ensCache.set(address, { name, resolvedAt: Date.now() });
+  ensCache.set(address, { data, resolvedAt: Date.now() });
 }

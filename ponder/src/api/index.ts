@@ -3,6 +3,7 @@ import { db, publicClients } from "ponder:api";
 import schema from "ponder:schema";
 import { graphql, eq, desc, asc, and, or, gt, sql, count, like } from "ponder";
 import { resolveEns, batchResolveEns, initEnsResolver } from "./ens";
+import type { EnsData } from "./ens";
 import { NounsDAOLogicV3ABI } from "../../../app/lib/nouns/abis/NounsDAOLogicV3";
 
 // Initialize ENS resolver with DB access for ens_names table lookups
@@ -24,6 +25,18 @@ const PROPOSAL_STATES = [
   "OBJECTION_PERIOD",
   "UPDATABLE",
 ] as const;
+
+/** Helper to extract name from an EnsData map entry */
+function ensName(map: Map<string, EnsData>, addr: string | null | undefined): string | null {
+  if (!addr) return null;
+  return map.get(addr.toLowerCase())?.name || null;
+}
+
+/** Helper to extract avatar from an EnsData map entry */
+function ensAvatar(map: Map<string, EnsData>, addr: string | null | undefined): string | null {
+  if (!addr) return null;
+  return map.get(addr.toLowerCase())?.avatar || null;
+}
 
 const app = new Hono();
 
@@ -73,12 +86,15 @@ app.get("/api/auction/current", async (c) => {
 
   return c.json({
     ...current,
-    winnerEns: current.winner ? ensMap.get(current.winner.toLowerCase()) || null : null,
-    settlerEns: current.settlerAddress ? ensMap.get(current.settlerAddress.toLowerCase()) || null : null,
+    winnerEns: ensName(ensMap, current.winner),
+    winnerAvatar: ensAvatar(ensMap, current.winner),
+    settlerEns: ensName(ensMap, current.settlerAddress),
+    settlerAvatar: ensAvatar(ensMap, current.settlerAddress),
     noun: noun[0] || null,
     bids: bids.map((b) => ({
       ...b,
-      bidderEns: ensMap.get(b.bidder.toLowerCase()) || null,
+      bidderEns: ensName(ensMap, b.bidder),
+      bidderAvatar: ensAvatar(ensMap, b.bidder),
     })),
   });
 });
@@ -118,12 +134,15 @@ app.get("/api/auction/:nounId", async (c) => {
 
   return c.json({
     ...a,
-    winnerEns: a.winner ? ensMap.get(a.winner.toLowerCase()) || null : null,
-    settlerEns: a.settlerAddress ? ensMap.get(a.settlerAddress.toLowerCase()) || null : null,
+    winnerEns: ensName(ensMap, a.winner),
+    winnerAvatar: ensAvatar(ensMap, a.winner),
+    settlerEns: ensName(ensMap, a.settlerAddress),
+    settlerAvatar: ensAvatar(ensMap, a.settlerAddress),
     noun: noun[0] || null,
     bids: bids.map((b) => ({
       ...b,
-      bidderEns: ensMap.get(b.bidder.toLowerCase()) || null,
+      bidderEns: ensName(ensMap, b.bidder),
+      bidderAvatar: ensAvatar(ensMap, b.bidder),
     })),
   });
 });
@@ -194,7 +213,8 @@ app.get("/api/nouns", async (c) => {
   return c.json({
     nouns: nouns.map((n) => ({
       ...n,
-      ownerEns: n.owner ? ensMap.get(n.owner.toLowerCase()) || null : null,
+      ownerEns: ensName(ensMap, n.owner),
+      ownerAvatar: ensAvatar(ensMap, n.owner),
     })),
     total: totalResult[0]?.count || 0,
     limit,
@@ -245,13 +265,17 @@ app.get("/api/nouns/:id", async (c) => {
 
   return c.json({
     ...noun,
-    ownerEns: noun.owner ? ensMap.get(noun.owner.toLowerCase()) || null : null,
-    winnerEns: noun.winnerAddress ? ensMap.get(noun.winnerAddress.toLowerCase()) || null : null,
-    settlerEns: noun.settledByAddress ? ensMap.get(noun.settledByAddress.toLowerCase()) || null : null,
+    ownerEns: ensName(ensMap, noun.owner),
+    ownerAvatar: ensAvatar(ensMap, noun.owner),
+    winnerEns: ensName(ensMap, noun.winnerAddress),
+    winnerAvatar: ensAvatar(ensMap, noun.winnerAddress),
+    settlerEns: ensName(ensMap, noun.settledByAddress),
+    settlerAvatar: ensAvatar(ensMap, noun.settledByAddress),
     auction: auctionResult[0] || null,
     bids: bids.map((b) => ({
       ...b,
-      bidderEns: ensMap.get(b.bidder.toLowerCase()) || null,
+      bidderEns: ensName(ensMap, b.bidder),
+      bidderAvatar: ensAvatar(ensMap, b.bidder),
     })),
     transfers: transferHistory,
   });
@@ -282,13 +306,15 @@ app.get("/api/nouns/addresses", async (c) => {
       .filter((s) => s.address)
       .map((s) => ({
         address: s.address,
-        ens: ensMap.get(s.address!.toLowerCase()) || null,
+        ens: ensName(ensMap, s.address),
+        avatar: ensAvatar(ensMap, s.address),
       })),
     winners: winners
       .filter((w) => w.address)
       .map((w) => ({
         address: w.address,
-        ens: ensMap.get(w.address!.toLowerCase()) || null,
+        ens: ensName(ensMap, w.address),
+        avatar: ensAvatar(ensMap, w.address),
       })),
   });
 });
@@ -372,7 +398,8 @@ app.get("/api/proposals", async (c) => {
   return c.json({
     proposals: proposalsWithState.map((p) => ({
       ...p,
-      proposerEns: p.proposer ? ensMap.get(p.proposer.toLowerCase()) || null : null,
+      proposerEns: ensName(ensMap, p.proposer),
+      proposerAvatar: ensAvatar(ensMap, p.proposer),
     })),
     total: totalResult[0]?.count || 0,
     first,
@@ -438,14 +465,17 @@ app.get("/api/proposals/:id", async (c) => {
   return c.json({
     ...proposal,
     onChainStatus: onChainState || proposal.status,
-    proposerEns: proposal.proposer ? ensMap.get(proposal.proposer.toLowerCase()) || null : null,
+    proposerEns: ensName(ensMap, proposal.proposer),
+    proposerAvatar: ensAvatar(ensMap, proposal.proposer),
     votes: votesResult.map((v) => ({
       ...v,
-      voterEns: ensMap.get(v.voter.toLowerCase()) || null,
+      voterEns: ensName(ensMap, v.voter),
+      voterAvatar: ensAvatar(ensMap, v.voter),
     })),
     feedback: feedbackResult.map((f) => ({
       ...f,
-      senderEns: ensMap.get(f.msgSender.toLowerCase()) || null,
+      senderEns: ensName(ensMap, f.msgSender),
+      senderAvatar: ensAvatar(ensMap, f.msgSender),
     })),
     versions: versionsResult,
   });
@@ -489,7 +519,8 @@ app.get("/api/voters", async (c) => {
   return c.json({
     voters: voterRows.map((v) => ({
       ...v,
-      ens: ensMap.get(v.address.toLowerCase()) || null,
+      ens: ensName(ensMap, v.address),
+      avatar: ensAvatar(ensMap, v.address),
     })),
     total: totalResult[0]?.count || 0,
     first,
@@ -553,12 +584,14 @@ app.get("/api/voters/:address", async (c) => {
 
   return c.json({
     ...voter,
-    ens: ensMap.get(voter.address.toLowerCase()) || null,
+    ens: ensName(ensMap, voter.address),
+    avatar: ensAvatar(ensMap, voter.address),
     votes: votesResult,
     ownedNouns,
     delegations: delegationsResult.map((d) => ({
       ...d,
-      delegatorEns: ensMap.get(d.delegator.toLowerCase()) || null,
+      delegatorEns: ensName(ensMap, d.delegator),
+      delegatorAvatar: ensAvatar(ensMap, d.delegator),
     })),
     authoredProposals,
     authoredCandidates,
@@ -595,7 +628,8 @@ app.get("/api/candidates", async (c) => {
   return c.json({
     candidates: candidateRows.map((candidate) => ({
       ...candidate,
-      proposerEns: ensMap.get(candidate.proposer.toLowerCase()) || null,
+      proposerEns: ensName(ensMap, candidate.proposer),
+      proposerAvatar: ensAvatar(ensMap, candidate.proposer),
     })),
     total: totalResult[0]?.count || 0,
     first,
@@ -646,14 +680,17 @@ app.get("/api/candidates/:slug", async (c) => {
 
   return c.json({
     ...candidate,
-    proposerEns: ensMap.get(candidate.proposer.toLowerCase()) || null,
+    proposerEns: ensName(ensMap, candidate.proposer),
+    proposerAvatar: ensAvatar(ensMap, candidate.proposer),
     signatures: signaturesResult.map((s) => ({
       ...s,
-      signerEns: ensMap.get(s.signer.toLowerCase()) || null,
+      signerEns: ensName(ensMap, s.signer),
+      signerAvatar: ensAvatar(ensMap, s.signer),
     })),
     feedback: feedbackResult.map((f) => ({
       ...f,
-      senderEns: ensMap.get(f.msgSender.toLowerCase()) || null,
+      senderEns: ensName(ensMap, f.msgSender),
+      senderAvatar: ensAvatar(ensMap, f.msgSender),
     })),
     versions: versionsResult,
   });
@@ -879,7 +916,7 @@ app.get("/api/search", async (c) => {
 // ENS ENDPOINTS
 // =============================================================================
 
-/** POST /api/ens/batch - Bulk-resolve ENS names */
+/** POST /api/ens/batch - Bulk-resolve ENS names and avatars */
 app.post("/api/ens/batch", async (c) => {
   const body = await c.req.json<{ addresses: string[] }>();
   if (!body.addresses || !Array.isArray(body.addresses)) {
@@ -888,19 +925,19 @@ app.post("/api/ens/batch", async (c) => {
 
   const ensMap = await batchResolveEns(body.addresses.slice(0, 100));
 
-  const results: Record<string, string | null> = {};
-  for (const [addr, name] of ensMap) {
-    results[addr] = name;
+  const results: Record<string, { name: string | null; avatar: string | null }> = {};
+  for (const [addr, data] of ensMap) {
+    results[addr] = { name: data.name, avatar: data.avatar };
   }
 
   return c.json(results);
 });
 
-/** GET /api/ens/:address - Resolve a single ENS name */
+/** GET /api/ens/:address - Resolve a single ENS name and avatar */
 app.get("/api/ens/:address", async (c) => {
   const address = c.req.param("address");
-  const name = await resolveEns(address);
-  return c.json({ address, name });
+  const data = await resolveEns(address);
+  return c.json({ address, name: data.name, avatar: data.avatar });
 });
 
 export default app;

@@ -1,7 +1,7 @@
 /**
  * ENS Resolution Helper for Ponder Indexing
  *
- * Resolves addresses to ENS names via ensideas.com and stores them
+ * Resolves addresses to ENS names and avatars via ensideas.com and stores them
  * in the ens_names table during indexing. Uses an in-memory cache
  * to avoid duplicate HTTP calls across the lifetime of the process.
  */
@@ -10,45 +10,61 @@ import { ensNames } from "ponder:schema";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+/** Resolved ENS data (name + avatar) */
+export interface EnsResult {
+  name: string | null;
+  avatar: string | null;
+}
+
 // In-memory cache: persists for the lifetime of the Ponder process.
 // During backfill, this means each unique address is resolved exactly once.
-const ENS_CACHE = new Map<string, string | null>();
+const ENS_CACHE = new Map<string, EnsResult>();
 
 /**
- * Resolve an Ethereum address to its ENS name via ensideas.com.
+ * Resolve an Ethereum address to its ENS name and avatar via ensideas.com.
  * Results are cached in memory for the lifetime of the process.
- * Returns null if no ENS name is found or on error.
+ * Returns { name, avatar } -- both may be null if no ENS record exists.
  */
-export async function resolveEns(address: string): Promise<string | null> {
+export async function resolveEns(address: string): Promise<EnsResult> {
   const lower = address.toLowerCase();
 
-  if (ENS_CACHE.has(lower)) {
-    return ENS_CACHE.get(lower) ?? null;
+  const cached = ENS_CACHE.get(lower);
+  if (cached !== undefined) {
+    return cached;
   }
 
   try {
     const res = await fetch(`https://api.ensideas.com/ens/resolve/${lower}`);
     if (!res.ok) {
-      ENS_CACHE.set(lower, null);
-      return null;
+      const result: EnsResult = { name: null, avatar: null };
+      ENS_CACHE.set(lower, result);
+      return result;
     }
-    const data = (await res.json()) as { name?: string; address?: string };
-    const name = data.name || null;
-    ENS_CACHE.set(lower, name);
-    return name;
+    const data = (await res.json()) as {
+      name?: string;
+      address?: string;
+      avatar?: string;
+    };
+    const result: EnsResult = {
+      name: data.name || null,
+      avatar: data.avatar || null,
+    };
+    ENS_CACHE.set(lower, result);
+    return result;
   } catch {
-    ENS_CACHE.set(lower, null);
-    return null;
+    const result: EnsResult = { name: null, avatar: null };
+    ENS_CACHE.set(lower, result);
+    return result;
   }
 }
 
 /**
- * Resolve an address to its ENS name and store the result in the ens_names table.
+ * Resolve an address to its ENS name/avatar and store the result in the ens_names table.
  * Skips the zero address. Uses in-memory cache to avoid duplicate HTTP calls.
  *
  * @param context - Ponder event handler context (must have context.db)
  * @param address - The Ethereum address to resolve
- * @returns The resolved ENS name, or null
+ * @returns The resolved ENS name, or null (kept for backward compat with callers)
  */
 export async function resolveAndStoreEns(
   context: { db: any },
@@ -60,7 +76,7 @@ export async function resolveAndStoreEns(
   if (lower === ZERO_ADDRESS) return null;
 
   // Resolve (uses in-memory cache internally)
-  const name = await resolveEns(lower);
+  const { name, avatar } = await resolveEns(lower);
 
   // Write to ens_names table (upsert)
   try {
@@ -69,10 +85,12 @@ export async function resolveAndStoreEns(
       .values({
         address: lower as `0x${string}`,
         name,
+        avatar,
         resolvedAt: BigInt(Math.floor(Date.now() / 1000)),
       })
       .onConflictDoUpdate({
         name,
+        avatar,
         resolvedAt: BigInt(Math.floor(Date.now() / 1000)),
       });
   } catch {
