@@ -10,6 +10,10 @@ import {
 } from "ponder:schema";
 import { extractTitle, resolveAndStoreEns } from "../helpers/ens";
 
+// Module-level map: passes vote record IDs from VoteCast -> VoteCastWithClientId
+// Key: "${txHash}-${voter}-${proposalId}", Value: vote primary key
+const pendingVoteIds = new Map<string, string>();
+
 // =============================================================================
 // PROPOSAL LIFECYCLE
 // =============================================================================
@@ -208,8 +212,10 @@ ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
   // Resolve ENS for voter
   const ensName = await resolveAndStoreEns(context, voter);
 
+  const voteId = `${event.transaction.hash}-${event.log.logIndex}`;
+
   await context.db.insert(votes).values({
-    id: `${event.transaction.hash}-${event.log.logIndex}`,
+    id: voteId,
     voter,
     proposalId: Number(proposalId),
     support: Number(support),
@@ -219,6 +225,9 @@ ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
     blockTimestamp: event.block.timestamp,
     txHash: event.transaction.hash,
   });
+
+  // Store vote ID for the companion VoteCastWithClientId handler
+  pendingVoteIds.set(`${event.transaction.hash}-${voter}-${proposalId}`, voteId);
 
   // Update vote counts on proposal using find + update
   const proposal = await context.db.find(proposals, { id: Number(proposalId) });
@@ -261,12 +270,17 @@ ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
 });
 
 ponder.on("NounsDAO:VoteCastWithClientId", async ({ event, context }) => {
-  // This event fires in the same tx as VoteCast; update the most recent vote for this voter+proposal
-  // Since we can't query by composite key, we just store the clientId on the proposal for now
-  // The vote was already inserted by VoteCast handler
-  // We store clientId on the vote record by matching tx hash
-  // For simplicity, we'll skip updating individual votes with clientId here
-  // The auction/proposal-level clientId is more useful for rewards
+  const { voter, proposalId, clientId } = event.args;
+
+  // Update the individual vote record with clientId
+  const mapKey = `${event.transaction.hash}-${voter}-${proposalId}`;
+  const voteId = pendingVoteIds.get(mapKey);
+  if (voteId) {
+    await context.db
+      .update(votes, { id: voteId })
+      .set({ clientId: Number(clientId) });
+    pendingVoteIds.delete(mapKey);
+  }
 });
 
 ponder.on("NounsDAO:RefundableVote", async ({ event, context }) => {

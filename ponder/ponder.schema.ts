@@ -5,8 +5,10 @@ import {
   relations,
   eq,
   or,
+  and,
   gt,
   desc,
+  isNotNull,
 } from "ponder";
 
 // =============================================================================
@@ -623,21 +625,24 @@ export const nounsRelations = relations(nouns, ({ one, many }) => ({
 export const auctionsRelations = relations(auctions, ({ one, many }) => ({
   noun: one(nouns, { fields: [auctions.nounId], references: [nouns.id] }),
   bids: many(auctionBids),
+  client: one(clients, { fields: [auctions.clientId], references: [clients.clientId] }),
 }));
 
 export const auctionBidsRelations = relations(auctionBids, ({ one }) => ({
   noun: one(nouns, { fields: [auctionBids.nounId], references: [nouns.id] }),
   auction: one(auctions, { fields: [auctionBids.nounId], references: [auctions.nounId] }),
+  client: one(clients, { fields: [auctionBids.clientId], references: [clients.clientId] }),
 }));
 
 export const transfersRelations = relations(transfers, ({ one }) => ({
   noun: one(nouns, { fields: [transfers.tokenId], references: [nouns.id] }),
 }));
 
-export const proposalsRelations = relations(proposals, ({ many }) => ({
+export const proposalsRelations = relations(proposals, ({ one, many }) => ({
   votes: many(votes),
   versions: many(proposalVersions),
   feedback: many(proposalFeedback),
+  client: one(clients, { fields: [proposals.clientId], references: [clients.clientId] }),
 }));
 
 export const proposalVersionsRelations = relations(proposalVersions, ({ one }) => ({
@@ -647,6 +652,7 @@ export const proposalVersionsRelations = relations(proposalVersions, ({ one }) =
 export const votesRelations = relations(votes, ({ one }) => ({
   proposal: one(proposals, { fields: [votes.proposalId], references: [proposals.id] }),
   voter: one(voters, { fields: [votes.voter], references: [voters.address] }),
+  client: one(clients, { fields: [votes.clientId], references: [clients.clientId] }),
 }));
 
 export const proposalFeedbackRelations = relations(proposalFeedback, ({ one }) => ({
@@ -660,6 +666,13 @@ export const votersRelations = relations(voters, ({ many }) => ({
 
 export const delegationsRelations = relations(delegations, ({ one }) => ({
   toVoter: one(voters, { fields: [delegations.toDelegate], references: [voters.address] }),
+}));
+
+export const clientsRelations = relations(clients, ({ many }) => ({
+  auctions: many(auctions),
+  auctionBids: many(auctionBids),
+  proposals: many(proposals),
+  votes: many(votes),
 }));
 
 export const candidatesRelations = relations(candidates, ({ many }) => ({
@@ -727,4 +740,58 @@ export const auctionHistory = onchainView("auction_history").as((qb) =>
     })
     .from(auctions)
     .innerJoin(nouns, eq(auctions.nounId, nouns.id)),
+);
+
+/** Settled auctions with client info (winning bid's client) */
+export const clientAuctionWins = onchainView("client_auction_wins").as((qb) =>
+  qb
+    .select({
+      nounId: auctions.nounId,
+      winner: auctions.winner,
+      amount: auctions.amount,
+      startTime: auctions.startTime,
+      endTime: auctions.endTime,
+      clientId: auctions.clientId,
+      clientName: clients.name,
+    })
+    .from(auctions)
+    .innerJoin(clients, eq(auctions.clientId, clients.clientId))
+    .where(eq(auctions.settled, true)),
+);
+
+/** Proposals submitted via a client */
+export const clientProposals = onchainView("client_proposals").as((qb) =>
+  qb
+    .select({
+      proposalId: proposals.id,
+      proposer: proposals.proposer,
+      title: proposals.title,
+      status: proposals.status,
+      forVotes: proposals.forVotes,
+      againstVotes: proposals.againstVotes,
+      abstainVotes: proposals.abstainVotes,
+      createdTimestamp: proposals.createdTimestamp,
+      clientId: proposals.clientId,
+      clientName: clients.name,
+    })
+    .from(proposals)
+    .innerJoin(clients, eq(proposals.clientId, clients.clientId)),
+);
+
+/** Votes cast via a client */
+export const clientVotes = onchainView("client_votes").as((qb) =>
+  qb
+    .select({
+      voteId: votes.id,
+      voter: votes.voter,
+      proposalId: votes.proposalId,
+      support: votes.support,
+      votes: votes.votes,
+      reason: votes.reason,
+      blockTimestamp: votes.blockTimestamp,
+      clientId: votes.clientId,
+      clientName: clients.name,
+    })
+    .from(votes)
+    .innerJoin(clients, eq(votes.clientId, clients.clientId)),
 );
