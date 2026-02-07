@@ -241,17 +241,17 @@ export async function GET(
               flexDirection: 'column',
               justifyContent: 'center',
               width: 580,
-              padding: '44px 0 44px 52px',
+              padding: '40px 0 40px 52px',
             }}
           >
             {/* berryos.wtf branding */}
             <div
               style={{
                 display: 'flex',
-                fontSize: 22,
-                color: 'rgba(0,0,0,0.4)',
+                fontSize: 26,
+                color: '#555',
                 fontWeight: 700,
-                marginBottom: 14,
+                marginBottom: 10,
               }}
             >
               berryos.wtf
@@ -261,9 +261,9 @@ export async function GET(
             <div
               style={{
                 display: 'flex',
-                fontSize: 76,
+                fontSize: 84,
                 fontWeight: 700,
-                color: '#1a1a1a',
+                color: '#111',
                 lineHeight: 1,
               }}
             >
@@ -275,10 +275,10 @@ export async function GET(
               style={{
                 display: 'flex',
                 width: 420,
-                height: 3,
-                background: 'rgba(0,0,0,0.14)',
-                marginTop: 18,
-                marginBottom: 20,
+                height: 4,
+                background: 'rgba(0,0,0,0.18)',
+                marginTop: 16,
+                marginBottom: 18,
                 borderRadius: 2,
               }}
             />
@@ -288,7 +288,7 @@ export async function GET(
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 7,
+                gap: 5,
               }}
             >
               {traits.map((trait) => (
@@ -297,16 +297,16 @@ export async function GET(
                   style={{
                     display: 'flex',
                     alignItems: 'baseline',
-                    gap: 12,
+                    gap: 14,
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 16,
-                      color: 'rgba(0,0,0,0.5)',
+                      fontSize: 20,
+                      color: '#666',
                       fontWeight: 700,
-                      letterSpacing: 1,
-                      width: 140,
+                      letterSpacing: 0.5,
+                      width: 160,
                       flexShrink: 0,
                     }}
                   >
@@ -314,8 +314,8 @@ export async function GET(
                   </span>
                   <span
                     style={{
-                      fontSize: 24,
-                      color: '#1a1a1a',
+                      fontSize: 28,
+                      color: '#111',
                       fontWeight: 700,
                     }}
                   >
@@ -331,10 +331,10 @@ export async function GET(
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 7,
-                  marginTop: 18,
-                  paddingTop: 16,
-                  borderTop: '2px solid rgba(0,0,0,0.1)',
+                  gap: 5,
+                  marginTop: 16,
+                  paddingTop: 14,
+                  borderTop: '3px solid rgba(0,0,0,0.12)',
                 }}
               >
                 {infoLines.map((line) => (
@@ -343,16 +343,16 @@ export async function GET(
                     style={{
                       display: 'flex',
                       alignItems: 'baseline',
-                      gap: 10,
+                      gap: 14,
                     }}
                   >
                     <span
                       style={{
-                        fontSize: 15,
-                        color: 'rgba(0,0,0,0.5)',
+                        fontSize: 19,
+                        color: '#666',
                         fontWeight: 700,
-                        letterSpacing: 1,
-                        width: 140,
+                        letterSpacing: 0.5,
+                        width: 160,
                         flexShrink: 0,
                       }}
                     >
@@ -360,8 +360,8 @@ export async function GET(
                     </span>
                     <span
                       style={{
-                        fontSize: 20,
-                        color: '#222',
+                        fontSize: 24,
+                        color: '#111',
                         fontWeight: 700,
                       }}
                     >
