@@ -61,14 +61,14 @@ export default createConfig({
       chain: "mainnet",
       abi: NounsDAOLogicV3ABI,
       address: "0x6f3E6272A167e8AcCb32072d08E0957F9c79223d",
-      startBlock: 17990266,
+      startBlock: 12985453,
     },
 
     NounsDAOData: {
       chain: "mainnet",
       abi: DataProxyABI,
       address: "0xf790A5f59678dd733fb3De93493A91f472ca1365",
-      startBlock: 17990266,
+      startBlock: 17812145,
     },
 
     // =========================================================================
@@ -79,7 +79,7 @@ export default createConfig({
       chain: "mainnet",
       abi: TreasuryTimelockABI,
       address: "0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71",
-      startBlock: 17990266,
+      startBlock: 17811727,
     },
 
     TreasuryV1: {
