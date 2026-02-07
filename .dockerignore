@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.env*
+*.md
+scripts
+src
+public
+.vercel
+.cursor
+ponder/node_modules
+ponder/.ponder

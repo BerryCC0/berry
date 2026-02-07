@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       SELECT id, background, body, accessory, head, glasses,
              settled_by_address, settled_by_ens, settled_at,
              winning_bid, winner_address, winner_ens
-      FROM nouns
+      FROM legacy_nouns
       WHERE id = ANY(${limitedIds})
     `;
     
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
     
     // Get filtered count
     const countResult = await sql`
-      SELECT COUNT(*) as count FROM nouns
+      SELECT COUNT(*) as count FROM legacy_nouns
       WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
         AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
         AND (${background}::int IS NULL OR background = ${background})
@@ -170,7 +170,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -187,7 +187,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -204,7 +204,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -221,7 +221,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -238,7 +238,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -255,7 +255,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -272,7 +272,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})
@@ -290,7 +290,7 @@ async function queryWithSort(
         SELECT id, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns
+        FROM legacy_nouns
         WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
           AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
           AND (${background}::int IS NULL OR background = ${background})

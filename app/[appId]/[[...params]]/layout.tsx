@@ -155,7 +155,7 @@ export async function generateMetadata({
           const sql = neon(process.env.DATABASE_URL!);
           const rows = await sql`
             SELECT head, glasses, accessory, body, background
-            FROM nouns WHERE id = ${nounId}
+            FROM legacy_nouns WHERE id = ${nounId}
           `;
           if (rows.length > 0) {
             const n = rows[0];

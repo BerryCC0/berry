@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
             ens_name,
             delegated_votes,
             nouns_represented
-          FROM voters
+          FROM legacy_voters
           WHERE 
             LOWER(ens_name) LIKE ${searchPattern}
             OR LOWER(address) LIKE ${searchPattern}
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
               for_votes,
               against_votes,
               abstain_votes
-            FROM proposals
+            FROM legacy_proposals
             WHERE 
               id = ${parseInt(query)}
               OR LOWER(title) LIKE ${searchPattern}
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
               for_votes,
               against_votes,
               abstain_votes
-            FROM proposals
+            FROM legacy_proposals
             WHERE LOWER(title) LIKE ${searchPattern}
             ORDER BY created_timestamp DESC
             LIMIT ${limit}
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
             proposer,
             canceled,
             signature_count
-          FROM candidates
+          FROM legacy_candidates
           WHERE 
             canceled = false
             AND (

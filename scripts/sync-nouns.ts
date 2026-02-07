@@ -367,7 +367,7 @@ async function syncNouns() {
   const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
   
   // Check existing nouns
-  const existingResult = await sql`SELECT id FROM nouns ORDER BY id DESC LIMIT 1`;
+  const existingResult = await sql`SELECT id FROM legacy_nouns ORDER BY id DESC LIMIT 1`;
   const highestExisting = existingResult[0]?.id ?? -1;
   console.log(`Highest existing noun in database: ${highestExisting}`);
   
@@ -392,7 +392,7 @@ async function syncNouns() {
   
   // Clear existing data and re-insert with correct settler attribution
   console.log('\nClearing existing nouns table for fresh sync with correct settler attribution...');
-  await sql`TRUNCATE TABLE nouns`;
+  await sql`TRUNCATE TABLE legacy_nouns`;
   
   // Process and insert nouns
   let inserted = 0;
@@ -465,7 +465,7 @@ async function syncNouns() {
       
       // Insert
       await sql`
-        INSERT INTO nouns (
+        INSERT INTO legacy_nouns (
           id, background, body, accessory, head, glasses, svg,
           settled_by_address, settled_at, settled_tx_hash,
           winning_bid, winner_address
@@ -501,14 +501,14 @@ async function syncNouns() {
   console.log(`Errors: ${errors}`);
   
   // Final count
-  const countResult = await sql`SELECT COUNT(*) as count FROM nouns`;
+  const countResult = await sql`SELECT COUNT(*) as count FROM legacy_nouns`;
   console.log(`Total nouns in database: ${countResult[0]?.count}`);
   
   // Show sample of settler attribution
   console.log('\nSample settler attribution (noun -> settler):');
   const samples = await sql`
     SELECT id, settled_by_address, winner_address 
-    FROM nouns 
+    FROM legacy_nouns 
     WHERE id IN (1, 2, 10, 11, 100, 1000, 1760, 1761)
     ORDER BY id
   `;

@@ -39,7 +39,7 @@ async function main() {
 
   // Count settlers missing ENS
   const settlerCount = await sql`
-    SELECT COUNT(*) as count FROM nouns
+    SELECT COUNT(*) as count FROM legacy_nouns
     WHERE settled_by_address IS NOT NULL
       AND settled_by_address != '0x0000000000000000000000000000000000000000'
       AND settled_by_address != ''
@@ -49,7 +49,7 @@ async function main() {
 
   // Count winners missing ENS
   const winnerCount = await sql`
-    SELECT COUNT(*) as count FROM nouns
+    SELECT COUNT(*) as count FROM legacy_nouns
     WHERE winner_address IS NOT NULL
       AND winner_address != '0x0000000000000000000000000000000000000000'
       AND winner_address != ''
@@ -75,7 +75,7 @@ async function main() {
     // Get unique settler addresses missing ENS
     const settlers = await sql`
       SELECT DISTINCT settled_by_address as address
-      FROM nouns
+      FROM legacy_nouns
       WHERE settled_by_address IS NOT NULL
         AND settled_by_address != '0x0000000000000000000000000000000000000000'
         AND settled_by_address != ''
@@ -92,7 +92,7 @@ async function main() {
           const ensName = await resolveENS(row.address);
           if (ensName) {
             await sql`
-              UPDATE nouns SET settled_by_ens = ${ensName}
+              UPDATE legacy_nouns SET settled_by_ens = ${ensName}
               WHERE LOWER(settled_by_address) = ${row.address.toLowerCase()}
                 AND settled_by_ens IS NULL
             `;
@@ -121,7 +121,7 @@ async function main() {
 
     const winners = await sql`
       SELECT DISTINCT winner_address as address
-      FROM nouns
+      FROM legacy_nouns
       WHERE winner_address IS NOT NULL
         AND winner_address != '0x0000000000000000000000000000000000000000'
         AND winner_address != ''
@@ -138,7 +138,7 @@ async function main() {
           const ensName = await resolveENS(row.address);
           if (ensName) {
             await sql`
-              UPDATE nouns SET winner_ens = ${ensName}
+              UPDATE legacy_nouns SET winner_ens = ${ensName}
               WHERE LOWER(winner_address) = ${row.address.toLowerCase()}
                 AND winner_ens IS NULL
             `;

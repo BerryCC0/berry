@@ -131,7 +131,7 @@ export async function GET(
         SELECT id, svg, background, body, accessory, head, glasses,
                settled_by_address, settled_by_ens, settled_at,
                winning_bid, winner_address, winner_ens
-        FROM nouns WHERE id = ${nounId}
+        FROM legacy_nouns WHERE id = ${nounId}
       `,
       fetchAuction(nounId),
     ]);

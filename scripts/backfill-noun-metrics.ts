@@ -35,7 +35,7 @@ async function main() {
 
   // Count nouns that need backfilling (area IS NULL)
   const countResult = await sql`
-    SELECT COUNT(*) as count FROM nouns WHERE area IS NULL
+    SELECT COUNT(*) as count FROM legacy_nouns WHERE area IS NULL
   `;
   const totalToBackfill = parseInt(countResult[0]?.count || '0');
 
@@ -53,7 +53,7 @@ async function main() {
     // Fetch a batch of nouns missing metrics
     const nouns = await sql`
       SELECT id, background, body, accessory, head, glasses
-      FROM nouns
+      FROM legacy_nouns
       WHERE area IS NULL
       ORDER BY id ASC
       LIMIT ${BATCH_SIZE}
@@ -74,7 +74,7 @@ async function main() {
         const metrics = computeAllNounMetrics(seed);
 
         await sql`
-          UPDATE nouns
+          UPDATE legacy_nouns
           SET area = ${metrics.area},
               color_count = ${metrics.color_count},
               brightness = ${metrics.brightness}

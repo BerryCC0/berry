@@ -323,7 +323,7 @@ async function syncVoters(sql: SqlFunction): Promise<{ inserted: number; updated
   if (delegates.length === 0) return results;
   
   // Get existing ENS names from database
-  const existingVoters = await sql`SELECT address, ens_name FROM voters` as { address: string; ens_name: string | null }[];
+  const existingVoters = await sql`SELECT address, ens_name FROM legacy_voters` as { address: string; ens_name: string | null }[];
   const existingENS = new Map<string, string | null>();
   for (const v of existingVoters) {
     existingENS.set(v.address.toLowerCase(), v.ens_name);
@@ -345,17 +345,17 @@ async function syncVoters(sql: SqlFunction): Promise<{ inserted: number; updated
       : null;
     
     try {
-      const existing = await sql`SELECT address FROM voters WHERE address = ${address}` as { address: string }[];
+      const existing = await sql`SELECT address FROM legacy_voters WHERE address = ${address}` as { address: string }[];
       
       if (existing.length === 0) {
         await sql`
-          INSERT INTO voters (address, ens_name, delegated_votes, nouns_represented, total_votes, last_vote_at)
+          INSERT INTO legacy_voters (address, ens_name, delegated_votes, nouns_represented, total_votes, last_vote_at)
           VALUES (${address}, ${ensName}, ${delegatedVotes}, ${nounsRepresented}, ${totalVotes}, ${lastVoteAt})
         `;
         results.inserted++;
       } else {
         await sql`
-          UPDATE voters 
+          UPDATE legacy_voters 
           SET ens_name = COALESCE(${ensName}, ens_name),
               delegated_votes = ${delegatedVotes},
               nouns_represented = ${nounsRepresented},
@@ -383,7 +383,7 @@ async function syncAccounts(sql: SqlFunction): Promise<{ inserted: number; updat
   if (accounts.length === 0) return results;
   
   // Get existing voters
-  const existingVoters = await sql`SELECT address FROM voters` as { address: string }[];
+  const existingVoters = await sql`SELECT address FROM legacy_voters` as { address: string }[];
   const existingSet = new Set(existingVoters.map(v => v.address.toLowerCase()));
   
   // Filter to accounts not already in voters table
@@ -410,10 +410,10 @@ async function syncAccounts(sql: SqlFunction): Promise<{ inserted: number; updat
     
     try {
       await sql`
-        INSERT INTO voters (address, ens_name, delegated_votes, nouns_represented)
+        INSERT INTO legacy_voters (address, ens_name, delegated_votes, nouns_represented)
         VALUES (${address}, ${ensName}, 0, ${nounsRepresented})
         ON CONFLICT (address) DO UPDATE SET
-          ens_name = COALESCE(EXCLUDED.ens_name, voters.ens_name),
+          ens_name = COALESCE(EXCLUDED.ens_name, legacy_voters.ens_name),
           nouns_represented = EXCLUDED.nouns_represented,
           updated_at = NOW()
       `;
@@ -440,11 +440,11 @@ async function syncProposals(sql: SqlFunction): Promise<{ inserted: number; upda
     const proposer = proposal.proposer.id.toLowerCase();
     
     try {
-      const existing = await sql`SELECT id FROM proposals WHERE id = ${id}` as { id: number }[];
+      const existing = await sql`SELECT id FROM legacy_proposals WHERE id = ${id}` as { id: number }[];
       
       if (existing.length === 0) {
         await sql`
-          INSERT INTO proposals (
+          INSERT INTO legacy_proposals (
             id, title, description, status, proposer,
             for_votes, against_votes, abstain_votes, quorum_votes,
             start_block, end_block, created_timestamp, execution_eta
@@ -461,7 +461,7 @@ async function syncProposals(sql: SqlFunction): Promise<{ inserted: number; upda
         results.inserted++;
       } else {
         await sql`
-          UPDATE proposals SET
+          UPDATE legacy_proposals SET
             title = ${proposal.title},
             description = ${proposal.description},
             status = ${proposal.status || 'PENDING'},
@@ -509,14 +509,14 @@ async function syncProposalVersions(sql: SqlFunction): Promise<{ inserted: numbe
       
       try {
         // Check if proposal exists first
-        const proposalExists = await sql`SELECT id FROM proposals WHERE id = ${parseInt(proposalId)}` as { id: number }[];
+        const proposalExists = await sql`SELECT id FROM legacy_proposals WHERE id = ${parseInt(proposalId)}` as { id: number }[];
         if (proposalExists.length === 0) continue;
         
-        const existing = await sql`SELECT id FROM proposal_versions WHERE id = ${version.id}` as { id: string }[];
+        const existing = await sql`SELECT id FROM legacy_proposal_versions WHERE id = ${version.id}` as { id: string }[];
         
         if (existing.length === 0) {
           await sql`
-            INSERT INTO proposal_versions (
+            INSERT INTO legacy_proposal_versions (
               id, proposal_id, version_number, title, description, update_message, created_at
             ) VALUES (
               ${version.id}, ${parseInt(proposalId)}, ${versionNumber},
@@ -549,11 +549,11 @@ async function syncCandidates(sql: SqlFunction): Promise<{ inserted: number; upd
     const signatureCount = candidate.latestVersion?.content?.contentSignatures?.length || 0;
     
     try {
-      const existing = await sql`SELECT id FROM candidates WHERE id = ${id}` as { id: string }[];
+      const existing = await sql`SELECT id FROM legacy_candidates WHERE id = ${id}` as { id: string }[];
       
       if (existing.length === 0) {
         await sql`
-          INSERT INTO candidates (
+          INSERT INTO legacy_candidates (
             id, slug, proposer, title, description, canceled,
             created_timestamp, last_updated_timestamp, signature_count
           ) VALUES (
@@ -565,7 +565,7 @@ async function syncCandidates(sql: SqlFunction): Promise<{ inserted: number; upd
         results.inserted++;
       } else {
         await sql`
-          UPDATE candidates SET
+          UPDATE legacy_candidates SET
             title = ${title},
             description = ${description},
             canceled = ${candidate.canceled},
@@ -610,14 +610,14 @@ async function syncCandidateVersions(sql: SqlFunction): Promise<{ inserted: numb
       
       try {
         // Check if candidate exists first
-        const candidateExists = await sql`SELECT id FROM candidates WHERE id = ${candidateId}` as { id: string }[];
+        const candidateExists = await sql`SELECT id FROM legacy_candidates WHERE id = ${candidateId}` as { id: string }[];
         if (candidateExists.length === 0) continue;
         
-        const existing = await sql`SELECT id FROM candidate_versions WHERE id = ${version.id}` as { id: string }[];
+        const existing = await sql`SELECT id FROM legacy_candidate_versions WHERE id = ${version.id}` as { id: string }[];
         
         if (existing.length === 0) {
           await sql`
-            INSERT INTO candidate_versions (
+            INSERT INTO legacy_candidate_versions (
               id, candidate_id, version_number, title, description, update_message, created_at
             ) VALUES (
               ${version.id}, ${candidateId}, ${versionNumber},

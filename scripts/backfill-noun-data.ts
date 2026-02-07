@@ -46,7 +46,7 @@ async function main() {
 
   // Get all nouns that need fixing (null winning_bid or auction house as winner)
   const needsFix = await sql`
-    SELECT id FROM nouns
+    SELECT id FROM legacy_nouns
     WHERE winning_bid IS NULL
        OR LOWER(winner_address) = ${AUCTION_HOUSE_ADDRESS}
     ORDER BY id DESC
@@ -94,7 +94,7 @@ async function main() {
 
       try {
         const result = await sql`
-          UPDATE nouns
+          UPDATE legacy_nouns
           SET winning_bid = COALESCE(${winningBid}, winning_bid),
               winner_address = CASE
                 WHEN LOWER(winner_address) = ${AUCTION_HOUSE_ADDRESS} AND ${winnerAddress}::text IS NOT NULL
@@ -125,7 +125,7 @@ async function main() {
   console.log('\n── Step 2: Fixing settled_at timestamps from Etherscan ──');
 
   const badTimestamps = await sql`
-    SELECT id, settled_tx_hash FROM nouns
+    SELECT id, settled_tx_hash FROM legacy_nouns
     WHERE settled_tx_hash IS NOT NULL
       AND settled_tx_hash != ${'0x' + '0'.repeat(64)}
       AND (settled_at IS NULL OR settled_at <= '1970-01-02T00:00:00Z')
@@ -170,7 +170,7 @@ async function main() {
           const settledAt = new Date(timestamp * 1000).toISOString();
 
           await sql`
-            UPDATE nouns SET settled_at = ${settledAt} WHERE id = ${id}
+            UPDATE legacy_nouns SET settled_at = ${settledAt} WHERE id = ${id}
           `;
           fixedTimestamps++;
         }

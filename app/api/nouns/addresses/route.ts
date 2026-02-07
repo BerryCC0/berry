@@ -19,7 +19,7 @@ export async function GET() {
         LOWER(settled_by_address) as address,
         MAX(settled_by_ens) as ens,
         COUNT(*)::int as count
-      FROM nouns
+      FROM legacy_nouns
       WHERE settled_by_address IS NOT NULL
         AND settled_by_address != ''
       GROUP BY LOWER(settled_by_address)
@@ -32,7 +32,7 @@ export async function GET() {
         LOWER(winner_address) as address,
         MAX(winner_ens) as ens,
         COUNT(*)::int as count
-      FROM nouns
+      FROM legacy_nouns
       WHERE winner_address IS NOT NULL
         AND winner_address != ''
       GROUP BY LOWER(winner_address)

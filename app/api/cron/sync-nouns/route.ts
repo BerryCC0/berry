@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     const etherscanApiKey = process.env.ETHERSCAN_API_KEY!;
 
     // Get highest noun ID in database
-    const highestResult = await sql`SELECT MAX(id) as max_id FROM nouns`;
+    const highestResult = await sql`SELECT MAX(id) as max_id FROM legacy_nouns`;
     const highestId = highestResult[0]?.max_id ?? 0;
 
     // Fetch nouns from Goldsky
@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
       const nounId = parseInt(noun.id);
 
       // Check if exists
-      const existing = await sql`SELECT id FROM nouns WHERE id = ${nounId}`;
+      const existing = await sql`SELECT id FROM legacy_nouns WHERE id = ${nounId}`;
       if (existing.length > 0) {
         results.skipped++;
         continue;
@@ -222,7 +222,7 @@ export async function GET(request: NextRequest) {
         const metrics = computeAllNounMetrics(seed);
 
         await sql`
-          INSERT INTO nouns (id, background, body, accessory, head, glasses, svg,
+          INSERT INTO legacy_nouns (id, background, body, accessory, head, glasses, svg,
             settled_by_address, settled_at, settled_tx_hash, winning_bid, winner_address,
             area, color_count, brightness)
           VALUES (${nounId}, ${seed.background}, ${seed.body}, ${seed.accessory},
@@ -242,7 +242,7 @@ export async function GET(request: NextRequest) {
     // Update settler info for nouns missing it (limit to 10 per run to respect rate limits)
     // For each noun missing settler, we need to find who settled the PREVIOUS noun's auction
     const missingSettler = await sql`
-      SELECT id FROM nouns 
+      SELECT id FROM legacy_nouns 
       WHERE settled_by_address = '0x0000000000000000000000000000000000000000' 
       AND id > 1
       ORDER BY id DESC 
@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
             // Resolve settler ENS name
             const settlerEns = await resolveENS(settlerAddress);
             await sql`
-              UPDATE nouns 
+              UPDATE legacy_nouns 
               SET settled_by_address = ${settlerAddress},
                   settled_by_ens = ${settlerEns},
                   settled_tx_hash = ${log.transactionHash},
@@ -327,7 +327,7 @@ export async function GET(request: NextRequest) {
     // Resolve missing ENS names for settlers and winners (limit 20 per run)
     const missingEns = await sql`
       (SELECT settled_by_address as address, 'settler' as type, id
-       FROM nouns
+       FROM legacy_nouns
        WHERE settled_by_address IS NOT NULL
          AND settled_by_address != '0x0000000000000000000000000000000000000000'
          AND settled_by_ens IS NULL
@@ -335,7 +335,7 @@ export async function GET(request: NextRequest) {
        LIMIT 10)
       UNION ALL
       (SELECT winner_address as address, 'winner' as type, id
-       FROM nouns
+       FROM legacy_nouns
        WHERE winner_address IS NOT NULL
          AND winner_address != '0x0000000000000000000000000000000000000000'
          AND winner_ens IS NULL
@@ -348,9 +348,9 @@ export async function GET(request: NextRequest) {
         const ensName = await resolveENS(row.address);
         if (ensName) {
           if (row.type === 'settler') {
-            await sql`UPDATE nouns SET settled_by_ens = ${ensName} WHERE id = ${row.id}`;
+            await sql`UPDATE legacy_nouns SET settled_by_ens = ${ensName} WHERE id = ${row.id}`;
           } else {
-            await sql`UPDATE nouns SET winner_ens = ${ensName} WHERE id = ${row.id}`;
+            await sql`UPDATE legacy_nouns SET winner_ens = ${ensName} WHERE id = ${row.id}`;
           }
           results.ensResolved++;
         }

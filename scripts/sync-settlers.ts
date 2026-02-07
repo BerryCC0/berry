@@ -42,7 +42,7 @@ async function syncSettlers() {
   // Get nouns missing settler info (excluding genesis nouns 0 and 1)
   console.log('Finding nouns missing settler info...');
   const missingSettlers = await sql`
-    SELECT id FROM nouns 
+    SELECT id FROM legacy_nouns 
     WHERE settled_by_address = '0x0000000000000000000000000000000000000000'
     AND id > 1
     ORDER BY id ASC
@@ -118,7 +118,7 @@ async function syncSettlers() {
           const timestamp = parseInt(log.timeStamp, 10);
           
           await sql`
-            UPDATE nouns 
+            UPDATE legacy_nouns 
             SET settled_by_address = ${txData.result.from.toLowerCase()},
                 settled_tx_hash = ${log.transactionHash},
                 settled_at = ${new Date(timestamp * 1000).toISOString()}
@@ -132,7 +132,7 @@ async function syncSettlers() {
           if (isNounderNoun(nounId)) {
             const nextNounId = nounId + 1;
             await sql`
-              UPDATE nouns 
+              UPDATE legacy_nouns 
               SET settled_by_address = ${txData.result.from.toLowerCase()},
                   settled_tx_hash = ${log.transactionHash},
                   settled_at = ${new Date(timestamp * 1000).toISOString()}
@@ -164,7 +164,7 @@ async function syncSettlers() {
   
   // Show count of remaining missing
   const stillMissing = await sql`
-    SELECT COUNT(*) as count FROM nouns 
+    SELECT COUNT(*) as count FROM legacy_nouns 
     WHERE settled_by_address = '0x0000000000000000000000000000000000000000'
     AND id > 1
   `;
@@ -174,7 +174,7 @@ async function syncSettlers() {
   console.log('\nSample updated nouns:');
   const samples = await sql`
     SELECT id, settled_by_address 
-    FROM nouns 
+    FROM legacy_nouns 
     WHERE id IN (10, 100, 500, 1000, 1500, 1760)
     ORDER BY id
   `;

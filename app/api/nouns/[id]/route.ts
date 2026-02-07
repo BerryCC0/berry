@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const sql = neon(process.env.DATABASE_URL!);
     
     const result = await sql`
-      SELECT * FROM nouns WHERE id = ${id}
+      SELECT * FROM legacy_nouns WHERE id = ${id}
     `;
     
     if (result.length === 0) {

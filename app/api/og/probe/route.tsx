@@ -35,7 +35,7 @@ export async function GET() {
 
     // Fetch 12 most recent nouns (6x2 grid — keeps payload manageable)
     const nouns = await sql`
-      SELECT id, svg FROM nouns
+      SELECT id, svg FROM legacy_nouns
       ORDER BY id DESC
       LIMIT 12
     `;
