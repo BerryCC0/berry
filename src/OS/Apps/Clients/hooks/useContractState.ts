@@ -39,6 +39,27 @@ export function useContractState() {
     functionName: 'nextProposalRewardFirstAuctionId',
   });
 
+  // Read the timestamp of the last proposal rewards update
+  const { data: lastProposalRewardsUpdate } = useReadContract({
+    address: CLIENT_REWARDS_ADDRESS,
+    abi: ClientRewardsABI,
+    functionName: 'lastProposalRewardsUpdate',
+  });
+
+  // Read the next auction ID to reward (for auction rewards updates)
+  const { data: nextAuctionIdToReward } = useReadContract({
+    address: CLIENT_REWARDS_ADDRESS,
+    abi: ClientRewardsABI,
+    functionName: 'nextAuctionIdToReward',
+  });
+
+  // Read auction reward params (minimumAuctionsBetweenUpdates, etc.)
+  const { data: auctionRewardParams } = useReadContract({
+    address: CLIENT_REWARDS_ADDRESS,
+    abi: ClientRewardsABI,
+    functionName: 'getAuctionRewardParams',
+  });
+
   // Read pending auction revenue since the last ProposalRewardsUpdated
   const currentTimestamp = BigInt(Math.floor(Date.now() / 1000));
   const { data: pendingRevenue } = useReadContract({
@@ -56,6 +77,9 @@ export function useContractState() {
     proposalRewardParams,
     nextProposalIdToReward,
     nextAuctionIdForRevenue,
+    lastProposalRewardsUpdate,
+    nextAuctionIdToReward,
+    auctionRewardParams,
     pendingRevenue,
   };
 }

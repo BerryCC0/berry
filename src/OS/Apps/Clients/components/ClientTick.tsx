@@ -43,7 +43,7 @@ export function ClientTick({ x, y, payload, clientMetadata, chartData, clients, 
             y={2}
             width={14}
             height={14}
-            clipPath="inset(0% round 50%)"
+            clipPath="inset(0% round 2px)"
           />
         )}
         <text
@@ -69,12 +69,12 @@ export function ClientTick({ x, y, payload, clientMetadata, chartData, clients, 
           y={2}
           width={14}
           height={14}
-          clipPath="inset(0% round 50%)"
-        />
-      )}
-      <text
-        x={0}
-        y={imgSrc ? 22 : 6}
+            clipPath="inset(0% round 2px)"
+          />
+        )}
+        <text
+          x={0}
+          y={imgSrc ? 22 : 6}
         textAnchor="middle"
         fontSize={9}
         fill="var(--berry-text-secondary, #6e6e73)"

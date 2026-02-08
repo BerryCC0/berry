@@ -48,6 +48,23 @@
   color: var(--berry-bg, #fff);
 }
 
+.toolbarClientButton {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--berry-accent, #5B8DEF);
+  background: var(--berry-accent, #5B8DEF);
+  color: var(--berry-bg, #fff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbarClientButton:hover {
+  background: var(--berry-accent-hover, var(--berry-accent, #4a7de0));
+  border-color: var(--berry-accent-hover, var(--berry-accent, #4a7de0));
+}
+
 /* ── Summary stat cards ──────────────────────────────────────────────────── */
 
 .statsGrid {
@@ -96,6 +113,47 @@
 }
 
 /* ── Charts grid ─────────────────────────────────────────────────────────── */
+
+/* ── Collapsible section toggle ──────────────────────────────────────────── */
+
+.collapseToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-secondary, #6e6e73);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: color 0.15s ease;
+}
+
+.collapseToggle:hover {
+  color: var(--berry-text-primary, #1d1d1f);
+}
+
+.collapseArrow {
+  display: inline-block;
+  font-size: 9px;
+  transition: transform 0.2s ease;
+}
+
+.collapseArrowOpen {
+  transform: rotate(90deg);
+}
+
+.collapseContent {
+  margin-bottom: 8px;
+}
+
+/* ── Charts ─────────────────────────────────────────────────────────────── */
 
 .chartsRow {
   display: grid;
@@ -334,6 +392,65 @@
 .poolValue {
   font-weight: 700;
   color: var(--berry-text-primary, #1d1d1f);
+}
+
+/* Cycle countdown */
+.cycleCountdown {
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cycleMet {
+  font-weight: 600;
+  color: var(--berry-success, #34c759);
+}
+
+.cycleUnmet {
+  color: var(--berry-text-muted, #8e8e93);
+}
+
+.cycleSep {
+  color: var(--berry-text-muted, #8e8e93);
+  margin: 0 1px;
+}
+
+.cycleSettleable {
+  font-weight: 600;
+  color: var(--berry-success, #34c759);
+}
+
+/* Update rewards button */
+.updateButton {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--berry-accent, #5B8DEF);
+  background: var(--berry-accent, #5B8DEF);
+  color: var(--berry-bg, #fff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.updateButton:hover:not(:disabled) {
+  background: var(--berry-accent-hover, var(--berry-accent, #4a7de0));
+  border-color: var(--berry-accent-hover, var(--berry-accent, #4a7de0));
+}
+
+.updateButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--berry-bg-tertiary, #e5e5e5);
+  border-color: var(--berry-border, #e5e5e5);
+  color: var(--berry-text-muted, #8e8e93);
+}
+
+.updateButtonPending {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 /* Proposal items — Camp digest style */
@@ -748,6 +865,7 @@
 .detailHeader {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 8px 16px;
   border-bottom: 1px solid var(--berry-border, #e5e5e5);
@@ -770,10 +888,98 @@
   background: var(--berry-bg-secondary, #f5f5f7);
 }
 
+.detailTitleBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
 .detailTitle {
   font-size: 14px;
   font-weight: 600;
-  flex: 1;
+}
+
+.detailSubtitle {
+  font-size: 11px;
+  color: var(--berry-text-muted, #8e8e93);
+  font-weight: 400;
+}
+
+.editMetaButton {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  margin-left: 6px;
+  border-radius: 4px;
+  border: 1px solid var(--berry-border, #e5e5e5);
+  background: transparent;
+  color: var(--berry-text-secondary, #6e6e73);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  vertical-align: middle;
+}
+
+.editMetaButton:hover {
+  background: var(--berry-bg-tertiary, #e5e5e5);
+  color: var(--berry-text-primary, #1d1d1f);
+}
+
+/* Metadata editor (inline form in detail view) */
+.metadataEditor {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
+  background: var(--berry-bg-secondary, #f5f5f7);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metaField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.metaLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-secondary, #6e6e73);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metaInput {
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--berry-border, #e5e5e5);
+  border-radius: 4px;
+  background: var(--berry-bg, #fff);
+  color: var(--berry-text-primary, #1d1d1f);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.metaInput:focus {
+  border-color: var(--berry-accent, #5B8DEF);
+}
+
+.metaTextarea {
+  font-size: 13px;
+  font-family: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--berry-border, #e5e5e5);
+  border-radius: 4px;
+  background: var(--berry-bg, #fff);
+  color: var(--berry-text-primary, #1d1d1f);
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+}
+
+.metaTextarea:focus {
+  border-color: var(--berry-accent, #5B8DEF);
 }
 
 .detailContent {

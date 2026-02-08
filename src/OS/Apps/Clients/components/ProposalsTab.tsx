@@ -11,15 +11,27 @@ import {
 } from 'recharts';
 import type {
   ClientData, ClientMetadataMap, DistributionItem,
-  ProposalBreakdownEntry, CycleRewardEntry,
+  ProposalBreakdownEntry, CycleRewardEntry, CycleProgress,
 } from '../types';
 import type { Proposal } from '@/OS/Apps/Camp/types';
+import { useUpdateProposalRewards } from '../hooks/useUpdateRewards';
 import { getClientName } from '@/OS/lib/clientNames';
 import { CHART_COLORS } from '../constants';
 import { formatEth } from '../utils';
 import { EthTooltip } from './ChartTooltips';
 import { ClientTick } from './ClientTick';
 import styles from '../Clients.module.css';
+
+/** Format seconds into a human-readable duration string */
+function formatDuration(totalSeconds: number): string {
+  if (totalSeconds <= 0) return '0m';
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
 
 interface ProposalsTabProps {
   proposalsByClient: DistributionItem[];
@@ -29,6 +41,7 @@ interface ProposalsTabProps {
   clients?: ClientData[];
   pendingRevenueEth: number | null;
   eligibleCount: { eligible: number; withClient: number; total: number };
+  cycleProgress: CycleProgress | null;
   filterEligible: boolean;
   setFilterEligible: (fn: (v: boolean) => boolean) => void;
   currentPeriodProposals: Proposal[];
@@ -39,9 +52,18 @@ interface ProposalsTabProps {
 export function ProposalsTab({
   proposalsByClient, votesByClient, cycleRewardsByClient,
   clientMetadata, clients, pendingRevenueEth,
-  eligibleCount, filterEligible, setFilterEligible,
+  eligibleCount, cycleProgress, filterEligible, setFilterEligible,
   currentPeriodProposals, getEligibility, proposalBreakdowns,
 }: ProposalsTabProps) {
+  const {
+    execute: executeProposalUpdate,
+    isPending: isProposalPending,
+    isConfirming: isProposalConfirming,
+    isSuccess: isProposalSuccess,
+    canExecute: canExecuteProposal,
+    lastProposalId,
+  } = useUpdateProposalRewards({ currentPeriodProposals, getEligibility });
+
   return (
     <>
       {/* Cycle distribution charts */}
@@ -129,6 +151,43 @@ export function ProposalsTab({
             {eligibleCount.eligible}/{eligibleCount.withClient}
           </span> of {eligibleCount.total}
         </span>
+        {cycleProgress && (
+          <span className={styles.cycleCountdown}>
+            {cycleProgress.canDistribute ? (
+              <span className={styles.cycleSettleable}>Ready to distribute</span>
+            ) : (
+              <>
+                <span className={cycleProgress.proposalConditionMet ? styles.cycleMet : styles.cycleUnmet}>
+                  {eligibleCount.eligible}/{cycleProgress.numProposalsEnoughForReward} proposals
+                </span>
+                <span className={styles.cycleSep}>·</span>
+                <span className={cycleProgress.timeConditionMet ? styles.cycleMet : styles.cycleUnmet}>
+                  {cycleProgress.timeRemaining != null
+                    ? `${formatDuration(cycleProgress.timeRemaining)} left`
+                    : `${formatDuration(cycleProgress.timeElapsed)} elapsed`}
+                </span>
+              </>
+            )}
+          </span>
+        )}
+        <button
+          className={`${styles.updateButton} ${isProposalPending || isProposalConfirming ? styles.updateButtonPending : ''}`}
+          disabled={!canExecuteProposal || isProposalPending || isProposalConfirming || isProposalSuccess}
+          onClick={executeProposalUpdate}
+          title={
+            isProposalSuccess ? 'Proposal rewards updated!'
+              : isProposalConfirming ? 'Confirming transaction…'
+              : isProposalPending ? 'Waiting for wallet…'
+              : !canExecuteProposal ? 'Conditions not met for reward distribution'
+              : lastProposalId != null ? `Update through Prop #${lastProposalId}`
+              : 'Update Proposal Rewards'
+          }
+        >
+          {isProposalSuccess ? '✓ Updated'
+            : isProposalConfirming ? 'Confirming…'
+            : isProposalPending ? 'Pending…'
+            : 'Update Proposal Rewards'}
+        </button>
         <button
           className={`${styles.filterToggle} ${filterEligible ? styles.filterToggleActive : ''}`}
           onClick={() => setFilterEligible((v) => !v)}

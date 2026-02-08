@@ -8,6 +8,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { AppComponentProps } from '@/OS/types/app';
 import { useDashboardData } from './hooks/useDashboardData';
+import { useOwnedClient } from './hooks/useOwnedClient';
 import { ClientDetail } from './components/ClientDetail';
 import { InfoCard } from './components/InfoCard';
 import { RevenueChart } from './components/RevenueChart';
@@ -23,10 +24,14 @@ export function Clients({ windowId }: AppComponentProps) {
     clients, clientsLoading, rewardUpdates,
     contractWethBalanceEth, quorumBps, pendingRevenueEth,
     clientMetadata, cycleAuctionsData, cycleRewardsByClient,
+    cycleProgress,
     totals, getSortedClients, rewardEconData, revenueData,
     votesByClient, proposalsByClient, currentPeriodProposals,
     getEligibility, eligibleCount, proposalBreakdowns,
   } = useDashboardData();
+
+  // Client NFT ownership detection
+  const { ownedClientId, clientBalance: ownedClientBalance } = useOwnedClient(clients);
 
   // UI state
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
@@ -34,6 +39,7 @@ export function Clients({ windowId }: AppComponentProps) {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [bottomTab, setBottomTab] = useState<'proposals' | 'auctions' | 'leaderboard'>('proposals');
   const [filterEligible, setFilterEligible] = useState(true);
+  const [chartsOpen, setChartsOpen] = useState(false);
 
   const sortedClients = useMemo(
     () => getSortedClients(sortField, sortDir),
@@ -60,6 +66,7 @@ export function Clients({ windowId }: AppComponentProps) {
           client={client}
           rewardUpdates={rewardUpdates ?? []}
           onBack={() => setSelectedClientId(null)}
+          isOwner={ownedClientId === selectedClientId}
         />
       );
     }
@@ -92,23 +99,42 @@ export function Clients({ windowId }: AppComponentProps) {
       {/* Toolbar */}
       <div className={styles.toolbar}>
         <span className={styles.toolbarTitle}>Client Incentives</span>
-        <span className={styles.toolbarBadge}>{totals.count} clients</span>
+        {ownedClientId != null && (
+          <button
+            className={styles.toolbarClientButton}
+            onClick={() => setSelectedClientId(ownedClientId)}
+          >
+            {clients?.find((c) => c.clientId === ownedClientId)?.name || 'My Client'}
+          </button>
+        )}
       </div>
 
       <div className={styles.content}>
-        {/* Info card + Auction Revenue chart */}
-        <div className={styles.chartsRow}>
-          <InfoCard
-            totals={totals}
-            contractWethBalanceEth={contractWethBalanceEth}
-            quorumBps={quorumBps}
-            rewardEconData={rewardEconData}
-          />
-          <RevenueChart revenueData={revenueData} />
-        </div>
+        {/* Collapsible charts section */}
+        <button
+          className={styles.collapseToggle}
+          onClick={() => setChartsOpen((v) => !v)}
+        >
+          <span className={`${styles.collapseArrow} ${chartsOpen ? styles.collapseArrowOpen : ''}`}>&#9654;</span>
+          Overview &amp; Historical Charts
+        </button>
+        {chartsOpen && (
+          <div className={styles.collapseContent}>
+            {/* Info card + Auction Revenue chart */}
+            <div className={styles.chartsRow}>
+              <InfoCard
+                totals={totals}
+                contractWethBalanceEth={contractWethBalanceEth}
+                quorumBps={quorumBps}
+                rewardEconData={rewardEconData}
+              />
+              <RevenueChart revenueData={revenueData} />
+            </div>
 
-        {/* Reward rate charts */}
-        <RewardRateCharts rewardEconData={rewardEconData} />
+            {/* Reward rate charts */}
+            <RewardRateCharts rewardEconData={rewardEconData} />
+          </div>
+        )}
 
         {/* Tabbed section */}
         <div className={styles.bottomTabs}>
@@ -150,6 +176,7 @@ export function Clients({ windowId }: AppComponentProps) {
             clients={clients}
             pendingRevenueEth={pendingRevenueEth}
             eligibleCount={eligibleCount}
+            cycleProgress={cycleProgress}
             filterEligible={filterEligible}
             setFilterEligible={setFilterEligible}
             currentPeriodProposals={currentPeriodProposals}

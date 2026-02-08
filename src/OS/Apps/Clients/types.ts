@@ -204,6 +204,21 @@ export interface ClientMetadataEntry {
 export type ClientMetadataMap = Map<number, ClientMetadataEntry>;
 
 // ============================================================================
+// Cycle progress / countdown
+// ============================================================================
+
+export interface CycleProgress {
+  minimumRewardPeriod: number;        // seconds
+  numProposalsEnoughForReward: number;
+  lastUpdateTimestamp: number;        // unix seconds
+  timeElapsed: number;                // seconds since last update
+  timeRemaining: number | null;       // seconds until minimumRewardPeriod met (null if already met)
+  proposalConditionMet: boolean;      // eligible >= numProposalsEnoughForReward
+  timeConditionMet: boolean;          // timeElapsed >= minimumRewardPeriod
+  canDistribute: boolean;              // either condition met
+}
+
+// ============================================================================
 // Cycle rewards aggregation
 // ============================================================================
 

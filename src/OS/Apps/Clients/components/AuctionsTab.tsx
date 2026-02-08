@@ -10,6 +10,7 @@ import {
   CartesianGrid, Cell, LabelList,
 } from 'recharts';
 import type { ClientData, ClientMetadataMap, CycleAuctionsResponse } from '../types';
+import { useUpdateAuctionRewards } from '../hooks/useUpdateRewards';
 import { getClientName } from '@/OS/lib/clientNames';
 import { CHART_COLORS } from '../constants';
 import { weiToEth, formatEth } from '../utils';
@@ -26,6 +27,16 @@ interface AuctionsTabProps {
 }
 
 export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendingRevenueEth }: AuctionsTabProps) {
+  const {
+    execute: executeAuctionUpdate,
+    isPending: isAuctionPending,
+    isConfirming: isAuctionConfirming,
+    isSuccess: isAuctionSuccess,
+    canExecute: canExecuteAuction,
+    isSimulating: isAuctionSimulating,
+    error: auctionError,
+    lastNounId,
+  } = useUpdateAuctionRewards();
   return (
     <>
       {/* Auction distribution charts */}
@@ -143,6 +154,24 @@ export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendin
               : '—'}
           </span>
         </span>
+        <button
+          className={`${styles.updateButton} ${isAuctionPending || isAuctionConfirming ? styles.updateButtonPending : ''}`}
+          disabled={!canExecuteAuction || isAuctionPending || isAuctionConfirming || isAuctionSuccess}
+          onClick={executeAuctionUpdate}
+          title={
+            isAuctionSuccess ? 'Auction rewards updated!'
+              : isAuctionConfirming ? 'Confirming transaction…'
+              : isAuctionPending ? 'Waiting for wallet…'
+              : !canExecuteAuction ? 'Not enough auctions since last update'
+              : lastNounId != null ? `Update through Noun #${lastNounId}`
+              : 'Update Auction Rewards'
+          }
+        >
+          {isAuctionSuccess ? '✓ Updated'
+            : isAuctionConfirming ? 'Confirming…'
+            : isAuctionPending ? 'Pending…'
+            : 'Update Auction Rewards'}
+        </button>
       </div>
 
       {/* Auction list */}

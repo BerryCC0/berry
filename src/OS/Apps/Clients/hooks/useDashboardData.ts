@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { formatEther } from 'viem';
 import { useClients, useRewardUpdates, useCycleVotes, useCycleAuctions } from './useClientIncentives';
 import { useContractState } from './useContractState';
@@ -15,7 +15,7 @@ import { useClientMetadata } from './useClientMetadata';
 import { useProposals } from '@/OS/Apps/Camp/hooks';
 import { CHART_COLORS } from '../constants';
 import { weiToEth } from '../utils';
-import type { CycleRewardEntry } from '../types';
+import type { CycleRewardEntry, CycleProgress } from '../types';
 
 export function useDashboardData() {
   // Core data
@@ -29,6 +29,7 @@ export function useDashboardData() {
     proposalRewardParams,
     nextProposalIdToReward,
     nextAuctionIdForRevenue,
+    lastProposalRewardsUpdate,
     pendingRevenue,
   } = useContractState();
 
@@ -106,6 +107,67 @@ export function useDashboardData() {
       .sort((a, b) => b.reward - a.reward);
   }, [chartData.proposalBreakdowns]);
 
+  // Live-updating clock for cycle countdown (ticks every 60s)
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Find the creation time of the last eligible proposal in the current cycle
+  const lastEligibleProposalTimestamp = useMemo(() => {
+    if (!chartData.currentPeriodProposals.length) return null;
+    const eligible = chartData.currentPeriodProposals.filter(
+      (p) => chartData.getEligibility(p) === 'eligible',
+    );
+    if (!eligible.length) return null;
+    // Proposals are sorted newest-first; take the latest creation time
+    return Math.max(...eligible.map((p) => Number(p.createdTimestamp)));
+  }, [chartData.currentPeriodProposals, chartData.getEligibility]);
+
+  // Compute cycle progress
+  // Time condition: creationTime(lastEligibleProposal) - lastUpdate >= minimumRewardPeriod
+  // NOT now - lastUpdate. Distribution also requires at least 1 eligible proposal.
+  const cycleProgress = useMemo<CycleProgress | null>(() => {
+    if (!proposalRewardParams || lastProposalRewardsUpdate == null) return null;
+
+    const minimumRewardPeriod = Number(proposalRewardParams.minimumRewardPeriod);
+    const numProposalsEnoughForReward = Number(proposalRewardParams.numProposalsEnoughForReward);
+    const lastUpdateTimestamp = Number(lastProposalRewardsUpdate);
+    const eligibleCount = chartData.eligibleCount.eligible;
+
+    // Proposal count condition
+    const proposalConditionMet = eligibleCount >= numProposalsEnoughForReward;
+
+    // Time condition is checked against the last eligible proposal's creation time, not now.
+    // If there are no eligible proposals yet, time condition cannot be evaluated.
+    let timeConditionMet = false;
+    let timeElapsed = now - lastUpdateTimestamp; // wall-clock elapsed (for display)
+    if (lastEligibleProposalTimestamp != null) {
+      const periodElapsed = lastEligibleProposalTimestamp - lastUpdateTimestamp;
+      timeConditionMet = periodElapsed >= minimumRewardPeriod;
+    }
+
+    // Time remaining: how much longer from now until minimumRewardPeriod is reached
+    // (i.e. when a newly-created proposal would satisfy the time condition)
+    const deadline = lastUpdateTimestamp + minimumRewardPeriod;
+    const timeRemaining = now >= deadline ? null : deadline - now;
+
+    // Can only distribute if there are eligible proposals AND either condition is met
+    const canDistribute = eligibleCount > 0 && (timeConditionMet || proposalConditionMet);
+
+    return {
+      minimumRewardPeriod,
+      numProposalsEnoughForReward,
+      lastUpdateTimestamp,
+      timeElapsed,
+      timeRemaining,
+      proposalConditionMet,
+      timeConditionMet,
+      canDistribute,
+    };
+  }, [proposalRewardParams, lastProposalRewardsUpdate, now, chartData.eligibleCount.eligible, lastEligibleProposalTimestamp]);
+
   return {
     // Loading / data
     clients,
@@ -123,6 +185,7 @@ export function useDashboardData() {
     // Cycle data
     cycleAuctionsData,
     cycleRewardsByClient,
+    cycleProgress,
 
     // Chart data (spread all computed values)
     ...chartData,
