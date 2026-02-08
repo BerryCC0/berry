@@ -26,7 +26,7 @@ export function ClientAvatar({ clientId, name, clientMetadata, clients, size }: 
         src={imgSrc}
         alt={name}
         className={styles.clientAvatar}
-        style={{ objectFit: 'cover', ...sizeStyle }}
+        style={{ objectFit: 'cover', background: 'transparent', ...sizeStyle }}
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
     );
