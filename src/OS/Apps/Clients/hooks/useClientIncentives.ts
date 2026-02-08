@@ -102,6 +102,12 @@ export interface ClientActivity {
   bids: ClientBid[];
 }
 
+export interface CycleVoteEntry {
+  clientId: number;
+  name: string;
+  voteCount: number;
+}
+
 // ============================================================================
 // FETCH FUNCTIONS
 // ============================================================================
@@ -132,6 +138,17 @@ async function fetchClientActivity(clientId?: number): Promise<ClientActivity> {
   const response = await fetch(`/api/clients/activity?${params}`);
   if (!response.ok) throw new Error('Failed to fetch activity');
   return response.json();
+}
+
+async function fetchCycleVotes(proposalIds: number[]): Promise<CycleVoteEntry[]> {
+  if (proposalIds.length === 0) return [];
+  const params = new URLSearchParams();
+  params.set('proposalIds', proposalIds.join(','));
+
+  const response = await fetch(`/api/clients/cycle-votes?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch cycle votes');
+  const json = await response.json();
+  return json.votes;
 }
 
 async function fetchRewardUpdates(type?: 'PROPOSAL' | 'AUCTION'): Promise<RewardUpdate[]> {
@@ -190,5 +207,17 @@ export function useRewardUpdates(type?: 'PROPOSAL' | 'AUCTION') {
     queryKey: ['clients', 'updates', type ?? 'all'],
     queryFn: () => fetchRewardUpdates(type),
     staleTime: 120000,
+  });
+}
+
+/**
+ * Fetch vote weight per client for a specific set of proposal IDs (current cycle)
+ */
+export function useCycleVotes(proposalIds: number[]) {
+  return useQuery({
+    queryKey: ['clients', 'cycle-votes', proposalIds],
+    queryFn: () => fetchCycleVotes(proposalIds),
+    staleTime: 60000,
+    enabled: proposalIds.length > 0,
   });
 }
