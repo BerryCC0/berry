@@ -63,21 +63,25 @@ export function VoterRow({
       onClick={() => onNavigate(`voter/${address}`)}
     >
       <div className={styles.header}>
-        <span className={styles.name}>{displayName}</span>
-        <span 
-          className={styles.support}
-          style={{ color: getSupportColor(support) }}
-        >
-          {supportLabel}
-        </span>
-        <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
-        <span className={styles.date}>{dateStr}</span>
-        {isFeedback && <span className={styles.badge}>{t('camp.vote.signal')}</span>}
-        {!isFeedback && clientId != null && clientId !== 0 && (
-          <span className={`${styles.clientBadge} ${isBerryOSClient(clientId) ? styles.berryBadge : ''}`}>
-            {getClientName(clientId)}
+        <div className={styles.headerLeft}>
+          <span className={styles.name}>{displayName}</span>
+          <span 
+            className={styles.support}
+            style={{ color: getSupportColor(support) }}
+          >
+            {supportLabel}
           </span>
-        )}
+          <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
+        </div>
+        <div className={styles.headerRight}>
+          <span className={styles.date}>{dateStr}</span>
+          {isFeedback && <span className={styles.badge}>{t('camp.vote.signal')}</span>}
+          {!isFeedback && clientId != null && clientId !== 0 && (
+            <span className={`${styles.clientBadge} ${isBerryOSClient(clientId) ? styles.berryBadge : ''}`}>
+              {getClientName(clientId)}
+            </span>
+          )}
+        </div>
       </div>
       {reason && (
         <MarkdownRenderer 

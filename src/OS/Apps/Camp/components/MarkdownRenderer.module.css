@@ -5,8 +5,8 @@
 
 .markdown {
   font-family: var(--berry-font-system);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.65;
   color: var(--berry-text-primary);
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -19,7 +19,7 @@
 
 /* Headings */
 .h1 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
   color: var(--berry-text-primary);
   margin: 24px 0 12px 0;
@@ -28,7 +28,7 @@
 }
 
 .h2 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: var(--berry-text-primary);
   margin: 20px 0 10px 0;
@@ -37,14 +37,14 @@
 }
 
 .h3 {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   color: var(--berry-text-primary);
   margin: 16px 0 8px 0;
 }
 
 .h4, .h5, .h6 {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
   color: var(--berry-text-primary);
   margin: 12px 0 6px 0;
@@ -89,12 +89,12 @@
 }
 
 .image {
-  max-width: 400px !important;
-  max-height: 250px !important;
+  max-width: 100% !important;
+  max-height: 400px !important;
   width: auto !important;
   height: auto !important;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--berry-border);
   background: var(--berry-bg-secondary);
   cursor: zoom-in;
@@ -108,11 +108,11 @@
 /* GIFs get larger allowance for better viewing */
 .gifImage {
   max-width: 100% !important;
-  max-height: 400px !important;
+  max-height: 500px !important;
   width: auto !important;
   height: auto !important;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--berry-border);
   background: var(--berry-bg-secondary);
   cursor: zoom-in;
@@ -134,12 +134,12 @@
 
 /* Fallback: target any images that might be rendered directly in markdown */
 .markdown :global(img) {
-  max-width: 400px !important;
-  max-height: 250px !important;
+  max-width: 100% !important;
+  max-height: 400px !important;
   width: auto !important;
   height: auto !important;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--berry-border);
 }
 
@@ -204,7 +204,7 @@
 /* Code */
 .inlineCode {
   font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size: 11px;
+  font-size: 12px;
   padding: 2px 6px;
   background: var(--berry-bg-tertiary);
   border: 1px solid var(--berry-border);
@@ -223,7 +223,7 @@
 
 .codeBlock {
   font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--berry-text-primary);
 }
@@ -237,7 +237,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .thead {

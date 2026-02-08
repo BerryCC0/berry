@@ -667,12 +667,15 @@
 
 .descriptionContent {
   font-family: var(--berry-font-system);
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.65;
   color: var(--berry-text-primary);
-  white-space: pre-wrap;
   word-break: break-word;
   overflow-y: auto;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  padding: 16px 20px;
 }
 
 @media (min-width: 768px) {

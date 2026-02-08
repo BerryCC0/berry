@@ -341,7 +341,7 @@ const probeConfig: AppConfig = {
     position: "top-right",
     width: 1100,
     height: 750,
-    minWidth: 600,
+    minWidth: 360,
     minHeight: 450,
     isResizable: true,
   },

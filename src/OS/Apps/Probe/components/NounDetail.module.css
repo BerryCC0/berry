@@ -16,6 +16,8 @@
   /* Dark text for readability on Noun bg colors */
   color: #1a1a1a;
   position: relative;
+  container-type: inline-size;
+  container-name: noun-detail;
 }
 
 /* ── Top navigation bar ── */
@@ -569,8 +571,8 @@
   image-rendering: crisp-edges;
 }
 
-/* ── Mobile: stack image on top, info below ── */
-@media (max-width: 600px) {
+/* ── Compact: stack image on top, info below when container is narrow ── */
+@container noun-detail (max-width: 600px) {
   .content {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
@@ -579,8 +581,9 @@
 
   .imageSection {
     order: -1;
-    height: 55vh;
-    min-height: 240px;
+    height: 80cqw;
+    min-height: 280px;
+    max-height: 60vh;
     align-items: center;
     justify-content: center;
   }

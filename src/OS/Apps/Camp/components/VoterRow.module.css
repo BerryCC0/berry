@@ -21,9 +21,25 @@
 
 .header {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.headerLeft {
+  display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  min-width: 0;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .name {
@@ -49,7 +65,6 @@
   font-family: var(--berry-font-system);
   font-size: 10px;
   color: var(--berry-text-muted);
-  margin-left: auto;
 }
 
 .badge {
