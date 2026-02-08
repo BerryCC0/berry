@@ -25,14 +25,27 @@ import { ClientDetail } from './components/ClientDetail';
 import styles from './Clients.module.css';
 
 /**
+ * Resolve the best image for a client: favicon first, NFT image fallback.
+ */
+function getClientImage(
+  clientId: number | undefined,
+  clientMetadata: Map<number, { favicon?: string }> | undefined,
+  clients: Array<{ clientId: number; nftImage?: string | null }> | undefined,
+): string | undefined {
+  if (clientId == null) return undefined;
+  const favicon = clientMetadata?.get(clientId)?.favicon;
+  if (favicon) return favicon;
+  const client = clients?.find((c) => c.clientId === clientId);
+  return client?.nftImage ?? undefined;
+}
+
+/**
  * Custom XAxis tick that renders a favicon/NFT image alongside the client name.
  */
-function ClientTick({ x, y, payload, clientMetadata, chartData }: any) {
+function ClientTick({ x, y, payload, clientMetadata, chartData, clients }: any) {
   const name = payload?.value ?? '';
-  // Find the clientId for this name from the chart data
   const entry = chartData?.find((d: any) => d.name === name);
-  const meta = entry?.clientId != null ? clientMetadata?.get(entry.clientId) : undefined;
-  const imgSrc = meta?.nftImage || meta?.favicon;
+  const imgSrc = getClientImage(entry?.clientId, clientMetadata, clients);
 
   return (
     <g transform={`translate(${x},${y})`}>
@@ -374,7 +387,7 @@ export function Clients({ windowId }: AppComponentProps) {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={proposalsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={proposalsByClient} />} interval={0} height={50} />
+                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={proposalsByClient} clients={clients} />} interval={0} height={50} />
                           <YAxis tick={{ fontSize: 10 }} width={30} allowDecimals={false} />
                           <Tooltip />
                           <Bar dataKey="count" name="Proposals" radius={[3, 3, 0, 0]}>
@@ -396,7 +409,7 @@ export function Clients({ windowId }: AppComponentProps) {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={votesByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={votesByClient} />} interval={0} height={50} />
+                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={votesByClient} clients={clients} />} interval={0} height={50} />
                           <YAxis tick={{ fontSize: 10 }} width={40} />
                           <Tooltip />
                           <Bar dataKey="count" name="Votes" radius={[3, 3, 0, 0]}>
@@ -418,7 +431,7 @@ export function Clients({ windowId }: AppComponentProps) {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={cycleRewardsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleRewardsByClient} />} interval={0} height={50} />
+                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleRewardsByClient} clients={clients} />} interval={0} height={50} />
                           <YAxis tick={{ fontSize: 10 }} width={40} />
                           <Tooltip content={<EthTooltip />} />
                           <Bar dataKey="reward" name="Reward" radius={[3, 3, 0, 0]}>
@@ -606,8 +619,7 @@ export function Clients({ windowId }: AppComponentProps) {
                         <td>
                           <div className={styles.clientNameCell}>
                             {(() => {
-                              const meta = clientMetadata?.get(client.clientId);
-                              const imgSrc = meta?.nftImage || meta?.favicon;
+                              const imgSrc = getClientImage(client.clientId, clientMetadata, clients);
                               if (imgSrc) {
                                 return (
                                   <img

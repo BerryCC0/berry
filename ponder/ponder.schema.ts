@@ -488,6 +488,7 @@ export const clients = onchainTable("clients", (t) => ({
   approved: t.boolean().notNull().default(false),
   totalRewarded: t.bigint().notNull().default(0n),
   totalWithdrawn: t.bigint().notNull().default(0n),
+  nftImage: t.text(),
   blockNumber: t.bigint().notNull(),
   blockTimestamp: t.bigint().notNull(),
 }));

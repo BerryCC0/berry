@@ -1,6 +1,7 @@
 /**
  * Client Metadata Hook
- * Resolves favicons, website meta, and NFT images for each client.
+ * Resolves favicons and website meta for each client.
+ * NFT images come from Ponder (ClientData.nftImage) -- not fetched here.
  */
 
 'use client';
@@ -17,7 +18,6 @@ export interface ClientMetadataEntry {
   favicon?: string;
   title?: string;
   description?: string;
-  nftImage?: string;
 }
 
 export type ClientMetadataMap = Map<number, ClientMetadataEntry>;
@@ -27,15 +27,9 @@ export type ClientMetadataMap = Map<number, ClientMetadataEntry>;
 // ============================================================================
 
 async function fetchMetadataForClient(
-  clientId: number,
-  url: string | null,
+  url: string,
 ): Promise<ClientMetadataEntry | null> {
-  const params = new URLSearchParams();
-  if (url) params.set('url', url);
-  params.set('tokenId', String(clientId));
-
-  if (!params.toString()) return null;
-
+  const params = new URLSearchParams({ url });
   const resp = await fetch(`/api/clients/metadata?${params.toString()}`);
   if (!resp.ok) return null;
   return resp.json();
@@ -45,11 +39,17 @@ async function fetchAllClientMetadata(
   clients: ClientData[],
 ): Promise<ClientMetadataMap> {
   const entries = await Promise.allSettled(
-    clients.map(async (client) => {
-      const url = getClientUrl(client.clientId, client.description);
-      const metadata = await fetchMetadataForClient(client.clientId, url);
-      return [client.clientId, metadata] as const;
-    }),
+    clients
+      .map((client) => {
+        const url = getClientUrl(client.clientId, client.description);
+        if (!url) return null;
+        return { clientId: client.clientId, url };
+      })
+      .filter(Boolean)
+      .map(async (item) => {
+        const metadata = await fetchMetadataForClient(item!.url);
+        return [item!.clientId, metadata] as const;
+      }),
   );
 
   const map = new Map<number, ClientMetadataEntry>();
@@ -66,8 +66,9 @@ async function fetchAllClientMetadata(
 // ============================================================================
 
 /**
- * Fetches metadata (favicon, title, description, NFT image) for all clients.
- * Results are cached for 1 hour since favicons/NFT images rarely change.
+ * Fetches website metadata (favicon, title, description) for all clients.
+ * Results are cached for 1 hour since favicons rarely change.
+ * NFT images are NOT fetched here -- they come from ClientData.nftImage (Ponder).
  */
 export function useClientMetadata(clients: ClientData[] | undefined) {
   return useQuery<ClientMetadataMap>({

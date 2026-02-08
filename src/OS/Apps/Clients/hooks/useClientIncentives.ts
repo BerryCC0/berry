@@ -18,6 +18,7 @@ export interface ClientData {
   approved: boolean;
   totalRewarded: string; // bigint as string (wei)
   totalWithdrawn: string;
+  nftImage: string | null; // on-chain NFT image (SVG data URI), indexed by Ponder
   blockTimestamp: string;
   voteCount: number;
   proposalCount: number;

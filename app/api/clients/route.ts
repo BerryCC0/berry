@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         SELECT client_id, name, description, approved,
                total_rewarded::text as total_rewarded,
                total_withdrawn::text as total_withdrawn,
+               nft_image,
                block_timestamp::text as block_timestamp
         FROM ponder_live.clients
         ORDER BY client_id ASC
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
         approved: c.approved,
         totalRewarded: c.total_rewarded ?? '0',
         totalWithdrawn: c.total_withdrawn ?? '0',
+        nftImage: c.nft_image ?? null,
         blockTimestamp: c.block_timestamp,
         voteCount: voteMap.get(clientId) ?? 0,
         proposalCount: proposalMap.get(clientId) ?? 0,

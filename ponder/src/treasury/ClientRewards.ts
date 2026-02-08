@@ -8,10 +8,52 @@ import {
 } from "ponder:schema";
 
 // =============================================================================
+// HELPERS
+// =============================================================================
+
+/**
+ * Fetch and parse the NFT image from tokenURI for a client.
+ * tokenURI returns a data URI (data:application/json;base64,...) containing
+ * JSON metadata with an `image` field (SVG data URI).
+ */
+async function fetchNftImage(context: any, clientId: bigint): Promise<string | null> {
+  try {
+    const uri = await context.client.readContract({
+      abi: context.contracts.ClientRewards.abi,
+      address: context.contracts.ClientRewards.address,
+      functionName: "tokenURI",
+      args: [clientId],
+    });
+
+    if (typeof uri === "string") {
+      if (uri.startsWith("data:application/json;base64,")) {
+        const json = Buffer.from(
+          uri.slice("data:application/json;base64,".length),
+          "base64"
+        ).toString("utf-8");
+        const metadata = JSON.parse(json);
+        return metadata.image ?? null;
+      }
+      if (uri.startsWith("data:application/json,")) {
+        const metadata = JSON.parse(
+          decodeURIComponent(uri.slice("data:application/json,".length))
+        );
+        return metadata.image ?? null;
+      }
+    }
+  } catch {
+    // tokenURI may not exist for very early clients — ignore
+  }
+  return null;
+}
+
+// =============================================================================
 // CLIENT MANAGEMENT
 // =============================================================================
 
 ponder.on("ClientRewards:ClientRegistered", async ({ event, context }) => {
+  const nftImage = await fetchNftImage(context, event.args.clientId);
+
   await context.db.insert(clients).values({
     clientId: Number(event.args.clientId),
     name: event.args.name,
@@ -19,12 +61,15 @@ ponder.on("ClientRewards:ClientRegistered", async ({ event, context }) => {
     approved: false,
     totalRewarded: 0n,
     totalWithdrawn: 0n,
+    nftImage,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
   }).onConflictDoNothing();
 });
 
 ponder.on("ClientRewards:ClientUpdated", async ({ event, context }) => {
+  const nftImage = await fetchNftImage(context, event.args.clientId);
+
   await context.db.insert(clients).values({
     clientId: Number(event.args.clientId),
     name: event.args.name,
@@ -32,11 +77,13 @@ ponder.on("ClientRewards:ClientUpdated", async ({ event, context }) => {
     approved: false,
     totalRewarded: 0n,
     totalWithdrawn: 0n,
+    nftImage,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
   }).onConflictDoUpdate({
     name: event.args.name,
     description: event.args.description,
+    nftImage,
   });
 });
 
