@@ -5,7 +5,7 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import type { ClientData, RewardUpdate, CycleVoteEntry } from './useClientIncentives';
+import type { ClientData, RewardUpdate, CycleVoteEntry, CycleProposalVoteEntry } from './useClientIncentives';
 import type { Proposal } from '@/OS/Apps/Camp/types';
 import { weiToEth, shortDate } from '../utils';
 import { CHART_COLORS } from '../constants';
@@ -46,6 +46,15 @@ export interface RevenueDataPoint {
   rewardPerProposal: number;
 }
 
+export interface ProposalBreakdownEntry {
+  clientId: number;
+  name: string;
+  voteCount: number;
+  estimatedVoteReward: number;
+  isProposer: boolean;
+  estimatedProposalReward: number;
+}
+
 // ============================================================================
 // Hook
 // ============================================================================
@@ -56,6 +65,9 @@ export function useChartData(
   proposals: Proposal[] | undefined,
   nextProposalIdToReward: bigint | number | undefined | null,
   cycleVotes?: CycleVoteEntry[],
+  votesByProposal?: CycleProposalVoteEntry[],
+  pendingRevenue?: unknown,
+  proposalRewardParams?: { proposalRewardBps: number | bigint; votingRewardBps: number | bigint; proposalEligibilityQuorumBps: number | bigint } | null,
 ) {
   // Computed totals
   const totals = useMemo<Totals>(() => {
@@ -224,6 +236,75 @@ export function useChartData(
     return { eligible, withClient, total: currentPeriodProposals.length };
   }, [currentPeriodProposals, getEligibility]);
 
+  // Per-proposal client breakdown with estimated rewards
+  const proposalBreakdowns = useMemo<Map<number, ProposalBreakdownEntry[]>>(() => {
+    const map = new Map<number, ProposalBreakdownEntry[]>();
+    if (!votesByProposal?.length || !pendingRevenue || !proposalRewardParams) return map;
+
+    // Compute reward pools from on-chain params
+    const revenueWei = (pendingRevenue as [bigint, bigint])[0];
+    const revenueEth = weiToEth(revenueWei.toString());
+    const proposalPool = revenueEth * Number(proposalRewardParams.proposalRewardBps) / 10000;
+    const votePool = revenueEth * Number(proposalRewardParams.votingRewardBps) / 10000;
+
+    // Count eligible proposals and total eligible votes
+    const eligibleProps = currentPeriodProposals.filter((p) => getEligibility(p) === 'eligible');
+    const eligiblePropIds = new Set(eligibleProps.map((p) => Number(p.id)));
+    const rewardPerProposal = eligibleProps.length > 0 ? proposalPool / eligibleProps.length : 0;
+
+    // Total eligible votes across all eligible proposals
+    const totalEligibleVotes = votesByProposal
+      .filter((v) => eligiblePropIds.has(v.proposalId))
+      .reduce((sum, v) => sum + v.voteCount, 0);
+    const rewardPerVote = totalEligibleVotes > 0 ? votePool / totalEligibleVotes : 0;
+
+    // Build per-proposal breakdown
+    for (const propId of eligiblePropIds) {
+      const proposal = eligibleProps.find((p) => Number(p.id) === propId);
+      if (!proposal) continue;
+
+      const propVotes = votesByProposal.filter((v) => v.proposalId === propId);
+      const entries: ProposalBreakdownEntry[] = [];
+
+      // Track which client IDs we've seen (for merging proposer + voter)
+      const clientMap = new Map<number, ProposalBreakdownEntry>();
+
+      // Add voting clients
+      for (const v of propVotes) {
+        clientMap.set(v.clientId, {
+          clientId: v.clientId,
+          name: getClientName(v.clientId) || v.name || `Client ${v.clientId}`,
+          voteCount: v.voteCount,
+          estimatedVoteReward: v.voteCount * rewardPerVote,
+          isProposer: v.clientId === proposal.clientId,
+          estimatedProposalReward: v.clientId === proposal.clientId ? rewardPerProposal : 0,
+        });
+      }
+
+      // Ensure the proposing client is included even if they didn't vote
+      if (proposal.clientId != null && !clientMap.has(proposal.clientId)) {
+        clientMap.set(proposal.clientId, {
+          clientId: proposal.clientId,
+          name: getClientName(proposal.clientId) || `Client ${proposal.clientId}`,
+          voteCount: 0,
+          estimatedVoteReward: 0,
+          isProposer: true,
+          estimatedProposalReward: rewardPerProposal,
+        });
+      }
+
+      // Sort: proposer first, then by vote count desc
+      const sorted = Array.from(clientMap.values()).sort((a, b) => {
+        if (a.isProposer !== b.isProposer) return a.isProposer ? -1 : 1;
+        return b.voteCount - a.voteCount;
+      });
+
+      map.set(propId, sorted);
+    }
+
+    return map;
+  }, [votesByProposal, pendingRevenue, proposalRewardParams, currentPeriodProposals, getEligibility]);
+
   return {
     totals,
     getSortedClients,
@@ -236,5 +317,6 @@ export function useChartData(
     rewardedProposals,
     getEligibility,
     eligibleCount,
+    proposalBreakdowns,
   };
 }

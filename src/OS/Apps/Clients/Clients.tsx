@@ -54,7 +54,7 @@ export function Clients({ windowId }: AppComponentProps) {
   }, [proposals, nextProposalIdToReward]);
 
   // Fetch vote weight per client for current cycle eligible proposals
-  const { data: cycleVotes } = useCycleVotes(eligibleProposalIds);
+  const { data: cycleVotesData } = useCycleVotes(eligibleProposalIds);
 
   // Computed chart & table data
   const {
@@ -67,7 +67,12 @@ export function Clients({ windowId }: AppComponentProps) {
     currentPeriodProposals,
     getEligibility,
     eligibleCount,
-  } = useChartData(clients, rewardUpdates, proposals, nextProposalIdToReward, cycleVotes);
+    proposalBreakdowns,
+  } = useChartData(
+    clients, rewardUpdates, proposals, nextProposalIdToReward,
+    cycleVotesData?.votes, cycleVotesData?.votesByProposal,
+    pendingRevenue, proposalRewardParams,
+  );
 
   // UI state
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
@@ -431,6 +436,34 @@ export function Clients({ windowId }: AppComponentProps) {
                       <span className={styles.proposalIneligible}>Ineligible</span>
                     )}
                   </div>
+                  {eligibility === 'eligible' && proposalBreakdowns.has(Number(proposal.id)) && (
+                    <div className={styles.proposalBreakdown}>
+                      {proposalBreakdowns.get(Number(proposal.id))!.map((entry) => {
+                        const totalReward = entry.estimatedProposalReward + entry.estimatedVoteReward;
+                        return (
+                          <div key={entry.clientId} className={styles.breakdownEntry}>
+                            <span
+                              className={styles.breakdownClient}
+                              style={{ color: CHART_COLORS[entry.clientId % CHART_COLORS.length] }}
+                            >
+                              {entry.name}
+                            </span>
+                            {entry.isProposer && (
+                              <span className={styles.breakdownTag}>proposer</span>
+                            )}
+                            {entry.voteCount > 0 && (
+                              <span className={styles.breakdownVotes}>
+                                {entry.voteCount.toLocaleString()} votes
+                              </span>
+                            )}
+                            <span className={styles.breakdownReward}>
+                              ~{formatEth(totalReward)} ETH
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}

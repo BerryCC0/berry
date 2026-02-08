@@ -108,6 +108,18 @@ export interface CycleVoteEntry {
   voteCount: number;
 }
 
+export interface CycleProposalVoteEntry {
+  proposalId: number;
+  clientId: number;
+  name: string;
+  voteCount: number;
+}
+
+export interface CycleVotesResponse {
+  votes: CycleVoteEntry[];
+  votesByProposal: CycleProposalVoteEntry[];
+}
+
 // ============================================================================
 // FETCH FUNCTIONS
 // ============================================================================
@@ -140,15 +152,15 @@ async function fetchClientActivity(clientId?: number): Promise<ClientActivity> {
   return response.json();
 }
 
-async function fetchCycleVotes(proposalIds: number[]): Promise<CycleVoteEntry[]> {
-  if (proposalIds.length === 0) return [];
+async function fetchCycleVotes(proposalIds: number[]): Promise<CycleVotesResponse> {
+  if (proposalIds.length === 0) return { votes: [], votesByProposal: [] };
   const params = new URLSearchParams();
   params.set('proposalIds', proposalIds.join(','));
 
   const response = await fetch(`/api/clients/cycle-votes?${params}`);
   if (!response.ok) throw new Error('Failed to fetch cycle votes');
   const json = await response.json();
-  return json.votes;
+  return { votes: json.votes, votesByProposal: json.votesByProposal };
 }
 
 async function fetchRewardUpdates(type?: 'PROPOSAL' | 'AUCTION'): Promise<RewardUpdate[]> {
@@ -212,9 +224,10 @@ export function useRewardUpdates(type?: 'PROPOSAL' | 'AUCTION') {
 
 /**
  * Fetch vote weight per client for a specific set of proposal IDs (current cycle)
+ * Returns both aggregate and per-proposal breakdowns
  */
 export function useCycleVotes(proposalIds: number[]) {
-  return useQuery({
+  return useQuery<CycleVotesResponse>({
     queryKey: ['clients', 'cycle-votes', proposalIds],
     queryFn: () => fetchCycleVotes(proposalIds),
     staleTime: 60000,
