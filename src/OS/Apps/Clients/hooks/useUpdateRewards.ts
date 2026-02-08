@@ -60,6 +60,9 @@ export function useUpdateAuctionRewards() {
 
   const canExecute = !!simulateData?.request && !simulateError;
 
+  // Extract short revert reason from simulation error
+  const revertReason = simulateError?.message?.match(/reverted with the following reason:\n(.+)\n/)?.[1] ?? null;
+
   const execute = () => {
     if (simulateData?.request) {
       writeContract(simulateData.request);
@@ -73,6 +76,7 @@ export function useUpdateAuctionRewards() {
     isSuccess,
     canExecute,
     isSimulating,
+    revertReason,
     error: writeError || simulateError,
     lastNounId,
     hash,
@@ -144,6 +148,9 @@ export function useUpdateProposalRewards({ currentPeriodProposals, getEligibilit
 
   const canExecute = !!simulateData?.request && !simulateError;
 
+  // Extract short revert reason from simulation error
+  const revertReason = simulateError?.message?.match(/reverted with the following reason:\n(.+)\n/)?.[1] ?? null;
+
   const execute = () => {
     if (simulateData?.request) {
       writeContract(simulateData.request);
@@ -157,6 +164,7 @@ export function useUpdateProposalRewards({ currentPeriodProposals, getEligibilit
     isSuccess,
     canExecute,
     isSimulating,
+    revertReason,
     error: writeError || simulateError,
     lastProposalId,
     hash,

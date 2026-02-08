@@ -61,6 +61,7 @@ export function ProposalsTab({
     isConfirming: isProposalConfirming,
     isSuccess: isProposalSuccess,
     canExecute: canExecuteProposal,
+    revertReason: proposalRevertReason,
     lastProposalId,
   } = useUpdateProposalRewards({ currentPeriodProposals, getEligibility });
 
@@ -178,7 +179,7 @@ export function ProposalsTab({
             isProposalSuccess ? 'Proposal rewards updated!'
               : isProposalConfirming ? 'Confirming transaction…'
               : isProposalPending ? 'Waiting for wallet…'
-              : !canExecuteProposal ? 'Conditions not met for reward distribution'
+              : !canExecuteProposal ? (proposalRevertReason || 'Conditions not met for reward distribution')
               : lastProposalId != null ? `Update through Prop #${lastProposalId}`
               : 'Update Proposal Rewards'
           }

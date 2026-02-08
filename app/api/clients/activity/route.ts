@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const clientId = searchParams.get('clientId');
   const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200);
+  const voteLimit = Math.min(parseInt(searchParams.get('voteLimit') || String(limit)), 5000);
 
   try {
     const sql = ponderSql();
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
             LEFT JOIN ponder_live.proposals p ON v.proposal_id = p.id
             WHERE v.client_id = ${clientFilter}
             ORDER BY v.block_timestamp DESC
-            LIMIT ${limit}
+            LIMIT ${voteLimit}
           `
         : sql`
             SELECT v.id, v.voter, v.proposal_id, v.support, v.votes,
@@ -39,13 +40,15 @@ export async function GET(request: NextRequest) {
             INNER JOIN ponder_live.clients c ON v.client_id = c.client_id
             LEFT JOIN ponder_live.proposals p ON v.proposal_id = p.id
             ORDER BY v.block_timestamp DESC
-            LIMIT ${limit}
+            LIMIT ${voteLimit}
           `,
       // Proposals submitted via clients
       clientFilter
         ? sql`
             SELECT p.id, p.title, p.proposer, p.status, p.client_id,
                    p.created_timestamp::text as created_timestamp,
+                   p.for_votes, p.against_votes, p.abstain_votes,
+                   p.quorum_votes::text as quorum_votes,
                    c.name as client_name
             FROM ponder_live.proposals p
             LEFT JOIN ponder_live.clients c ON p.client_id = c.client_id
@@ -56,6 +59,8 @@ export async function GET(request: NextRequest) {
         : sql`
             SELECT p.id, p.title, p.proposer, p.status, p.client_id,
                    p.created_timestamp::text as created_timestamp,
+                   p.for_votes, p.against_votes, p.abstain_votes,
+                   p.quorum_votes::text as quorum_votes,
                    c.name as client_name
             FROM ponder_live.proposals p
             INNER JOIN ponder_live.clients c ON p.client_id = c.client_id

@@ -70,6 +70,10 @@ export interface ClientProposal {
   client_id: number;
   created_timestamp: string;
   client_name: string;
+  for_votes: number;
+  against_votes: number;
+  abstain_votes: number;
+  quorum_votes: string;
 }
 
 export interface ClientWithdrawal {

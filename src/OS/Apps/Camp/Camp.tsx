@@ -237,6 +237,7 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
             src="/icons/camp.svg" 
             alt="Camp" 
             className={styles.logo}
+            onClick={() => navigate({ view: 'activity' })}
           />
           
           {/* Search bar - opens command palette */}

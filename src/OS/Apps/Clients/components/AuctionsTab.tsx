@@ -34,7 +34,7 @@ export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendin
     isSuccess: isAuctionSuccess,
     canExecute: canExecuteAuction,
     isSimulating: isAuctionSimulating,
-    error: auctionError,
+    revertReason: auctionRevertReason,
     lastNounId,
   } = useUpdateAuctionRewards();
   return (
@@ -162,7 +162,7 @@ export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendin
             isAuctionSuccess ? 'Auction rewards updated!'
               : isAuctionConfirming ? 'Confirming transaction…'
               : isAuctionPending ? 'Waiting for wallet…'
-              : !canExecuteAuction ? 'Not enough auctions since last update'
+              : !canExecuteAuction ? (auctionRevertReason || 'Not enough auctions since last update')
               : lastNounId != null ? `Update through Noun #${lastNounId}`
               : 'Update Auction Rewards'
           }

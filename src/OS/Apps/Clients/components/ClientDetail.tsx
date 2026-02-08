@@ -18,6 +18,7 @@ import { CLIENT_REWARDS_ADDRESS } from '../constants';
 import type { ClientData, RewardUpdate } from '../types';
 import { weiToEth, formatEth, timeAgo, formatDate } from '../utils';
 import { EthTooltip } from './ChartTooltips';
+import { useENSBatch } from '@/OS/hooks';
 import styles from '../Clients.module.css';
 
 interface ClientDetailProps {
@@ -113,6 +114,7 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
   // UI state
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [activityTab, setActivityTab] = useState<'votes' | 'proposals' | 'bids' | 'withdrawals' | 'rewards'>('votes');
+  const [voteDisplayLimit, setVoteDisplayLimit] = useState(50);
 
   // Owner actions state
   const [editingMeta, setEditingMeta] = useState(false);
@@ -139,6 +141,54 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
     }));
   }, [rewards]);
 
+  // Vote summary stats
+  const voteSummary = useMemo(() => {
+    if (!activity?.votes?.length) return null;
+    const votes = activity.votes;
+    let forVotes = 0, againstVotes = 0, abstainVotes = 0;
+    let totalWeight = 0;
+    const uniqueVoters = new Set<string>();
+    const uniqueProps = new Set<number>();
+    for (const v of votes) {
+      if (v.support === 1) forVotes++;
+      else if (v.support === 0) againstVotes++;
+      else abstainVotes++;
+      totalWeight += Number(v.votes || 0);
+      uniqueVoters.add(v.voter?.toLowerCase());
+      uniqueProps.add(v.proposal_id);
+    }
+    return { forVotes, againstVotes, abstainVotes, totalWeight, uniqueVoters: uniqueVoters.size, uniqueProps: uniqueProps.size, total: votes.length };
+  }, [activity?.votes]);
+
+  // Extract unique addresses from visible votes and proposals for ENS resolution
+  const visibleAddresses = useMemo(() => {
+    const seen = new Set<string>();
+    const addrs: string[] = [];
+    // Voter addresses from visible votes
+    if (activity?.votes?.length) {
+      for (const v of activity.votes.slice(0, voteDisplayLimit)) {
+        const addr = v.voter?.toLowerCase();
+        if (addr && !seen.has(addr)) {
+          seen.add(addr);
+          addrs.push(v.voter);
+        }
+      }
+    }
+    // Proposer addresses from proposals
+    if (activity?.proposals?.length) {
+      for (const p of activity.proposals) {
+        const addr = p.proposer?.toLowerCase();
+        if (addr && !seen.has(addr)) {
+          seen.add(addr);
+          addrs.push(p.proposer);
+        }
+      }
+    }
+    return addrs;
+  }, [activity?.votes, activity?.proposals, voteDisplayLimit]);
+
+  const ensMap = useENSBatch(visibleAddresses);
+
   return (
     <div className={styles.clients}>
       <div className={styles.detailPanel}>
@@ -163,6 +213,32 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
             <span className={styles.detailSubtitle}>
               ID: {client.clientId} · Registered {formatDate(client.blockTimestamp)}
             </span>
+          </div>
+          <div className={styles.headerStats}>
+            <div className={styles.headerStat}>
+              <span className={styles.headerStatLabel}>Rewarded</span>
+              <span className={styles.headerStatValue}>{formatEth(weiToEth(client.totalRewarded))}</span>
+            </div>
+            <div className={styles.headerStat}>
+              <span className={styles.headerStatLabel}>Pending</span>
+              <span className={styles.headerStatValue}>{formatEth(balance)}</span>
+            </div>
+            <div className={styles.headerStat}>
+              <span className={styles.headerStatLabel}>Votes</span>
+              <span className={styles.headerStatValue}>{client.voteCount.toLocaleString()}</span>
+            </div>
+            <div className={styles.headerStat}>
+              <span className={styles.headerStatLabel}>Props</span>
+              <span className={styles.headerStatValue}>{client.proposalCount}</span>
+            </div>
+            <div className={styles.headerStat}>
+              <span className={styles.headerStatLabel}>Bids</span>
+              <span className={styles.headerStatValue}>{client.bidCount.toLocaleString()}</span>
+            </div>
+            <div className={styles.headerStat}>
+              <span className={styles.headerStatLabel}>Wins</span>
+              <span className={styles.headerStatValue}>{client.auctionCount}</span>
+            </div>
           </div>
           {isOwner && (
             <button
@@ -230,47 +306,6 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
           </button>
           {overviewOpen && (
             <div className={styles.collapseContent}>
-              <div className={styles.detailStatsGrid}>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Total Rewarded</div>
-                  <div className={styles.statValue}>{formatEth(weiToEth(client.totalRewarded))} ETH</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Withdrawn</div>
-                  <div className={styles.statValue}>{formatEth(weiToEth(client.totalWithdrawn))} ETH</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Pending</div>
-                  <div className={styles.statValue}>{formatEth(balance)} ETH</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Status</div>
-                  <div className={styles.statValue}>{client.approved ? 'Approved' : 'Pending'}</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Votes</div>
-                  <div className={styles.statValue}>{client.voteCount.toLocaleString()}</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Proposals</div>
-                  <div className={styles.statValue}>{client.proposalCount}</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Bids</div>
-                  <div className={styles.statValue}>{client.bidCount.toLocaleString()}</div>
-                  {client.bidCount > 0 && (
-                    <div className={styles.statSub}>{formatEth(weiToEth(client.bidVolume))} ETH vol</div>
-                  )}
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Auctions Won</div>
-                  <div className={styles.statValue}>{client.auctionCount}</div>
-                  {client.auctionCount > 0 && (
-                    <div className={styles.statSub}>{formatEth(weiToEth(client.auctionVolume))} ETH vol</div>
-                  )}
-                </div>
-              </div>
-
               {rewardTimeline.length > 0 && (
                 <div className={styles.detailSection}>
                   <div className={styles.chartCardWide}>
@@ -342,19 +377,83 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
               <div className={styles.activityList}>
                 {activityTab === 'votes' && (
                   <>
-                    {activity?.votes?.slice(0, 30).map((v: any) => (
-                      <div key={v.id} className={styles.activityItem}>
-                        <div className={`${styles.activityIcon} ${styles.activityIconVote}`}>
-                          {v.support === 1 ? '\u2713' : v.support === 0 ? '\u2717' : '\u2014'}
+                    {activity?.votes?.length ? (
+                      <>
+                        {voteSummary && (
+                          <div className={styles.votesSummary}>
+                            <span>{voteSummary.uniqueVoters} voter{voteSummary.uniqueVoters !== 1 ? 's' : ''}</span>
+                            <span>{voteSummary.uniqueProps} proposal{voteSummary.uniqueProps !== 1 ? 's' : ''}</span>
+                            <span>{voteSummary.totalWeight.toLocaleString()} total votes</span>
+                            <span style={{ marginLeft: 'auto' }}>
+                              {voteSummary.forVotes} for · {voteSummary.againstVotes} against · {voteSummary.abstainVotes} abstain
+                            </span>
+                          </div>
+                        )}
+                        <div className={styles.votesTableWrap}>
+                          <table className={styles.votesTable}>
+                            <thead>
+                              <tr>
+                                <th>Proposal</th>
+                                <th>Voter</th>
+                                <th>Vote</th>
+                                <th style={{ textAlign: 'right' }}>Weight</th>
+                                <th style={{ textAlign: 'right' }}>When</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {activity.votes.slice(0, voteDisplayLimit).map((v: any) => (
+                                <tr key={v.id}>
+                                  <td>
+                                    <span className={styles.proposalLink} title={v.proposal_title || `Prop ${v.proposal_id}`}>
+                                      {v.proposal_id}{v.proposal_title ? `: ${v.proposal_title}` : ''}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <span className={styles.voterAddress} title={v.voter}>
+                                      {ensMap.get(v.voter)?.displayName || ensMap.get(v.voter?.toLowerCase())?.displayName || `${v.voter?.slice(0, 6)}…${v.voter?.slice(-4)}`}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <span className={`${styles.voteSupport} ${
+                                      v.support === 1 ? styles.voteSupportFor
+                                        : v.support === 0 ? styles.voteSupportAgainst
+                                        : styles.voteSupportAbstain
+                                    }`}>
+                                      {v.support === 1 ? 'For' : v.support === 0 ? 'Against' : 'Abstain'}
+                                    </span>
+                                  </td>
+                                  <td className={styles.voteWeight}>{Number(v.votes).toLocaleString()}</td>
+                                  <td style={{ textAlign: 'right' }}>
+                                    <span className={styles.activityTime}>{timeAgo(v.block_timestamp)}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                        <span className={styles.activityText}>
-                          Voted on Prop {v.proposal_id}
-                          {v.proposal_title ? `: ${v.proposal_title}` : ''}
-                        </span>
-                        <span className={styles.activityTime}>{timeAgo(v.block_timestamp)}</span>
-                      </div>
-                    ))}
-                    {!activity?.votes?.length && (
+                        {activity.votes.length > voteDisplayLimit && (
+                          <div className={styles.loadMoreRow}>
+                            <button
+                              className={styles.loadMoreButton}
+                              onClick={() => setVoteDisplayLimit((prev) => Math.min(prev + 100, activity.votes.length))}
+                            >
+                              Show more ({Math.min(100, activity.votes.length - voteDisplayLimit)} more of {activity.votes.length - voteDisplayLimit} remaining)
+                            </button>
+                            {activity.votes.length - voteDisplayLimit > 100 && (
+                              <>
+                                {' '}
+                                <button
+                                  className={styles.loadMoreButton}
+                                  onClick={() => setVoteDisplayLimit(activity.votes.length)}
+                                >
+                                  Show all
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    ) : (
                       <div className={styles.emptyState}><div className={styles.emptyText}>No votes</div></div>
                     )}
                   </>
@@ -362,16 +461,83 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
 
                 {activityTab === 'proposals' && (
                   <>
-                    {activity?.proposals?.slice(0, 20).map((p: any) => (
-                      <div key={p.id} className={styles.activityItem}>
-                        <div className={`${styles.activityIcon} ${styles.activityIconProposal}`}>P</div>
-                        <span className={styles.activityText}>
-                          Prop {p.id}: {p.title || 'Untitled'}
-                        </span>
-                        <span className={styles.activityTime}>{timeAgo(p.created_timestamp)}</span>
-                      </div>
-                    ))}
-                    {!activity?.proposals?.length && (
+                    {activity?.proposals?.length ? activity.proposals.map((p: any) => {
+                      const forVotes = Number(p.for_votes || 0);
+                      const againstVotes = Number(p.against_votes || 0);
+                      const abstainVotes = Number(p.abstain_votes || 0);
+                      const quorum = Number(p.quorum_votes || 0) || 1;
+                      const totalVotes = forVotes + againstVotes + abstainVotes;
+                      const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status);
+                      const isPending = p.status === 'PENDING';
+                      const isUpdatable = p.status === 'UPDATABLE';
+                      const isDefeated = p.status === 'DEFEATED';
+                      const isExecuted = p.status === 'EXECUTED';
+                      const isSucceeded = p.status === 'SUCCEEDED';
+                      const isQueued = p.status === 'QUEUED';
+                      const isCancelled = p.status === 'CANCELLED';
+                      const isVetoed = p.status === 'VETOED';
+
+                      const statusClass = isActive ? styles.proposalStatusActive
+                        : isPending ? styles.proposalStatusUpdatable
+                        : isUpdatable ? styles.proposalStatusUpdatable
+                        : isDefeated || isCancelled || isVetoed ? styles.proposalStatusDefeated
+                        : isExecuted || isSucceeded ? styles.proposalStatusExecuted
+                        : isQueued ? styles.proposalStatusQueued
+                        : '';
+
+                      const statusLabel = isActive ? 'Voting'
+                        : p.status === 'OBJECTION_PERIOD' ? 'Objection'
+                        : isPending ? 'Pending'
+                        : isUpdatable ? 'Updatable'
+                        : isDefeated ? 'Defeated'
+                        : isExecuted ? 'Executed'
+                        : isSucceeded ? 'Succeeded'
+                        : isQueued ? 'Queued'
+                        : isCancelled ? 'Cancelled'
+                        : isVetoed ? 'Vetoed'
+                        : p.status;
+
+                      const maxVotes = Math.max(totalVotes, quorum);
+                      const forWidth = maxVotes > 0 ? (forVotes / maxVotes) * 100 : 0;
+                      const againstWidth = maxVotes > 0 ? (againstVotes / maxVotes) * 100 : 0;
+                      const abstainWidth = maxVotes > 0 ? (abstainVotes / maxVotes) * 100 : 0;
+                      const quorumPosition = maxVotes > 0 ? (quorum / maxVotes) * 100 : 0;
+
+                      const proposerDisplay = ensMap.get(p.proposer)?.displayName
+                        || ensMap.get(p.proposer?.toLowerCase())?.displayName
+                        || `${p.proposer?.slice(0, 6)}…${p.proposer?.slice(-4)}`;
+
+                      return (
+                        <div key={p.id} className={styles.proposalItem}>
+                          <div className={styles.proposalItemContent}>
+                            <div className={styles.proposalMeta}>
+                              <span className={styles.proposalNumber}>Prop {p.id}</span>
+                              {' by '}
+                              <span className={styles.voterAddress} title={p.proposer}>{proposerDisplay}</span>
+                              <span className={styles.activityTime} style={{ marginLeft: 'auto' }}>{timeAgo(p.created_timestamp)}</span>
+                            </div>
+                            <div className={styles.proposalItemTitle}>{p.title || 'Untitled'}</div>
+                            {(isActive || totalVotes > 0) && (
+                              <div className={styles.proposalVoteBar}>
+                                {forVotes > 0 && <div className={styles.voteBarFor} style={{ width: `${forWidth}%` }} />}
+                                {abstainVotes > 0 && <div className={styles.voteBarAbstain} style={{ width: `${abstainWidth}%` }} />}
+                                {againstVotes > 0 && <div className={styles.voteBarAgainst} style={{ width: `${againstWidth}%` }} />}
+                                <div className={styles.voteBarQuorum} style={{ left: `${quorumPosition}%` }} />
+                              </div>
+                            )}
+                            <div className={styles.proposalStats}>
+                              <span className={`${styles.proposalStatusBadge} ${statusClass}`}>{statusLabel}</span>
+                              <span className={styles.proposalVoteSummary}>
+                                {forVotes.toLocaleString()} for
+                                {againstVotes > 0 && <> · {againstVotes.toLocaleString()} against</>}
+                                {abstainVotes > 0 && <> · {abstainVotes.toLocaleString()} abstain</>}
+                                {' · '}{quorum} quorum
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }) : (
                       <div className={styles.emptyState}><div className={styles.emptyText}>No proposals</div></div>
                     )}
                   </>
