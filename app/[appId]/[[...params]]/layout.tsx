@@ -114,6 +114,27 @@ export async function generateMetadata({
     };
   }
 
+  // Client Incentives metadata
+  if (appId === 'clients') {
+    const ogImageUrl = `${baseUrl}/api/og/clients`;
+    return {
+      title: "Client Incentives - Berry OS",
+      description: "Nouns DAO client incentives dashboard — live on-chain rewards, leaderboards, and analytics.",
+      openGraph: {
+        title: "Client Incentives",
+        description: "Nouns DAO client incentives dashboard — live on-chain rewards, leaderboards, and analytics.",
+        images: [ogImageUrl],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "Client Incentives",
+        description: "Nouns DAO client incentives dashboard — live on-chain rewards, leaderboards, and analytics.",
+        images: [ogImageUrl],
+      },
+    };
+  }
+
   // Default metadata
   const defaultMeta: Metadata = {
     title: app ? `${app.name} - Berry OS` : "Berry OS",
