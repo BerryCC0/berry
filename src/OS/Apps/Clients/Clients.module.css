@@ -901,6 +901,13 @@
   font-weight: 600;
 }
 
+.detailDescription {
+  font-size: 12px;
+  color: var(--berry-text-secondary, #6e6e73);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
 .detailSubtitle {
   font-size: 11px;
   color: var(--berry-text-muted, #8e8e93);

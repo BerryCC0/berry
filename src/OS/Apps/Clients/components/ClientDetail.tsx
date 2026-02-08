@@ -111,6 +111,7 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
   const balance = weiToEth(client.totalRewarded) - weiToEth(client.totalWithdrawn);
 
   // UI state
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const [activityTab, setActivityTab] = useState<'votes' | 'proposals' | 'bids' | 'withdrawals' | 'rewards'>('votes');
 
   // Owner actions state
@@ -156,6 +157,9 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
                 </button>
               )}
             </span>
+            {client.description && (
+              <span className={styles.detailDescription}>{client.description}</span>
+            )}
             <span className={styles.detailSubtitle}>
               ID: {client.clientId} · Registered {formatDate(client.blockTimestamp)}
             </span>
@@ -216,82 +220,82 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
         )}
 
         <div className={styles.detailContent}>
-          {/* Stats -- 4 columns */}
-          <div className={styles.detailStatsGrid}>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Total Rewarded</div>
-              <div className={styles.statValue}>{formatEth(weiToEth(client.totalRewarded))} ETH</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Withdrawn</div>
-              <div className={styles.statValue}>{formatEth(weiToEth(client.totalWithdrawn))} ETH</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Pending</div>
-              <div className={styles.statValue}>{formatEth(balance)} ETH</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Status</div>
-              <div className={styles.statValue}>{client.approved ? 'Approved' : 'Pending'}</div>
-              <div className={styles.statSub}>ID: {client.clientId}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Votes</div>
-              <div className={styles.statValue}>{client.voteCount.toLocaleString()}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Proposals</div>
-              <div className={styles.statValue}>{client.proposalCount}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Bids</div>
-              <div className={styles.statValue}>{client.bidCount.toLocaleString()}</div>
-              {client.bidCount > 0 && (
-                <div className={styles.statSub}>{formatEth(weiToEth(client.bidVolume))} ETH vol</div>
-              )}
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Auctions Won</div>
-              <div className={styles.statValue}>{client.auctionCount}</div>
-              {client.auctionCount > 0 && (
-                <div className={styles.statSub}>{formatEth(weiToEth(client.auctionVolume))} ETH vol</div>
-              )}
-            </div>
-          </div>
-
-          {client.description && (
-            <div className={styles.detailSection}>
-              <h3 className={styles.sectionTitle}>Description</h3>
-              <div style={{ fontSize: 13, color: 'var(--berry-text-secondary, #6e6e73)' }}>
-                {client.description}
-              </div>
-            </div>
-          )}
-
-          {/* Reward timeline chart */}
-          {rewardTimeline.length > 0 && (
-            <div className={styles.detailSection}>
-              <div className={styles.chartCardWide}>
-                <div className={styles.chartTitle}>Cumulative Rewards</div>
-                <div className={styles.chartContainerWide}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={rewardTimeline} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                      <defs>
-                        <linearGradient id="detailGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="var(--berry-accent, #5B8DEF)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="var(--berry-accent, #5B8DEF)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
-                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} width={50} />
-                      <Tooltip content={<EthTooltip />} />
-                      <Area type="monotone" dataKey="total" name="Cumulative" stroke="var(--berry-accent, #5B8DEF)"
-                        fill="url(#detailGrad)" strokeWidth={2} />
-                    </AreaChart>
-                  </ResponsiveContainer>
+          {/* Collapsible overview */}
+          <button
+            className={styles.collapseToggle}
+            onClick={() => setOverviewOpen((v) => !v)}
+          >
+            <span className={`${styles.collapseArrow} ${overviewOpen ? styles.collapseArrowOpen : ''}`}>&#9654;</span>
+            Overview &amp; Stats
+          </button>
+          {overviewOpen && (
+            <div className={styles.collapseContent}>
+              <div className={styles.detailStatsGrid}>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Total Rewarded</div>
+                  <div className={styles.statValue}>{formatEth(weiToEth(client.totalRewarded))} ETH</div>
+                </div>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Withdrawn</div>
+                  <div className={styles.statValue}>{formatEth(weiToEth(client.totalWithdrawn))} ETH</div>
+                </div>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Pending</div>
+                  <div className={styles.statValue}>{formatEth(balance)} ETH</div>
+                </div>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Status</div>
+                  <div className={styles.statValue}>{client.approved ? 'Approved' : 'Pending'}</div>
+                </div>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Votes</div>
+                  <div className={styles.statValue}>{client.voteCount.toLocaleString()}</div>
+                </div>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Proposals</div>
+                  <div className={styles.statValue}>{client.proposalCount}</div>
+                </div>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Bids</div>
+                  <div className={styles.statValue}>{client.bidCount.toLocaleString()}</div>
+                  {client.bidCount > 0 && (
+                    <div className={styles.statSub}>{formatEth(weiToEth(client.bidVolume))} ETH vol</div>
+                  )}
+                </div>
+                <div className={styles.statCard}>
+                  <div className={styles.statLabel}>Auctions Won</div>
+                  <div className={styles.statValue}>{client.auctionCount}</div>
+                  {client.auctionCount > 0 && (
+                    <div className={styles.statSub}>{formatEth(weiToEth(client.auctionVolume))} ETH vol</div>
+                  )}
                 </div>
               </div>
+
+              {rewardTimeline.length > 0 && (
+                <div className={styles.detailSection}>
+                  <div className={styles.chartCardWide}>
+                    <div className={styles.chartTitle}>Cumulative Rewards</div>
+                    <div className={styles.chartContainerWide}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={rewardTimeline} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                          <defs>
+                            <linearGradient id="detailGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="var(--berry-accent, #5B8DEF)" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="var(--berry-accent, #5B8DEF)" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
+                          <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                          <YAxis tick={{ fontSize: 10 }} width={50} />
+                          <Tooltip content={<EthTooltip />} />
+                          <Area type="monotone" dataKey="total" name="Cumulative" stroke="var(--berry-accent, #5B8DEF)"
+                            fill="url(#detailGrad)" strokeWidth={2} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
