@@ -43,7 +43,8 @@ export type AppIconId =
   | "treasury"
   | "nounspot"
   | "crystal-ball"
-  | "probe";
+  | "probe"
+  | "clients";
 
 /**
  * File type icon IDs
@@ -93,6 +94,7 @@ const iconRegistry: Record<IconId, string> = {
   "nounspot": `${ICONS_BASE_PATH}/nounspot.svg`,
   "crystal-ball": `${ICONS_BASE_PATH}/crystal-ball.png`,
   "probe": `${ICONS_BASE_PATH}/probe.png`,
+  "clients": `${ICONS_BASE_PATH}/clients.svg`,
 
   // File type icons
   "file-text": `${ICONS_BASE_PATH}/file-text.svg`,

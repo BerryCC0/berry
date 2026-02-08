@@ -25,6 +25,7 @@ const Treasury = lazy(() => import("./Treasury/Treasury").then(m => ({ default: 
 const Nounspot = lazy(() => import("./Nounspot/Nounspot").then(m => ({ default: m.Nounspot })));
 const CrystalBall = lazy(() => import("./CrystalBall/CrystalBall").then(m => ({ default: m.CrystalBall })));
 const Probe = lazy(() => import("./Probe/Probe").then(m => ({ default: m.Probe })));
+const Clients = lazy(() => import("./Clients/Clients").then(m => ({ default: m.Clients })));
 
 /**
  * Finder - File browser
@@ -350,6 +351,28 @@ const probeConfig: AppConfig = {
 };
 
 /**
+ * Clients - Client Incentives Dashboard
+ * Visualizes Nouns DAO client incentives data from Ponder
+ */
+const clientsConfig: AppConfig = {
+  id: "clients",
+  name: "Clients",
+  icon: getIcon("clients"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 1100,
+    height: 750,
+    minWidth: 600,
+    minHeight: 450,
+    isResizable: true,
+  },
+  permissions: ["network"],
+  component: Clients,
+};
+
+/**
  * All OS app configurations
  * 
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -370,6 +393,7 @@ export const osAppConfigs: AppConfig[] = [
   nounspotConfig,
   crystalBallConfig,
   probeConfig,
+  clientsConfig,
 ];
 
 /**

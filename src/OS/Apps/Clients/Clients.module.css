@@ -1,0 +1,558 @@
+/* ============================================================================
+ * Clients Incentives Dashboard
+ * ============================================================================ */
+
+.clients {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--window-bg, #fff);
+  color: var(--text-primary, #1d1d1f);
+  font-family: var(--font-system, -apple-system, BlinkMacSystemFont, sans-serif);
+  overflow: hidden;
+}
+
+/* ── Scrollable content ─────────────────────────────────────────────────── */
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+}
+
+/* ── Toolbar / header ────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  background: var(--toolbar-bg, #f5f5f7);
+  flex-shrink: 0;
+}
+
+.toolbarTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #1d1d1f);
+  flex: 1;
+}
+
+.toolbarBadge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent-color, #5B8DEF);
+  color: #fff;
+}
+
+/* ── Summary stat cards ──────────────────────────────────────────────────── */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--card-bg, #f5f5f7);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary, #8e8e93);
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #1d1d1f);
+  line-height: 1.2;
+}
+
+.statSub {
+  font-size: 11px;
+  color: var(--text-secondary, #6e6e73);
+  margin-top: 2px;
+}
+
+/* ── Section headers ─────────────────────────────────────────────────────── */
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1d1d1f);
+  margin: 0 0 12px 0;
+}
+
+/* ── Charts grid ─────────────────────────────────────────────────────────── */
+
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.chartCard {
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--card-bg, #f5f5f7);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.chartCardWide {
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--card-bg, #f5f5f7);
+  border: 1px solid var(--border-color, #e5e5e5);
+  margin-bottom: 20px;
+}
+
+.chartTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6e6e73);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.chartContainer {
+  width: 100%;
+  height: 220px;
+}
+
+.chartContainerWide {
+  width: 100%;
+  height: 200px;
+}
+
+/* ── Leaderboard table ───────────────────────────────────────────────────── */
+
+.tableContainer {
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #e5e5e5);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background: var(--toolbar-bg, #f5f5f7);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary, #8e8e93);
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.table th:hover {
+  color: var(--text-primary, #1d1d1f);
+}
+
+.thActive {
+  color: var(--accent-color, #5B8DEF) !important;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color, #f0f0f0);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.table tbody tr:hover {
+  background: var(--hover-bg, #f5f5f7);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tdRight {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tdMono {
+  font-family: var(--font-mono, 'SF Mono', 'Menlo', monospace);
+  font-size: 12px;
+}
+
+.rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--border-color, #e5e5e5);
+  color: var(--text-secondary, #6e6e73);
+}
+
+.rankGold {
+  background: #ffd700;
+  color: #7a6200;
+}
+
+.rankSilver {
+  background: #c0c0c0;
+  color: #555;
+}
+
+.rankBronze {
+  background: #cd7f32;
+  color: #fff;
+}
+
+.clientNameCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clientAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-color, #5B8DEF);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.clientName {
+  font-weight: 500;
+  color: var(--text-primary, #1d1d1f);
+}
+
+.clientId {
+  font-size: 11px;
+  color: var(--text-tertiary, #8e8e93);
+}
+
+.approvedBadge {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34c759;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ── Detail panel ────────────────────────────────────────────────────────── */
+
+.detailPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  background: var(--toolbar-bg, #f5f5f7);
+  flex-shrink: 0;
+}
+
+.backButton {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent-color, #5B8DEF);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.backButton:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+.detailTitle {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.detailContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+}
+
+.detailStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.detailSection {
+  margin-bottom: 20px;
+}
+
+/* ── Activity list ───────────────────────────────────────────────────────── */
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--card-bg, #f5f5f7);
+  font-size: 12px;
+}
+
+.activityIcon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.activityIconVote {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+.activityIconProposal {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.activityIconWithdrawal {
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+.activityIconBid {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.activityIconUpdate {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.activityText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary, #1d1d1f);
+}
+
+.activityTime {
+  font-size: 11px;
+  color: var(--text-tertiary, #8e8e93);
+  flex-shrink: 0;
+}
+
+.activityAmount {
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #1d1d1f);
+  flex-shrink: 0;
+}
+
+/* ── Loading & empty states ──────────────────────────────────────────────── */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-secondary, #6e6e73);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border-color, #e5e5e5);
+  border-top-color: var(--accent-color, #5B8DEF);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loadingText {
+  font-size: 13px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-secondary, #6e6e73);
+  text-align: center;
+}
+
+.emptyText {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* ── Reward update timeline ───────────────────────────────────────────────── */
+
+.updateItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--card-bg, #f5f5f7);
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.updateMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.updateMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.updateMetaLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary, #8e8e93);
+}
+
+.updateMetaValue {
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #1d1d1f);
+}
+
+/* ── Recharts overrides ──────────────────────────────────────────────────── */
+
+.clients :global(.recharts-text) {
+  font-size: 10px;
+  fill: var(--text-tertiary, #8e8e93);
+}
+
+.clients :global(.recharts-cartesian-axis-tick-value) {
+  font-size: 10px;
+  fill: var(--text-tertiary, #8e8e93);
+}
+
+.clients :global(.recharts-tooltip-wrapper) {
+  outline: none;
+}
+
+.tooltip {
+  background: var(--window-bg, #fff);
+  border: 1px solid var(--border-color, #e5e5e5);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+}
+
+.tooltipLabel {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary, #1d1d1f);
+}
+
+.tooltipValue {
+  color: var(--text-secondary, #6e6e73);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .statsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chartsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .detailStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
