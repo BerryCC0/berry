@@ -54,7 +54,7 @@ export function BootOverlay({
       {/* Berry Glyph GIF - centered */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/icons/berry-glyph.gif"
+        src="/icons/loader.gif"
         alt="Berry OS"
         className={styles.glyph}
       />

@@ -12,7 +12,7 @@ export function BerryLoader() {
     <div className={styles.container}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/icons/berry-glyph.gif"
+        src="/icons/loader.gif"
         alt="Loading..."
         className={styles.glyph}
       />
