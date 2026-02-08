@@ -15,6 +15,7 @@ import type { AppComponentProps } from '@/OS/types/app';
 import { useClients, useRewardUpdates, useCycleVotes } from './hooks/useClientIncentives';
 import { useContractState } from './hooks/useContractState';
 import { useChartData } from './hooks/useChartData';
+import { useClientMetadata } from './hooks/useClientMetadata';
 import { useProposals } from '@/OS/Apps/Camp/hooks';
 import { getClientName } from '@/OS/lib/clientNames';
 import { CHART_COLORS } from './constants';
@@ -22,6 +23,42 @@ import { weiToEth, formatEth, getInitials } from './utils';
 import { EthTooltip, RevenueTooltip } from './components/ChartTooltips';
 import { ClientDetail } from './components/ClientDetail';
 import styles from './Clients.module.css';
+
+/**
+ * Custom XAxis tick that renders a favicon/NFT image alongside the client name.
+ */
+function ClientTick({ x, y, payload, clientMetadata, chartData }: any) {
+  const name = payload?.value ?? '';
+  // Find the clientId for this name from the chart data
+  const entry = chartData?.find((d: any) => d.name === name);
+  const meta = entry?.clientId != null ? clientMetadata?.get(entry.clientId) : undefined;
+  const imgSrc = meta?.nftImage || meta?.favicon;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {imgSrc && (
+        <image
+          href={imgSrc}
+          x={-7}
+          y={2}
+          width={14}
+          height={14}
+          style={{ borderRadius: '50%' }}
+          clipPath="inset(0% round 50%)"
+        />
+      )}
+      <text
+        x={0}
+        y={imgSrc ? 22 : 6}
+        textAnchor="middle"
+        fontSize={9}
+        fill="var(--text-secondary, #6e6e73)"
+      >
+        {name}
+      </text>
+    </g>
+  );
+}
 
 export function Clients({ windowId }: AppComponentProps) {
   // Data fetching
@@ -55,6 +92,9 @@ export function Clients({ windowId }: AppComponentProps) {
 
   // Fetch vote weight per client for current cycle eligible proposals
   const { data: cycleVotesData } = useCycleVotes(eligibleProposalIds);
+
+  // Fetch client metadata (favicons, NFT images)
+  const { data: clientMetadata } = useClientMetadata(clients);
 
   // Computed chart & table data
   const {
@@ -334,7 +374,7 @@ export function Clients({ windowId }: AppComponentProps) {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={proposalsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={proposalsByClient} />} interval={0} height={50} />
                           <YAxis tick={{ fontSize: 10 }} width={30} allowDecimals={false} />
                           <Tooltip />
                           <Bar dataKey="count" name="Proposals" radius={[3, 3, 0, 0]}>
@@ -356,7 +396,7 @@ export function Clients({ windowId }: AppComponentProps) {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={votesByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={votesByClient} />} interval={0} height={50} />
                           <YAxis tick={{ fontSize: 10 }} width={40} />
                           <Tooltip />
                           <Bar dataKey="count" name="Votes" radius={[3, 3, 0, 0]}>
@@ -378,7 +418,7 @@ export function Clients({ windowId }: AppComponentProps) {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={cycleRewardsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleRewardsByClient} />} interval={0} height={50} />
                           <YAxis tick={{ fontSize: 10 }} width={40} />
                           <Tooltip content={<EthTooltip />} />
                           <Bar dataKey="reward" name="Reward" radius={[3, 3, 0, 0]}>
@@ -565,9 +605,26 @@ export function Clients({ windowId }: AppComponentProps) {
                         <td><span className={`${styles.rank} ${rankClass}`}>{idx + 1}</span></td>
                         <td>
                           <div className={styles.clientNameCell}>
-                            <div className={styles.clientAvatar} style={{ background: CHART_COLORS[client.clientId % CHART_COLORS.length] }}>
-                              {getInitials(client.name)}
-                            </div>
+                            {(() => {
+                              const meta = clientMetadata?.get(client.clientId);
+                              const imgSrc = meta?.nftImage || meta?.favicon;
+                              if (imgSrc) {
+                                return (
+                                  <img
+                                    src={imgSrc}
+                                    alt={client.name}
+                                    className={styles.clientAvatar}
+                                    style={{ objectFit: 'cover' }}
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                );
+                              }
+                              return (
+                                <div className={styles.clientAvatar} style={{ background: CHART_COLORS[client.clientId % CHART_COLORS.length] }}>
+                                  {getInitials(client.name)}
+                                </div>
+                              );
+                            })()}
                             <div>
                               <span className={styles.clientName}>
                                 {client.name || `Client ${client.clientId}`}
