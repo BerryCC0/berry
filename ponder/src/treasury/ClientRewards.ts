@@ -68,21 +68,26 @@ ponder.on("ClientRewards:ClientRewarded", async ({ event, context }) => {
     blockTimestamp: event.block.timestamp,
   });
 
-  // Upsert client and accumulate total rewarded
-  const existing = await context.db.find(clients, { clientId: Number(event.args.clientId) });
-  const prevRewarded = existing?.totalRewarded ?? 0n;
+  // Read authoritative on-chain state for this client
+  const metadata = await context.client.readContract({
+    abi: context.contracts.ClientRewards.abi,
+    address: context.contracts.ClientRewards.address,
+    functionName: "clientMetadata",
+    args: [event.args.clientId],
+  });
 
   await context.db.insert(clients).values({
     clientId: Number(event.args.clientId),
-    name: existing?.name ?? "",
-    description: existing?.description ?? "",
-    approved: existing?.approved ?? false,
-    totalRewarded: prevRewarded + event.args.amount,
-    totalWithdrawn: existing?.totalWithdrawn ?? 0n,
+    name: metadata.name,
+    description: metadata.description,
+    approved: metadata.approved,
+    totalRewarded: metadata.rewarded,
+    totalWithdrawn: metadata.withdrawn,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
   }).onConflictDoUpdate({
-    totalRewarded: prevRewarded + event.args.amount,
+    totalRewarded: metadata.rewarded,
+    totalWithdrawn: metadata.withdrawn,
   });
 });
 
@@ -96,21 +101,26 @@ ponder.on("ClientRewards:ClientBalanceWithdrawal", async ({ event, context }) =>
     blockTimestamp: event.block.timestamp,
   });
 
-  // Upsert client and accumulate total withdrawn
-  const existing = await context.db.find(clients, { clientId: Number(event.args.clientId) });
-  const prevWithdrawn = existing?.totalWithdrawn ?? 0n;
+  // Read authoritative on-chain state for this client
+  const metadata = await context.client.readContract({
+    abi: context.contracts.ClientRewards.abi,
+    address: context.contracts.ClientRewards.address,
+    functionName: "clientMetadata",
+    args: [event.args.clientId],
+  });
 
   await context.db.insert(clients).values({
     clientId: Number(event.args.clientId),
-    name: existing?.name ?? "",
-    description: existing?.description ?? "",
-    approved: existing?.approved ?? false,
-    totalRewarded: existing?.totalRewarded ?? 0n,
-    totalWithdrawn: prevWithdrawn + event.args.amount,
+    name: metadata.name,
+    description: metadata.description,
+    approved: metadata.approved,
+    totalRewarded: metadata.rewarded,
+    totalWithdrawn: metadata.withdrawn,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
   }).onConflictDoUpdate({
-    totalWithdrawn: prevWithdrawn + event.args.amount,
+    totalRewarded: metadata.rewarded,
+    totalWithdrawn: metadata.withdrawn,
   });
 });
 

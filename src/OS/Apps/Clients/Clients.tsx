@@ -162,12 +162,23 @@ export function Clients({ windowId }: AppComponentProps) {
     if (!rewardUpdates?.length) return [];
     return rewardUpdates
       .filter((u) => u.rewardPerProposal && u.rewardPerVote)
-      .map((u) => ({
-        label: `P${u.firstProposalId}-${u.lastProposalId}`,
-        date: shortDate(u.blockTimestamp),
-        rewardPerProposal: Number(weiToEth(u.rewardPerProposal!).toFixed(6)),
-        rewardPerVote: Number(weiToEth(u.rewardPerVote!).toFixed(8)),
-      }));
+      .map((u) => {
+        // Reward per winning auction = 5% of average winning bid in the period
+        let rewardPerAuction = 0;
+        if (u.auctionRevenue && u.firstAuctionIdForRevenue && u.lastAuctionIdForRevenue) {
+          const numAuctions = Number(u.lastAuctionIdForRevenue) - Number(u.firstAuctionIdForRevenue) + 1;
+          if (numAuctions > 0) {
+            rewardPerAuction = (weiToEth(u.auctionRevenue) / numAuctions) * 0.05;
+          }
+        }
+        return {
+          label: `P${u.firstProposalId}-${u.lastProposalId}`,
+          date: shortDate(u.blockTimestamp),
+          rewardPerProposal: Number(weiToEth(u.rewardPerProposal!).toFixed(6)),
+          rewardPerVote: Number(weiToEth(u.rewardPerVote!).toFixed(8)),
+          rewardPerAuction: Number(rewardPerAuction.toFixed(4)),
+        };
+      });
   }, [rewardUpdates]);
 
   // Auction revenue bar chart data
@@ -243,36 +254,78 @@ export function Clients({ windowId }: AppComponentProps) {
       </div>
 
       <div className={styles.content}>
-        {/* Summary cards -- 5 columns */}
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total Rewarded</div>
-            <div className={styles.statValue}>{formatEth(totals.rewarded)} ETH</div>
+        {/* Info card + Auction Revenue chart */}
+        <div className={styles.chartsRow}>
+          <div className={styles.infoCard}>
+            <div className={styles.infoTitle}>Client Incentives Contract</div>
+            <div className={styles.infoDescription}>
+              Nouns DAO rewards third-party clients that facilitate governance participation and auction bidding.
+            </div>
+            <div className={styles.infoStats}>
+              <div className={styles.infoStatRow}>
+                <span className={styles.infoStatLabel}>Total Rewarded</span>
+                <span className={styles.infoStatValue}>{formatEth(totals.rewarded)} ETH</span>
+              </div>
+              <div className={styles.infoStatRow}>
+                <span className={styles.infoStatLabel}>Total Withdrawn</span>
+                <span className={styles.infoStatValue}>{formatEth(totals.withdrawn)} ETH</span>
+              </div>
+              <div className={styles.infoStatRow}>
+                <span className={styles.infoStatLabel}>Pending Balance</span>
+                <span className={styles.infoStatValue}>{formatEth(totals.balance)} ETH</span>
+              </div>
+              <div className={styles.infoDivider} />
+              <div className={styles.infoStatRow}>
+                <span className={styles.infoStatLabel}>Registered Clients</span>
+                <span className={styles.infoStatValue}>{totals.count}</span>
+              </div>
+              <div className={styles.infoStatRow}>
+                <span className={styles.infoStatLabel}>Reward per Vote</span>
+                <span className={styles.infoStatValue}>
+                  {rewardEconData.length > 0
+                    ? `${formatEth(rewardEconData[rewardEconData.length - 1].rewardPerVote)} ETH`
+                    : '—'}
+                </span>
+              </div>
+              <div className={styles.infoStatRow}>
+                <span className={styles.infoStatLabel}>Reward per Proposal</span>
+                <span className={styles.infoStatValue}>
+                  {rewardEconData.length > 0
+                    ? `${formatEth(rewardEconData[rewardEconData.length - 1].rewardPerProposal)} ETH`
+                    : '—'}
+                </span>
+              </div>
+              <div className={styles.infoStatRow}>
+                <span className={styles.infoStatLabel}>Auction Bid Reward</span>
+                <span className={styles.infoStatValue}>5% of winning bid</span>
+              </div>
+            </div>
           </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total Withdrawn</div>
-            <div className={styles.statValue}>{formatEth(totals.withdrawn)} ETH</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Pending Balance</div>
-            <div className={styles.statValue}>{formatEth(totals.balance)} ETH</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Registered Clients</div>
-            <div className={styles.statValue}>{totals.count}</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total Bids</div>
-            <div className={styles.statValue}>{totals.bids.toLocaleString()}</div>
-          </div>
+
+          {revenueData.length > 0 && (
+            <div className={styles.chartCard}>
+              <div className={styles.chartTitle}>Auction Revenue per Update</div>
+              <div className={styles.chartContainer}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenueData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
+                    <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" angle={-30} textAnchor="end" height={50} />
+                    <YAxis tick={{ fontSize: 10 }} width={50} />
+                    <Tooltip content={<RevenueTooltip />} />
+                    <Bar dataKey="revenue" name="Auction Revenue" fill="#ff9500" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Reward Economics charts row */}
+        {/* Reward rate charts: per proposal, per vote, per winning auction */}
         {rewardEconData.length > 0 && (
-          <div className={styles.chartsRow}>
-            {/* Reward per Proposal over time */}
+          <div className={styles.chartsRowTriple}>
+            {/* Reward per Proposal */}
             <div className={styles.chartCard}>
-              <div className={styles.chartTitle}>Reward per Proposal Over Time</div>
+              <div className={styles.chartTitle}>Reward per Proposal</div>
               <div className={styles.chartContainer}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={rewardEconData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
@@ -287,18 +340,36 @@ export function Clients({ windowId }: AppComponentProps) {
               </div>
             </div>
 
-            {/* Auction Revenue per update */}
+            {/* Reward per Vote */}
             <div className={styles.chartCard}>
-              <div className={styles.chartTitle}>Auction Revenue per Update</div>
+              <div className={styles.chartTitle}>Reward per Vote</div>
               <div className={styles.chartContainer}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                  <LineChart data={rewardEconData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
                     <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" angle={-30} textAnchor="end" height={50} />
                     <YAxis tick={{ fontSize: 10 }} width={50} />
-                    <Tooltip content={<RevenueTooltip />} />
-                    <Bar dataKey="revenue" name="Auction Revenue" fill="#ff9500" radius={[3, 3, 0, 0]} />
-                  </BarChart>
+                    <Tooltip content={<EthTooltip />} />
+                    <Line type="monotone" dataKey="rewardPerVote" name="Per Vote"
+                      stroke="#34c759" strokeWidth={2} dot={{ r: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Reward per Winning Auction */}
+            <div className={styles.chartCard}>
+              <div className={styles.chartTitle}>Reward per Winning Auction</div>
+              <div className={styles.chartContainer}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={rewardEconData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
+                    <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" angle={-30} textAnchor="end" height={50} />
+                    <YAxis tick={{ fontSize: 10 }} width={50} />
+                    <Tooltip content={<EthTooltip />} />
+                    <Line type="monotone" dataKey="rewardPerAuction" name="Per Auction"
+                      stroke="#ff9500" strokeWidth={2} dot={{ r: 2 }} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>

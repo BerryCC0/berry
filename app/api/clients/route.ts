@@ -12,18 +12,21 @@ export async function GET(request: NextRequest) {
     const sql = ponderSql();
 
     // Fetch clients with aggregated counts in parallel
-    // Uses event tables (ground truth) instead of accumulated fields on clients row
-    const [clientRows, voteCounts, proposalCounts, auctionCounts, bidCounts, rewardSums, withdrawalSums] = await Promise.all([
-      // All registered clients (no longer relying on total_rewarded/total_withdrawn)
+    // total_rewarded/total_withdrawn are synced from on-chain clientMetadata() by Ponder
+    const [clientRows, voteCounts, proposalCounts, auctionCounts, bidCounts] = await Promise.all([
+      // All registered clients with on-chain-synced reward/withdrawal totals
       sql`
         SELECT client_id, name, description, approved,
+               total_rewarded::text as total_rewarded,
+               total_withdrawn::text as total_withdrawn,
                block_timestamp::text as block_timestamp
         FROM ponder_live.clients
         ORDER BY client_id ASC
       `,
-      // Vote counts per client -- uses the client_votes view (INNER JOIN votes + clients)
+      // Vote weight per client -- SUM(votes) gives total noun-votes, not just vote records
+      // Each vote record stores the voter's noun count (vote weight) at time of voting
       sql`
-        SELECT client_id, COUNT(*)::int as vote_count
+        SELECT client_id, COALESCE(SUM(votes), 0)::int as vote_count
         FROM ponder_live.client_votes
         GROUP BY client_id
       `,
@@ -53,18 +56,6 @@ export async function GET(request: NextRequest) {
         WHERE client_id IS NOT NULL
         GROUP BY client_id
       `,
-      // Accurate total rewarded from append-only event table
-      sql`
-        SELECT client_id, COALESCE(SUM(amount), 0)::text as total_rewarded
-        FROM ponder_live.client_reward_events
-        GROUP BY client_id
-      `,
-      // Accurate total withdrawn from append-only event table
-      sql`
-        SELECT client_id, COALESCE(SUM(amount), 0)::text as total_withdrawn
-        FROM ponder_live.client_withdrawals
-        GROUP BY client_id
-      `,
     ]);
 
     // Build lookup maps
@@ -72,8 +63,6 @@ export async function GET(request: NextRequest) {
     const proposalMap = new Map(proposalCounts.map((r: any) => [r.client_id, r.proposal_count]));
     const auctionMap = new Map(auctionCounts.map((r: any) => [r.client_id, { count: r.auction_count, volume: r.auction_volume }]));
     const bidMap = new Map(bidCounts.map((r: any) => [r.client_id, { count: r.bid_count, volume: r.bid_volume }]));
-    const rewardMap = new Map(rewardSums.map((r: any) => [r.client_id, r.total_rewarded]));
-    const withdrawalMap = new Map(withdrawalSums.map((r: any) => [r.client_id, r.total_withdrawn]));
 
     const clients = clientRows.map((c: any) => {
       const clientId = c.client_id;
@@ -85,8 +74,8 @@ export async function GET(request: NextRequest) {
         name: displayName,
         description: c.description,
         approved: c.approved,
-        totalRewarded: rewardMap.get(clientId) ?? '0',
-        totalWithdrawn: withdrawalMap.get(clientId) ?? '0',
+        totalRewarded: c.total_rewarded ?? '0',
+        totalWithdrawn: c.total_withdrawn ?? '0',
         blockTimestamp: c.block_timestamp,
         voteCount: voteMap.get(clientId) ?? 0,
         proposalCount: proposalMap.get(clientId) ?? 0,
