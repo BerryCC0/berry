@@ -7,10 +7,6 @@ import {
 } from "ponder:schema";
 import { resolveAndStoreEns, batchResolveAndStoreEns } from "../helpers/ens";
 
-// Module-level map: passes bid record IDs from AuctionBid -> AuctionBidWithClientId
-// Key: "${txHash}-${nounId}", Value: bid primary key
-const pendingBidIds = new Map<string, string>();
-
 // =============================================================================
 // AuctionCreated
 // =============================================================================
@@ -56,7 +52,8 @@ ponder.on("NounsAuctionHouse:AuctionBid", async ({ event, context }) => {
   // Resolve ENS for bidder
   await resolveAndStoreEns(context, sender);
 
-  const bidId = `${event.transaction.hash}-${event.log.logIndex}`;
+  // Deterministic ID: one bid per nounId per transaction
+  const bidId = `${event.transaction.hash}-${nounId}`;
 
   await context.db.insert(auctionBids).values({
     id: bidId,
@@ -68,9 +65,6 @@ ponder.on("NounsAuctionHouse:AuctionBid", async ({ event, context }) => {
     blockTimestamp: event.block.timestamp,
     txHash: event.transaction.hash,
   });
-
-  // Store bid ID for the companion AuctionBidWithClientId handler
-  pendingBidIds.set(`${event.transaction.hash}-${nounId}`, bidId);
 });
 
 // =============================================================================
@@ -79,20 +73,16 @@ ponder.on("NounsAuctionHouse:AuctionBid", async ({ event, context }) => {
 ponder.on("NounsAuctionHouse:AuctionBidWithClientId", async ({ event, context }) => {
   const { nounId, clientId } = event.args;
 
-  // Update the auction-level clientId (tracks winning bid's client)
+  // Update the auction-level clientId (tracks latest bid's client)
   await context.db
     .update(auctions, { nounId: Number(nounId) })
     .set({ clientId: Number(clientId) });
 
-  // Update the individual bid record with clientId
-  const mapKey = `${event.transaction.hash}-${nounId}`;
-  const bidId = pendingBidIds.get(mapKey);
-  if (bidId) {
-    await context.db
-      .update(auctionBids, { id: bidId })
-      .set({ clientId: Number(clientId) });
-    pendingBidIds.delete(mapKey);
-  }
+  // Deterministic ID matches the AuctionBid handler -- no map needed
+  const bidId = `${event.transaction.hash}-${nounId}`;
+  await context.db
+    .update(auctionBids, { id: bidId })
+    .set({ clientId: Number(clientId) });
 });
 
 // =============================================================================

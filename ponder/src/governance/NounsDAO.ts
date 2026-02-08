@@ -10,10 +10,6 @@ import {
 } from "ponder:schema";
 import { extractTitle, resolveAndStoreEns } from "../helpers/ens";
 
-// Module-level map: passes vote record IDs from VoteCast -> VoteCastWithClientId
-// Key: "${txHash}-${voter}-${proposalId}", Value: vote primary key
-const pendingVoteIds = new Map<string, string>();
-
 // =============================================================================
 // PROPOSAL LIFECYCLE
 // =============================================================================
@@ -212,7 +208,8 @@ ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
   // Resolve ENS for voter
   const ensName = await resolveAndStoreEns(context, voter);
 
-  const voteId = `${event.transaction.hash}-${event.log.logIndex}`;
+  // Deterministic ID: a voter can only vote once per proposal
+  const voteId = `${voter}-${proposalId}`;
 
   await context.db.insert(votes).values({
     id: voteId,
@@ -225,9 +222,6 @@ ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
     blockTimestamp: event.block.timestamp,
     txHash: event.transaction.hash,
   });
-
-  // Store vote ID for the companion VoteCastWithClientId handler
-  pendingVoteIds.set(`${event.transaction.hash}-${voter}-${proposalId}`, voteId);
 
   // Update vote counts on proposal using find + update
   const proposal = await context.db.find(proposals, { id: Number(proposalId) });
@@ -272,15 +266,11 @@ ponder.on("NounsDAO:VoteCast", async ({ event, context }) => {
 ponder.on("NounsDAO:VoteCastWithClientId", async ({ event, context }) => {
   const { voter, proposalId, clientId } = event.args;
 
-  // Update the individual vote record with clientId
-  const mapKey = `${event.transaction.hash}-${voter}-${proposalId}`;
-  const voteId = pendingVoteIds.get(mapKey);
-  if (voteId) {
-    await context.db
-      .update(votes, { id: voteId })
-      .set({ clientId: Number(clientId) });
-    pendingVoteIds.delete(mapKey);
-  }
+  // Deterministic ID matches the VoteCast handler -- no map needed
+  const voteId = `${voter}-${proposalId}`;
+  await context.db
+    .update(votes, { id: voteId })
+    .set({ clientId: Number(clientId) });
 });
 
 ponder.on("NounsDAO:RefundableVote", async ({ event, context }) => {

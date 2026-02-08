@@ -8,7 +8,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
   AreaChart, Area, CartesianGrid,
   LineChart, Line,
 } from 'recharts';
@@ -98,19 +97,6 @@ function EthTooltip({ active, payload, label }: any) {
   );
 }
 
-function PieTooltip({ active, payload }: any) {
-  if (!active || !payload?.length) return null;
-  const d = payload[0];
-  return (
-    <div className={styles.tooltip}>
-      <div className={styles.tooltipLabel}>{d.name}</div>
-      <div className={styles.tooltipValue}>
-        {formatEth(d.value)} ETH ({(d.payload.percent * 100).toFixed(1)}%)
-      </div>
-    </div>
-  );
-}
-
 function RevenueTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -131,7 +117,6 @@ function RevenueTooltip({ active, payload, label }: any) {
 
 export function Clients({ windowId }: AppComponentProps) {
   const { data: clients, isLoading: clientsLoading } = useClients();
-  const { data: rewards } = useClientRewardsTimeSeries();
   const { data: rewardUpdates } = useRewardUpdates('PROPOSAL');
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [sortField, setSortField] = useState<string>('totalRewarded');
@@ -171,53 +156,6 @@ export function Clients({ windowId }: AppComponentProps) {
     });
     return arr;
   }, [clients, sortField, sortDir]);
-
-  // Bar chart data (top 10 by rewards)
-  const barData = useMemo(() => {
-    if (!clients?.length) return [];
-    return [...clients]
-      .sort((a, b) => weiToEth(b.totalRewarded) - weiToEth(a.totalRewarded))
-      .slice(0, 10)
-      .map((c) => ({
-        name: c.name || `Client ${c.clientId}`,
-        rewarded: Number(weiToEth(c.totalRewarded).toFixed(4)),
-        withdrawn: Number(weiToEth(c.totalWithdrawn).toFixed(4)),
-      }));
-  }, [clients]);
-
-  // Pie chart data
-  const pieData = useMemo(() => {
-    if (!clients?.length) return [];
-    const totalRewarded = clients.reduce((sum, c) => sum + weiToEth(c.totalRewarded), 0);
-    if (totalRewarded === 0) return [];
-    return [...clients]
-      .filter((c) => weiToEth(c.totalRewarded) > 0)
-      .sort((a, b) => weiToEth(b.totalRewarded) - weiToEth(a.totalRewarded))
-      .map((c) => {
-        const value = weiToEth(c.totalRewarded);
-        return {
-          name: c.name || `Client ${c.clientId}`,
-          value: Number(value.toFixed(4)),
-          percent: value / totalRewarded,
-        };
-      });
-  }, [clients]);
-
-  // Area chart data (cumulative rewards over time)
-  const areaData = useMemo(() => {
-    if (!rewards?.length) return [];
-    const monthMap = new Map<string, number>();
-    let cumulative = 0;
-    for (const r of rewards) {
-      const date = new Date(Number(r.blockTimestamp) * 1000);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      cumulative += weiToEth(r.amount);
-      monthMap.set(key, cumulative);
-    }
-    return Array.from(monthMap.entries()).map(([month, total]) => ({
-      month, total: Number(total.toFixed(4)),
-    }));
-  }, [rewards]);
 
   // Reward economics chart data (from ProposalRewardsUpdated events)
   const rewardEconData = useMemo(() => {
@@ -328,66 +266,6 @@ export function Clients({ windowId }: AppComponentProps) {
             <div className={styles.statValue}>{totals.bids.toLocaleString()}</div>
           </div>
         </div>
-
-        {/* Charts row: Bar + Pie */}
-        <div className={styles.chartsRow}>
-          <div className={styles.chartCard}>
-            <div className={styles.chartTitle}>Top Clients by Rewards</div>
-            <div className={styles.chartContainer}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-35} textAnchor="end" height={60} />
-                  <YAxis tick={{ fontSize: 10 }} width={50} />
-                  <Tooltip content={<EthTooltip />} />
-                  <Bar dataKey="rewarded" name="Rewarded" fill="#5B8DEF" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="withdrawn" name="Withdrawn" fill="#34c759" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className={styles.chartCard}>
-            <div className={styles.chartTitle}>Reward Distribution</div>
-            <div className={styles.chartContainer}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                    innerRadius={45} outerRadius={80} paddingAngle={2} stroke="none">
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<PieTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Cumulative rewards over time */}
-        {areaData.length > 0 && (
-          <div className={styles.chartCardWide}>
-            <div className={styles.chartTitle}>Cumulative Rewards Over Time</div>
-            <div className={styles.chartContainerWide}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={areaData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                  <defs>
-                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#5B8DEF" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#5B8DEF" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} width={50} />
-                  <Tooltip content={<EthTooltip />} />
-                  <Area type="monotone" dataKey="total" name="Cumulative" stroke="#5B8DEF"
-                    fill="url(#areaGrad)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
 
         {/* Reward Economics charts row */}
         {rewardEconData.length > 0 && (
