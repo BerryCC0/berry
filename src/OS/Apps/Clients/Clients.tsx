@@ -79,7 +79,7 @@ export function Clients({ windowId }: AppComponentProps) {
   const [sortField, setSortField] = useState<string>('totalRewarded');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [bottomTab, setBottomTab] = useState<'proposals' | 'leaderboard'>('proposals');
-  const [filterEligible, setFilterEligible] = useState(false);
+  const [filterEligible, setFilterEligible] = useState(true);
 
   const sortedClients = useMemo(
     () => getSortedClients(sortField, sortDir),

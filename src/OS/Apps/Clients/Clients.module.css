@@ -474,31 +474,29 @@
 }
 
 .proposalBreakdown {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-color, #e5e5e5);
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: flex-end;
+  gap: 2px;
 }
 
 .breakdownEntry {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 11px;
   color: var(--text-secondary, #6e6e73);
 }
 
 .breakdownClient {
   font-weight: 600;
-  min-width: 60px;
 }
 
 .breakdownTag {
   font-size: 9px;
   font-weight: 600;
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: 3px;
   background: var(--border-color, #e5e5e5);
   color: var(--text-tertiary, #8e8e93);
@@ -510,10 +508,11 @@
 }
 
 .breakdownReward {
-  margin-left: auto;
   font-weight: 600;
   font-family: 'SF Mono', 'Menlo', monospace;
   color: var(--text-primary, #1d1d1f);
+  min-width: 80px;
+  text-align: right;
 }
 
 .proposalPending {
