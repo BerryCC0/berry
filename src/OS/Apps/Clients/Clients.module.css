@@ -1,14 +1,14 @@
 /* ============================================================================
- * Clients Incentives Dashboard
+ * Clients Incentives Dashboard — Theme-compliant using --berry-* CSS variables
  * ============================================================================ */
 
 .clients {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--window-bg, #fff);
-  color: var(--text-primary, #1d1d1f);
-  font-family: var(--font-system, -apple-system, BlinkMacSystemFont, sans-serif);
+  background: var(--berry-window-bg, var(--berry-bg, #fff));
+  color: var(--berry-text-primary, #1d1d1f);
+  font-family: var(--berry-font-system, -apple-system, BlinkMacSystemFont, sans-serif);
   overflow: hidden;
 }
 
@@ -27,15 +27,15 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
-  background: var(--toolbar-bg, #f5f5f7);
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
+  background: var(--berry-bg-secondary, #f5f5f7);
   flex-shrink: 0;
 }
 
 .toolbarTitle {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
   flex: 1;
 }
 
@@ -44,8 +44,8 @@
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 10px;
-  background: var(--accent-color, #5B8DEF);
-  color: #fff;
+  background: var(--berry-accent, #5B8DEF);
+  color: var(--berry-bg, #fff);
 }
 
 /* ── Summary stat cards ──────────────────────────────────────────────────── */
@@ -60,8 +60,8 @@
 .statCard {
   padding: 14px 16px;
   border-radius: 10px;
-  background: var(--card-bg, #f5f5f7);
-  border: 1px solid var(--border-color, #e5e5e5);
+  background: var(--berry-bg-secondary, #f5f5f7);
+  border: 1px solid var(--berry-border, #e5e5e5);
 }
 
 .statLabel {
@@ -69,20 +69,20 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-muted, #8e8e93);
   margin-bottom: 4px;
 }
 
 .statValue {
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
   line-height: 1.2;
 }
 
 .statSub {
   font-size: 11px;
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
   margin-top: 2px;
 }
 
@@ -91,7 +91,7 @@
 .sectionTitle {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
   margin: 0 0 12px 0;
 }
 
@@ -114,8 +114,8 @@
 .chartCard {
   padding: 16px;
   border-radius: 10px;
-  background: var(--card-bg, #f5f5f7);
-  border: 1px solid var(--border-color, #e5e5e5);
+  background: var(--berry-bg-secondary, #f5f5f7);
+  border: 1px solid var(--berry-border, #e5e5e5);
 }
 
 /* ── Info card ────────────────────────────────────────────────────────────── */
@@ -123,8 +123,8 @@
 .infoCard {
   padding: 20px;
   border-radius: 10px;
-  background: var(--card-bg, #f5f5f7);
-  border: 1px solid var(--border-color, #e5e5e5);
+  background: var(--berry-bg-secondary, #f5f5f7);
+  border: 1px solid var(--berry-border, #e5e5e5);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -133,13 +133,13 @@
 .infoTitle {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
 }
 
 .infoDescription {
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
 }
 
 .infoStats {
@@ -157,33 +157,33 @@
 }
 
 .infoStatLabel {
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
 }
 
 .infoStatValue {
   font-weight: 600;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
   font-variant-numeric: tabular-nums;
 }
 
 .infoDivider {
   height: 1px;
-  background: var(--border-color, #e5e5e5);
+  background: var(--berry-border, #e5e5e5);
   margin: 2px 0;
 }
 
 .chartCardWide {
   padding: 16px;
   border-radius: 10px;
-  background: var(--card-bg, #f5f5f7);
-  border: 1px solid var(--border-color, #e5e5e5);
+  background: var(--berry-bg-secondary, #f5f5f7);
+  border: 1px solid var(--berry-border, #e5e5e5);
   margin-bottom: 20px;
 }
 
 .chartTitle {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -205,7 +205,7 @@
   display: flex;
   gap: 4px;
   padding: 0 0 12px;
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
   margin-bottom: 16px;
 }
 
@@ -213,23 +213,23 @@
   background: none;
   border: none;
   padding: 6px 14px;
-  font-family: var(--font-system, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family: var(--berry-font-system, -apple-system, BlinkMacSystemFont, sans-serif);
   font-size: 12px;
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-muted, #8e8e93);
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.15s ease;
 }
 
 .bottomTab:hover {
-  color: var(--text-primary, #1d1d1f);
-  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+  color: var(--berry-text-primary, #1d1d1f);
+  background: var(--berry-bg-secondary, #f5f5f7);
 }
 
 .bottomTabActive {
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
   font-weight: 600;
-  border-bottom: 2px solid var(--text-primary, #1d1d1f);
+  border-bottom: 2px solid var(--berry-text-primary, #1d1d1f);
   border-radius: 4px 4px 0 0;
 }
 
@@ -244,14 +244,14 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-muted, #8e8e93);
   margin-bottom: 6px;
 }
 
 .distributionValue {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
   float: right;
   margin-top: -18px;
 }
@@ -261,7 +261,7 @@
   height: 16px;
   border-radius: 4px;
   overflow: hidden;
-  background: var(--border-color, #e5e5e5);
+  background: var(--berry-bg-tertiary, #e5e5e5);
   margin-bottom: 6px;
 }
 
@@ -276,7 +276,7 @@
   flex-wrap: wrap;
   gap: 10px;
   font-size: 11px;
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
 }
 
 .legendItem {
@@ -298,8 +298,8 @@
   gap: 16px;
   padding: 10px 0 12px;
   font-size: 13px;
-  color: var(--text-secondary, #6e6e73);
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  color: var(--berry-text-secondary, #6e6e73);
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
   margin-bottom: 12px;
 }
 
@@ -309,54 +309,120 @@
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 6px;
-  border: 1px solid var(--border-color, #e5e5e5);
+  border: 1px solid var(--berry-border, #e5e5e5);
   background: transparent;
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .filterToggle:hover {
-  background: var(--border-color, #e5e5e5);
+  background: var(--berry-bg-tertiary, #e5e5e5);
 }
 
 .filterToggleActive {
-  background: #5B8DEF;
-  border-color: #5B8DEF;
-  color: #fff;
+  background: var(--berry-accent, #5B8DEF);
+  border-color: var(--berry-accent, #5B8DEF);
+  color: var(--berry-bg, #fff);
 }
 
 .filterToggleActive:hover {
-  background: #4a7de0;
-  border-color: #4a7de0;
+  background: var(--berry-accent-hover, var(--berry-accent, #4a7de0));
+  border-color: var(--berry-accent-hover, var(--berry-accent, #4a7de0));
 }
 
 .poolValue {
   font-weight: 700;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
 }
 
+/* Proposal items — Camp digest style */
 .proposalItem {
   position: relative;
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: var(--card-bg, #f5f5f7);
-  border: 1px solid var(--border-color, #e5e5e5);
-  margin-bottom: 8px;
+  padding: 12px;
+  margin: 4px 0;
+  border-radius: 6px;
   cursor: default;
+  transition: background 0.15s ease;
 }
 
-.proposalItemHeader {
+.proposalItem:hover {
+  background: var(--berry-bg-secondary, #f5f5f7);
+}
+
+.proposalMeta {
+  font-size: 11px;
+  color: var(--berry-text-muted, #8e8e93);
+  margin-bottom: 4px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 4px;
 }
 
 .proposalNumber {
-  font-size: 12px;
   font-weight: 500;
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-muted, #8e8e93);
+}
+
+.proposalClientBadge {
+  font-size: 10px;
+  font-style: italic;
+  margin-left: 2px;
+}
+
+.proposalItemTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary, #1d1d1f);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+/* Vote bar — thin Camp-style with quorum marker */
+.proposalVoteBar {
+  position: relative;
+  height: 4px;
+  background: var(--berry-bg-tertiary, #e5e5e5);
+  border-radius: 2px;
+  overflow: visible;
+  margin-bottom: 8px;
+  display: flex;
+}
+
+.voteBarFor {
+  height: 100%;
+  background: var(--berry-success, #34c759);
+  border-radius: 2px 0 0 2px;
+}
+
+.voteBarAbstain {
+  height: 100%;
+  background: var(--berry-text-muted, #8e8e93);
+}
+
+.voteBarAgainst {
+  height: 100%;
+  background: var(--berry-error, #ff3b30);
+  border-radius: 0 2px 2px 0;
+}
+
+.voteBarQuorum {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 8px;
+  background: var(--berry-text-secondary, #6e6e73);
+  transform: translateX(-50%);
+}
+
+/* Stats row */
+.proposalStats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--berry-text-muted, #8e8e93);
+  flex-wrap: wrap;
 }
 
 .proposalStatusBadge {
@@ -364,172 +430,173 @@
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.3px;
   padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--border-color, #e5e5e5);
-  color: var(--text-tertiary, #8e8e93);
+  border-radius: 3px;
+  background: var(--berry-bg-tertiary, #e5e5e5);
+  color: var(--berry-text-muted, #8e8e93);
 }
 
 .proposalStatusActive {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: rgba(var(--berry-success-rgb, 52, 199, 89), 0.15);
+  color: var(--berry-success, #2e7d32);
 }
 
 .proposalStatusUpdatable {
-  background: #fff3e0;
-  color: #e65100;
+  background: rgba(var(--berry-warning-rgb, 255, 149, 0), 0.15);
+  color: var(--berry-warning, #e65100);
 }
 
 .proposalStatusDefeated {
-  background: #fce8e6;
-  color: #c5221f;
+  background: rgba(var(--berry-error-rgb, 255, 59, 48), 0.15);
+  color: var(--berry-error, #c5221f);
 }
 
 .proposalStatusExecuted {
-  background: #e8f0fe;
-  color: #1a73e8;
+  background: rgba(var(--berry-info-rgb, 91, 141, 239), 0.15);
+  color: var(--berry-info, #1a73e8);
 }
 
 .proposalStatusQueued {
-  background: #f3e5f5;
+  background: rgba(175, 82, 222, 0.15);
   color: #7b1fa2;
-}
-
-.proposalItemTitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary, #1d1d1f);
-  line-height: 1.3;
-}
-
-.proposalItemFooter {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.proposalClientBadge {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--border-color, #e5e5e5);
-  color: var(--text-secondary, #6e6e73);
-  text-transform: uppercase;
-}
-
-.proposalVoteBar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-secondary, #6e6e73);
-}
-
-.proposalVoteBarTrack {
-  width: 80px;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--border-color, #e5e5e5);
-  overflow: hidden;
-  display: flex;
-}
-
-.proposalVoteBarFill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.proposalVoteCount {
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  font-weight: 500;
 }
 
 .proposalEligible {
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 4px;
-  background: #e8f5e9;
-  color: #2e7d32;
+  border-radius: 3px;
+  background: rgba(var(--berry-success-rgb, 52, 199, 89), 0.15);
+  color: var(--berry-success, #2e7d32);
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .proposalIneligible {
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 4px;
-  background: #fce8e6;
-  color: #c5221f;
+  border-radius: 3px;
+  background: rgba(var(--berry-error-rgb, 255, 59, 48), 0.15);
+  color: var(--berry-error, #c5221f);
   text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.proposalVoteSummary {
+  font-size: 11px;
+  color: var(--berry-text-muted, #8e8e93);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.proposalItemWithBreakdown {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+}
+
+.proposalItemContent {
+  flex: 1;
+  min-width: 0;
 }
 
 .proposalBreakdown {
-  margin-top: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.breakdownEntry {
   display: flex;
   align-items: center;
-  gap: 6px;
+  padding-right: 14px;
+  margin-right: 14px;
+  border-right: 1px solid var(--berry-border, #e5e5e5);
+  flex-shrink: 0;
+}
+
+.breakdownTable {
+  border-collapse: collapse;
   font-size: 11px;
-  color: var(--text-secondary, #6e6e73);
+}
+
+.breakdownTh {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--berry-text-muted, #8e8e93);
+  padding: 0 8px 4px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
+  white-space: nowrap;
+}
+
+.breakdownThRight {
+  text-align: right;
+  padding-right: 0;
+}
+
+.breakdownRow {
+  vertical-align: middle;
+}
+
+.breakdownTd {
+  padding: 3px 8px 3px 0;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.breakdownTdRight {
+  text-align: right;
+  padding-right: 0;
 }
 
 .breakdownClient {
   font-weight: 600;
+  margin-right: 4px;
 }
 
 .breakdownTag {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   padding: 1px 4px;
   border-radius: 3px;
-  background: var(--border-color, #e5e5e5);
-  color: var(--text-tertiary, #8e8e93);
+  background: var(--berry-bg-tertiary, #e5e5e5);
+  color: var(--berry-text-muted, #8e8e93);
   text-transform: uppercase;
+  vertical-align: middle;
 }
 
 .breakdownVotes {
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-secondary, #6e6e73);
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdownVotesDash {
+  color: var(--berry-text-muted, #aeaeb2);
 }
 
 .breakdownReward {
   font-weight: 600;
   font-family: 'SF Mono', 'Menlo', monospace;
-  color: var(--text-primary, #1d1d1f);
-  min-width: 80px;
-  text-align: right;
+  color: var(--berry-text-primary, #1d1d1f);
+  font-variant-numeric: tabular-nums;
 }
 
 .proposalPending {
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 4px;
-  background: #fff3e0;
-  color: #e65100;
+  border-radius: 3px;
+  background: rgba(var(--berry-warning-rgb, 255, 149, 0), 0.15);
+  color: var(--berry-warning, #e65100);
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 /* ── Leaderboard table ───────────────────────────────────────────────────── */
 
 .tableContainer {
   border-radius: 10px;
-  border: 1px solid var(--border-color, #e5e5e5);
+  border: 1px solid var(--berry-border, #e5e5e5);
   overflow: hidden;
   margin-bottom: 20px;
 }
@@ -541,7 +608,7 @@
 }
 
 .table thead {
-  background: var(--toolbar-bg, #f5f5f7);
+  background: var(--berry-bg-secondary, #f5f5f7);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -554,19 +621,19 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--text-tertiary, #8e8e93);
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  color: var(--berry-text-muted, #8e8e93);
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
 }
 
 .table th:hover {
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
 }
 
 .thActive {
-  color: var(--accent-color, #5B8DEF) !important;
+  color: var(--berry-accent, #5B8DEF) !important;
 }
 
 .thRight {
@@ -575,7 +642,7 @@
 
 .table td {
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border-color, #f0f0f0);
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
   vertical-align: middle;
 }
 
@@ -585,7 +652,7 @@
 }
 
 .table tbody tr:hover {
-  background: var(--hover-bg, #f5f5f7);
+  background: var(--berry-bg-secondary, #f5f5f7);
 }
 
 .table tbody tr:last-child td {
@@ -598,7 +665,7 @@
 }
 
 .tdMono {
-  font-family: var(--font-mono, 'SF Mono', 'Menlo', monospace);
+  font-family: 'SF Mono', 'Menlo', monospace;
   font-size: 12px;
 }
 
@@ -611,8 +678,8 @@
   border-radius: 50%;
   font-size: 11px;
   font-weight: 600;
-  background: var(--border-color, #e5e5e5);
-  color: var(--text-secondary, #6e6e73);
+  background: var(--berry-bg-tertiary, #e5e5e5);
+  color: var(--berry-text-secondary, #6e6e73);
 }
 
 .rankGold {
@@ -639,9 +706,9 @@
 .clientAvatar {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: var(--accent-color, #5B8DEF);
-  color: #fff;
+  border-radius: 5%;
+  background: var(--berry-accent, #5B8DEF);
+  color: var(--berry-bg, #fff);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -652,12 +719,12 @@
 
 .clientName {
   font-weight: 500;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
 }
 
 .clientId {
   font-size: 11px;
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-muted, #8e8e93);
 }
 
 .approvedBadge {
@@ -665,7 +732,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #34c759;
+  background: var(--berry-success, #34c759);
   margin-left: 4px;
   vertical-align: middle;
 }
@@ -683,8 +750,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
-  background: var(--toolbar-bg, #f5f5f7);
+  border-bottom: 1px solid var(--berry-border, #e5e5e5);
+  background: var(--berry-bg-secondary, #f5f5f7);
   flex-shrink: 0;
 }
 
@@ -693,14 +760,14 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--accent-color, #5B8DEF);
+  color: var(--berry-accent, #5B8DEF);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.1s;
 }
 
 .backButton:hover {
-  background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+  background: var(--berry-bg-secondary, #f5f5f7);
 }
 
 .detailTitle {
@@ -740,7 +807,7 @@
   gap: 10px;
   padding: 8px 12px;
   border-radius: 6px;
-  background: var(--card-bg, #f5f5f7);
+  background: var(--berry-bg-secondary, #f5f5f7);
   font-size: 12px;
 }
 
@@ -756,27 +823,27 @@
 }
 
 .activityIconVote {
-  background: #e8f0fe;
-  color: #1a73e8;
+  background: rgba(var(--berry-info-rgb, 96, 165, 250), 0.2);
+  color: var(--berry-info, #1a73e8);
 }
 
 .activityIconProposal {
-  background: #e6f4ea;
-  color: #137333;
+  background: rgba(var(--berry-success-rgb, 74, 222, 128), 0.2);
+  color: var(--berry-success, #137333);
 }
 
 .activityIconWithdrawal {
-  background: #fce8e6;
-  color: #c5221f;
+  background: rgba(var(--berry-error-rgb, 239, 68, 68), 0.2);
+  color: var(--berry-error, #c5221f);
 }
 
 .activityIconBid {
-  background: #fff3e0;
-  color: #e65100;
+  background: rgba(var(--berry-warning-rgb, 251, 191, 36), 0.2);
+  color: var(--berry-warning, #e65100);
 }
 
 .activityIconUpdate {
-  background: #f3e5f5;
+  background: rgba(175, 82, 222, 0.15);
   color: #7b1fa2;
 }
 
@@ -786,12 +853,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
 }
 
 .activityTime {
   font-size: 11px;
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-muted, #8e8e93);
   flex-shrink: 0;
 }
 
@@ -799,7 +866,7 @@
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
   flex-shrink: 0;
 }
 
@@ -812,14 +879,14 @@
   justify-content: center;
   height: 100%;
   gap: 12px;
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid var(--border-color, #e5e5e5);
-  border-top-color: var(--accent-color, #5B8DEF);
+  border: 3px solid var(--berry-border, #e5e5e5);
+  border-top-color: var(--berry-accent, #5B8DEF);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -832,13 +899,25 @@
   font-size: 13px;
 }
 
+.loaderGif {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+
+.noClient {
+  color: var(--berry-text-muted, #aeaeb2);
+  font-style: italic;
+  font-size: 12px;
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40px;
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
   text-align: center;
 }
 
@@ -855,7 +934,7 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 6px;
-  background: var(--card-bg, #f5f5f7);
+  background: var(--berry-bg-secondary, #f5f5f7);
   font-size: 12px;
   margin-bottom: 2px;
 }
@@ -877,26 +956,26 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--text-tertiary, #8e8e93);
+  color: var(--berry-text-muted, #8e8e93);
 }
 
 .updateMetaValue {
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
 }
 
 /* ── Recharts overrides ──────────────────────────────────────────────────── */
 
 .clients :global(.recharts-text) {
   font-size: 10px;
-  fill: var(--text-tertiary, #8e8e93);
+  fill: var(--berry-text-muted, #8e8e93);
 }
 
 .clients :global(.recharts-cartesian-axis-tick-value) {
   font-size: 10px;
-  fill: var(--text-tertiary, #8e8e93);
+  fill: var(--berry-text-muted, #8e8e93);
 }
 
 .clients :global(.recharts-tooltip-wrapper) {
@@ -904,8 +983,8 @@
 }
 
 .tooltip {
-  background: var(--window-bg, #fff);
-  border: 1px solid var(--border-color, #e5e5e5);
+  background: var(--berry-window-bg, var(--berry-bg, #fff));
+  border: 1px solid var(--berry-border, #e5e5e5);
   border-radius: 8px;
   padding: 8px 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -915,11 +994,11 @@
 .tooltipLabel {
   font-weight: 600;
   margin-bottom: 4px;
-  color: var(--text-primary, #1d1d1f);
+  color: var(--berry-text-primary, #1d1d1f);
 }
 
 .tooltipValue {
-  color: var(--text-secondary, #6e6e73);
+  color: var(--berry-text-secondary, #6e6e73);
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */

@@ -2,6 +2,23 @@
  * Client Incentives Utility Functions
  */
 
+import type { ClientMetadataMap } from './types';
+
+/**
+ * Resolve the best image for a client: favicon first, NFT image fallback.
+ */
+export function getClientImage(
+  clientId: number | undefined,
+  clientMetadata: ClientMetadataMap | undefined,
+  clients: Array<{ clientId: number; nftImage?: string | null }> | undefined,
+): string | undefined {
+  if (clientId == null) return undefined;
+  const favicon = clientMetadata?.get(clientId)?.favicon;
+  if (favicon) return favicon;
+  const client = clients?.find((c) => c.clientId === clientId);
+  return client?.nftImage ?? undefined;
+}
+
 /** Format wei (as string) to ETH number */
 export function weiToEth(wei: string): number {
   return Number(BigInt(wei)) / 1e18;

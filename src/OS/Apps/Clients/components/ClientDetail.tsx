@@ -10,12 +10,8 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import {
-  useClientRewardsTimeSeries,
-  useClientActivity,
-  type ClientData,
-  type RewardUpdate,
-} from '../hooks/useClientIncentives';
+import { useClientRewardsTimeSeries, useClientActivity } from '../hooks/useClientIncentives';
+import type { ClientData, RewardUpdate } from '../types';
 import { weiToEth, formatEth, timeAgo, formatDate } from '../utils';
 import { EthTooltip } from './ChartTooltips';
 import styles from '../Clients.module.css';
@@ -106,7 +102,7 @@ export function ClientDetail({ client, rewardUpdates, onBack }: ClientDetailProp
           {client.description && (
             <div className={styles.detailSection}>
               <h3 className={styles.sectionTitle}>Description</h3>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary, #6e6e73)' }}>
+              <div style={{ fontSize: 13, color: 'var(--berry-text-secondary, #6e6e73)' }}>
                 {client.description}
               </div>
             </div>
@@ -122,15 +118,15 @@ export function ClientDetail({ client, rewardUpdates, onBack }: ClientDetailProp
                     <AreaChart data={rewardTimeline} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
                       <defs>
                         <linearGradient id="detailGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#5B8DEF" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#5B8DEF" stopOpacity={0} />
+                          <stop offset="5%" stopColor="var(--berry-accent, #5B8DEF)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="var(--berry-accent, #5B8DEF)" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
                       <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} width={50} />
                       <Tooltip content={<EthTooltip />} />
-                      <Area type="monotone" dataKey="total" name="Cumulative" stroke="#5B8DEF"
+                      <Area type="monotone" dataKey="total" name="Cumulative" stroke="var(--berry-accent, #5B8DEF)"
                         fill="url(#detailGrad)" strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>

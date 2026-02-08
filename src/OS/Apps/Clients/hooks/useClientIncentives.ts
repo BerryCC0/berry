@@ -6,120 +6,28 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import type {
+  ClientData,
+  RewardEvent,
+  RewardUpdate,
+  ClientActivity,
+  CycleVotesResponse,
+  CycleAuctionsResponse,
+} from '../types';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-export interface ClientData {
-  clientId: number;
-  name: string;
-  description: string;
-  approved: boolean;
-  totalRewarded: string; // bigint as string (wei)
-  totalWithdrawn: string;
-  nftImage: string | null; // on-chain NFT image (SVG data URI), indexed by Ponder
-  blockTimestamp: string;
-  voteCount: number;
-  proposalCount: number;
-  auctionCount: number;
-  auctionVolume: string;
-  bidCount: number;
-  bidVolume: string;
-}
-
-export interface RewardEvent {
-  id: string;
-  clientId: number;
-  clientName: string;
-  amount: string; // wei
-  blockNumber: string;
-  blockTimestamp: string;
-}
-
-export interface RewardUpdate {
-  id: string;
-  updateType: 'PROPOSAL' | 'AUCTION';
-  blockNumber: string;
-  blockTimestamp: string;
-  // ProposalRewardsUpdated fields
-  firstProposalId: string | null;
-  lastProposalId: string | null;
-  firstAuctionIdForRevenue: string | null;
-  lastAuctionIdForRevenue: string | null;
-  auctionRevenue: string | null;
-  rewardPerProposal: string | null;
-  rewardPerVote: string | null;
-  // AuctionRewardsUpdated fields
-  firstAuctionId: string | null;
-  lastAuctionId: string | null;
-}
-
-export interface ClientVote {
-  id: string;
-  voter: string;
-  proposal_id: number;
-  support: number;
-  votes: number;
-  client_id: number;
-  block_timestamp: string;
-  client_name: string;
-  proposal_title: string;
-}
-
-export interface ClientProposal {
-  id: number;
-  title: string;
-  proposer: string;
-  status: string;
-  client_id: number;
-  created_timestamp: string;
-  client_name: string;
-}
-
-export interface ClientWithdrawal {
-  id: string;
-  client_id: number;
-  amount: string;
-  to_address: string;
-  block_timestamp: string;
-  client_name: string;
-}
-
-export interface ClientBid {
-  id: string;
-  noun_id: number;
-  bidder: string;
-  amount: string;
-  client_id: number;
-  block_timestamp: string;
-  client_name: string;
-}
-
-export interface ClientActivity {
-  votes: ClientVote[];
-  proposals: ClientProposal[];
-  withdrawals: ClientWithdrawal[];
-  bids: ClientBid[];
-}
-
-export interface CycleVoteEntry {
-  clientId: number;
-  name: string;
-  voteCount: number;
-}
-
-export interface CycleProposalVoteEntry {
-  proposalId: number;
-  clientId: number;
-  name: string;
-  voteCount: number;
-}
-
-export interface CycleVotesResponse {
-  votes: CycleVoteEntry[];
-  votesByProposal: CycleProposalVoteEntry[];
-}
+// Re-export types for convenience
+export type {
+  ClientData,
+  RewardEvent,
+  RewardUpdate,
+  ClientActivity,
+  CycleVoteEntry,
+  CycleProposalVoteEntry,
+  CycleVotesResponse,
+  CycleAuction,
+  CycleAuctionClientEntry,
+  CycleAuctionsResponse,
+} from '../types';
 
 // ============================================================================
 // FETCH FUNCTIONS
@@ -162,6 +70,13 @@ async function fetchCycleVotes(proposalIds: number[]): Promise<CycleVotesRespons
   if (!response.ok) throw new Error('Failed to fetch cycle votes');
   const json = await response.json();
   return { votes: json.votes, votesByProposal: json.votesByProposal };
+}
+
+async function fetchCycleAuctions(firstNounId: number): Promise<CycleAuctionsResponse> {
+  const params = new URLSearchParams({ firstNounId: String(firstNounId) });
+  const response = await fetch(`/api/clients/cycle-auctions?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch cycle auctions');
+  return response.json();
 }
 
 async function fetchRewardUpdates(type?: 'PROPOSAL' | 'AUCTION'): Promise<RewardUpdate[]> {
@@ -233,5 +148,17 @@ export function useCycleVotes(proposalIds: number[]) {
     queryFn: () => fetchCycleVotes(proposalIds),
     staleTime: 60000,
     enabled: proposalIds.length > 0,
+  });
+}
+
+/**
+ * Fetch current cycle auction data (bids/wins by client, auction list)
+ */
+export function useCycleAuctions(firstNounId: number | undefined) {
+  return useQuery<CycleAuctionsResponse>({
+    queryKey: ['clients', 'cycle-auctions', firstNounId],
+    queryFn: () => fetchCycleAuctions(firstNounId!),
+    staleTime: 60000,
+    enabled: firstNounId != null,
   });
 }

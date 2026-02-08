@@ -7,20 +7,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { ClientData } from './useClientIncentives';
+import type { ClientData, ClientMetadataEntry, ClientMetadataMap } from '../types';
 import { getClientUrl } from '@/OS/lib/clientNames';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface ClientMetadataEntry {
-  favicon?: string;
-  title?: string;
-  description?: string;
-}
-
-export type ClientMetadataMap = Map<number, ClientMetadataEntry>;
 
 // ============================================================================
 // Fetcher

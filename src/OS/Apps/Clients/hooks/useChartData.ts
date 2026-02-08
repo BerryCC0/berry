@@ -5,55 +5,14 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import type { ClientData, RewardUpdate, CycleVoteEntry, CycleProposalVoteEntry } from './useClientIncentives';
+import type {
+  ClientData, RewardUpdate, CycleVoteEntry, CycleProposalVoteEntry,
+  Totals, DistributionItem, RewardEconDataPoint, RevenueDataPoint, ProposalBreakdownEntry,
+} from '../types';
 import type { Proposal } from '@/OS/Apps/Camp/types';
 import { weiToEth, shortDate } from '../utils';
 import { CHART_COLORS } from '../constants';
 import { getClientName } from '@/OS/lib/clientNames';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface Totals {
-  rewarded: number;
-  withdrawn: number;
-  balance: number;
-  count: number;
-  bids: number;
-}
-
-export interface DistributionItem {
-  clientId: number;
-  name: string;
-  count: number;
-  pct: number;
-  color: string;
-}
-
-export interface RewardEconDataPoint {
-  label: string;
-  date: string;
-  rewardPerProposal: number;
-  rewardPerVote: number;
-  rewardPerAuction: number;
-}
-
-export interface RevenueDataPoint {
-  label: string;
-  date: string;
-  revenue: number;
-  rewardPerProposal: number;
-}
-
-export interface ProposalBreakdownEntry {
-  clientId: number;
-  name: string;
-  voteCount: number;
-  estimatedVoteReward: number;
-  isProposer: boolean;
-  estimatedProposalReward: number;
-}
 
 // ============================================================================
 // Hook

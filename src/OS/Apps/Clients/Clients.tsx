@@ -1,167 +1,44 @@
 /**
  * Clients Incentives Dashboard
- * Presentation component — all business logic lives in hooks/, utils/, and constants.
+ * Thin orchestrator — all business logic lives in hooks/, all presentation in components/.
  */
 
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, LineChart, Line, Cell, LabelList,
-} from 'recharts';
-import { formatEther } from 'viem';
 import type { AppComponentProps } from '@/OS/types/app';
-import { useClients, useRewardUpdates, useCycleVotes } from './hooks/useClientIncentives';
-import { useContractState } from './hooks/useContractState';
-import { useChartData } from './hooks/useChartData';
-import { useClientMetadata } from './hooks/useClientMetadata';
-import { useProposals } from '@/OS/Apps/Camp/hooks';
-import { getClientName } from '@/OS/lib/clientNames';
-import { CHART_COLORS } from './constants';
-import { weiToEth, formatEth, getInitials } from './utils';
-import { EthTooltip, RevenueTooltip } from './components/ChartTooltips';
+import { useDashboardData } from './hooks/useDashboardData';
 import { ClientDetail } from './components/ClientDetail';
+import { InfoCard } from './components/InfoCard';
+import { RevenueChart } from './components/RevenueChart';
+import { RewardRateCharts } from './components/RewardRateCharts';
+import { ProposalsTab } from './components/ProposalsTab';
+import { AuctionsTab } from './components/AuctionsTab';
+import { LeaderboardTab } from './components/LeaderboardTab';
 import styles from './Clients.module.css';
 
-/**
- * Resolve the best image for a client: favicon first, NFT image fallback.
- */
-function getClientImage(
-  clientId: number | undefined,
-  clientMetadata: Map<number, { favicon?: string }> | undefined,
-  clients: Array<{ clientId: number; nftImage?: string | null }> | undefined,
-): string | undefined {
-  if (clientId == null) return undefined;
-  const favicon = clientMetadata?.get(clientId)?.favicon;
-  if (favicon) return favicon;
-  const client = clients?.find((c) => c.clientId === clientId);
-  return client?.nftImage ?? undefined;
-}
-
-/**
- * Custom XAxis tick that renders a favicon/NFT image alongside the client name.
- */
-function ClientTick({ x, y, payload, clientMetadata, chartData, clients }: any) {
-  const name = payload?.value ?? '';
-  const entry = chartData?.find((d: any) => d.name === name);
-  const imgSrc = getClientImage(entry?.clientId, clientMetadata, clients);
-
-  return (
-    <g transform={`translate(${x},${y})`}>
-      {imgSrc && (
-        <image
-          href={imgSrc}
-          x={-7}
-          y={2}
-          width={14}
-          height={14}
-          style={{ borderRadius: '50%' }}
-          clipPath="inset(0% round 50%)"
-        />
-      )}
-      <text
-        x={0}
-        y={imgSrc ? 22 : 6}
-        textAnchor="middle"
-        fontSize={9}
-        fill="var(--text-secondary, #6e6e73)"
-      >
-        {name}
-      </text>
-    </g>
-  );
-}
-
 export function Clients({ windowId }: AppComponentProps) {
-  // Data fetching
-  const { data: clients, isLoading: clientsLoading } = useClients();
-  const { data: rewardUpdates } = useRewardUpdates('PROPOSAL');
-  const { data: proposals } = useProposals(50, 'all', 'newest');
-
-  // On-chain contract state
+  // All data orchestration
   const {
-    contractWethBalance,
-    proposalRewardParams,
-    nextProposalIdToReward,
-    pendingRevenue,
-  } = useContractState();
-
-  // Compute eligible proposal IDs for current cycle vote fetching
-  const eligibleProposalIds = useMemo(() => {
-    if (!proposals?.length || nextProposalIdToReward == null) return [];
-    const cutoff = Number(nextProposalIdToReward) - 1;
-    return proposals
-      .filter((p) => {
-        if (Number(p.id) <= cutoff) return false; // already rewarded
-        if (p.clientId == null) return false;
-        if (['CANCELLED', 'VETOED'].includes(p.status)) return false;
-        const forVotes = Number(p.forVotes);
-        const quorum = Number(p.quorumVotes) || 1;
-        return forVotes >= quorum;
-      })
-      .map((p) => Number(p.id));
-  }, [proposals, nextProposalIdToReward]);
-
-  // Fetch vote weight per client for current cycle eligible proposals
-  const { data: cycleVotesData } = useCycleVotes(eligibleProposalIds);
-
-  // Fetch client metadata (favicons, NFT images)
-  const { data: clientMetadata } = useClientMetadata(clients);
-
-  // Computed chart & table data
-  const {
-    totals,
-    getSortedClients,
-    rewardEconData,
-    revenueData,
-    votesByClient,
-    proposalsByClient,
-    currentPeriodProposals,
-    getEligibility,
-    eligibleCount,
-    proposalBreakdowns,
-  } = useChartData(
-    clients, rewardUpdates, proposals, nextProposalIdToReward,
-    cycleVotesData?.votes, cycleVotesData?.votesByProposal,
-    pendingRevenue, proposalRewardParams,
-  );
+    clients, clientsLoading, rewardUpdates,
+    contractWethBalanceEth, quorumBps, pendingRevenueEth,
+    clientMetadata, cycleAuctionsData, cycleRewardsByClient,
+    totals, getSortedClients, rewardEconData, revenueData,
+    votesByClient, proposalsByClient, currentPeriodProposals,
+    getEligibility, eligibleCount, proposalBreakdowns,
+  } = useDashboardData();
 
   // UI state
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [sortField, setSortField] = useState<string>('totalRewarded');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [bottomTab, setBottomTab] = useState<'proposals' | 'leaderboard'>('proposals');
+  const [bottomTab, setBottomTab] = useState<'proposals' | 'auctions' | 'leaderboard'>('proposals');
   const [filterEligible, setFilterEligible] = useState(true);
 
   const sortedClients = useMemo(
     () => getSortedClients(sortField, sortDir),
     [getSortedClients, sortField, sortDir],
   );
-
-  // Aggregate estimated rewards per client across all eligible proposals
-  const cycleRewardsByClient = useMemo(() => {
-    if (!proposalBreakdowns.size) return [];
-    const totals = new Map<number, { name: string; reward: number; color: string }>();
-    for (const entries of proposalBreakdowns.values()) {
-      for (const e of entries) {
-        const prev = totals.get(e.clientId);
-        const reward = e.estimatedProposalReward + e.estimatedVoteReward;
-        if (prev) {
-          prev.reward += reward;
-        } else {
-          totals.set(e.clientId, {
-            name: e.name,
-            reward,
-            color: CHART_COLORS[e.clientId % CHART_COLORS.length],
-          });
-        }
-      }
-    }
-    return Array.from(totals.entries())
-      .map(([clientId, v]) => ({ clientId, ...v }))
-      .sort((a, b) => b.reward - a.reward);
-  }, [proposalBreakdowns]);
 
   const handleSort = useCallback((field: string) => {
     setSortField((prev) => {
@@ -173,9 +50,6 @@ export function Clients({ windowId }: AppComponentProps) {
       return field;
     });
   }, []);
-
-  const sortArrow = (field: string) =>
-    sortField === field ? (sortDir === 'desc' ? ' \u25BE' : ' \u25B4') : '';
 
   // ---------- Detail view ----------
   if (selectedClientId !== null) {
@@ -196,8 +70,7 @@ export function Clients({ windowId }: AppComponentProps) {
     return (
       <div className={styles.clients}>
         <div className={styles.loading}>
-          <div className={styles.spinner} />
-          <span className={styles.loadingText}>Loading client incentives...</span>
+          <img src="/icons/loader.gif" alt="Loading" className={styles.loaderGif} />
         </div>
       </div>
     );
@@ -225,142 +98,26 @@ export function Clients({ windowId }: AppComponentProps) {
       <div className={styles.content}>
         {/* Info card + Auction Revenue chart */}
         <div className={styles.chartsRow}>
-          <div className={styles.infoCard}>
-            <div className={styles.infoTitle}>Client Incentives Contract</div>
-            <div className={styles.infoDescription}>
-              Nouns DAO rewards third-party clients that facilitate governance participation and auction bidding.
-            </div>
-            <div className={styles.infoStats}>
-            <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Registered Clients</span>
-                <span className={styles.infoStatValue}>{totals.count}</span>
-              </div>
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Current Balance</span>
-                <span className={styles.infoStatValue}>
-                  {contractWethBalance != null
-                    ? `${formatEth(Number(formatEther(contractWethBalance as bigint)))} ETH`
-                    : '—'}
-                </span>
-              </div>
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Total Rewarded</span>
-                <span className={styles.infoStatValue}>{formatEth(totals.rewarded)} ETH</span>
-              </div>
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Total Withdrawn</span>
-                <span className={styles.infoStatValue}>{formatEth(totals.withdrawn)} ETH</span>
-              </div>
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Pending Withdraw or Approval</span>
-                <span className={styles.infoStatValue}>{formatEth(totals.balance)} ETH</span>
-              </div>
-              <div className={styles.infoDivider} />
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Auction Bid Reward</span>
-                <span className={styles.infoStatValue}>5% of winning bid</span>
-              </div>
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Proposal Eligibility Quorum</span>
-                <span className={styles.infoStatValue}>
-                  {proposalRewardParams
-                    ? `${Number(proposalRewardParams.proposalEligibilityQuorumBps) / 100}%`
-                    : '10%'}
-                </span>
-              </div>
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Previous Reward per Proposal</span>
-                <span className={styles.infoStatValue}>
-                  {rewardEconData.length > 0
-                    ? `${formatEth(rewardEconData[rewardEconData.length - 1].rewardPerProposal)} ETH`
-                    : '—'}
-                </span>
-              </div>
-              <div className={styles.infoStatRow}>
-                <span className={styles.infoStatLabel}>Previous Reward per Vote</span>
-                <span className={styles.infoStatValue}>
-                  {rewardEconData.length > 0
-                    ? `${formatEth(rewardEconData[rewardEconData.length - 1].rewardPerVote)} ETH`
-                    : '—'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {revenueData.length > 0 && (
-            <div className={styles.chartCard}>
-              <div className={styles.chartTitle}>Auction Revenue per Update</div>
-              <div className={styles.chartContainer}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" angle={-30} textAnchor="end" height={50} />
-                    <YAxis tick={{ fontSize: 10 }} width={50} />
-                    <Tooltip content={<RevenueTooltip />} />
-                    <Bar dataKey="revenue" name="Auction Revenue" fill="#ff9500" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
+          <InfoCard
+            totals={totals}
+            contractWethBalanceEth={contractWethBalanceEth}
+            quorumBps={quorumBps}
+            rewardEconData={rewardEconData}
+          />
+          <RevenueChart revenueData={revenueData} />
         </div>
 
-        {/* Reward rate charts: per proposal, per vote, per winning auction */}
-        {rewardEconData.length > 0 && (
-          <div className={styles.chartsRowTriple}>
-
-          <div className={styles.chartCard}>
-              <div className={styles.chartTitle}>Reward per Winning Auction</div>
-              <div className={styles.chartContainer}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={rewardEconData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" angle={-30} textAnchor="end" height={50} />
-                    <YAxis tick={{ fontSize: 10 }} width={50} />
-                    <Tooltip content={<EthTooltip />} />
-                    <Line type="monotone" dataKey="rewardPerAuction" name="Per Auction"
-                      stroke="#ff9500" strokeWidth={2} dot={{ r: 2 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className={styles.chartCard}>
-              <div className={styles.chartTitle}>Reward per Proposal</div>
-              <div className={styles.chartContainer}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={rewardEconData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" angle={-30} textAnchor="end" height={50} />
-                    <YAxis tick={{ fontSize: 10 }} width={50} />
-                    <Tooltip content={<EthTooltip />} />
-                    <Line type="monotone" dataKey="rewardPerProposal" name="Per Proposal"
-                      stroke="#5B8DEF" strokeWidth={2} dot={{ r: 2 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className={styles.chartCard}>
-              <div className={styles.chartTitle}>Reward per Vote</div>
-              <div className={styles.chartContainer}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={rewardEconData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" angle={-30} textAnchor="end" height={50} />
-                    <YAxis tick={{ fontSize: 10 }} width={50} />
-                    <Tooltip content={<EthTooltip />} />
-                    <Line type="monotone" dataKey="rewardPerVote" name="Per Vote"
-                      stroke="#34c759" strokeWidth={2} dot={{ r: 2 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Reward rate charts */}
+        <RewardRateCharts rewardEconData={rewardEconData} />
 
         {/* Tabbed section */}
         <div className={styles.bottomTabs}>
+        <button
+            className={`${styles.bottomTab} ${bottomTab === 'auctions' ? styles.bottomTabActive : ''}`}
+            onClick={() => setBottomTab('auctions')}
+          >
+            Current Cycle Auctions
+          </button>
           <button
             className={`${styles.bottomTab} ${bottomTab === 'proposals' ? styles.bottomTabActive : ''}`}
             onClick={() => setBottomTab('proposals')}
@@ -375,290 +132,42 @@ export function Clients({ windowId }: AppComponentProps) {
           </button>
         </div>
 
+        {bottomTab === 'auctions' && (
+          <AuctionsTab
+            cycleAuctionsData={cycleAuctionsData}
+            clientMetadata={clientMetadata}
+            clients={clients}
+            pendingRevenueEth={pendingRevenueEth}
+          />
+        )}
+
         {bottomTab === 'proposals' && (
-          <>
-            {/* Cycle distribution charts */}
-            {(proposalsByClient.length > 0 || votesByClient.length > 0 || cycleRewardsByClient.length > 0) && (
-              <div className={styles.chartsRowTriple}>
-                {proposalsByClient.length > 0 && (
-                  <div className={styles.chartCard}>
-                    <div className={styles.chartTitle}>Proposals by Client</div>
-                    <div className={styles.chartContainer}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={proposalsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={proposalsByClient} clients={clients} />} interval={0} height={50} />
-                          <YAxis tick={{ fontSize: 10 }} width={30} allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="count" name="Proposals" radius={[3, 3, 0, 0]}>
-                            {proposalsByClient.map((entry, i) => (
-                              <Cell key={i} fill={entry.color} />
-                            ))}
-                            <LabelList dataKey="count" position="top" fontSize={9} />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-
-                {votesByClient.length > 0 && (
-                  <div className={styles.chartCard}>
-                    <div className={styles.chartTitle}>Votes by Client</div>
-                    <div className={styles.chartContainer}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={votesByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={votesByClient} clients={clients} />} interval={0} height={50} />
-                          <YAxis tick={{ fontSize: 10 }} width={40} />
-                          <Tooltip />
-                          <Bar dataKey="count" name="Votes" radius={[3, 3, 0, 0]}>
-                            {votesByClient.map((entry, i) => (
-                              <Cell key={i} fill={entry.color} />
-                            ))}
-                            <LabelList dataKey="count" position="top" fontSize={9} formatter={(v: any) => Number(v).toLocaleString()} />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-
-                {cycleRewardsByClient.length > 0 && (
-                  <div className={styles.chartCard}>
-                    <div className={styles.chartTitle}>Est. Rewards by Client</div>
-                    <div className={styles.chartContainer}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={cycleRewardsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
-                          <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleRewardsByClient} clients={clients} />} interval={0} height={50} />
-                          <YAxis tick={{ fontSize: 10 }} width={40} />
-                          <Tooltip content={<EthTooltip />} />
-                          <Bar dataKey="reward" name="Reward" radius={[3, 3, 0, 0]}>
-                            {cycleRewardsByClient.map((entry, i) => (
-                              <Cell key={i} fill={entry.color} />
-                            ))}
-                            <LabelList dataKey="reward" position="top" fontSize={9} formatter={(v: any) => formatEth(Number(v))} />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Pool info */}
-            <div className={styles.poolInfo}>
-              <span>
-                Pool <span className={styles.poolValue}>
-                  {pendingRevenue != null
-                    ? `${formatEth(weiToEth((pendingRevenue as [bigint, bigint])[0].toString()) * 0.05)} ETH`
-                    : '—'}
-                </span>
-              </span>
-              <span>
-                Eligible: <span className={styles.poolValue}>
-                  {eligibleCount.eligible}/{eligibleCount.withClient}
-                </span> of {eligibleCount.total}
-              </span>
-              <button
-                className={`${styles.filterToggle} ${filterEligible ? styles.filterToggleActive : ''}`}
-                onClick={() => setFilterEligible((v) => !v)}
-              >
-                {filterEligible ? 'Show All' : 'Eligible Only'}
-              </button>
-            </div>
-
-            {/* Current period proposals (unrewarded) */}
-            {currentPeriodProposals.filter((p) => {
-              if (!filterEligible) return true;
-              const e = getEligibility(p);
-              return e === 'eligible' || e === 'pending';
-            }).map((proposal) => {
-              const forVotes = Number(proposal.forVotes);
-              const againstVotes = Number(proposal.againstVotes);
-              const quorum = Number(proposal.quorumVotes) || 1;
-              const totalVotes = forVotes + againstVotes;
-              const forPct = totalVotes > 0 ? (forVotes / totalVotes) * 100 : 0;
-              const clientName = proposal.clientId != null ? getClientName(proposal.clientId) : null;
-              const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(proposal.status);
-              const isUpdatable = proposal.status === 'UPDATABLE';
-              const isDefeated = proposal.status === 'DEFEATED';
-              const isExecuted = proposal.status === 'EXECUTED';
-              const isQueued = proposal.status === 'QUEUED';
-              const eligibility = getEligibility(proposal);
-
-              const statusClass = isActive ? styles.proposalStatusActive
-                : isUpdatable ? styles.proposalStatusUpdatable
-                : isDefeated ? styles.proposalStatusDefeated
-                : isExecuted ? styles.proposalStatusExecuted
-                : isQueued ? styles.proposalStatusQueued
-                : '';
-
-              return (
-                <div key={proposal.id} className={styles.proposalItem}>
-                  {clientName && (
-                    <span
-                      className={styles.proposalClientBadge}
-                      style={{ background: CHART_COLORS[(proposal.clientId ?? 0) % CHART_COLORS.length] + '22', color: CHART_COLORS[(proposal.clientId ?? 0) % CHART_COLORS.length] }}
-                    >
-                      {clientName}
-                    </span>
-                  )}
-                  <div className={styles.proposalItemHeader}>
-                    <span className={styles.proposalNumber}>#{proposal.id}</span>
-                  </div>
-                  <div className={styles.proposalItemTitle}>{proposal.title}</div>
-                  <div className={styles.proposalItemFooter}>
-                    {isActive ? (
-                      <div className={styles.proposalVoteBar}>
-                        <div className={styles.proposalVoteBarTrack}>
-                          <div
-                            className={styles.proposalVoteBarFill}
-                            style={{ width: `${forPct}%`, background: forVotes >= quorum ? '#34c759' : '#5B8DEF' }}
-                          />
-                        </div>
-                        <span className={styles.proposalVoteCount}>{forVotes}/{quorum}</span>
-                      </div>
-                    ) : (
-                      <span className={`${styles.proposalStatusBadge} ${statusClass}`}>
-                        {proposal.status}
-                      </span>
-                    )}
-                    {eligibility === 'eligible' ? (
-                      <span className={styles.proposalEligible}>Eligible</span>
-                    ) : eligibility === 'pending' ? (
-                      <span className={styles.proposalPending}>Pending</span>
-                    ) : (
-                      <span className={styles.proposalIneligible}>Ineligible</span>
-                    )}
-                  </div>
-                  {eligibility === 'eligible' && proposalBreakdowns.has(Number(proposal.id)) && (
-                    <div className={styles.proposalBreakdown}>
-                      {proposalBreakdowns.get(Number(proposal.id))!.map((entry) => {
-                        const totalReward = entry.estimatedProposalReward + entry.estimatedVoteReward;
-                        return (
-                          <div key={entry.clientId} className={styles.breakdownEntry}>
-                            <span
-                              className={styles.breakdownClient}
-                              style={{ color: CHART_COLORS[entry.clientId % CHART_COLORS.length] }}
-                            >
-                              {entry.name}
-                            </span>
-                            {entry.isProposer && (
-                              <span className={styles.breakdownTag}>proposer</span>
-                            )}
-                            {entry.voteCount > 0 && (
-                              <span className={styles.breakdownVotes}>
-                                {entry.voteCount.toLocaleString()} votes
-                              </span>
-                            )}
-                            <span className={styles.breakdownReward}>
-                              ~{formatEth(totalReward)} ETH
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {currentPeriodProposals.length === 0 && (
-              <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-tertiary, #8e8e93)', fontSize: 13 }}>
-                No proposals in current reward period
-              </div>
-            )}
-          </>
+          <ProposalsTab
+            proposalsByClient={proposalsByClient}
+            votesByClient={votesByClient}
+            cycleRewardsByClient={cycleRewardsByClient}
+            clientMetadata={clientMetadata}
+            clients={clients}
+            pendingRevenueEth={pendingRevenueEth}
+            eligibleCount={eligibleCount}
+            filterEligible={filterEligible}
+            setFilterEligible={setFilterEligible}
+            currentPeriodProposals={currentPeriodProposals}
+            getEligibility={getEligibility}
+            proposalBreakdowns={proposalBreakdowns}
+          />
         )}
 
         {bottomTab === 'leaderboard' && (
-          <>
-            <div className={styles.tableContainer}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={{ width: 40 }}>#</th>
-                    <th>Client</th>
-                    <th className={`${styles.thRight} ${sortField === 'totalRewarded' ? styles.thActive : ''}`}
-                      onClick={() => handleSort('totalRewarded')}>
-                      Rewarded{sortArrow('totalRewarded')}
-                    </th>
-                    <th className={`${styles.thRight} ${sortField === 'balance' ? styles.thActive : ''}`}
-                      onClick={() => handleSort('balance')}>
-                      Balance{sortArrow('balance')}
-                    </th>
-                    <th className={`${styles.thRight} ${sortField === 'voteCount' ? styles.thActive : ''}`}
-                      onClick={() => handleSort('voteCount')}>
-                      Votes{sortArrow('voteCount')}
-                    </th>
-                    <th className={`${styles.thRight} ${sortField === 'proposalCount' ? styles.thActive : ''}`}
-                      onClick={() => handleSort('proposalCount')}>
-                      Props{sortArrow('proposalCount')}
-                    </th>
-                    <th className={`${styles.thRight} ${sortField === 'bidCount' ? styles.thActive : ''}`}
-                      onClick={() => handleSort('bidCount')}>
-                      Bids{sortArrow('bidCount')}
-                    </th>
-                    <th className={`${styles.thRight} ${sortField === 'auctionCount' ? styles.thActive : ''}`}
-                      onClick={() => handleSort('auctionCount')}>
-                      Auctions{sortArrow('auctionCount')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedClients.map((client, idx) => {
-                    const balance = weiToEth(client.totalRewarded) - weiToEth(client.totalWithdrawn);
-                    const rankClass = idx === 0 ? styles.rankGold
-                      : idx === 1 ? styles.rankSilver
-                      : idx === 2 ? styles.rankBronze : '';
-                    return (
-                      <tr key={client.clientId} onClick={() => setSelectedClientId(client.clientId)}>
-                        <td><span className={`${styles.rank} ${rankClass}`}>{idx + 1}</span></td>
-                        <td>
-                          <div className={styles.clientNameCell}>
-                            {(() => {
-                              const imgSrc = getClientImage(client.clientId, clientMetadata, clients);
-                              if (imgSrc) {
-                                return (
-                                  <img
-                                    src={imgSrc}
-                                    alt={client.name}
-                                    className={styles.clientAvatar}
-                                    style={{ objectFit: 'cover' }}
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                  />
-                                );
-                              }
-                              return (
-                                <div className={styles.clientAvatar} style={{ background: CHART_COLORS[client.clientId % CHART_COLORS.length] }}>
-                                  {getInitials(client.name)}
-                                </div>
-                              );
-                            })()}
-                            <div>
-                              <span className={styles.clientName}>
-                                {client.name || `Client ${client.clientId}`}
-                                {client.approved && <span className={styles.approvedBadge} />}
-                              </span>
-                              <div className={styles.clientId}>ID: {client.clientId}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className={`${styles.tdRight} ${styles.tdMono}`}>{formatEth(weiToEth(client.totalRewarded))}</td>
-                        <td className={`${styles.tdRight} ${styles.tdMono}`}>{formatEth(balance)}</td>
-                        <td className={styles.tdRight}>{client.voteCount.toLocaleString()}</td>
-                        <td className={styles.tdRight}>{client.proposalCount}</td>
-                        <td className={styles.tdRight}>{client.bidCount.toLocaleString()}</td>
-                        <td className={styles.tdRight}>{client.auctionCount}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
+          <LeaderboardTab
+            sortedClients={sortedClients}
+            clientMetadata={clientMetadata}
+            clients={clients}
+            sortField={sortField}
+            sortDir={sortDir}
+            handleSort={handleSort}
+            onSelectClient={setSelectedClientId}
+          />
         )}
       </div>
     </div>
