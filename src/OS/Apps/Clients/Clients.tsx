@@ -8,7 +8,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, LineChart, Line,
+  CartesianGrid, LineChart, Line, Cell, LabelList,
 } from 'recharts';
 import { formatEther } from 'viem';
 import type { AppComponentProps } from '@/OS/types/app';
@@ -85,6 +85,30 @@ export function Clients({ windowId }: AppComponentProps) {
     () => getSortedClients(sortField, sortDir),
     [getSortedClients, sortField, sortDir],
   );
+
+  // Aggregate estimated rewards per client across all eligible proposals
+  const cycleRewardsByClient = useMemo(() => {
+    if (!proposalBreakdowns.size) return [];
+    const totals = new Map<number, { name: string; reward: number; color: string }>();
+    for (const entries of proposalBreakdowns.values()) {
+      for (const e of entries) {
+        const prev = totals.get(e.clientId);
+        const reward = e.estimatedProposalReward + e.estimatedVoteReward;
+        if (prev) {
+          prev.reward += reward;
+        } else {
+          totals.set(e.clientId, {
+            name: e.name,
+            reward,
+            color: CHART_COLORS[e.clientId % CHART_COLORS.length],
+          });
+        }
+      }
+    }
+    return Array.from(totals.entries())
+      .map(([clientId, v]) => ({ clientId, ...v }))
+      .sort((a, b) => b.reward - a.reward);
+  }, [proposalBreakdowns]);
 
   const handleSort = useCallback((field: string) => {
     setSortField((prev) => {
@@ -300,53 +324,74 @@ export function Clients({ windowId }: AppComponentProps) {
 
         {bottomTab === 'proposals' && (
           <>
-            {/* Votes by Client distribution */}
-            {votesByClient.length > 0 && (
-              <div className={styles.distributionSection}>
-                <div className={styles.distributionLabel}>Votes by Client</div>
-                <div className={styles.distributionBar}>
-                  {votesByClient.map((c) => (
-                    <div
-                      key={c.clientId}
-                      className={styles.distributionSegment}
-                      style={{ width: `${c.pct}%`, background: c.color }}
-                      title={`${c.name}: ${c.count.toLocaleString()} votes`}
-                    />
-                  ))}
-                </div>
-                <div className={styles.distributionLegend}>
-                  {votesByClient.map((c) => (
-                    <span key={c.clientId} className={styles.legendItem}>
-                      <span className={styles.legendDot} style={{ background: c.color }} />
-                      {c.name} {c.count.toLocaleString()}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Cycle distribution charts */}
+            {(proposalsByClient.length > 0 || votesByClient.length > 0 || cycleRewardsByClient.length > 0) && (
+              <div className={styles.chartsRowTriple}>
+                {proposalsByClient.length > 0 && (
+                  <div className={styles.chartCard}>
+                    <div className={styles.chartTitle}>Proposals by Client</div>
+                    <div className={styles.chartContainer}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={proposalsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
+                          <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                          <YAxis tick={{ fontSize: 10 }} width={30} allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="count" name="Proposals" radius={[3, 3, 0, 0]}>
+                            {proposalsByClient.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                            <LabelList dataKey="count" position="top" fontSize={9} />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
 
-            {/* Proposals by Client distribution */}
-            {proposalsByClient.length > 0 && (
-              <div className={styles.distributionSection}>
-                <div className={styles.distributionLabel}>Proposals by Client</div>
-                <div className={styles.distributionBar}>
-                  {proposalsByClient.map((c) => (
-                    <div
-                      key={c.clientId}
-                      className={styles.distributionSegment}
-                      style={{ width: `${c.pct}%`, background: c.color }}
-                      title={`${c.name}: ${c.count} proposals`}
-                    />
-                  ))}
-                </div>
-                <div className={styles.distributionLegend}>
-                  {proposalsByClient.map((c) => (
-                    <span key={c.clientId} className={styles.legendItem}>
-                      <span className={styles.legendDot} style={{ background: c.color }} />
-                      {c.name} {c.count}
-                    </span>
-                  ))}
-                </div>
+                {votesByClient.length > 0 && (
+                  <div className={styles.chartCard}>
+                    <div className={styles.chartTitle}>Votes by Client</div>
+                    <div className={styles.chartContainer}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={votesByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
+                          <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                          <YAxis tick={{ fontSize: 10 }} width={40} />
+                          <Tooltip />
+                          <Bar dataKey="count" name="Votes" radius={[3, 3, 0, 0]}>
+                            {votesByClient.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                            <LabelList dataKey="count" position="top" fontSize={9} formatter={(v: any) => Number(v).toLocaleString()} />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {cycleRewardsByClient.length > 0 && (
+                  <div className={styles.chartCard}>
+                    <div className={styles.chartTitle}>Est. Rewards by Client</div>
+                    <div className={styles.chartContainer}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={cycleRewardsByClient} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e5e5e5)" />
+                          <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-30} textAnchor="end" height={50} />
+                          <YAxis tick={{ fontSize: 10 }} width={40} />
+                          <Tooltip content={<EthTooltip />} />
+                          <Bar dataKey="reward" name="Reward" radius={[3, 3, 0, 0]}>
+                            {cycleRewardsByClient.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                            <LabelList dataKey="reward" position="top" fontSize={9} formatter={(v: any) => formatEth(Number(v))} />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
