@@ -6,16 +6,11 @@ const nextConfig: NextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.experiments = {
-        ...config.experiments,
-        asyncWebAssembly: true,
-      };
       config.module.rules.push({
         test: /\.wasm$/,
         type: "asset/resource",
       });
     }
-
     return config;
   },
 };

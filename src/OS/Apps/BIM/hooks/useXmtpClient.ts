@@ -70,9 +70,7 @@ export function useXmtpClient() {
         setXmtpReady(true);
         setXmtpConnecting(false);
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("[BIM] XMTP client initialized, inbox:", client.inboxId);
-        }
+        console.log("[BIM] XMTP client initialized, inbox:", client.inboxId);
       } catch (err) {
         console.error("[BIM] Failed to initialize XMTP:", err);
         setXmtpError(err instanceof Error ? err.message : "Failed to connect to XMTP");
