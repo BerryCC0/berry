@@ -1,13 +1,13 @@
 /**
  * Dynamic OG Image for Individual Client Detail
- * Shows client name, URL, registration date, stats, and NFT image.
- * Matches the dark gradient style of the dashboard OG image.
+ * Clean layout matching the client detail header style:
+ * favicon + name + approved dot, URL, ID/date, then stats in bordered boxes.
  */
 
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
-import { CLIENT_NAMES, CLIENT_REGISTRY, getClientUrl } from '@/OS/lib/clientNames';
+import { CLIENT_NAMES, getClientUrl } from '@/OS/lib/clientNames';
 
 export const runtime = 'nodejs';
 
@@ -19,58 +19,6 @@ function fmtEth(n: number): string {
   if (n >= 1) return n.toFixed(2);
   if (n >= 0.01) return n.toFixed(3);
   return n.toFixed(4);
-}
-
-function svgToDataUri(svg: string): string {
-  const b64 = Buffer.from(svg, 'utf-8').toString('base64');
-  return `data:image/svg+xml;base64,${b64}`;
-}
-
-// Cache the Courier font so it's only fetched once per cold start
-let courierFontB64: string | null = null;
-async function getCourierFontB64(): Promise<string> {
-  if (courierFontB64) return courierFontB64;
-  // Courier Prime is a Courier-compatible monospace font from Google Fonts
-  const res = await fetch(
-    'https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELWwZjW-_-tvg.ttf',
-  );
-  const buf = await res.arrayBuffer();
-  courierFontB64 = Buffer.from(buf).toString('base64');
-  return courierFontB64;
-}
-
-/**
- * Extract raw SVG from a data URI, resize it, and embed a Courier font
- * so resvg can render the text elements in the NFT image.
- */
-async function prepareNftSvg(dataUri: string, size: number): Promise<string> {
-  let svg: string;
-
-  if (dataUri.includes('base64,')) {
-    const b64 = dataUri.split('base64,')[1];
-    svg = Buffer.from(b64, 'base64').toString('utf-8');
-  } else if (dataUri.startsWith('data:image/svg+xml,')) {
-    svg = decodeURIComponent(dataUri.slice('data:image/svg+xml,'.length));
-  } else {
-    svg = dataUri;
-  }
-
-  // Embed Courier font so resvg can render text
-  const fontB64 = await getCourierFontB64();
-  const fontFaceStyle = `<defs><style>@font-face { font-family: 'Courier'; src: url('data:font/ttf;base64,${fontB64}') format('truetype'); }</style></defs>`;
-
-  // Inject font + resize
-  svg = svg.replace(
-    /<svg([^>]*)>/i,
-    (match, attrs) => {
-      let cleaned = attrs
-        .replace(/\s*width\s*=\s*["'][^"']*["']/gi, '')
-        .replace(/\s*height\s*=\s*["'][^"']*["']/gi, '');
-      return `<svg${cleaned} width="${size}" height="${size}">${fontFaceStyle}`;
-    },
-  );
-
-  return svgToDataUri(svg);
 }
 
 function formatDate(timestamp: string): string {
@@ -94,22 +42,14 @@ export async function GET(
   try {
     const sql = ponderSql();
 
-    // Query the actual schema: client row + aggregated counts from separate tables
-    const [clientRows, rankRows, voteCounts, proposalCounts, auctionCounts, bidCounts] = await Promise.all([
+    const [clientRows, voteCounts, proposalCounts, auctionCounts, bidCounts] = await Promise.all([
       sql`
         SELECT client_id, name, description, approved,
                total_rewarded::text as total_rewarded,
                total_withdrawn::text as total_withdrawn,
-               nft_image,
                block_timestamp::text as block_timestamp
         FROM ponder_live.clients
         WHERE client_id = ${clientId}
-      `,
-      sql`
-        SELECT client_id
-        FROM ponder_live.clients
-        WHERE approved = true
-        ORDER BY total_rewarded DESC NULLS LAST
       `,
       sql`
         SELECT COALESCE(SUM(votes), 0)::int as vote_count
@@ -149,49 +89,46 @@ export async function GET(
     const auctionCount = auctionCounts[0]?.auction_count ?? 0;
     const bidCount = bidCounts[0]?.bid_count ?? 0;
 
-    // Calculate rank
-    const rank = rankRows.findIndex((r: any) => r.client_id === clientId) + 1;
-    const rankLabel = rank > 0 ? `#${rank}` : '';
-
-    // Client URL
     const clientUrl = getClientUrl(clientId, c.description);
-
-    // Registration date
     const registeredDate = formatDate(c.block_timestamp);
 
-    // Stats to display
-    const stats = [
-      { label: 'REWARDED', value: `${fmtEth(rewarded)} ETH`, color: '#5B8DEF' },
-      { label: 'BALANCE', value: `${fmtEth(balance)} ETH`, color: '#34c759' },
-      { label: 'VOTES', value: voteCount.toLocaleString(), color: '#ff9500' },
-      { label: 'PROPOSALS', value: String(proposalCount), color: '#af52de' },
-      { label: 'BIDS', value: bidCount.toLocaleString(), color: '#5ac8fa' },
-      { label: 'AUCTION WINS', value: String(auctionCount), color: '#ffcc00' },
-    ];
-
-    // Process NFT image — resize SVG and embed Courier font for text rendering
-    const NFT_SIZE = 500;
-    let nftImageSrc: string | null = null;
-    if (c.nft_image) {
-      const raw = c.nft_image as string;
-      if (raw.startsWith('data:image/svg') || raw.startsWith('<svg') || raw.startsWith('<?xml')) {
-        nftImageSrc = await prepareNftSvg(raw, NFT_SIZE);
-      } else if (raw.startsWith('data:')) {
-        // Non-SVG data URI (e.g. PNG) — use as-is
-        nftImageSrc = raw;
-      }
-    }
-
-    // Favicon: use Google's favicon service for reliability
+    // Favicon via Google's service (large size for right-side display)
     let faviconSrc: string | null = null;
     if (clientUrl) {
       try {
         const domain = new URL(clientUrl).hostname;
-        faviconSrc = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+        faviconSrc = `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(clientUrl)}&size=256`;
       } catch {
-        // invalid URL, skip
+        // skip
       }
     }
+
+    // Stat box style shared across all boxes
+    const statBox = {
+      display: 'flex' as const,
+      flexDirection: 'column' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      border: '2px solid #e0e0e0',
+      borderRadius: 8,
+      padding: '16px 24px',
+      minWidth: 120,
+    };
+
+    const statLabel = {
+      fontSize: 14,
+      fontWeight: 700,
+      color: '#888',
+      letterSpacing: 1,
+      textTransform: 'uppercase' as const,
+      marginBottom: 4,
+    };
+
+    const statValue = {
+      fontSize: 32,
+      fontWeight: 800,
+      color: '#1a1a1a',
+    };
 
     return new ImageResponse(
       (
@@ -200,72 +137,35 @@ export async function GET(
             display: 'flex',
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)',
+            background: '#f5f5f5',
             fontFamily: 'system-ui',
-            padding: 0,
+            padding: '56px 64px',
+            alignItems: 'center',
           }}
         >
-          {/* Left side: Info */}
+          {/* Left side: name, URL, stats */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
+              flex: 1,
               justifyContent: 'center',
-              width: nftImageSrc ? 700 : '100%',
-              padding: '48px 56px',
             }}
           >
-            {/* Branding */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 12,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 20,
-                  color: 'rgba(255,255,255,0.35)',
-                  fontWeight: 600,
-                }}
-              >
-                Client Incentives
-              </span>
-              <span
-                style={{
-                  fontSize: 20,
-                  color: 'rgba(255,255,255,0.25)',
-                  fontWeight: 600,
-                }}
-              >
-                Berry OS
-              </span>
-            </div>
-
-            {/* Client name + favicon + approved badge + rank */}
+            {/* Name + Approved dot */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 14,
-                marginBottom: 6,
+                marginBottom: 8,
               }}
             >
-              {faviconSrc && (
-                <img
-                  src={faviconSrc}
-                  width={48}
-                  height={48}
-                  style={{ borderRadius: 8, flexShrink: 0 }}
-                />
-              )}
               <span
                 style={{
-                  fontSize: 60,
+                  fontSize: 64,
                   fontWeight: 800,
-                  color: '#ffffff',
+                  color: '#1a1a1a',
                   letterSpacing: '-1px',
                   lineHeight: 1.1,
                 }}
@@ -276,123 +176,121 @@ export async function GET(
                 <div
                   style={{
                     display: 'flex',
-                    width: 18,
-                    height: 18,
+                    width: 20,
+                    height: 20,
                     borderRadius: '50%',
                     background: '#34c759',
                     flexShrink: 0,
-                    marginTop: 4,
                   }}
                 />
               )}
-              {rankLabel && (
-                <span
-                  style={{
-                    fontSize: 32,
-                    fontWeight: 700,
-                    color: rank <= 3 ? '#ffd700' : 'rgba(255,255,255,0.4)',
-                    marginLeft: 4,
-                  }}
-                >
-                  {rankLabel}
-                </span>
-              )}
             </div>
 
-            {/* URL + ID + Registration date */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-                marginBottom: 28,
-              }}
-            >
-              {clientUrl && (
-                <span
-                  style={{
-                    fontSize: 22,
-                    color: '#5B8DEF',
-                    fontWeight: 600,
-                  }}
-                >
-                  {clientUrl.replace(/^https?:\/\//, '')}
-                </span>
-              )}
+            {/* URL */}
+            {clientUrl && (
               <span
                 style={{
-                  fontSize: 20,
-                  color: 'rgba(255,255,255,0.4)',
+                  fontSize: 24,
+                  color: '#555',
                   fontWeight: 500,
+                  marginBottom: 4,
                 }}
               >
-                ID: {clientId}{registeredDate ? ` · Registered ${registeredDate}` : ''}
+                {clientUrl.replace(/^https?:\/\//, '')}
               </span>
-            </div>
+            )}
 
-            {/* Stats grid */}
+            {/* ID + Registration date */}
+            <span
+              style={{
+                fontSize: 22,
+                color: '#999',
+                fontWeight: 500,
+                marginBottom: 40,
+              }}
+            >
+              ID: {clientId}{registeredDate ? ` · Registered ${registeredDate}` : ''}
+            </span>
+
+            {/* Stats top row: Rewarded + Balance */}
             <div
               style={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: 10,
+                gap: 12,
+                marginBottom: 12,
               }}
             >
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: 'rgba(255,255,255,0.06)',
-                    borderRadius: 10,
-                    padding: '12px 18px',
-                    minWidth: 130,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: 'rgba(255,255,255,0.4)',
-                      letterSpacing: 0.5,
-                      marginBottom: 3,
-                    }}
-                  >
-                    {stat.label}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 26,
-                      fontWeight: 700,
-                      color: stat.color,
-                    }}
-                  >
-                    {stat.value}
-                  </span>
-                </div>
-              ))}
+              <div style={{ ...statBox, padding: '16px 32px', minWidth: 180 }}>
+                <span style={statLabel}>Rewarded</span>
+                <span style={statValue}>{fmtEth(rewarded)} ETH</span>
+              </div>
+              <div style={{ ...statBox, padding: '16px 32px', minWidth: 180 }}>
+                <span style={statLabel}>Balance</span>
+                <span style={statValue}>{fmtEth(balance)} ETH</span>
+              </div>
+            </div>
+
+            {/* Stats bottom row: Wins, Bids, Votes, Props */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+              }}
+            >
+              <div style={statBox}>
+                <span style={statLabel}>Wins</span>
+                <span style={statValue}>{auctionCount}</span>
+              </div>
+              <div style={statBox}>
+                <span style={statLabel}>Bids</span>
+                <span style={statValue}>{bidCount.toLocaleString()}</span>
+              </div>
+              <div style={statBox}>
+                <span style={statLabel}>Votes</span>
+                <span style={statValue}>{voteCount.toLocaleString()}</span>
+              </div>
+              <div style={statBox}>
+                <span style={statLabel}>Props</span>
+                <span style={statValue}>{proposalCount}</span>
+              </div>
+            </div>
+
+            {/* Berry OS branding */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                marginTop: 32,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 18,
+                  color: '#bbb',
+                  fontWeight: 600,
+                }}
+              >
+                Client Incentives — Berry OS
+              </span>
             </div>
           </div>
 
-          {/* Right side: NFT image */}
-          {nftImageSrc && (
+          {/* Right side: Large favicon */}
+          {faviconSrc && (
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flex: 1,
-                padding: 24,
+                marginLeft: 48,
               }}
             >
               <img
-                src={nftImageSrc}
-                width={NFT_SIZE}
-                height={NFT_SIZE}
+                src={faviconSrc}
+                width={280}
+                height={280}
                 style={{
-                  borderRadius: 24,
-                  imageRendering: 'pixelated',
+                  borderRadius: 32,
                   objectFit: 'contain',
                 }}
               />
@@ -408,7 +306,6 @@ export async function GET(
   } catch (error) {
     console.error(`[OG] Failed to generate Client ${clientId} image:`, error);
 
-    // Fallback
     return new ImageResponse(
       (
         <div
@@ -419,13 +316,13 @@ export async function GET(
             justifyContent: 'center',
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)',
+            background: '#f5f5f5',
           }}
         >
-          <span style={{ fontSize: 72, fontWeight: 800, color: '#ffffff' }}>
+          <span style={{ fontSize: 72, fontWeight: 800, color: '#1a1a1a' }}>
             Client #{clientId}
           </span>
-          <span style={{ fontSize: 28, color: 'rgba(255,255,255,0.5)', marginTop: 16 }}>
+          <span style={{ fontSize: 28, color: '#999', marginTop: 16 }}>
             Client Incentives — Berry OS
           </span>
         </div>
