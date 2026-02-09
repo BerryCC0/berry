@@ -88,6 +88,11 @@ ponder.on("ClientRewards:ClientUpdated", async ({ event, context }) => {
 });
 
 ponder.on("ClientRewards:ClientApprovalSet", async ({ event, context }) => {
+  const nftImage = await fetchNftImage(context, event.args.clientId);
+
+  const update: Record<string, any> = { approved: event.args.approved };
+  if (nftImage) update.nftImage = nftImage;
+
   await context.db.insert(clients).values({
     clientId: Number(event.args.clientId),
     name: "",
@@ -95,11 +100,10 @@ ponder.on("ClientRewards:ClientApprovalSet", async ({ event, context }) => {
     approved: event.args.approved,
     totalRewarded: 0n,
     totalWithdrawn: 0n,
+    nftImage,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
-  }).onConflictDoUpdate({
-    approved: event.args.approved,
-  });
+  }).onConflictDoUpdate(update);
 });
 
 // =============================================================================
@@ -115,13 +119,22 @@ ponder.on("ClientRewards:ClientRewarded", async ({ event, context }) => {
     blockTimestamp: event.block.timestamp,
   });
 
-  // Read authoritative on-chain state for this client
-  const metadata = await context.client.readContract({
-    abi: context.contracts.ClientRewards.abi,
-    address: context.contracts.ClientRewards.address,
-    functionName: "clientMetadata",
-    args: [event.args.clientId],
-  });
+  // Read authoritative on-chain state + NFT image for this client
+  const [metadata, nftImage] = await Promise.all([
+    context.client.readContract({
+      abi: context.contracts.ClientRewards.abi,
+      address: context.contracts.ClientRewards.address,
+      functionName: "clientMetadata",
+      args: [event.args.clientId],
+    }),
+    fetchNftImage(context, event.args.clientId),
+  ]);
+
+  const rewardUpdate: Record<string, any> = {
+    totalRewarded: metadata.rewarded,
+    totalWithdrawn: metadata.withdrawn,
+  };
+  if (nftImage) rewardUpdate.nftImage = nftImage;
 
   await context.db.insert(clients).values({
     clientId: Number(event.args.clientId),
@@ -130,12 +143,10 @@ ponder.on("ClientRewards:ClientRewarded", async ({ event, context }) => {
     approved: metadata.approved,
     totalRewarded: metadata.rewarded,
     totalWithdrawn: metadata.withdrawn,
+    nftImage,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
-  }).onConflictDoUpdate({
-    totalRewarded: metadata.rewarded,
-    totalWithdrawn: metadata.withdrawn,
-  });
+  }).onConflictDoUpdate(rewardUpdate);
 });
 
 ponder.on("ClientRewards:ClientBalanceWithdrawal", async ({ event, context }) => {
@@ -148,13 +159,22 @@ ponder.on("ClientRewards:ClientBalanceWithdrawal", async ({ event, context }) =>
     blockTimestamp: event.block.timestamp,
   });
 
-  // Read authoritative on-chain state for this client
-  const metadata = await context.client.readContract({
-    abi: context.contracts.ClientRewards.abi,
-    address: context.contracts.ClientRewards.address,
-    functionName: "clientMetadata",
-    args: [event.args.clientId],
-  });
+  // Read authoritative on-chain state + NFT image for this client
+  const [metadata, nftImage] = await Promise.all([
+    context.client.readContract({
+      abi: context.contracts.ClientRewards.abi,
+      address: context.contracts.ClientRewards.address,
+      functionName: "clientMetadata",
+      args: [event.args.clientId],
+    }),
+    fetchNftImage(context, event.args.clientId),
+  ]);
+
+  const withdrawUpdate: Record<string, any> = {
+    totalRewarded: metadata.rewarded,
+    totalWithdrawn: metadata.withdrawn,
+  };
+  if (nftImage) withdrawUpdate.nftImage = nftImage;
 
   await context.db.insert(clients).values({
     clientId: Number(event.args.clientId),
@@ -163,12 +183,10 @@ ponder.on("ClientRewards:ClientBalanceWithdrawal", async ({ event, context }) =>
     approved: metadata.approved,
     totalRewarded: metadata.rewarded,
     totalWithdrawn: metadata.withdrawn,
+    nftImage,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
-  }).onConflictDoUpdate({
-    totalRewarded: metadata.rewarded,
-    totalWithdrawn: metadata.withdrawn,
-  });
+  }).onConflictDoUpdate(withdrawUpdate);
 });
 
 // =============================================================================

@@ -259,6 +259,15 @@ function buildInitialState(
       }
       break;
 
+    case "clients":
+      // /clients/berry-os/votes → path for internal routing
+      // /clients/11 → client detail by ID
+      // /clients/leaderboard → dashboard tab
+      if (safeParams.length > 0) {
+        state.path = safeParams.join("/");
+      }
+      break;
+
     default:
       // Generic: pass sanitized search params as state
       Object.entries(safeSearchParams).forEach(([key, value]) => {

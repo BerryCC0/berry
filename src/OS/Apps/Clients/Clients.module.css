@@ -892,8 +892,8 @@
 }
 
 .detailAvatar {
-  width: auto;
-  height: 180px;
+  width: 220px;
+  height: 220px;
   border-radius: 6px;
   flex-shrink: 0;
   object-fit: contain;
@@ -904,6 +904,49 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.nftColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.nftOwnerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--berry-text-muted, #8e8e93);
+  text-decoration: none;
+  max-width: 220px;
+  white-space: nowrap;
+}
+
+.nftOwnerLabel:hover {
+  color: var(--berry-accent, #5B8DEF);
+}
+
+.nftOwnerAvatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 5%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.nftOwnerName {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-weight: 500;
+  color: var(--berry-text-secondary, #6e6e73);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nftOwnerLabel:hover .nftOwnerName {
+  color: var(--berry-accent, #5B8DEF);
 }
 
 .backButton {
@@ -922,7 +965,6 @@
 }
 
 .detailTitleBlock {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -958,10 +1000,16 @@
   font-weight: 400;
 }
 
+.headerStatsWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 24px;
+  margin-right: auto;
+}
+
 .headerStats {
-  display: grid;
-  grid-template-columns: repeat(6, auto);
-  gap: 0;
+  display: flex;
   flex-shrink: 0;
   border: 1px solid var(--berry-border, #e5e5e5);
   border-radius: 6px;

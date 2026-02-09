@@ -8,6 +8,8 @@ import type { Metadata } from "next";
 import { osAppConfigs } from "@/OS/Apps/OSAppConfig";
 import { ponderSql } from '@/app/lib/ponder-db';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
+import { CLIENT_NAMES } from '@/OS/lib/clientNames';
+import { slugifyClientName } from '@/OS/Apps/Clients/types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -56,6 +58,91 @@ async function fetchCandidateMetaBySlug(slug: string) {
       LIMIT 1
     `;
     return rows[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+// Resolve a client ID or name slug to metadata for OG tags
+async function resolveClientMeta(param: string, baseUrl: string): Promise<{
+  clientId: number;
+  name: string;
+  description: string;
+  ogImageUrl: string;
+} | null> {
+  try {
+    const sql = ponderSql();
+    const numId = parseInt(param, 10);
+
+    let clientId: number | null = null;
+
+    if (!isNaN(numId) && numId >= 0) {
+      // Direct numeric ID
+      clientId = numId;
+    } else {
+      // Try to resolve slug from CLIENT_NAMES registry
+      for (const [idStr, name] of Object.entries(CLIENT_NAMES)) {
+        if (slugifyClientName(name) === param) {
+          clientId = Number(idStr);
+          break;
+        }
+      }
+
+      // If not in registry, try DB lookup by slugified name
+      if (clientId === null) {
+        const rows = await sql`
+          SELECT client_id, name
+          FROM ponder_live.clients
+          ORDER BY total_rewarded DESC NULLS LAST
+        `;
+        for (const row of rows) {
+          if (slugifyClientName(row.name || '') === param) {
+            clientId = row.client_id;
+            break;
+          }
+        }
+      }
+    }
+
+    if (clientId === null) return null;
+
+    // Fetch client data + aggregated counts from separate tables
+    const [clientRowsResult, voteResult, proposalResult] = await Promise.all([
+      sql`
+        SELECT client_id, name, description,
+               total_rewarded::text as total_rewarded,
+               total_withdrawn::text as total_withdrawn,
+               block_timestamp::text as block_timestamp
+        FROM ponder_live.clients
+        WHERE client_id = ${clientId}
+      `,
+      sql`
+        SELECT COALESCE(SUM(votes), 0)::int as vote_count
+        FROM ponder_live.client_votes
+        WHERE client_id = ${clientId}
+      `,
+      sql`
+        SELECT COUNT(*)::int as proposal_count
+        FROM ponder_live.proposals
+        WHERE client_id = ${clientId}
+      `,
+    ]);
+    if (clientRowsResult.length === 0) return null;
+
+    const c = clientRowsResult[0];
+    const name = CLIENT_NAMES[clientId] ?? (c.name || `Client ${clientId}`);
+    const rewarded = Number(BigInt(c.total_rewarded || '0')) / 1e18;
+    const ethStr = rewarded >= 1 ? rewarded.toFixed(2) : rewarded.toFixed(4);
+    const voteCount = voteResult[0]?.vote_count ?? 0;
+    const proposalCount = proposalResult[0]?.proposal_count ?? 0;
+    const description = `${name} (Client #${clientId}) — ${ethStr} ETH rewarded, ${voteCount} votes, ${proposalCount} proposals.`;
+
+    return {
+      clientId,
+      name,
+      description,
+      ogImageUrl: `${baseUrl}/api/og/clients/${clientId}`,
+    };
   } catch {
     return null;
   }
@@ -116,6 +203,38 @@ export async function generateMetadata({
 
   // Client Incentives metadata
   if (appId === 'clients') {
+    // Check for individual client route: /clients/{idOrName} or /clients/{idOrName}/{tab}
+    if (routeParams && routeParams.length > 0) {
+      const firstParam = routeParams[0];
+      // Dashboard tabs don't get individual metadata
+      const dashboardTabs = new Set(['auctions', 'proposals', 'leaderboard']);
+      if (!dashboardTabs.has(firstParam)) {
+        const clientMeta = await resolveClientMeta(firstParam, baseUrl);
+        if (clientMeta) {
+          const tab = routeParams[1] || null;
+          const tabLabel = tab ? ` — ${tab.charAt(0).toUpperCase() + tab.slice(1)}` : '';
+          const title = `${clientMeta.name}${tabLabel}`;
+          return {
+            title: `${title} - Client Incentives - Berry OS`,
+            description: clientMeta.description,
+            openGraph: {
+              title: `${title} - Client Incentives`,
+              description: clientMeta.description,
+              images: [clientMeta.ogImageUrl],
+              type: "website",
+            },
+            twitter: {
+              card: "summary_large_image",
+              title: `${title} - Client Incentives`,
+              description: clientMeta.description,
+              images: [clientMeta.ogImageUrl],
+            },
+          };
+        }
+      }
+    }
+
+    // Dashboard / fallback
     const ogImageUrl = `${baseUrl}/api/og/clients`;
     return {
       title: "Client Incentives - Berry OS",

@@ -1,11 +1,21 @@
 /**
  * Clients Incentives Dashboard
  * Thin orchestrator — all business logic lives in hooks/, all presentation in components/.
+ *
+ * Routes:
+ * - /clients                    → Dashboard (default tab)
+ * - /clients/auctions           → Dashboard auctions tab
+ * - /clients/proposals          → Dashboard proposals tab
+ * - /clients/leaderboard        → Dashboard leaderboard tab
+ * - /clients/{id}               → Client detail by ID
+ * - /clients/{name-slug}        → Client detail by name
+ * - /clients/{id}/{tab}         → Client detail with specific tab
+ * - /clients/{name-slug}/{tab}  → Client detail with specific tab
  */
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { AppComponentProps } from '@/OS/types/app';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useOwnedClient } from './hooks/useOwnedClient';
@@ -16,9 +26,20 @@ import { RewardRateCharts } from './components/RewardRateCharts';
 import { ProposalsTab } from './components/ProposalsTab';
 import { AuctionsTab } from './components/AuctionsTab';
 import { LeaderboardTab } from './components/LeaderboardTab';
+import {
+  parseClientsRoute,
+  clientsRouteToPath,
+  type ClientsRoute,
+  type DashboardTab,
+  type ClientTab,
+} from './types';
 import styles from './Clients.module.css';
 
-export function Clients({ windowId }: AppComponentProps) {
+interface ClientsInitialState {
+  path?: string;
+}
+
+export function Clients({ windowId, initialState, onStateChange }: AppComponentProps) {
   // All data orchestration
   const {
     clients, clientsLoading, rewardUpdates,
@@ -33,13 +54,84 @@ export function Clients({ windowId }: AppComponentProps) {
   // Client NFT ownership detection
   const { ownedClientId, clientBalance: ownedClientBalance } = useOwnedClient(clients);
 
-  // UI state
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  // Cast initialState
+  const clientsState = initialState as ClientsInitialState | undefined;
+
+  // Route-based navigation (following Camp's pattern)
+  const [route, setRoute] = useState<ClientsRoute>(() =>
+    parseClientsRoute(clientsState?.path, clients ?? undefined),
+  );
+  const [history, setHistory] = useState<ClientsRoute[]>([]);
+
+  // Re-parse route when initialState changes (deep link from external)
+  useEffect(() => {
+    if (clientsState?.path !== undefined) {
+      const newRoute = parseClientsRoute(clientsState.path, clients ?? undefined);
+      setRoute(newRoute);
+    }
+  }, [clientsState?.path]);
+
+  // Re-resolve slug-based routes once clients data loads
+  // (initial parse may not have had the client list)
+  useEffect(() => {
+    if (clients && clientsState?.path) {
+      const resolved = parseClientsRoute(clientsState.path, clients);
+      setRoute((prev) => {
+        // Only update if the resolution actually changed something
+        if (prev.view === 'dashboard' && resolved.view === 'client') return resolved;
+        return prev;
+      });
+    }
+  }, [clients, clientsState?.path]);
+
+  // Navigate to a new route
+  const navigate = useCallback((newRoute: ClientsRoute) => {
+    setHistory((prev) => [...prev, route]);
+    setRoute(newRoute);
+
+    const newPath = clientsRouteToPath(newRoute, clients ?? undefined);
+    onStateChange?.({ path: newPath });
+  }, [route, onStateChange, clients]);
+
+  // Go back in history
+  const goBack = useCallback(() => {
+    if (history.length > 0) {
+      const prevRoute = history[history.length - 1];
+      setHistory((prev) => prev.slice(0, -1));
+      setRoute(prevRoute);
+      onStateChange?.({ path: clientsRouteToPath(prevRoute, clients ?? undefined) });
+    } else {
+      setRoute({ view: 'dashboard' });
+      onStateChange?.({ path: '' });
+    }
+  }, [history, onStateChange, clients]);
+
+  // Convenience navigation helpers
+  const navigateToClient = useCallback((clientId: number, tab?: ClientTab) => {
+    navigate({ view: 'client', clientId, tab });
+  }, [navigate]);
+
+  const navigateToDashboardTab = useCallback((tab: DashboardTab) => {
+    navigate({ view: 'dashboard', tab });
+  }, [navigate]);
+
+  const handleClientTabChange = useCallback((tab: ClientTab) => {
+    if (route.view === 'client') {
+      const newRoute: ClientsRoute = { view: 'client', clientId: route.clientId, tab };
+      setRoute(newRoute);
+      const newPath = clientsRouteToPath(newRoute, clients ?? undefined);
+      onStateChange?.({ path: newPath });
+    }
+  }, [route, onStateChange, clients]);
+
+  // UI state not tied to URL
   const [sortField, setSortField] = useState<string>('totalRewarded');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [bottomTab, setBottomTab] = useState<'proposals' | 'auctions' | 'leaderboard'>('proposals');
   const [filterEligible, setFilterEligible] = useState(true);
   const [chartsOpen, setChartsOpen] = useState(false);
+
+  // Derive bottomTab from route
+  const bottomTab: DashboardTab = route.view === 'dashboard' ? (route.tab ?? 'auctions') : 'auctions';
 
   const sortedClients = useMemo(
     () => getSortedClients(sortField, sortDir),
@@ -58,19 +150,22 @@ export function Clients({ windowId }: AppComponentProps) {
   }, []);
 
   // ---------- Detail view ----------
-  if (selectedClientId !== null) {
-    const client = clients?.find((c) => c.clientId === selectedClientId);
+  if (route.view === 'client') {
+    const client = clients?.find((c) => c.clientId === route.clientId);
     if (client) {
       return (
         <ClientDetail
           client={client}
           rewardUpdates={rewardUpdates ?? []}
-          onBack={() => setSelectedClientId(null)}
-          isOwner={ownedClientId === selectedClientId}
+          onBack={goBack}
+          isOwner={ownedClientId === route.clientId}
           clientMetadata={clientMetadata}
+          activeTab={route.tab}
+          onTabChange={handleClientTabChange}
         />
       );
     }
+    // Client not found (data still loading or invalid ID) — fall through to loading/dashboard
   }
 
   // ---------- Loading ----------
@@ -103,7 +198,7 @@ export function Clients({ windowId }: AppComponentProps) {
         {ownedClientId != null && (
           <button
             className={styles.toolbarClientButton}
-            onClick={() => setSelectedClientId(ownedClientId)}
+            onClick={() => navigateToClient(ownedClientId)}
           >
             {clients?.find((c) => c.clientId === ownedClientId)?.name || 'My Client'}
           </button>
@@ -141,19 +236,19 @@ export function Clients({ windowId }: AppComponentProps) {
         <div className={styles.bottomTabs}>
         <button
             className={`${styles.bottomTab} ${bottomTab === 'auctions' ? styles.bottomTabActive : ''}`}
-            onClick={() => setBottomTab('auctions')}
+            onClick={() => navigateToDashboardTab('auctions')}
           >
             Current Cycle Auctions
           </button>
           <button
             className={`${styles.bottomTab} ${bottomTab === 'proposals' ? styles.bottomTabActive : ''}`}
-            onClick={() => setBottomTab('proposals')}
+            onClick={() => navigateToDashboardTab('proposals')}
           >
             Current Cycle Proposals
           </button>
           <button
             className={`${styles.bottomTab} ${bottomTab === 'leaderboard' ? styles.bottomTabActive : ''}`}
-            onClick={() => setBottomTab('leaderboard')}
+            onClick={() => navigateToDashboardTab('leaderboard')}
           >
             Leaderboard
           </button>
@@ -194,7 +289,7 @@ export function Clients({ windowId }: AppComponentProps) {
             sortField={sortField}
             sortDir={sortDir}
             handleSort={handleSort}
-            onSelectClient={setSelectedClientId}
+            onSelectClient={navigateToClient}
           />
         )}
       </div>

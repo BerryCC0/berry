@@ -87,6 +87,12 @@ export function useRouteSync() {
         }
         return "/camp";
 
+      case "clients":
+        if (state.path && typeof state.path === 'string' && state.path.length > 0) {
+          return `/clients/${state.path}`;
+        }
+        return "/clients";
+
       default:
         return `/${appId}`;
     }

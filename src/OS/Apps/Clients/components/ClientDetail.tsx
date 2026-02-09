@@ -15,10 +15,10 @@ import { formatEther } from 'viem';
 import { useClientRewardsTimeSeries, useClientActivity } from '../hooks/useClientIncentives';
 import { ClientRewardsABI } from '@/app/lib/nouns/abis/ClientRewards';
 import { CLIENT_REWARDS_ADDRESS } from '../constants';
-import type { ClientData, RewardUpdate, ClientMetadataMap } from '../types';
+import type { ClientData, RewardUpdate, ClientMetadataMap, ClientTab } from '../types';
 import { weiToEth, formatEth, timeAgo, formatDate } from '../utils';
 import { EthTooltip } from './ChartTooltips';
-import { useENSBatch } from '@/OS/hooks';
+import { useENS, useENSBatch } from '@/OS/hooks';
 import styles from '../Clients.module.css';
 
 interface ClientDetailProps {
@@ -27,6 +27,8 @@ interface ClientDetailProps {
   onBack: () => void;
   isOwner?: boolean;
   clientMetadata?: ClientMetadataMap;
+  activeTab?: ClientTab;
+  onTabChange?: (tab: ClientTab) => void;
 }
 
 // --- Withdraw hook ---
@@ -106,16 +108,32 @@ function useUpdateMetadata(clientId: number, name: string, description: string, 
   };
 }
 
-export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMetadata }: ClientDetailProps) {
+export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMetadata, activeTab, onTabChange }: ClientDetailProps) {
   const { data: activity, isLoading: activityLoading } = useClientActivity(client.clientId);
   const { data: rewards } = useClientRewardsTimeSeries(client.clientId);
   const { data: currentBlock } = useBlockNumber({ watch: false });
 
+  // Read NFT owner address
+  const { data: nftOwner } = useReadContract({
+    address: CLIENT_REWARDS_ADDRESS,
+    abi: ClientRewardsABI,
+    functionName: 'ownerOf',
+    args: [BigInt(client.clientId)],
+  });
+  const ownerENS = useENS(nftOwner as string | undefined);
+
   const balance = weiToEth(client.totalRewarded) - weiToEth(client.totalWithdrawn);
+
+  // Activity tab: controlled by parent via activeTab prop, with local fallback
+  const [localTab, setLocalTab] = useState<ClientTab>(activeTab ?? 'votes');
+  const activityTab = activeTab ?? localTab;
+  const setActivityTab = (tab: ClientTab) => {
+    setLocalTab(tab);
+    onTabChange?.(tab);
+  };
 
   // UI state
   const [overviewOpen, setOverviewOpen] = useState(false);
-  const [activityTab, setActivityTab] = useState<'votes' | 'proposals' | 'bids' | 'withdrawals' | 'rewards'>('votes');
   const [voteDisplayLimit, setVoteDisplayLimit] = useState(50);
 
   // Owner actions state
@@ -242,30 +260,34 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMet
               ID: {client.clientId} · Registered {formatDate(client.blockTimestamp)}
             </span>
           </div>
-          <div className={styles.headerStats}>
-            <div className={styles.headerStat}>
-              <span className={styles.headerStatLabel}>Rewarded</span>
-              <span className={styles.headerStatValue}>{formatEth(weiToEth(client.totalRewarded))} ETH</span>
+          <div className={styles.headerStatsWrap}>
+            <div className={styles.headerStats}>
+              <div className={styles.headerStat}>
+                <span className={styles.headerStatLabel}>Rewarded</span>
+                <span className={styles.headerStatValue}>{formatEth(weiToEth(client.totalRewarded))} ETH</span>
+              </div>
+              <div className={styles.headerStat}>
+                <span className={styles.headerStatLabel}>Balance</span>
+                <span className={styles.headerStatValue}>{formatEth(balance)} ETH</span>
+              </div>
             </div>
+            <div className={styles.headerStats}>
             <div className={styles.headerStat}>
-              <span className={styles.headerStatLabel}>Balance</span>
-              <span className={styles.headerStatValue}>{formatEth(balance)} ETH</span>
-            </div>
-            <div className={styles.headerStat}>
-              <span className={styles.headerStatLabel}>Votes</span>
-              <span className={styles.headerStatValue}>{client.voteCount.toLocaleString()}</span>
-            </div>
-            <div className={styles.headerStat}>
-              <span className={styles.headerStatLabel}>Props</span>
-              <span className={styles.headerStatValue}>{client.proposalCount}</span>
-            </div>
-            <div className={styles.headerStat}>
-              <span className={styles.headerStatLabel}>Bids</span>
-              <span className={styles.headerStatValue}>{client.bidCount.toLocaleString()}</span>
-            </div>
-            <div className={styles.headerStat}>
-              <span className={styles.headerStatLabel}>Wins</span>
-              <span className={styles.headerStatValue}>{client.auctionCount}</span>
+                <span className={styles.headerStatLabel}>Wins</span>
+                <span className={styles.headerStatValue}>{client.auctionCount}</span>
+              </div>
+              <div className={styles.headerStat}>
+                <span className={styles.headerStatLabel}>Bids</span>
+                <span className={styles.headerStatValue}>{client.bidCount.toLocaleString()}</span>
+              </div>
+              <div className={styles.headerStat}>
+                <span className={styles.headerStatLabel}>Votes</span>
+                <span className={styles.headerStatValue}>{client.voteCount.toLocaleString()}</span>
+              </div>
+              <div className={styles.headerStat}>
+                <span className={styles.headerStatLabel}>Props</span>
+                <span className={styles.headerStatValue}>{client.proposalCount}</span>
+              </div>
             </div>
           </div>
           {isOwner && (
@@ -336,11 +358,33 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMet
             <div className={styles.collapseContent}>
               <div className={styles.overviewRow}>
                 {client.nftImage && (
-                  <img
-                    src={client.nftImage}
-                    alt={client.name || `Client ${client.clientId}`}
-                    className={styles.detailAvatar}
-                  />
+                  <div className={styles.nftColumn}>
+                    <img
+                      src={client.nftImage}
+                      alt={client.name || `Client ${client.clientId}`}
+                      className={styles.detailAvatar}
+                    />
+                    {nftOwner && (
+                      <a
+                        href={`https://etherscan.io/address/${nftOwner}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.nftOwnerLabel}
+                        title={nftOwner as string}
+                      >
+                        Owned by{' '}
+                        {ownerENS.avatar && (
+                          <img
+                            src={ownerENS.avatar}
+                            alt=""
+                            className={styles.nftOwnerAvatar}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                        <span className={styles.nftOwnerName}>{ownerENS.displayName}</span>
+                      </a>
+                    )}
+                  </div>
                 )}
               {rewardTimeline.length > 0 && (
                 <div className={styles.detailSection} style={{ flex: 1, minWidth: 0 }}>
