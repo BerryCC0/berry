@@ -67,6 +67,7 @@ export function Clients({ windowId }: AppComponentProps) {
           rewardUpdates={rewardUpdates ?? []}
           onBack={() => setSelectedClientId(null)}
           isOwner={ownedClientId === selectedClientId}
+          clientMetadata={clientMetadata}
         />
       );
     }

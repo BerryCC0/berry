@@ -924,8 +924,19 @@
 }
 
 .detailTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   font-weight: 600;
+}
+
+.detailFavicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  object-fit: cover;
 }
 
 .detailDescription {

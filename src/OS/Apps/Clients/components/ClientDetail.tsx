@@ -15,7 +15,7 @@ import { formatEther } from 'viem';
 import { useClientRewardsTimeSeries, useClientActivity } from '../hooks/useClientIncentives';
 import { ClientRewardsABI } from '@/app/lib/nouns/abis/ClientRewards';
 import { CLIENT_REWARDS_ADDRESS } from '../constants';
-import type { ClientData, RewardUpdate } from '../types';
+import type { ClientData, RewardUpdate, ClientMetadataMap } from '../types';
 import { weiToEth, formatEth, timeAgo, formatDate } from '../utils';
 import { EthTooltip } from './ChartTooltips';
 import { useENSBatch } from '@/OS/hooks';
@@ -26,6 +26,7 @@ interface ClientDetailProps {
   rewardUpdates: RewardUpdate[];
   onBack: () => void;
   isOwner?: boolean;
+  clientMetadata?: ClientMetadataMap;
 }
 
 // --- Withdraw hook ---
@@ -105,7 +106,7 @@ function useUpdateMetadata(clientId: number, name: string, description: string, 
   };
 }
 
-export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientDetailProps) {
+export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMetadata }: ClientDetailProps) {
   const { data: activity, isLoading: activityLoading } = useClientActivity(client.clientId);
   const { data: rewards } = useClientRewardsTimeSeries(client.clientId);
   const { data: currentBlock } = useBlockNumber({ watch: false });
@@ -222,6 +223,14 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
           )}
           <div className={styles.detailTitleBlock}>
             <span className={styles.detailTitle}>
+              {clientMetadata?.get(client.clientId)?.favicon && (
+                <img
+                  src={clientMetadata.get(client.clientId)!.favicon}
+                  alt=""
+                  className={styles.detailFavicon}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
               {client.name || `Client ${client.clientId}`}
               {client.approved && <span className={styles.approvedBadge} />}
               {isOwner && (
