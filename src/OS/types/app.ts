@@ -16,6 +16,7 @@ export type AppCategory =
   | "media"
   | "web3"
   | "nouns"
+  | "social"
   | "games";
 
 /**

@@ -1,0 +1,1278 @@
+/* ============================================================================
+ * BIM (Berry Instant Messaging) — Discord-style layout with Berry OS aesthetics
+ * Uses --berry-* CSS variables for theme compliance
+ * ============================================================================ */
+
+/* ── Root container ─────────────────────────────────────────────────────── */
+.bim {
+  display: flex;
+  height: 100%;
+  background: var(--berry-window-bg, #f0f0f0);
+  color: var(--berry-text-primary, #000);
+  font-family: var(--berry-font-system, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* ── Server Rail (leftmost icon strip) ──────────────────────────────────── */
+.serverRail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 56px;
+  min-width: 56px;
+  padding: 8px 0;
+  gap: 4px;
+  background: var(--berry-bg, #e0e0e0);
+  border-right: 1px solid var(--berry-border, #ccc);
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+}
+
+.serverRail::-webkit-scrollbar {
+  width: 0;
+}
+
+.serverIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-radius 0.15s ease, background 0.15s ease;
+  background: var(--berry-bg-secondary, #f0f0f0);
+  color: var(--berry-text-primary, #000);
+  border: 1px solid var(--berry-border, #ccc);
+  overflow: hidden;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.serverIcon:hover {
+  border-radius: 30%;
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+  border-color: var(--berry-accent, #e93737);
+}
+
+.serverIconActive {
+  border-radius: 30%;
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+  border-color: var(--berry-accent, #e93737);
+}
+
+.serverIconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.serverRailDivider {
+  width: 28px;
+  height: 1px;
+  background: var(--berry-border, #ccc);
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
+.dmIcon {
+  font-size: 18px;
+}
+
+.addServerIcon {
+  font-size: 20px;
+  color: var(--berry-success, #28a745);
+}
+
+.addServerIcon:hover {
+  background: var(--berry-success, #28a745);
+  color: var(--berry-text-inverse, #fff);
+  border-color: var(--berry-success, #28a745);
+}
+
+/* ── Channel Sidebar ────────────────────────────────────────────────────── */
+.channelSidebar {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  min-width: 160px;
+  background: var(--berry-bg-secondary, #f0f0f0);
+  border-right: 1px solid var(--berry-border, #ccc);
+  flex-shrink: 0;
+}
+
+.channelSidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--berry-border, #ccc);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  min-height: 38px;
+}
+
+.channelSidebarHeaderTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.channelSidebarHeaderAction {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--berry-text-secondary, #333);
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.channelSidebarHeaderAction:hover {
+  color: var(--berry-text-primary, #000);
+}
+
+.channelList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.channelCategory {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-muted, #666);
+}
+
+.channelItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: var(--berry-text-secondary, #333);
+  border-radius: 0;
+  margin: 0 4px;
+  font-size: 13px;
+  user-select: none;
+}
+
+.channelItem:hover {
+  background: var(--berry-bg-tertiary, #fff);
+  color: var(--berry-text-primary, #000);
+}
+
+.channelItemActive {
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+}
+
+.channelItemActive:hover {
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+}
+
+.channelHash {
+  font-size: 16px;
+  font-weight: 400;
+  opacity: 0.6;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.channelName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.channelUnread {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+  padding: 1px 5px;
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── DM Sidebar ─────────────────────────────────────────────────────────── */
+.dmSidebar {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  min-width: 160px;
+  background: var(--berry-bg-secondary, #f0f0f0);
+  border-right: 1px solid var(--berry-border, #ccc);
+  flex-shrink: 0;
+}
+
+.dmSidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--berry-border, #ccc);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  min-height: 38px;
+}
+
+.dmSearchInput {
+  width: 100%;
+  padding: 6px 10px;
+  margin: 8px 10px;
+  border: 1px solid var(--berry-input-border, #ccc);
+  background: var(--berry-input-bg, #fff);
+  color: var(--berry-text-primary, #000);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+.dmSearchInput:focus {
+  border-color: var(--berry-accent, #e93737);
+}
+
+.dmList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.dmItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dmItem:hover {
+  background: var(--berry-bg-tertiary, #fff);
+}
+
+.dmItemActive {
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+}
+
+.dmItemActive:hover {
+  background: var(--berry-accent, #e93737);
+}
+
+.dmAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.dmInfo {
+  flex: 1;
+  overflow: hidden;
+}
+
+.dmName {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmLastMessage {
+  font-size: 11px;
+  color: var(--berry-text-muted, #666);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmItemActive .dmLastMessage {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dmUnread {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+  padding: 1px 5px;
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.newDmButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 10px;
+  padding: 6px;
+  border: 1px solid var(--berry-border, #ccc);
+  background: var(--berry-button-bg, #e0e0e0);
+  color: var(--berry-text-primary, #000);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.newDmButton:hover {
+  background: var(--berry-bg-tertiary, #fff);
+}
+
+/* ── Chat Area (center) ─────────────────────────────────────────────────── */
+.chatArea {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: var(--berry-window-bg, #f0f0f0);
+}
+
+.chatHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--berry-border, #ccc);
+  background: var(--berry-bg-secondary, #f0f0f0);
+  flex-shrink: 0;
+  min-height: 38px;
+}
+
+.chatHeaderHash {
+  font-size: 18px;
+  color: var(--berry-text-muted, #666);
+}
+
+.chatHeaderName {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.chatHeaderDescription {
+  font-size: 11px;
+  color: var(--berry-text-muted, #666);
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.chatHeaderActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.chatHeaderButton {
+  background: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--berry-text-secondary, #333);
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.chatHeaderButton:hover {
+  color: var(--berry-text-primary, #000);
+  border-color: var(--berry-border, #ccc);
+  background: var(--berry-bg-tertiary, #fff);
+}
+
+.chatHeaderButtonActive {
+  color: var(--berry-accent, #e93737);
+}
+
+/* ── Messages ───────────────────────────────────────────────────────────── */
+.messagesContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.messagesEnd {
+  flex-shrink: 0;
+}
+
+.dateSeparator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-muted, #666);
+}
+
+.dateSeparatorLine {
+  flex: 1;
+  height: 1px;
+  background: var(--berry-border, #ccc);
+}
+
+.messageGroup {
+  padding: 2px 16px;
+}
+
+.messageGroup:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.messageHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.messageRow {
+  display: flex;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.messageAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.messageAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.messageContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.messageSender {
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.messageSender:hover {
+  text-decoration: underline;
+}
+
+.messageTimestamp {
+  font-size: 10px;
+  color: var(--berry-text-muted, #666);
+}
+
+.messageText {
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.messageGrouped {
+  padding: 0 16px 0 60px;
+}
+
+.messageGroupedTimestamp {
+  display: none;
+  font-size: 10px;
+  color: var(--berry-text-muted, #666);
+  flex-shrink: 0;
+  width: 44px;
+  text-align: right;
+}
+
+.messageGrouped:hover .messageGroupedTimestamp {
+  display: block;
+}
+
+.messageGroupedRow {
+  display: flex;
+  gap: 12px;
+}
+
+/* ── Reactions ──────────────────────────────────────────────────────────── */
+.reactionsRow {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.reactionBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--berry-border, #ccc);
+  background: var(--berry-bg-secondary, #f0f0f0);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  user-select: none;
+}
+
+.reactionBadge:hover {
+  background: var(--berry-bg-tertiary, #fff);
+  border-color: var(--berry-accent, #e93737);
+}
+
+.reactionBadgeActive {
+  border-color: var(--berry-accent, #e93737);
+  background: rgba(233, 55, 55, 0.08);
+}
+
+.reactionCount {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-secondary, #333);
+}
+
+.addReactionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--berry-text-muted, #666);
+  border-radius: 4px;
+  opacity: 0;
+}
+
+.messageGroup:hover .addReactionButton {
+  opacity: 1;
+}
+
+.addReactionButton:hover {
+  border-color: var(--berry-border, #ccc);
+  background: var(--berry-bg-secondary, #f0f0f0);
+}
+
+/* ── Reply Preview ──────────────────────────────────────────────────────── */
+.replyPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 4px;
+  font-size: 11px;
+  color: var(--berry-text-muted, #666);
+  cursor: pointer;
+}
+
+.replyPreview:hover {
+  color: var(--berry-text-secondary, #333);
+}
+
+.replyBar {
+  width: 2px;
+  height: 12px;
+  background: var(--berry-accent, #e93737);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.replySender {
+  font-weight: 600;
+  color: var(--berry-text-secondary, #333);
+}
+
+.replyText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Attachment ─────────────────────────────────────────────────────────── */
+.attachmentPreview {
+  margin-top: 4px;
+  max-width: 400px;
+}
+
+.attachmentImage {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 4px;
+  border: 1px solid var(--berry-border, #ccc);
+  cursor: pointer;
+}
+
+.attachmentFile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--berry-border, #ccc);
+  background: var(--berry-bg-secondary, #f0f0f0);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.attachmentFile:hover {
+  background: var(--berry-bg-tertiary, #fff);
+}
+
+.attachmentFileIcon {
+  font-size: 24px;
+}
+
+.attachmentFileName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-accent, #e93737);
+}
+
+.attachmentFileSize {
+  font-size: 10px;
+  color: var(--berry-text-muted, #666);
+}
+
+/* ── Message Input ──────────────────────────────────────────────────────── */
+.messageInputContainer {
+  padding: 0 16px 12px;
+  flex-shrink: 0;
+}
+
+.messageInputReply {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--berry-bg-secondary, #f0f0f0);
+  border: 1px solid var(--berry-border, #ccc);
+  border-bottom: none;
+  font-size: 12px;
+  color: var(--berry-text-secondary, #333);
+}
+
+.messageInputReplyClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--berry-text-muted, #666);
+  padding: 0;
+  margin-left: auto;
+}
+
+.messageInputReplyClose:hover {
+  color: var(--berry-text-primary, #000);
+}
+
+.messageInputWrapper {
+  display: flex;
+  align-items: flex-end;
+  border: 1px solid var(--berry-input-border, #ccc);
+  background: var(--berry-input-bg, #fff);
+}
+
+.messageInputWrapper:focus-within {
+  border-color: var(--berry-accent, #e93737);
+}
+
+.messageInputAttachButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--berry-text-muted, #666);
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+
+.messageInputAttachButton:hover {
+  color: var(--berry-text-primary, #000);
+}
+
+.messageInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--berry-text-primary, #000);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px 4px;
+  resize: none;
+  outline: none;
+  min-height: 20px;
+  max-height: 120px;
+  line-height: 1.4;
+}
+
+.messageInput::placeholder {
+  color: var(--berry-text-muted, #666);
+}
+
+.messageInputSendButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--berry-accent, #e93737);
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+
+.messageInputSendButton:hover {
+  color: var(--berry-accent-hover, #cc2f2f);
+}
+
+.messageInputSendButton:disabled {
+  color: var(--berry-text-muted, #666);
+  cursor: default;
+}
+
+/* ── Member List (right sidebar) ────────────────────────────────────────── */
+.memberList {
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+  min-width: 140px;
+  background: var(--berry-bg-secondary, #f0f0f0);
+  border-left: 1px solid var(--berry-border, #ccc);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.memberCategory {
+  padding: 12px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-muted, #666);
+}
+
+.memberItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.memberItem:hover {
+  background: var(--berry-bg-tertiary, #fff);
+}
+
+.memberAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.memberName {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.memberRoleBadge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.memberRoleOwner {
+  background: #ffc107;
+  color: #333;
+}
+
+.memberRoleAdmin {
+  background: var(--berry-accent, #e93737);
+  color: #fff;
+}
+
+/* ── Empty / Loading / Welcome States ───────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 40px;
+  text-align: center;
+  gap: 16px;
+}
+
+.emptyStateIcon {
+  font-size: 48px;
+  opacity: 0.4;
+}
+
+.emptyStateTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.emptyStateText {
+  font-size: 13px;
+  color: var(--berry-text-muted, #666);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.emptyStateButton {
+  padding: 8px 20px;
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  margin-top: 8px;
+}
+
+.emptyStateButton:hover {
+  background: var(--berry-accent-hover, #cc2f2f);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.loaderGif {
+  width: 48px;
+  height: 48px;
+}
+
+/* ── Connect Wallet Prompt ──────────────────────────────────────────────── */
+.connectPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  padding: 40px;
+  text-align: center;
+}
+
+.connectPromptIcon {
+  font-size: 64px;
+  opacity: 0.5;
+}
+
+.connectPromptTitle {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.connectPromptText {
+  font-size: 13px;
+  color: var(--berry-text-muted, #666);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.connectButton {
+  padding: 10px 28px;
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.connectButton:hover {
+  background: var(--berry-accent-hover, #cc2f2f);
+}
+
+/* ── XMTP Initializing state ────────────────────────────────────────────── */
+.xmtpInit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+}
+
+.xmtpInitText {
+  font-size: 13px;
+  color: var(--berry-text-muted, #666);
+}
+
+/* ── Modal Overlay ──────────────────────────────────────────────────────── */
+.modalOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--berry-window-bg, #f0f0f0);
+  border: 1px solid var(--berry-border, #ccc);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  min-width: 360px;
+  max-width: 480px;
+  width: 90%;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.modalField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.modalLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-muted, #666);
+}
+
+.modalInput {
+  padding: 8px 10px;
+  border: 1px solid var(--berry-input-border, #ccc);
+  background: var(--berry-input-bg, #fff);
+  color: var(--berry-text-primary, #000);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.modalInput:focus {
+  border-color: var(--berry-accent, #e93737);
+}
+
+.modalTextarea {
+  padding: 8px 10px;
+  border: 1px solid var(--berry-input-border, #ccc);
+  background: var(--berry-input-bg, #fff);
+  color: var(--berry-text-primary, #000);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.modalTextarea:focus {
+  border-color: var(--berry-accent, #e93737);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.modalButtonPrimary {
+  padding: 6px 16px;
+  background: var(--berry-accent, #e93737);
+  color: var(--berry-text-inverse, #fff);
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.modalButtonPrimary:hover {
+  background: var(--berry-accent-hover, #cc2f2f);
+}
+
+.modalButtonPrimary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.modalButtonSecondary {
+  padding: 6px 16px;
+  background: var(--berry-button-bg, #e0e0e0);
+  color: var(--berry-text-primary, #000);
+  border: 1px solid var(--berry-border, #ccc);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.modalButtonSecondary:hover {
+  background: var(--berry-bg-tertiary, #fff);
+}
+
+/* ── Invite Code ────────────────────────────────────────────────────────── */
+.inviteCode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--berry-bg, #e0e0e0);
+  border: 1px solid var(--berry-border, #ccc);
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.inviteCodeCopy {
+  background: none;
+  border: 1px solid var(--berry-border, #ccc);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--berry-text-secondary, #333);
+}
+
+.inviteCodeCopy:hover {
+  background: var(--berry-bg-tertiary, #fff);
+}
+
+/* ── Emoji Picker ───────────────────────────────────────────────────────── */
+.emojiPicker {
+  position: absolute;
+  background: var(--berry-window-bg, #f0f0f0);
+  border: 1px solid var(--berry-border, #ccc);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  z-index: 50;
+}
+
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.emojiButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.emojiButton:hover {
+  background: var(--berry-bg-secondary, #f0f0f0);
+}
+
+/* ── Search Overlay ─────────────────────────────────────────────────────── */
+.searchOverlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 340px;
+  height: 100%;
+  background: var(--berry-window-bg, #f0f0f0);
+  border-left: 1px solid var(--berry-border, #ccc);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.searchHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--berry-border, #ccc);
+}
+
+.searchInput {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--berry-input-border, #ccc);
+  background: var(--berry-input-bg, #fff);
+  color: var(--berry-text-primary, #000);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--berry-accent, #e93737);
+}
+
+.searchClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--berry-text-muted, #666);
+  padding: 2px;
+}
+
+.searchClose:hover {
+  color: var(--berry-text-primary, #000);
+}
+
+.searchResults {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.searchResult {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--berry-border, #ccc);
+}
+
+.searchResult:hover {
+  background: var(--berry-bg-secondary, #f0f0f0);
+}
+
+.searchResultSender {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.searchResultText {
+  font-size: 12px;
+  color: var(--berry-text-secondary, #333);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchResultTime {
+  font-size: 10px;
+  color: var(--berry-text-muted, #666);
+}
+
+.searchEmpty {
+  padding: 20px;
+  text-align: center;
+  color: var(--berry-text-muted, #666);
+  font-size: 13px;
+}
+
+/* ── Server Settings ────────────────────────────────────────────────────── */
+.settingSection {
+  margin-bottom: 16px;
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.settingLabel {
+  font-size: 12px;
+  color: var(--berry-text-secondary, #333);
+}
+
+.dangerButton {
+  padding: 6px 16px;
+  background: var(--berry-error, #dc3545);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.dangerButton:hover {
+  opacity: 0.85;
+}
+
+/* ── Scrollbar styling ──────────────────────────────────────────────────── */
+.channelList::-webkit-scrollbar,
+.dmList::-webkit-scrollbar,
+.messagesContainer::-webkit-scrollbar,
+.memberList::-webkit-scrollbar,
+.searchResults::-webkit-scrollbar {
+  width: 8px;
+}
+
+.channelList::-webkit-scrollbar-track,
+.dmList::-webkit-scrollbar-track,
+.messagesContainer::-webkit-scrollbar-track,
+.memberList::-webkit-scrollbar-track,
+.searchResults::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.channelList::-webkit-scrollbar-thumb,
+.dmList::-webkit-scrollbar-thumb,
+.messagesContainer::-webkit-scrollbar-thumb,
+.memberList::-webkit-scrollbar-thumb,
+.searchResults::-webkit-scrollbar-thumb {
+  background: var(--berry-scrollbar-thumb, #999);
+  border-radius: 4px;
+}

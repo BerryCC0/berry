@@ -26,6 +26,7 @@ const Nounspot = lazy(() => import("./Nounspot/Nounspot").then(m => ({ default: 
 const CrystalBall = lazy(() => import("./CrystalBall/CrystalBall").then(m => ({ default: m.CrystalBall })));
 const Probe = lazy(() => import("./Probe/Probe").then(m => ({ default: m.Probe })));
 const Clients = lazy(() => import("./Clients/Clients").then(m => ({ default: m.Clients })));
+const BIM = lazy(() => import("./BIM/BIM").then(m => ({ default: m.BIM })));
 
 /**
  * Finder - File browser
@@ -373,6 +374,28 @@ const clientsConfig: AppConfig = {
 };
 
 /**
+ * BIM - Berry Instant Messaging
+ * Discord-like encrypted messaging using XMTP
+ */
+const bimConfig: AppConfig = {
+  id: "bim",
+  name: "BIM",
+  icon: getIcon("bim"),
+  category: "social",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 500,
+    isResizable: true,
+  },
+  permissions: ["network", "wallet"],
+  component: BIM,
+};
+
+/**
  * All OS app configurations
  * 
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -394,6 +417,7 @@ export const osAppConfigs: AppConfig[] = [
   crystalBallConfig,
   probeConfig,
   clientsConfig,
+  bimConfig,
 ];
 
 /**
