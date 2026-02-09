@@ -4,9 +4,10 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useBimStore } from "../../store/bimStore";
 import { useDirectMessages } from "../../hooks/useDirectMessages";
+import { useProfile } from "../../hooks/useProfile";
 import { truncateAddress, addressToColor, getInitials } from "../../utils";
 import styles from "../../BIM.module.css";
 
@@ -15,12 +16,33 @@ export function DMList() {
     activeDmConversationId,
     setActiveDmConversation,
     unreadCounts,
+    profiles,
+    inboxToWallet,
   } = useBimStore();
   const { dmConversations, createDm } = useDirectMessages();
+  const { resolveProfiles } = useProfile();
 
   const [newDmAddress, setNewDmAddress] = useState("");
   const [showNewDm, setShowNewDm] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Batch-resolve peer profiles for DM conversations
+  const resolvedPeersRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (dmConversations.length === 0) return;
+    const peerAddresses = dmConversations
+      .map((dm) => {
+        // Use peerAddress if it looks like a wallet, otherwise resolve from inboxToWallet
+        if (dm.peerAddress.startsWith("0x")) return dm.peerAddress.toLowerCase();
+        return inboxToWallet[dm.peerInboxId]?.toLowerCase() ?? null;
+      })
+      .filter((a): a is string => !!a);
+    const key = [...new Set(peerAddresses)].sort().join(",");
+    if (key && key !== resolvedPeersRef.current) {
+      resolvedPeersRef.current = key;
+      resolveProfiles(peerAddresses);
+    }
+  }, [dmConversations, inboxToWallet, resolveProfiles]);
 
   const handleCreateDm = useCallback(async () => {
     if (!newDmAddress.trim()) return;
@@ -72,21 +94,38 @@ export function DMList() {
         {dmConversations.map((dm) => {
           const unread = unreadCounts[dm.id] ?? 0;
           const isActive = activeDmConversationId === dm.id;
+          // Resolve peer address and profile
+          const peerWallet = dm.peerAddress.startsWith("0x")
+            ? dm.peerAddress.toLowerCase()
+            : inboxToWallet[dm.peerInboxId]?.toLowerCase() ?? dm.peerAddress;
+          const peerProfile = profiles[peerWallet.toLowerCase()];
+          const peerDisplayName = peerProfile?.display_name ?? null;
+          const peerAvatarUrl = peerProfile?.avatar_url ?? null;
+
           return (
             <div
               key={dm.id}
               className={`${styles.dmItem} ${isActive ? styles.dmItemActive : ""}`}
               onClick={() => setActiveDmConversation(dm.id)}
             >
-              <div
-                className={styles.dmAvatar}
-                style={{ background: addressToColor(dm.peerAddress) }}
-              >
-                {getInitials(null, dm.peerAddress)}
-              </div>
+              {peerAvatarUrl ? (
+                <img
+                  src={peerAvatarUrl}
+                  alt={peerDisplayName ?? ""}
+                  className={styles.dmAvatar}
+                  style={{ objectFit: "cover" }}
+                />
+              ) : (
+                <div
+                  className={styles.dmAvatar}
+                  style={{ background: addressToColor(peerWallet) }}
+                >
+                  {getInitials(peerDisplayName, peerWallet)}
+                </div>
+              )}
               <div className={styles.dmInfo}>
                 <div className={styles.dmName}>
-                  {truncateAddress(dm.peerAddress, 6)}
+                  {peerDisplayName ?? truncateAddress(peerWallet, 6)}
                 </div>
                 {dm.lastMessage && (
                   <div className={styles.dmLastMessage}>{dm.lastMessage}</div>

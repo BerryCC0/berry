@@ -20,6 +20,7 @@ import { useAppKit } from "@reown/appkit/react";
 import { useBimStore } from "./store/bimStore";
 import { useXmtpClient, getXmtpClient } from "./hooks/useXmtpClient";
 import { useServers } from "./hooks/useServers";
+import { useProfile } from "./hooks/useProfile";
 import { ensureXmtpGroup } from "./lib/ensureXmtpGroup";
 
 import { ServerRail } from "./components/Sidebar/ServerRail";
@@ -30,6 +31,7 @@ import { MemberList } from "./components/Members/MemberList";
 import { CreateServer } from "./components/Modals/CreateServer";
 import { CreateChannel } from "./components/Modals/CreateChannel";
 import { ServerSettings } from "./components/Modals/ServerSettings";
+import { UserProfile } from "./components/Modals/UserProfile";
 import { SearchOverlay } from "./components/Search/SearchOverlay";
 
 import { parseBimRoute, bimRouteToPath, type BimInitialState } from "./types";
@@ -39,6 +41,7 @@ export function BIM({ initialState, onStateChange }: AppComponentProps) {
   const { isConnected, address: userAddress } = useAppKitAccount();
   const { open: openWallet } = useAppKit();
   const { isReady: isXmtpReady, isConnecting: isXmtpConnecting, error: xmtpError } = useXmtpClient();
+  const { myProfile } = useProfile();
 
   const {
     activeView,
@@ -166,6 +169,16 @@ export function BIM({ initialState, onStateChange }: AppComponentProps) {
     });
   }, [activeServerId, activeChannelId, currentChannel, isXmtpReady, userAddress]);
 
+  // First-time profile setup: show modal if profile exists but has no display_name
+  const profilePromptRef = useRef(false);
+  useEffect(() => {
+    if (!isXmtpReady || !myProfile || profilePromptRef.current) return;
+    if (!myProfile.display_name) {
+      profilePromptRef.current = true;
+      useBimStore.getState().setActiveModal("userProfile");
+    }
+  }, [isXmtpReady, myProfile]);
+
   // User role in current server
   const userRole = useMemo(() => {
     if (!activeServerId || !userAddress) return "member";
@@ -272,6 +285,7 @@ export function BIM({ initialState, onStateChange }: AppComponentProps) {
       {activeModal === "createServer" && <CreateServer />}
       {activeModal === "createChannel" && <CreateChannel />}
       {activeModal === "serverSettings" && <ServerSettings />}
+      {activeModal === "userProfile" && <UserProfile />}
     </div>
   );
 }

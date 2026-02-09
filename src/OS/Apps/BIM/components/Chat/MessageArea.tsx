@@ -7,6 +7,7 @@
 import { useEffect, useRef } from "react";
 import { useBimStore } from "../../store/bimStore";
 import { useMessages } from "../../hooks/useMessages";
+import { useProfile } from "../../hooks/useProfile";
 import { MessageItem } from "./MessageItem";
 import { MessageInput } from "./MessageInput";
 import {
@@ -40,7 +41,8 @@ export function MessageArea({
     xmtpGroupId,
     memberAddresses
   );
-  const { setReplyingTo, showMemberList, toggleMemberList, toggleSearch } = useBimStore();
+  const { setReplyingTo, showMemberList, toggleMemberList, toggleSearch, inboxToWallet, profiles } = useBimStore();
+  const { resolveProfiles } = useProfile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +50,41 @@ export function MessageArea({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  // Batch-resolve profiles for all sender addresses in the current messages
+  const resolvedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (messages.length === 0) return;
+    // Build a unique set of wallet addresses from messages' senderInboxIds
+    const wallets = new Set<string>();
+    for (const msg of messages) {
+      const wallet = inboxToWallet[msg.senderInboxId];
+      if (wallet) wallets.add(wallet);
+      // Also try senderAddress if it looks like a wallet
+      if (msg.senderAddress && msg.senderAddress.startsWith("0x")) {
+        wallets.add(msg.senderAddress.toLowerCase());
+      }
+    }
+    const key = [...wallets].sort().join(",");
+    if (key && key !== resolvedRef.current) {
+      resolvedRef.current = key;
+      resolveProfiles([...wallets]);
+    }
+  }, [messages, inboxToWallet, resolveProfiles]);
+
+  // Helper: resolve a message's sender to display name and avatar
+  const getSenderProfile = (msg: BimMessage) => {
+    // Try inbox-to-wallet mapping first
+    const wallet = inboxToWallet[msg.senderInboxId]?.toLowerCase()
+      ?? (msg.senderAddress.startsWith("0x") ? msg.senderAddress.toLowerCase() : null);
+    if (!wallet) return { displayName: null, avatarUrl: null, walletAddress: msg.senderAddress };
+    const profile = profiles[wallet];
+    return {
+      displayName: profile?.display_name ?? null,
+      avatarUrl: profile?.avatar_url ?? null,
+      walletAddress: wallet,
+    };
+  };
 
   const handleReply = (message: BimMessage) => {
     setReplyingTo(message);
@@ -63,7 +100,9 @@ export function MessageArea({
   const getReplyySender = (messageId?: string) => {
     if (!messageId) return undefined;
     const msg = messages.find((m) => m.id === messageId);
-    return msg ? truncateAddress(msg.senderAddress, 4) : undefined;
+    if (!msg) return undefined;
+    const { displayName, walletAddress } = getSenderProfile(msg);
+    return displayName ?? truncateAddress(walletAddress, 4);
   };
 
   if (!conversationId) {
@@ -144,8 +183,10 @@ export function MessageArea({
 
         {messages.map((msg, i) => {
           const prev = i > 0 ? messages[i - 1] : null;
-          const isGrouped = prev
-            ? shouldGroupMessages(prev.sentAt, prev.senderAddress, msg.sentAt, msg.senderAddress)
+          const senderProfile = getSenderProfile(msg);
+          const prevProfile = prev ? getSenderProfile(prev) : null;
+          const isGrouped = prev && prevProfile
+            ? shouldGroupMessages(prev.sentAt, prevProfile.walletAddress, msg.sentAt, senderProfile.walletAddress)
             : false;
           const showDate = prev
             ? shouldShowDateSeparator(prev.sentAt, msg.sentAt)
@@ -158,6 +199,9 @@ export function MessageArea({
               isGrouped={isGrouped && !showDate}
               showDateSeparator={showDate}
               dateSeparatorText={showDate ? formatDateSeparator(msg.sentAt) : undefined}
+              displayName={senderProfile.displayName}
+              avatarUrl={senderProfile.avatarUrl}
+              resolvedAddress={senderProfile.walletAddress}
               onReply={handleReply}
               onReact={sendReaction}
               replyToContent={getReplyContent(msg.replyToMessageId)}

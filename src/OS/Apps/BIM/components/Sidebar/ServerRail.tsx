@@ -6,7 +6,7 @@
 
 import { useBimStore } from "../../store/bimStore";
 import type { BimServerData } from "../../types";
-import { getInitials, addressToColor } from "../../utils";
+import { getInitials, addressToColor, truncateAddress } from "../../utils";
 import styles from "../../BIM.module.css";
 
 interface ServerRailProps {
@@ -20,7 +20,13 @@ export function ServerRail({ servers }: ServerRailProps) {
     setActiveView,
     setActiveServer,
     setActiveModal,
+    myProfile,
   } = useBimStore();
+
+  const profileName = myProfile?.display_name ?? null;
+  const profileAvatar = myProfile?.avatar_url ?? null;
+  const profileWallet = myProfile?.wallet_address ?? "";
+  const profileColor = addressToColor(profileWallet);
 
   return (
     <div className={styles.serverRail}>
@@ -64,6 +70,33 @@ export function ServerRail({ servers }: ServerRailProps) {
       >
         +
       </button>
+
+      {/* Spacer to push user panel to the bottom */}
+      <div style={{ flex: 1 }} />
+
+      {/* User panel */}
+      {profileWallet && (
+        <button
+          className={styles.userPanelButton}
+          onClick={() => setActiveModal("userProfile")}
+          title={profileName ?? truncateAddress(profileWallet, 4)}
+        >
+          {profileAvatar ? (
+            <img
+              src={profileAvatar}
+              alt="Me"
+              className={styles.userPanelAvatar}
+            />
+          ) : (
+            <div
+              className={styles.userPanelAvatar}
+              style={{ background: profileColor }}
+            >
+              {getInitials(profileName, profileWallet)}
+            </div>
+          )}
+        </button>
+      )}
     </div>
   );
 }

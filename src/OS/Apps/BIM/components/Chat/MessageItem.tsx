@@ -19,6 +19,8 @@ interface MessageItemProps {
   showDateSeparator: boolean;
   dateSeparatorText?: string;
   displayName?: string | null;
+  avatarUrl?: string | null;
+  resolvedAddress?: string;
   onReply?: (message: BimMessage) => void;
   onReact?: (messageId: string, emoji: string) => void;
   replyToContent?: string;
@@ -31,13 +33,16 @@ export function MessageItem({
   showDateSeparator,
   dateSeparatorText,
   displayName,
+  avatarUrl,
+  resolvedAddress,
   onReply,
   onReact,
   replyToContent,
   replyToSender,
 }: MessageItemProps) {
-  const senderDisplay = displayName ?? truncateAddress(message.senderAddress, 4);
-  const color = addressToColor(message.senderAddress);
+  const effectiveAddress = resolvedAddress ?? message.senderAddress;
+  const senderDisplay = displayName ?? truncateAddress(effectiveAddress, 4);
+  const color = addressToColor(effectiveAddress);
   const time = formatMessageTime(message.sentAt);
   const shortTime = new Date(message.sentAt).toLocaleTimeString([], {
     hour: "numeric",
@@ -116,12 +121,21 @@ export function MessageItem({
       ) : (
         <div className={styles.messageGroup}>
           <div className={styles.messageRow}>
-            <div
-              className={styles.messageAvatar}
-              style={{ background: color }}
-            >
-              {getInitials(displayName ?? null, message.senderAddress)}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={senderDisplay}
+                className={styles.messageAvatar}
+                style={{ objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                className={styles.messageAvatar}
+                style={{ background: color }}
+              >
+                {getInitials(displayName ?? null, effectiveAddress)}
+              </div>
+            )}
             <div className={styles.messageContent}>
               <div className={styles.messageHeader}>
                 <span className={styles.messageSender} style={{ color }}>

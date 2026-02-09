@@ -10,6 +10,7 @@ import type {
   BimMemberData,
   BimMessage,
   BimDmConversation,
+  BimProfileData,
   ModalType,
 } from "../types";
 
@@ -81,6 +82,15 @@ interface BIMStore {
   showSearch: boolean;
   toggleSearch: () => void;
 
+  // ── Profiles ────────────────────────────────────────────
+  myProfile: BimProfileData | null;
+  profiles: Record<string, BimProfileData>; // wallet_address -> profile
+  inboxToWallet: Record<string, string>; // inboxId -> wallet_address
+
+  setMyProfile: (profile: BimProfileData | null) => void;
+  setProfiles: (profiles: BimProfileData[]) => void;
+  mapInboxToWallet: (mapping: Record<string, string>) => void;
+
   // ── Reply State ──────────────────────────────────────────
   replyingTo: BimMessage | null;
   setReplyingTo: (message: BimMessage | null) => void;
@@ -106,6 +116,10 @@ const initialState = {
   messages: {},
   dmConversations: [],
   unreadCounts: {},
+
+  myProfile: null,
+  profiles: {},
+  inboxToWallet: {},
 
   activeModal: null,
   showMemberList: true,
@@ -225,6 +239,19 @@ export const useBimStore = create<BIMStore>((set) => ({
   setActiveModal: (modal) => set({ activeModal: modal }),
   toggleMemberList: () => set((s) => ({ showMemberList: !s.showMemberList })),
   toggleSearch: () => set((s) => ({ showSearch: !s.showSearch })),
+
+  // Profiles
+  setMyProfile: (profile) => set({ myProfile: profile }),
+  setProfiles: (profileList) => set((s) => {
+    const updated = { ...s.profiles };
+    for (const p of profileList) {
+      updated[p.wallet_address.toLowerCase()] = p;
+    }
+    return { profiles: updated };
+  }),
+  mapInboxToWallet: (mapping) => set((s) => ({
+    inboxToWallet: { ...s.inboxToWallet, ...mapping },
+  })),
 
   // Reply
   setReplyingTo: (message) => set({ replyingTo: message }),

@@ -7,6 +7,7 @@
  */
 
 import { IdentifierKind, type Client, type Group } from "@xmtp/browser-sdk";
+import { useBimStore } from "../store/bimStore";
 
 // Track in-flight syncs to prevent duplicate work
 const syncInFlight = new Set<string>();
@@ -35,6 +36,17 @@ export async function syncGroupMembers(
     await group.sync();
     const xmtpMembers = await group.members();
     const existingInboxIds = new Set(xmtpMembers.map((m) => m.inboxId));
+
+    // 1b. Build inboxId -> walletAddress mapping from group members
+    const inboxMapping: Record<string, string> = {};
+    for (const m of xmtpMembers) {
+      if (m.accountIdentifiers.length > 0) {
+        inboxMapping[m.inboxId] = m.accountIdentifiers[0].identifier.toLowerCase();
+      }
+    }
+    if (Object.keys(inboxMapping).length > 0) {
+      useBimStore.getState().mapInboxToWallet(inboxMapping);
+    }
 
     // 2. Build a set of existing wallet addresses already in the group
     const existingAddresses = new Set<string>();

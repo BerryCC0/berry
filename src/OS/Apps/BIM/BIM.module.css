@@ -96,6 +96,40 @@
   border-color: var(--berry-success, #28a745);
 }
 
+/* ── User Panel (bottom of server rail) ────────────────────────────────── */
+.userPanelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin-bottom: 4px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  transition: opacity 0.15s ease;
+}
+
+.userPanelButton:hover {
+  opacity: 0.8;
+}
+
+.userPanelAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  object-fit: cover;
+  border: 2px solid var(--berry-border, #ccc);
+}
+
 /* ── Channel Sidebar ────────────────────────────────────────────────────── */
 .channelSidebar {
   display: flex;
