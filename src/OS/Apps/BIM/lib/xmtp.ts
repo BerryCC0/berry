@@ -40,7 +40,7 @@ export async function createXmtpClient(
   opts?: { env?: "dev" | "production" | "local" }
 ): Promise<Client> {
   const client = await Client.create(signer, {
-    env: opts?.env ?? "production",
+    env: opts?.env ?? (process.env.NODE_ENV === "production" ? "production" : "dev"),
   });
 
   return client;
