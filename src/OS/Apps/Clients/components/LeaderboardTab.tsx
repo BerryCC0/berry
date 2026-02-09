@@ -89,10 +89,10 @@ export const LeaderboardTab = memo(function LeaderboardTab({
                 </td>
                 <td className={`${styles.tdRight} ${styles.tdMono}`}>{formatEth(weiToEth(client.totalRewarded))}</td>
                 <td className={`${styles.tdRight} ${styles.tdMono}`}>{formatEth(balance)}</td>
+                <td className={styles.tdRight}>{client.auctionCount}</td>
+                <td className={styles.tdRight}>{client.bidCount.toLocaleString()}</td>
                 <td className={styles.tdRight}>{client.voteCount.toLocaleString()}</td>
                 <td className={styles.tdRight}>{client.proposalCount}</td>
-                <td className={styles.tdRight}>{client.bidCount.toLocaleString()}</td>
-                <td className={styles.tdRight}>{client.auctionCount}</td>
               </tr>
             );
           })}
