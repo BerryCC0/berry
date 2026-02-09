@@ -214,13 +214,6 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMet
       <div className={styles.detailPanel}>
         <div className={styles.detailHeader}>
           <button className={styles.backButton} onClick={onBack}>&larr; Back</button>
-          {client.nftImage && (
-            <img
-              src={client.nftImage}
-              alt={client.name || `Client ${client.clientId}`}
-              className={styles.detailAvatar}
-            />
-          )}
           <div className={styles.detailTitleBlock}>
             <span className={styles.detailTitle}>
               {clientMetadata?.get(client.clientId)?.favicon && (
@@ -341,8 +334,16 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMet
           </button>
           {overviewOpen && (
             <div className={styles.collapseContent}>
+              <div className={styles.overviewRow}>
+                {client.nftImage && (
+                  <img
+                    src={client.nftImage}
+                    alt={client.name || `Client ${client.clientId}`}
+                    className={styles.detailAvatar}
+                  />
+                )}
               {rewardTimeline.length > 0 && (
-                <div className={styles.detailSection}>
+                <div className={styles.detailSection} style={{ flex: 1, minWidth: 0 }}>
                   <div className={styles.chartCardWide}>
                     <div className={styles.chartTitle}>Cumulative Rewards</div>
                     <div className={styles.chartContainerWide}>
@@ -366,6 +367,7 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMet
                   </div>
                 </div>
               )}
+              </div>
             </div>
           )}
 

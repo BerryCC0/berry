@@ -892,12 +892,18 @@
 }
 
 .detailAvatar {
-  width: 48px;
-  height: 48px;
+  width: 80px;
+  height: 80px;
   border-radius: 6px;
   flex-shrink: 0;
   object-fit: cover;
   border: 1px solid var(--berry-border, #e5e5e5);
+}
+
+.overviewRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .backButton {
