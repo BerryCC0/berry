@@ -74,6 +74,8 @@ export interface ClientProposal {
   against_votes: number;
   abstain_votes: number;
   quorum_votes: string;
+  start_block: string;
+  end_block: string;
 }
 
 export interface ClientWithdrawal {
@@ -219,6 +221,8 @@ export interface CycleProgress {
   timeRemaining: number | null;       // seconds until minimumRewardPeriod met (null if already met)
   proposalConditionMet: boolean;      // eligible >= numProposalsEnoughForReward
   timeConditionMet: boolean;          // timeElapsed >= minimumRewardPeriod
+  pendingCount: number;               // proposals still voting (could become eligible)
+  qualifyingPendingCount: number;     // pending proposals created after deadline (would satisfy time condition)
   canDistribute: boolean;              // either condition met
 }
 

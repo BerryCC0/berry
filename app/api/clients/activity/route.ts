@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   const clientId = searchParams.get('clientId');
   const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200);
   const voteLimit = Math.min(parseInt(searchParams.get('voteLimit') || String(limit)), 5000);
+  const proposalLimit = Math.min(parseInt(searchParams.get('proposalLimit') || String(limit)), 1000);
 
   try {
     const sql = ponderSql();
@@ -49,23 +50,27 @@ export async function GET(request: NextRequest) {
                    p.created_timestamp::text as created_timestamp,
                    p.for_votes, p.against_votes, p.abstain_votes,
                    p.quorum_votes::text as quorum_votes,
+                   p.start_block::text as start_block,
+                   p.end_block::text as end_block,
                    c.name as client_name
             FROM ponder_live.proposals p
             LEFT JOIN ponder_live.clients c ON p.client_id = c.client_id
             WHERE p.client_id = ${clientFilter}
             ORDER BY p.created_timestamp DESC
-            LIMIT ${limit}
+            LIMIT ${proposalLimit}
           `
         : sql`
             SELECT p.id, p.title, p.proposer, p.status, p.client_id,
                    p.created_timestamp::text as created_timestamp,
                    p.for_votes, p.against_votes, p.abstain_votes,
                    p.quorum_votes::text as quorum_votes,
+                   p.start_block::text as start_block,
+                   p.end_block::text as end_block,
                    c.name as client_name
             FROM ponder_live.proposals p
             INNER JOIN ponder_live.clients c ON p.client_id = c.client_id
             ORDER BY p.created_timestamp DESC
-            LIMIT ${limit}
+            LIMIT ${proposalLimit}
           `,
       // Recent withdrawals
       clientFilter

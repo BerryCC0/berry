@@ -185,14 +185,15 @@ export function useChartData(
 
   // Eligible count for current period
   const eligibleCount = useMemo(() => {
-    let eligible = 0;
+    let eligible = 0, pending = 0;
     let withClient = 0;
     for (const p of currentPeriodProposals) {
       if (p.clientId != null) withClient++;
       const status = getEligibility(p);
       if (status === 'eligible') eligible++;
+      else if (status === 'pending') pending++;
     }
-    return { eligible, withClient, total: currentPeriodProposals.length };
+    return { eligible, pending, withClient, total: currentPeriodProposals.length };
   }, [currentPeriodProposals, getEligibility]);
 
   // Per-proposal client breakdown with estimated rewards

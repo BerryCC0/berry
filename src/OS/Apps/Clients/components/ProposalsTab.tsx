@@ -163,9 +163,13 @@ export function ProposalsTab({
                 </span>
                 <span className={styles.cycleSep}>·</span>
                 <span className={cycleProgress.timeConditionMet ? styles.cycleMet : styles.cycleUnmet}>
-                  {cycleProgress.timeRemaining != null
-                    ? `${formatDuration(cycleProgress.timeRemaining)} left`
-                    : `${formatDuration(cycleProgress.timeElapsed)} elapsed`}
+                  {cycleProgress.timeConditionMet
+                    ? 'Period met'
+                    : cycleProgress.timeRemaining != null
+                      ? `${formatDuration(cycleProgress.timeRemaining)} until period`
+                      : cycleProgress.qualifyingPendingCount > 0
+                        ? `Period passed · ${cycleProgress.qualifyingPendingCount} could qualify`
+                        : 'Period passed · none qualify yet'}
                 </span>
               </>
             )}

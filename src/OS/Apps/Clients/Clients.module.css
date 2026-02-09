@@ -601,6 +601,24 @@
   letter-spacing: 0.3px;
 }
 
+.proposalRewarded {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(var(--berry-info-rgb, 91, 141, 239), 0.15);
+  color: var(--berry-info, #1a73e8);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.proposalRewardAmount {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--berry-text-secondary, #6e6e73);
+  margin-left: auto;
+}
+
 .proposalVoteSummary {
   font-size: 11px;
   color: var(--berry-text-muted, #8e8e93);
@@ -873,6 +891,15 @@
   flex-shrink: 0;
 }
 
+.detailAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid var(--berry-border, #e5e5e5);
+}
+
 .backButton {
   padding: 4px 8px;
   border: none;
@@ -915,30 +942,40 @@
 }
 
 .headerStats {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(6, auto);
+  gap: 0;
   flex-shrink: 0;
+  border: 1px solid var(--berry-border, #e5e5e5);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .headerStat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
+  padding: 6px 12px;
+  border-right: 1px solid var(--berry-border, #e5e5e5);
+}
+
+.headerStat:last-child {
+  border-right: none;
 }
 
 .headerStatLabel {
   font-size: 9px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--berry-text-muted, #8e8e93);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
 .headerStatValue {
   font-size: 13px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--berry-text-primary, #1d1d1f);
 }
 

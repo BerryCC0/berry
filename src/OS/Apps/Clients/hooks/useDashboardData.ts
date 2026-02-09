@@ -125,6 +125,18 @@ export function useDashboardData() {
     return Math.max(...eligible.map((p) => Number(p.createdTimestamp)));
   }, [chartData.currentPeriodProposals, chartData.getEligibility]);
 
+  // Count pending proposals whose creation time would satisfy the time condition
+  const qualifyingPendingCount = useMemo(() => {
+    if (!proposalRewardParams || lastProposalRewardsUpdate == null) return 0;
+    const minimumRewardPeriod = Number(proposalRewardParams.minimumRewardPeriod);
+    const lastUpdateTimestamp = Number(lastProposalRewardsUpdate);
+    const deadline = lastUpdateTimestamp + minimumRewardPeriod;
+    return chartData.currentPeriodProposals.filter((p) => {
+      if (chartData.getEligibility(p) !== 'pending') return false;
+      return Number(p.createdTimestamp) >= deadline;
+    }).length;
+  }, [chartData.currentPeriodProposals, chartData.getEligibility, proposalRewardParams, lastProposalRewardsUpdate]);
+
   // Compute cycle progress
   // Time condition: creationTime(lastEligibleProposal) - lastUpdate >= minimumRewardPeriod
   // NOT now - lastUpdate. Distribution also requires at least 1 eligible proposal.
@@ -164,9 +176,11 @@ export function useDashboardData() {
       timeRemaining,
       proposalConditionMet,
       timeConditionMet,
+      pendingCount: chartData.eligibleCount.pending,
+      qualifyingPendingCount,
       canDistribute,
     };
-  }, [proposalRewardParams, lastProposalRewardsUpdate, now, chartData.eligibleCount.eligible, lastEligibleProposalTimestamp]);
+  }, [proposalRewardParams, lastProposalRewardsUpdate, now, chartData.eligibleCount.eligible, chartData.eligibleCount.pending, qualifyingPendingCount, lastEligibleProposalTimestamp]);
 
   return {
     // Loading / data

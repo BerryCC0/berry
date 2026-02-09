@@ -10,7 +10,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { useAccount, useSimulateContract, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useSimulateContract, useWriteContract, useWaitForTransactionReceipt, useReadContract, useBlockNumber } from 'wagmi';
 import { formatEther } from 'viem';
 import { useClientRewardsTimeSeries, useClientActivity } from '../hooks/useClientIncentives';
 import { ClientRewardsABI } from '@/app/lib/nouns/abis/ClientRewards';
@@ -108,6 +108,7 @@ function useUpdateMetadata(clientId: number, name: string, description: string, 
 export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientDetailProps) {
   const { data: activity, isLoading: activityLoading } = useClientActivity(client.clientId);
   const { data: rewards } = useClientRewardsTimeSeries(client.clientId);
+  const { data: currentBlock } = useBlockNumber({ watch: false });
 
   const balance = weiToEth(client.totalRewarded) - weiToEth(client.totalWithdrawn);
 
@@ -140,6 +141,24 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
       month, total: Number(total.toFixed(4)),
     }));
   }, [rewards]);
+
+  // Build a lookup: for each proposal ID, check if it was included in a reward update
+  // and what the reward-per-proposal was for that update
+  const proposalRewardLookup = useMemo(() => {
+    const lookup = new Map<number, { rewardPerProposal: number; rewardPerVote: number }>();
+    if (!rewardUpdates.length) return lookup;
+    for (const u of rewardUpdates) {
+      if (u.updateType !== 'PROPOSAL' || !u.firstProposalId || !u.lastProposalId) continue;
+      const first = Number(u.firstProposalId);
+      const last = Number(u.lastProposalId);
+      const rpp = u.rewardPerProposal ? Number(u.rewardPerProposal) / 1e18 : 0;
+      const rpv = u.rewardPerVote ? Number(u.rewardPerVote) / 1e18 : 0;
+      for (let id = first; id <= last; id++) {
+        lookup.set(id, { rewardPerProposal: rpp, rewardPerVote: rpv });
+      }
+    }
+    return lookup;
+  }, [rewardUpdates]);
 
   // Vote summary stats
   const voteSummary = useMemo(() => {
@@ -194,6 +213,13 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
       <div className={styles.detailPanel}>
         <div className={styles.detailHeader}>
           <button className={styles.backButton} onClick={onBack}>&larr; Back</button>
+          {client.nftImage && (
+            <img
+              src={client.nftImage}
+              alt={client.name || `Client ${client.clientId}`}
+              className={styles.detailAvatar}
+            />
+          )}
           <div className={styles.detailTitleBlock}>
             <span className={styles.detailTitle}>
               {client.name || `Client ${client.clientId}`}
@@ -217,11 +243,11 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
           <div className={styles.headerStats}>
             <div className={styles.headerStat}>
               <span className={styles.headerStatLabel}>Rewarded</span>
-              <span className={styles.headerStatValue}>{formatEth(weiToEth(client.totalRewarded))}</span>
+              <span className={styles.headerStatValue}>{formatEth(weiToEth(client.totalRewarded))} ETH</span>
             </div>
             <div className={styles.headerStat}>
-              <span className={styles.headerStatLabel}>Pending</span>
-              <span className={styles.headerStatValue}>{formatEth(balance)}</span>
+              <span className={styles.headerStatLabel}>Balance</span>
+              <span className={styles.headerStatValue}>{formatEth(balance)} ETH</span>
             </div>
             <div className={styles.headerStat}>
               <span className={styles.headerStatLabel}>Votes</span>
@@ -467,15 +493,28 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
                       const abstainVotes = Number(p.abstain_votes || 0);
                       const quorum = Number(p.quorum_votes || 0) || 1;
                       const totalVotes = forVotes + againstVotes + abstainVotes;
-                      const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status);
-                      const isPending = p.status === 'PENDING';
-                      const isUpdatable = p.status === 'UPDATABLE';
-                      const isDefeated = p.status === 'DEFEATED';
-                      const isExecuted = p.status === 'EXECUTED';
-                      const isSucceeded = p.status === 'SUCCEEDED';
-                      const isQueued = p.status === 'QUEUED';
-                      const isCancelled = p.status === 'CANCELLED';
-                      const isVetoed = p.status === 'VETOED';
+
+                      // Derive real status from block data when indexed status is stale
+                      let derivedStatus = p.status as string;
+                      if (currentBlock && ['PENDING', 'ACTIVE', 'UPDATABLE', 'OBJECTION_PERIOD'].includes(p.status)) {
+                        const startBlock = BigInt(p.start_block || '0');
+                        const endBlock = BigInt(p.end_block || '0');
+                        if (currentBlock > endBlock && endBlock > BigInt(0)) {
+                          derivedStatus = forVotes >= quorum ? 'SUCCEEDED' : 'DEFEATED';
+                        } else if (currentBlock >= startBlock && startBlock > BigInt(0)) {
+                          derivedStatus = 'ACTIVE';
+                        }
+                      }
+
+                      const isActive = ['ACTIVE', 'OBJECTION_PERIOD'].includes(derivedStatus);
+                      const isPending = derivedStatus === 'PENDING';
+                      const isUpdatable = derivedStatus === 'UPDATABLE';
+                      const isDefeated = derivedStatus === 'DEFEATED';
+                      const isExecuted = derivedStatus === 'EXECUTED';
+                      const isSucceeded = derivedStatus === 'SUCCEEDED';
+                      const isQueued = derivedStatus === 'QUEUED';
+                      const isCancelled = derivedStatus === 'CANCELLED';
+                      const isVetoed = derivedStatus === 'VETOED';
 
                       const statusClass = isActive ? styles.proposalStatusActive
                         : isPending ? styles.proposalStatusUpdatable
@@ -486,7 +525,7 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
                         : '';
 
                       const statusLabel = isActive ? 'Voting'
-                        : p.status === 'OBJECTION_PERIOD' ? 'Objection'
+                        : derivedStatus === 'OBJECTION_PERIOD' ? 'Objection'
                         : isPending ? 'Pending'
                         : isUpdatable ? 'Updatable'
                         : isDefeated ? 'Defeated'
@@ -495,7 +534,7 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
                         : isQueued ? 'Queued'
                         : isCancelled ? 'Cancelled'
                         : isVetoed ? 'Vetoed'
-                        : p.status;
+                        : derivedStatus;
 
                       const maxVotes = Math.max(totalVotes, quorum);
                       const forWidth = maxVotes > 0 ? (forVotes / maxVotes) * 100 : 0;
@@ -506,6 +545,24 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
                       const proposerDisplay = ensMap.get(p.proposer)?.displayName
                         || ensMap.get(p.proposer?.toLowerCase())?.displayName
                         || `${p.proposer?.slice(0, 6)}…${p.proposer?.slice(-4)}`;
+
+                      // Eligibility: same logic as main proposals tab
+                      const eligibility = isCancelled || isVetoed
+                        ? 'ineligible'
+                        : forVotes >= quorum
+                          ? 'eligible'
+                          : isDefeated
+                            ? 'ineligible'
+                            : (isActive || isPending || isUpdatable)
+                              ? 'pending'
+                              : 'ineligible';
+
+                      // Reward lookup: was this proposal included in a past reward distribution?
+                      const rewardInfo = proposalRewardLookup.get(Number(p.id));
+                      const wasRewarded = !!rewardInfo;
+                      const estimatedReward = rewardInfo
+                        ? rewardInfo.rewardPerProposal
+                        : 0;
 
                       return (
                         <div key={p.id} className={styles.proposalItem}>
@@ -527,12 +584,26 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner }: ClientD
                             )}
                             <div className={styles.proposalStats}>
                               <span className={`${styles.proposalStatusBadge} ${statusClass}`}>{statusLabel}</span>
+                              {wasRewarded ? (
+                                <span className={styles.proposalRewarded}>Rewarded</span>
+                              ) : eligibility === 'eligible' ? (
+                                <span className={styles.proposalEligible}>Eligible</span>
+                              ) : eligibility === 'pending' ? (
+                                <span className={styles.proposalPending}>Pending</span>
+                              ) : (
+                                <span className={styles.proposalIneligible}>Ineligible</span>
+                              )}
                               <span className={styles.proposalVoteSummary}>
                                 {forVotes.toLocaleString()} for
                                 {againstVotes > 0 && <> · {againstVotes.toLocaleString()} against</>}
                                 {abstainVotes > 0 && <> · {abstainVotes.toLocaleString()} abstain</>}
                                 {' · '}{quorum} quorum
                               </span>
+                              {wasRewarded && estimatedReward > 0 && (
+                                <span className={styles.proposalRewardAmount}>
+                                  ~{formatEth(estimatedReward)} ETH/prop
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

@@ -56,6 +56,7 @@ async function fetchClientActivity(clientId?: number): Promise<ClientActivity> {
   if (clientId !== undefined) params.set('clientId', String(clientId));
   params.set('limit', '100');
   params.set('voteLimit', '500');
+  params.set('proposalLimit', '500');
 
   const response = await fetch(`/api/clients/activity?${params}`);
   if (!response.ok) throw new Error('Failed to fetch activity');
