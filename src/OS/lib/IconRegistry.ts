@@ -96,7 +96,7 @@ const iconRegistry: Record<IconId, string> = {
   "crystal-ball": `${ICONS_BASE_PATH}/crystal-ball.png`,
   "probe": `${ICONS_BASE_PATH}/probe.png`,
   "clients": `${ICONS_BASE_PATH}/clients.png`,
-  "bim": `${ICONS_BASE_PATH}/bim.png`,
+  "bim": `${ICONS_BASE_PATH}/BIM.png`,
 
   // File type icons
   "file-text": `${ICONS_BASE_PATH}/file-text.svg`,
