@@ -29,6 +29,7 @@
     "@xmtp/content-type-remote-attachment": "^2.0.4",
     "@xmtp/content-type-reply": "^2.0.3",
     "@xmtp/node-sdk": "^5.3.0",
+    "axios": "^1.13.5",
     "dompurify": "^3.3.1",
     "drizzle-orm": "^0.45.1",
     "globe.gl": "^2.45.0",
