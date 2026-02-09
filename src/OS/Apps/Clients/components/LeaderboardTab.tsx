@@ -43,6 +43,14 @@ export const LeaderboardTab = memo(function LeaderboardTab({
               onClick={() => handleSort('balance')}>
               Balance{sortArrow('balance')}
             </th>
+            <th className={`${styles.thRight} ${sortField === 'auctionCount' ? styles.thActive : ''}`}
+              onClick={() => handleSort('auctionCount')}>
+              Auctions{sortArrow('auctionCount')}
+            </th>
+            <th className={`${styles.thRight} ${sortField === 'bidCount' ? styles.thActive : ''}`}
+              onClick={() => handleSort('bidCount')}>
+              Bids{sortArrow('bidCount')}
+            </th>
             <th className={`${styles.thRight} ${sortField === 'voteCount' ? styles.thActive : ''}`}
               onClick={() => handleSort('voteCount')}>
               Votes{sortArrow('voteCount')}
@@ -50,14 +58,6 @@ export const LeaderboardTab = memo(function LeaderboardTab({
             <th className={`${styles.thRight} ${sortField === 'proposalCount' ? styles.thActive : ''}`}
               onClick={() => handleSort('proposalCount')}>
               Props{sortArrow('proposalCount')}
-            </th>
-            <th className={`${styles.thRight} ${sortField === 'bidCount' ? styles.thActive : ''}`}
-              onClick={() => handleSort('bidCount')}>
-              Bids{sortArrow('bidCount')}
-            </th>
-            <th className={`${styles.thRight} ${sortField === 'auctionCount' ? styles.thActive : ''}`}
-              onClick={() => handleSort('auctionCount')}>
-              Auctions{sortArrow('auctionCount')}
             </th>
           </tr>
         </thead>
