@@ -5,6 +5,7 @@
 
 'use client';
 
+import { memo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LabelList,
@@ -19,6 +20,17 @@ import { ClientTick } from './ClientTick';
 import { ClientAvatar } from './ClientAvatar';
 import styles from '../Clients.module.css';
 
+const NO_CLIENT_COLOR = '#999';
+/** Get chart color — gray for no-client sentinel (-1), indexed color otherwise */
+function clientColor(clientId: number): string {
+  return clientId === -1 ? NO_CLIENT_COLOR : CHART_COLORS[clientId % CHART_COLORS.length];
+}
+/** Get display name — 'No Client' for sentinel, registry lookup otherwise */
+function clientName(clientId: number, fallback?: string): string {
+  if (clientId === -1) return 'No Client';
+  return getClientName(clientId) || fallback || `Client ${clientId}`;
+}
+
 interface AuctionsTabProps {
   cycleAuctionsData?: CycleAuctionsResponse;
   clientMetadata?: ClientMetadataMap;
@@ -26,7 +38,7 @@ interface AuctionsTabProps {
   pendingRevenueEth: number | null;
 }
 
-export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendingRevenueEth }: AuctionsTabProps) {
+export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendingRevenueEth }: AuctionsTabProps) {
   const {
     execute: executeAuctionUpdate,
     isPending: isAuctionPending,
@@ -50,18 +62,18 @@ export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendin
                   <BarChart
                     data={cycleAuctionsData.bidsByClient.map((b) => ({
                       ...b,
-                      name: getClientName(b.clientId) || b.name || `Client ${b.clientId}`,
-                      color: CHART_COLORS[b.clientId % CHART_COLORS.length],
+                      name: clientName(b.clientId, b.name),
+                      color: clientColor(b.clientId),
                     }))}
                     margin={{ top: 16, right: 8, bottom: 4, left: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
-                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.bidsByClient.map((b) => ({ ...b, name: getClientName(b.clientId) || b.name }))} clients={clients} />} interval={0} height={60} />
+                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.bidsByClient.map((b) => ({ ...b, name: clientName(b.clientId, b.name) }))} clients={clients} />} interval={0} height={60} />
                     <YAxis tick={{ fontSize: 10 }} width={40} />
                     <Tooltip />
                     <Bar dataKey="bidCount" name="Bids" radius={[3, 3, 0, 0]}>
                       {cycleAuctionsData.bidsByClient.map((entry, i) => (
-                        <Cell key={i} fill={CHART_COLORS[entry.clientId % CHART_COLORS.length]} />
+                        <Cell key={i} fill={clientColor(entry.clientId)} />
                       ))}
                       <LabelList dataKey="bidCount" position="top" fontSize={9} formatter={(v: any) => Number(v).toLocaleString()} />
                     </Bar>
@@ -79,18 +91,18 @@ export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendin
                   <BarChart
                     data={cycleAuctionsData.winsByClient.map((w) => ({
                       ...w,
-                      name: getClientName(w.clientId) || w.name || `Client ${w.clientId}`,
-                      color: CHART_COLORS[w.clientId % CHART_COLORS.length],
+                      name: clientName(w.clientId, w.name),
+                      color: clientColor(w.clientId),
                     }))}
                     margin={{ top: 16, right: 8, bottom: 4, left: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
-                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.winsByClient.map((w) => ({ ...w, name: getClientName(w.clientId) || w.name }))} clients={clients} />} interval={0} height={60} />
+                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.winsByClient.map((w) => ({ ...w, name: clientName(w.clientId, w.name) }))} clients={clients} />} interval={0} height={60} />
                     <YAxis tick={{ fontSize: 10 }} width={30} allowDecimals={false} />
                     <Tooltip />
                     <Bar dataKey="winCount" name="Wins" radius={[3, 3, 0, 0]}>
                       {cycleAuctionsData.winsByClient.map((entry, i) => (
-                        <Cell key={i} fill={CHART_COLORS[entry.clientId % CHART_COLORS.length]} />
+                        <Cell key={i} fill={clientColor(entry.clientId)} />
                       ))}
                       <LabelList dataKey="winCount" position="top" fontSize={9} />
                     </Bar>
@@ -109,19 +121,19 @@ export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendin
                   <BarChart
                     data={cycleAuctionsData.winsByClient.map((w) => ({
                       ...w,
-                      name: getClientName(w.clientId) || w.name || `Client ${w.clientId}`,
+                      name: clientName(w.clientId, w.name),
                       volume: weiToEth(w.winVolume || '0'),
-                      color: CHART_COLORS[w.clientId % CHART_COLORS.length],
+                      color: clientColor(w.clientId),
                     }))}
                     margin={{ top: 16, right: 8, bottom: 4, left: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
-                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.winsByClient.map((w) => ({ ...w, name: getClientName(w.clientId) || w.name }))} clients={clients} />} interval={0} height={60} />
+                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.winsByClient.map((w) => ({ ...w, name: clientName(w.clientId, w.name) }))} clients={clients} />} interval={0} height={60} />
                     <YAxis tick={{ fontSize: 10 }} width={40} />
                     <Tooltip content={<EthTooltip />} />
                     <Bar dataKey="volume" name="Volume" radius={[3, 3, 0, 0]}>
                       {cycleAuctionsData.winsByClient.map((entry, i) => (
-                        <Cell key={i} fill={CHART_COLORS[entry.clientId % CHART_COLORS.length]} />
+                        <Cell key={i} fill={clientColor(entry.clientId)} />
                       ))}
                       <LabelList dataKey="volume" position="top" fontSize={9} formatter={(v: any) => formatEth(Number(v))} />
                     </Bar>
@@ -226,4 +238,4 @@ export function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendin
       )}
     </>
   );
-}
+});

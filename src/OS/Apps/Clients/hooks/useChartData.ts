@@ -14,6 +14,21 @@ import { weiToEth, shortDate } from '../utils';
 import { CHART_COLORS } from '../constants';
 import { getClientName } from '@/OS/lib/clientNames';
 
+/** Sentinel client ID for entries with no client attribution */
+const NO_CLIENT_ID = -1;
+const NO_CLIENT_COLOR = '#999';
+
+/** Get chart color for a client — gray for no-client, indexed color otherwise */
+function clientColor(clientId: number): string {
+  return clientId === NO_CLIENT_ID ? NO_CLIENT_COLOR : CHART_COLORS[clientId % CHART_COLORS.length];
+}
+
+/** Get display name for a client — 'No Client' for sentinel, registry lookup otherwise */
+function clientDisplayName(clientId: number, fallbackName?: string): string {
+  if (clientId === NO_CLIENT_ID) return 'No Client';
+  return getClientName(clientId) || fallbackName || `Client ${clientId}`;
+}
+
 // ============================================================================
 // Hook
 // ============================================================================
@@ -141,6 +156,7 @@ export function useChartData(
   }, []);
 
   // Votes by client distribution — current cycle only (from Ponder cycle-votes API)
+  // Includes votes with no client attribution as "No Client"
   const votesByClient = useMemo<DistributionItem[]>(() => {
     if (!cycleVotes?.length) return [];
     const total = cycleVotes.reduce((sum, c) => sum + c.voteCount, 0);
@@ -150,38 +166,40 @@ export function useChartData(
       .sort((a, b) => b.voteCount - a.voteCount)
       .map((c) => ({
         clientId: c.clientId,
-        name: getClientName(c.clientId) || c.name || `Client ${c.clientId}`,
+        name: clientDisplayName(c.clientId, c.name),
         count: c.voteCount,
         pct: (c.voteCount / total) * 100,
-        color: CHART_COLORS[c.clientId % CHART_COLORS.length],
+        color: clientColor(c.clientId),
       }));
   }, [cycleVotes]);
 
-  // Proposals by client distribution — current cycle eligible only
+  // Proposals by client distribution — current cycle, all non-cancelled proposals
+  // Includes proposals with no client attribution as "No Client"
   const proposalsByClient = useMemo<DistributionItem[]>(() => {
     if (!currentPeriodProposals.length) return [];
-    // Only count eligible proposals (quorum met, has client, not cancelled)
-    const eligible = currentPeriodProposals.filter((p) => getEligibility(p) === 'eligible');
-    if (!eligible.length) return [];
-    // Group by clientId
+    // Include all non-cancelled proposals (not just eligible ones)
+    const included = currentPeriodProposals.filter(
+      (p) => !['CANCELLED', 'VETOED'].includes(p.status),
+    );
+    if (!included.length) return [];
+    // Group by clientId — use -1 sentinel for proposals without a client
     const countMap = new Map<number, number>();
-    for (const p of eligible) {
-      if (p.clientId != null) {
-        countMap.set(p.clientId, (countMap.get(p.clientId) ?? 0) + 1);
-      }
+    for (const p of included) {
+      const id = p.clientId ?? NO_CLIENT_ID;
+      countMap.set(id, (countMap.get(id) ?? 0) + 1);
     }
     const total = Array.from(countMap.values()).reduce((s, v) => s + v, 0);
     if (!total) return [];
     return Array.from(countMap.entries())
       .sort((a, b) => b[1] - a[1])
-      .map(([clientId, count]) => ({
-        clientId,
-        name: getClientName(clientId) || `Client ${clientId}`,
+      .map(([cid, count]) => ({
+        clientId: cid,
+        name: clientDisplayName(cid),
         count,
         pct: (count / total) * 100,
-        color: CHART_COLORS[clientId % CHART_COLORS.length],
+        color: clientColor(cid),
       }));
-  }, [currentPeriodProposals, getEligibility]);
+  }, [currentPeriodProposals]);
 
   // Eligible count for current period
   const eligibleCount = useMemo(() => {
@@ -229,11 +247,11 @@ export function useChartData(
       // Track which client IDs we've seen (for merging proposer + voter)
       const clientMap = new Map<number, ProposalBreakdownEntry>();
 
-      // Add voting clients
+      // Add voting clients (includes no-client votes with sentinel -1)
       for (const v of propVotes) {
         clientMap.set(v.clientId, {
           clientId: v.clientId,
-          name: getClientName(v.clientId) || v.name || `Client ${v.clientId}`,
+          name: clientDisplayName(v.clientId, v.name),
           voteCount: v.voteCount,
           estimatedVoteReward: v.voteCount * rewardPerVote,
           isProposer: v.clientId === proposal.clientId,
@@ -245,7 +263,7 @@ export function useChartData(
       if (proposal.clientId != null && !clientMap.has(proposal.clientId)) {
         clientMap.set(proposal.clientId, {
           clientId: proposal.clientId,
-          name: getClientName(proposal.clientId) || `Client ${proposal.clientId}`,
+          name: clientDisplayName(proposal.clientId),
           voteCount: 0,
           estimatedVoteReward: 0,
           isProposer: true,

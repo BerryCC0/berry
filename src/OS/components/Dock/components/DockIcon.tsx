@@ -44,8 +44,11 @@ export function DockIcon({ app, onClick, styles }: DockIconProps) {
         alt={app.title}
         className={styles.dockIconImage}
         draggable={false}
+        onLoad={(e) => {
+          (e.target as HTMLImageElement).style.display = "";
+        }}
         onError={(e) => {
-          // Fallback to emoji if icon fails to load
+          // Hide if icon fails to load
           (e.target as HTMLImageElement).style.display = "none";
         }}
       />

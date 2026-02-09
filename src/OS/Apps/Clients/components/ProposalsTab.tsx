@@ -5,6 +5,7 @@
 
 'use client';
 
+import { memo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, LabelList,
@@ -21,6 +22,12 @@ import { formatEth } from '../utils';
 import { EthTooltip } from './ChartTooltips';
 import { ClientTick } from './ClientTick';
 import styles from '../Clients.module.css';
+
+const NO_CLIENT_COLOR = '#999';
+/** Get chart color — gray for no-client sentinel (-1), indexed color otherwise */
+function clientColor(clientId: number): string {
+  return clientId === -1 ? NO_CLIENT_COLOR : CHART_COLORS[clientId % CHART_COLORS.length];
+}
 
 /** Format seconds into a human-readable duration string */
 function formatDuration(totalSeconds: number): string {
@@ -49,7 +56,7 @@ interface ProposalsTabProps {
   proposalBreakdowns: Map<number, ProposalBreakdownEntry[]>;
 }
 
-export function ProposalsTab({
+export const ProposalsTab = memo(function ProposalsTab({
   proposalsByClient, votesByClient, cycleRewardsByClient,
   clientMetadata, clients, pendingRevenueEth,
   eligibleCount, cycleProgress, filterEligible, setFilterEligible,
@@ -256,7 +263,7 @@ export function ProposalsTab({
                           <td className={styles.breakdownTd}>
                             <span
                               className={styles.breakdownClient}
-                              style={{ color: CHART_COLORS[entry.clientId % CHART_COLORS.length] }}
+                              style={{ color: clientColor(entry.clientId) }}
                             >
                               {entry.name}
                             </span>
@@ -289,7 +296,7 @@ export function ProposalsTab({
                 {clientName && (
                   <span
                     className={styles.proposalClientBadge}
-                    style={{ color: CHART_COLORS[(proposal.clientId ?? 0) % CHART_COLORS.length] }}
+                    style={{ color: clientColor(proposal.clientId ?? -1) }}
                   >
                     via {clientName}
                   </span>
@@ -350,4 +357,4 @@ export function ProposalsTab({
       )}
     </>
   );
-}
+});

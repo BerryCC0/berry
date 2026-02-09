@@ -35,17 +35,17 @@ export async function GET(request: NextRequest) {
         WHERE a.noun_id >= ${nounId} AND a.settled = true
         ORDER BY a.noun_id DESC
       `,
-      // All bids by client in cycle
+      // All bids by client in cycle (includes bids with no client)
       sql`
         SELECT b.client_id, c.name, COUNT(*)::int as bid_count,
                COALESCE(SUM(b.amount), 0)::text as bid_volume
         FROM ponder_live.auction_bids b
         LEFT JOIN ponder_live.clients c ON b.client_id = c.client_id
-        WHERE b.noun_id >= ${nounId} AND b.client_id IS NOT NULL
+        WHERE b.noun_id >= ${nounId}
         GROUP BY b.client_id, c.name
         ORDER BY bid_count DESC
       `,
-      // Winning bids by client in cycle (client that submitted the winning bid)
+      // Winning bids by client in cycle (includes wins with no client)
       sql`
         SELECT b.client_id, c.name, COUNT(*)::int as win_count,
                COALESCE(SUM(b.amount), 0)::text as win_volume
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         INNER JOIN ponder_live.auctions a
           ON b.noun_id = a.noun_id AND b.bidder = a.winner AND b.amount = a.amount
         LEFT JOIN ponder_live.clients c ON b.client_id = c.client_id
-        WHERE a.noun_id >= ${nounId} AND a.settled = true AND b.client_id IS NOT NULL
+        WHERE a.noun_id >= ${nounId} AND a.settled = true
         GROUP BY b.client_id, c.name
         ORDER BY win_count DESC
       `,
@@ -68,14 +68,14 @@ export async function GET(request: NextRequest) {
         clientName: a.client_name,
       })),
       bidsByClient: bidsByClient.map((r: any) => ({
-        clientId: r.client_id,
-        name: r.name,
+        clientId: r.client_id ?? -1,
+        name: r.name ?? 'No Client',
         bidCount: r.bid_count,
         bidVolume: r.bid_volume,
       })),
       winsByClient: winsByClient.map((r: any) => ({
-        clientId: r.client_id,
-        name: r.name,
+        clientId: r.client_id ?? -1,
+        name: r.name ?? 'No Client',
         winCount: r.win_count,
         winVolume: r.win_volume,
       })),

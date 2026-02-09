@@ -5,6 +5,7 @@
 
 'use client';
 
+import { memo } from 'react';
 import type { ClientData, ClientMetadataMap } from '../types';
 import { weiToEth, formatEth } from '../utils';
 import { ClientAvatar } from './ClientAvatar';
@@ -20,7 +21,7 @@ interface LeaderboardTabProps {
   onSelectClient: (clientId: number) => void;
 }
 
-export function LeaderboardTab({
+export const LeaderboardTab = memo(function LeaderboardTab({
   sortedClients, clientMetadata, clients,
   sortField, sortDir, handleSort, onSelectClient,
 }: LeaderboardTabProps) {
@@ -99,4 +100,4 @@ export function LeaderboardTab({
       </table>
     </div>
   );
-}
+});

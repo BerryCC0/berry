@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import { useReadContract } from 'wagmi';
 import { ERC20ABI } from '@/app/lib/nouns/contracts';
 import { ClientRewardsABI } from '@/app/lib/nouns/abis/ClientRewards';
@@ -60,8 +61,12 @@ export function useContractState() {
     functionName: 'getAuctionRewardParams',
   });
 
+  // Stabilize timestamp to 60-second granularity so it doesn't change on every render,
+  // which would invalidate Wagmi's query key and re-fire the contract call continuously.
+  const currentMinute = Math.floor(Date.now() / 60_000);
+  const currentTimestamp = useMemo(() => BigInt(currentMinute * 60), [currentMinute]);
+
   // Read pending auction revenue since the last ProposalRewardsUpdated
-  const currentTimestamp = BigInt(Math.floor(Date.now() / 1000));
   const { data: pendingRevenue } = useReadContract({
     address: CLIENT_REWARDS_ADDRESS,
     abi: ClientRewardsABI,

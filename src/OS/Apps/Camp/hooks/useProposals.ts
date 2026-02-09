@@ -33,10 +33,18 @@ const PROPOSAL_STATE_MAP: Record<number, ProposalStatus> = {
   10: 'UPDATABLE',
 };
 
+// Module-level cache for getCurrentBlock() to avoid redundant RPC calls
+let cachedBlock: { value: number; timestamp: number } | null = null;
+const BLOCK_CACHE_TTL = 10_000; // 10 seconds
+
 /**
- * Get the current Ethereum block number
+ * Get the current Ethereum block number (cached for 10s)
  */
 async function getCurrentBlock(): Promise<number> {
+  if (cachedBlock && Date.now() - cachedBlock.timestamp < BLOCK_CACHE_TTL) {
+    return cachedBlock.value;
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 2000);
@@ -58,11 +66,14 @@ async function getCurrentBlock(): Promise<number> {
     const json = await response.json();
     const block = parseInt(json.result, 16);
     if (block > 20000000) {
+      cachedBlock = { value: block, timestamp: Date.now() };
       return block;
     }
     throw new Error('Invalid block number');
   } catch {
-    return Math.floor((Date.now() / 1000 - 1438269988) / 12);
+    const fallback = Math.floor((Date.now() / 1000 - 1438269988) / 12);
+    cachedBlock = { value: fallback, timestamp: Date.now() };
+    return fallback;
   }
 }
 

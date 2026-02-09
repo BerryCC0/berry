@@ -63,10 +63,12 @@ async function fetchClientActivity(clientId?: number): Promise<ClientActivity> {
   return response.json();
 }
 
-async function fetchCycleVotes(proposalIds: number[]): Promise<CycleVotesResponse> {
-  if (proposalIds.length === 0) return { votes: [], votesByProposal: [] };
+async function fetchCycleVotes(proposalIds?: number[]): Promise<CycleVotesResponse> {
   const params = new URLSearchParams();
-  params.set('proposalIds', proposalIds.join(','));
+  // If explicit IDs provided, pass them; otherwise let the server auto-determine
+  if (proposalIds && proposalIds.length > 0) {
+    params.set('proposalIds', proposalIds.join(','));
+  }
 
   const response = await fetch(`/api/clients/cycle-votes?${params}`);
   if (!response.ok) throw new Error('Failed to fetch cycle votes');
@@ -104,6 +106,8 @@ export function useClients() {
     queryKey: ['clients', 'list'],
     queryFn: fetchClients,
     staleTime: 60000, // 1 min
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -115,6 +119,8 @@ export function useClientRewardsTimeSeries(clientId?: number) {
     queryKey: ['clients', 'rewards', clientId ?? 'all'],
     queryFn: () => fetchRewardsTimeSeries(clientId),
     staleTime: 120000, // 2 min
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -126,6 +132,8 @@ export function useClientActivity(clientId?: number) {
     queryKey: ['clients', 'activity', clientId ?? 'all'],
     queryFn: () => fetchClientActivity(clientId),
     staleTime: 60000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -137,19 +145,24 @@ export function useRewardUpdates(type?: 'PROPOSAL' | 'AUCTION') {
     queryKey: ['clients', 'updates', type ?? 'all'],
     queryFn: () => fetchRewardUpdates(type),
     staleTime: 120000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
 /**
- * Fetch vote weight per client for a specific set of proposal IDs (current cycle)
- * Returns both aggregate and per-proposal breakdowns
+ * Fetch vote weight per client for the current reward cycle.
+ * When called without args (or undefined), the server auto-determines eligible proposals
+ * from Ponder DB — no need to wait for client-side contract reads.
+ * When called with explicit IDs, uses those IDs directly.
  */
-export function useCycleVotes(proposalIds: number[]) {
+export function useCycleVotes(proposalIds?: number[]) {
   return useQuery<CycleVotesResponse>({
-    queryKey: ['clients', 'cycle-votes', proposalIds],
+    queryKey: ['clients', 'cycle-votes', proposalIds ?? 'auto'],
     queryFn: () => fetchCycleVotes(proposalIds),
     staleTime: 60000,
-    enabled: proposalIds.length > 0,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -161,6 +174,8 @@ export function useCycleAuctions(firstNounId: number | undefined) {
     queryKey: ['clients', 'cycle-auctions', firstNounId],
     queryFn: () => fetchCycleAuctions(firstNounId!),
     staleTime: 60000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     enabled: firstNounId != null,
   });
 }

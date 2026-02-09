@@ -33,24 +33,10 @@ export function useDashboardData() {
     pendingRevenue,
   } = useContractState();
 
-  // Compute eligible proposal IDs for current cycle vote fetching
-  const eligibleProposalIds = useMemo(() => {
-    if (!proposals?.length || nextProposalIdToReward == null) return [];
-    const cutoff = Number(nextProposalIdToReward) - 1;
-    return proposals
-      .filter((p) => {
-        if (Number(p.id) <= cutoff) return false;
-        if (p.clientId == null) return false;
-        if (['CANCELLED', 'VETOED'].includes(p.status)) return false;
-        const forVotes = Number(p.forVotes);
-        const quorum = Number(p.quorumVotes) || 1;
-        return forVotes >= quorum;
-      })
-      .map((p) => Number(p.id));
-  }, [proposals, nextProposalIdToReward]);
-
-  // Fetch vote weight per client for current cycle eligible proposals
-  const { data: cycleVotesData } = useCycleVotes(eligibleProposalIds);
+  // Fetch vote weight per client for the current reward cycle.
+  // No args = server auto-determines eligible proposals from Ponder DB,
+  // so this fetch starts immediately in parallel with proposals + contract reads.
+  const { data: cycleVotesData } = useCycleVotes();
 
   // Fetch current cycle auction data
   const { data: cycleAuctionsData } = useCycleAuctions(
@@ -97,7 +83,7 @@ export function useDashboardData() {
           totals.set(e.clientId, {
             name: e.name,
             reward,
-            color: CHART_COLORS[e.clientId % CHART_COLORS.length],
+            color: e.clientId === -1 ? '#999' : CHART_COLORS[e.clientId % CHART_COLORS.length],
           });
         }
       }

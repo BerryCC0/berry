@@ -88,7 +88,7 @@ const iconRegistry: Record<IconId, string> = {
   "sound-jam": `${ICONS_BASE_PATH}/sound-jam.svg`,
   "movie-player": `${ICONS_BASE_PATH}/movie-player.svg`,
   "pdf-viewer": `${ICONS_BASE_PATH}/pdf-viewer.svg`,
-  "nouns-auction": `${ICONS_BASE_PATH}/loading.gif`,
+  "nouns-auction": `${ICONS_BASE_PATH}/nouns-auction.svg`,
   "camp": `${ICONS_BASE_PATH}/camp.svg`,
   "treasury": `${ICONS_BASE_PATH}/treasury.png`,
   "nounspot": `${ICONS_BASE_PATH}/nounspot.svg`,

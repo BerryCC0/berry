@@ -254,16 +254,17 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
           </button>
         </div>
 
-        {bottomTab === 'auctions' && (
+        {/* Keep all tabs mounted; hide inactive ones to avoid unmount/remount cycles */}
+        <div style={{ display: bottomTab === 'auctions' ? undefined : 'none' }}>
           <AuctionsTab
             cycleAuctionsData={cycleAuctionsData}
             clientMetadata={clientMetadata}
             clients={clients}
             pendingRevenueEth={pendingRevenueEth}
           />
-        )}
+        </div>
 
-        {bottomTab === 'proposals' && (
+        <div style={{ display: bottomTab === 'proposals' ? undefined : 'none' }}>
           <ProposalsTab
             proposalsByClient={proposalsByClient}
             votesByClient={votesByClient}
@@ -279,9 +280,9 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
             getEligibility={getEligibility}
             proposalBreakdowns={proposalBreakdowns}
           />
-        )}
+        </div>
 
-        {bottomTab === 'leaderboard' && (
+        <div style={{ display: bottomTab === 'leaderboard' ? undefined : 'none' }}>
           <LeaderboardTab
             sortedClients={sortedClients}
             clientMetadata={clientMetadata}
@@ -291,7 +292,7 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
             handleSort={handleSort}
             onSelectClient={navigateToClient}
           />
-        )}
+        </div>
       </div>
     </div>
   );
