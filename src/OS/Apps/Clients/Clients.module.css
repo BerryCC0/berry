@@ -892,17 +892,17 @@
 }
 
 .detailAvatar {
-  width: 80px;
-  height: 80px;
+  width: auto;
+  height: 180px;
   border-radius: 6px;
   flex-shrink: 0;
-  object-fit: cover;
+  object-fit: contain;
   border: 1px solid var(--berry-border, #e5e5e5);
 }
 
 .overviewRow {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 }
 
