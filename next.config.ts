@@ -16,12 +16,6 @@ const nextConfig: NextConfig = {
       });
     }
 
-    // Ignore optional Solana dependencies from @coinbase/cdp-sdk
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      "@solana/kit": false,
-    };
-
     return config;
   },
 };
