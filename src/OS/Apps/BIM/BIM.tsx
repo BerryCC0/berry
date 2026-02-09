@@ -18,8 +18,9 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
 
 import { useBimStore } from "./store/bimStore";
-import { useXmtpClient } from "./hooks/useXmtpClient";
+import { useXmtpClient, getXmtpClient } from "./hooks/useXmtpClient";
 import { useServers } from "./hooks/useServers";
+import { ensureXmtpGroup } from "./lib/ensureXmtpGroup";
 
 import { ServerRail } from "./components/Sidebar/ServerRail";
 import { ChannelList } from "./components/Sidebar/ChannelList";
@@ -35,7 +36,7 @@ import { parseBimRoute, bimRouteToPath, type BimInitialState } from "./types";
 import styles from "./BIM.module.css";
 
 export function BIM({ initialState, onStateChange }: AppComponentProps) {
-  const { isConnected } = useAppKitAccount();
+  const { isConnected, address: userAddress } = useAppKitAccount();
   const { open: openWallet } = useAppKit();
   const { isReady: isXmtpReady, isConnecting: isXmtpConnecting, error: xmtpError } = useXmtpClient();
 
@@ -136,8 +137,36 @@ export function BIM({ initialState, onStateChange }: AppComponentProps) {
   const currentChannel = currentChannels.find((c) => c.id === activeChannelId);
   const currentMembers = activeServerId ? (members[activeServerId] ?? []) : [];
 
+  // Ensure the active channel has an XMTP group (create one if missing)
+  const ensureRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      !activeServerId ||
+      !activeChannelId ||
+      !currentChannel ||
+      currentChannel.xmtp_group_id ||
+      !isXmtpReady ||
+      !userAddress
+    ) return;
+    // Prevent duplicate creation attempts for the same channel
+    if (ensureRef.current === activeChannelId) return;
+    ensureRef.current = activeChannelId;
+
+    const client = getXmtpClient();
+    if (!client) return;
+
+    ensureXmtpGroup(client, {
+      serverId: activeServerId,
+      channelId: activeChannelId,
+      channelName: currentChannel.name,
+      xmtpGroupId: null,
+      walletAddress: userAddress,
+    }).finally(() => {
+      ensureRef.current = null;
+    });
+  }, [activeServerId, activeChannelId, currentChannel, isXmtpReady, userAddress]);
+
   // User role in current server
-  const userAddress = useAppKitAccount().address;
   const userRole = useMemo(() => {
     if (!activeServerId || !userAddress) return "member";
     const member = currentMembers.find(
@@ -222,6 +251,7 @@ export function BIM({ initialState, onStateChange }: AppComponentProps) {
           channelName={currentChannel?.name}
           channelDescription={currentChannel?.description ?? undefined}
           isChannel
+          memberAddresses={currentMembers.map((m) => m.wallet_address)}
         />
       ) : (
         <MessageArea

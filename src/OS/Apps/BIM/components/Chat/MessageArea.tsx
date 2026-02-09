@@ -24,6 +24,7 @@ interface MessageAreaProps {
   channelName?: string;
   channelDescription?: string;
   isChannel?: boolean;
+  memberAddresses?: string[];
 }
 
 export function MessageArea({
@@ -32,10 +33,12 @@ export function MessageArea({
   channelName,
   channelDescription,
   isChannel,
+  memberAddresses,
 }: MessageAreaProps) {
-  const { messages, sendMessage, sendReaction, sendReply } = useMessages(
+  const { messages, sendMessage, sendReaction, sendReply, notInGroup } = useMessages(
     conversationId,
-    xmtpGroupId
+    xmtpGroupId,
+    memberAddresses
   );
   const { setReplyingTo, showMemberList, toggleMemberList, toggleSearch } = useBimStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -114,7 +117,18 @@ export function MessageArea({
 
       {/* Messages */}
       <div className={styles.messagesContainer} ref={containerRef}>
-        {messages.length === 0 && (
+        {isChannel && notInGroup && xmtpGroupId && messages.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateIcon}>🔄</div>
+            <div className={styles.emptyStateTitle}>
+              Waiting to be added to #{channelName ?? "channel"}
+            </div>
+            <div className={styles.emptyStateText}>
+              An existing member needs to sync you into this channel.
+              This happens automatically when they visit the channel.
+            </div>
+          </div>
+        ) : messages.length === 0 && (
           <div className={styles.emptyState}>
             <div className={styles.emptyStateIcon}>🎉</div>
             <div className={styles.emptyStateTitle}>

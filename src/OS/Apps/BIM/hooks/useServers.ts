@@ -7,6 +7,9 @@
 import { useCallback, useEffect } from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useBimStore } from "../store/bimStore";
+import { getXmtpClient } from "./useXmtpClient";
+import { ensureXmtpGroup } from "../lib/ensureXmtpGroup";
+import { removeMemberFromXmtpGroups } from "../lib/syncGroupMembers";
 import type { BimServerData, BimChannelData, BimMemberData } from "../types";
 
 export function useServers() {
@@ -59,6 +62,22 @@ export function useServers() {
         // Also load channels for new server
         if (data.channels) {
           setChannels(data.server.id, data.channels);
+
+          // Eagerly create XMTP groups for the new server's channels
+          const client = getXmtpClient();
+          if (client && address) {
+            for (const ch of data.channels as BimChannelData[]) {
+              if (!ch.xmtp_group_id) {
+                ensureXmtpGroup(client, {
+                  serverId: data.server.id,
+                  channelId: ch.id,
+                  channelName: ch.name,
+                  xmtpGroupId: null,
+                  walletAddress: address,
+                }).catch((err) => console.error("[BIM] Eager group create failed:", err));
+              }
+            }
+          }
         }
         return data.server;
       }
@@ -114,6 +133,19 @@ export function useServers() {
         const data = await res.json();
         const channel = data.channel as BimChannelData;
         useBimStore.getState().addChannel(serverId, channel);
+
+        // Eagerly create XMTP group for the new channel
+        const client = getXmtpClient();
+        if (client && address && !channel.xmtp_group_id) {
+          ensureXmtpGroup(client, {
+            serverId,
+            channelId: channel.id,
+            channelName: channel.name,
+            xmtpGroupId: null,
+            walletAddress: address,
+          }).catch((err) => console.error("[BIM] Eager group create failed:", err));
+        }
+
         return channel;
       }
     } catch (err) {
@@ -147,13 +179,63 @@ export function useServers() {
       if (res.ok) {
         const data = await res.json();
         addServer(data.server);
+
+        // Fetch channels for the joined server so the UI can display them
+        const chRes = await fetch(`/api/bim/servers/${data.server.id}/channels`);
+        if (chRes.ok) {
+          const chData = await chRes.json();
+          setChannels(data.server.id, chData.channels ?? []);
+        }
+
+        // Fetch members so member sync can work when channels are loaded
+        const mRes = await fetch(`/api/bim/servers/${data.server.id}/members`);
+        if (mRes.ok) {
+          const mData = await mRes.json();
+          setMembers(data.server.id, mData.members ?? []);
+        }
+
         return data.server;
       }
     } catch (err) {
       console.error("[BIM] Failed to join server:", err);
     }
     return null;
-  }, [address, addServer]);
+  }, [address, addServer, setChannels, setMembers]);
+
+  // Remove a member from the server and all XMTP groups
+  const removeMemberAction = useCallback(async (
+    serverId: string,
+    targetWallet: string
+  ): Promise<boolean> => {
+    if (!address) return false;
+    try {
+      const res = await fetch(
+        `/api/bim/servers/${serverId}/members?wallet=${address}&target=${targetWallet}`,
+        { method: "DELETE" }
+      );
+      if (res.ok) {
+        useBimStore.getState().removeMember(serverId, targetWallet);
+
+        // Also remove from all XMTP groups for this server's channels
+        const client = getXmtpClient();
+        const serverChannels = useBimStore.getState().channels[serverId] ?? [];
+        const groupIds = serverChannels
+          .map((ch) => ch.xmtp_group_id)
+          .filter((id): id is string => !!id);
+
+        if (client && groupIds.length > 0) {
+          removeMemberFromXmtpGroups(client, groupIds, targetWallet).catch((err) =>
+            console.error("[BIM] Failed to remove from XMTP groups:", err)
+          );
+        }
+
+        return true;
+      }
+    } catch (err) {
+      console.error("[BIM] Failed to remove member:", err);
+    }
+    return false;
+  }, [address]);
 
   return {
     servers,
@@ -166,5 +248,6 @@ export function useServers() {
     createChannel,
     fetchMembers,
     joinServer,
+    removeMember: removeMemberAction,
   };
 }

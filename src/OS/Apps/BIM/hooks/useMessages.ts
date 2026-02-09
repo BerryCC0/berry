@@ -5,15 +5,20 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
-import type { AsyncStreamProxy, DecodedMessage } from "@xmtp/browser-sdk";
+import type { AsyncStreamProxy, DecodedMessage, Group } from "@xmtp/browser-sdk";
 import { encodeText } from "@xmtp/browser-sdk";
 import { ReactionAction, ReactionSchema } from "@xmtp/wasm-bindings";
 import { getXmtpClient } from "./useXmtpClient";
 import { useBimStore } from "../store/bimStore";
 import { normalizeMessage } from "../lib/contentTypes";
+import { syncGroupMembers } from "../lib/syncGroupMembers";
 import type { BimMessage } from "../types";
 
-export function useMessages(conversationId: string | null, xmtpGroupId: string | null) {
+export function useMessages(
+  conversationId: string | null,
+  xmtpGroupId: string | null,
+  memberAddresses?: string[]
+) {
   const {
     messages,
     addMessage,
@@ -23,6 +28,7 @@ export function useMessages(conversationId: string | null, xmtpGroupId: string |
   } = useBimStore();
 
   const streamRef = useRef<AsyncStreamProxy<DecodedMessage> | null>(null);
+  const notInGroupRef = useRef(false);
 
   const currentMessages = conversationId ? (messages[conversationId] ?? []) : [];
 
@@ -34,7 +40,16 @@ export function useMessages(conversationId: string | null, xmtpGroupId: string |
 
     try {
       const conversation = await client.conversations.getConversationById(xmtpGroupId);
-      if (!conversation) return;
+      if (!conversation) {
+        notInGroupRef.current = true;
+        return;
+      }
+      notInGroupRef.current = false;
+
+      // Fire-and-forget: sync DB members into the XMTP group
+      if (memberAddresses && memberAddresses.length > 0) {
+        syncGroupMembers(client, conversation as Group, memberAddresses).catch(() => {});
+      }
 
       await conversation.sync();
       const xmtpMessages = await conversation.messages();
@@ -166,5 +181,6 @@ export function useMessages(conversationId: string | null, xmtpGroupId: string |
     sendReaction,
     sendReply,
     loadHistory,
+    notInGroup: notInGroupRef.current,
   };
 }

@@ -48,6 +48,7 @@ interface BIMStore {
   setChannels: (serverId: string, channels: BimChannelData[]) => void;
   addChannel: (serverId: string, channel: BimChannelData) => void;
   removeChannel: (serverId: string, channelId: string) => void;
+  updateChannelData: (serverId: string, channelId: string, data: Partial<BimChannelData>) => void;
 
   // ── Members ──────────────────────────────────────────────
   members: Record<string, BimMemberData[]>; // serverId -> members
@@ -151,6 +152,14 @@ export const useBimStore = create<BIMStore>((set) => ({
     channels: {
       ...s.channels,
       [serverId]: (s.channels[serverId] || []).filter((ch) => ch.id !== channelId),
+    },
+  })),
+  updateChannelData: (serverId, channelId, data) => set((s) => ({
+    channels: {
+      ...s.channels,
+      [serverId]: (s.channels[serverId] || []).map((ch) =>
+        ch.id === channelId ? { ...ch, ...data } : ch
+      ),
     },
   })),
 
