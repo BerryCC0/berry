@@ -9,8 +9,9 @@ import { useQuery } from '@tanstack/react-query';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import type { Proposal, ProposalStatus, ProposalFilter, ProposalSort } from '../types';
 
-// Ethereum mainnet RPC for getting current block and contract calls
-const ETH_RPC = 'https://eth.llamarpc.com';
+// Ethereum mainnet RPC for getting current block and contract calls.
+// Using publicnode.com to avoid rate-limiting issues with llamarpc.com.
+const ETH_RPC = 'https://ethereum-rpc.publicnode.com';
 
 // Nouns DAO Governor proxy address
 const NOUNS_DAO_PROXY = NOUNS_ADDRESSES.governor;
@@ -158,6 +159,26 @@ async function getOnChainQuorum(proposalId: string): Promise<number | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Batch-fetch on-chain state for multiple proposals in parallel.
+ * Returns a map of proposalId -> ProposalStatus.
+ */
+async function getOnChainStateBatch(proposalIds: string[]): Promise<Map<string, ProposalStatus>> {
+  const results = new Map<string, ProposalStatus>();
+  if (proposalIds.length === 0) return results;
+
+  await Promise.all(
+    proposalIds.map(async (id) => {
+      const state = await getOnChainState(id);
+      if (state !== null) {
+        results.set(id, state);
+      }
+    })
+  );
+
+  return results;
 }
 
 /**
@@ -331,7 +352,13 @@ async function fetchProposals(
     .filter((p: Proposal) => ACTIVE_LIFECYCLE_STATUSES.includes(p.status))
     .map((p: Proposal) => p.id);
 
-  const quorumMap = await getOnChainQuorumBatch(activeIds);
+  // Batch-fetch both on-chain state and dynamic quorum for active lifecycle proposals in parallel.
+  // On-chain state gives ground-truth status from the contract (handles PENDING→ACTIVE transitions
+  // that depend on exact block numbers, avoiding estimation errors).
+  const [quorumMap, stateMap] = await Promise.all([
+    getOnChainQuorumBatch(activeIds),
+    getOnChainStateBatch(activeIds),
+  ]);
 
   return proposals.map((mapped: Proposal) => {
     // Override quorum with dynamic on-chain value when available
@@ -340,16 +367,29 @@ async function fetchProposals(
       mapped.quorumVotes = String(onChainQuorum);
     }
 
-    // Compute real-time status from block data (PENDING->ACTIVE, ACTIVE->DEFEATED/SUCCEEDED)
-    mapped.status = calculateStatusFallback(
-      mapped.status,
-      mapped.startBlock,
-      mapped.endBlock,
-      mapped.forVotes,
-      mapped.againstVotes,
-      mapped.quorumVotes,
-      currentBlock
-    );
+    // Use on-chain state for active lifecycle proposals (ground truth from contract)
+    const onChainStatus = stateMap.get(mapped.id);
+    if (onChainStatus) {
+      // Safety: don't downgrade ACTIVE→DEFEATED when endBlock hasn't passed
+      // (on-chain might be reading from a stale fork)
+      const indexedIsActive = mapped.status === 'ACTIVE' || mapped.status === 'OBJECTION_PERIOD';
+      const onChainIsFinal = ['SUCCEEDED', 'DEFEATED', 'EXPIRED'].includes(onChainStatus);
+      if (!(indexedIsActive && onChainIsFinal && currentBlock <= Number(mapped.endBlock))) {
+        mapped.status = onChainStatus;
+      }
+    } else {
+      // Fallback: compute status from block data (PENDING->ACTIVE, ACTIVE->DEFEATED/SUCCEEDED)
+      mapped.status = calculateStatusFallback(
+        mapped.status,
+        mapped.startBlock,
+        mapped.endBlock,
+        mapped.forVotes,
+        mapped.againstVotes,
+        mapped.quorumVotes,
+        currentBlock
+      );
+    }
+
     return mapped;
   });
 }
