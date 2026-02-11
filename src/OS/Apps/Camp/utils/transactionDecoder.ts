@@ -384,11 +384,11 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
   
   // Token Buyer: buyETH(uint256)
   if (signature === 'buyETH(uint256)' && params) {
-    const ethAmount = params.param0 as bigint;
-    const formattedAmount = formatUnits(ethAmount, 18);
+    const usdcAmount = params.param0 as bigint;
+    const formattedAmount = formatUnits(usdcAmount, 6);
     
-    decoded.title = `Buy ${parseFloat(formattedAmount).toLocaleString()} ETH`;
-    decoded.description = `Via Token Buyer (using USDC)`;
+    decoded.title = `Buy ETH with ${parseFloat(formattedAmount).toLocaleString()} USDC`;
+    decoded.description = `Via Token Buyer`;
     return decoded;
   }
   

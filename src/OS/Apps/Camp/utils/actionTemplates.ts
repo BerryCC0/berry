@@ -243,16 +243,16 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     category: 'swaps',
     name: 'Buy ETH with USDC',
     description: 'Use TokenBuyer to swap treasury USDC for ETH',
-    isMultiAction: false,
+    isMultiAction: true,
     fields: [
       {
-        name: 'ethAmount',
-        label: 'ETH Amount to Buy',
+        name: 'usdcAmount',
+        label: 'USDC Amount to Spend',
         type: 'amount',
         placeholder: '0.0',
         required: true,
-        validation: { min: 0, decimals: 18 },
-        helpText: 'Amount of ETH the treasury will receive'
+        validation: { min: 0, decimals: 6 },
+        helpText: 'Amount of USDC to spend — the TokenBuyer converts it to ETH at its current price'
       }
     ]
   },
@@ -1112,15 +1112,32 @@ export function generateActionsFromTemplate(
 
     // Treasury Swaps via TokenBuyer
     case 'swap-buy-eth': {
-      // TokenBuyer contract buys ETH from market using USDC
+      // TokenBuyer requires USDC approval before it can pull tokens via transferFrom.
+      // Action 1: approve TokenBuyer to spend USDC
+      // Action 2: call buyETH with the USDC amount
       const TOKEN_BUYER_ADDRESS = '0x4f2aCdc74f6941390d9b1804faBc3E780388cfe5' as Address;
-      const ethAmount = parseEther(fieldValues.ethAmount || '0');
-      return [{
-        target: TOKEN_BUYER_ADDRESS,
-        value: '0',
-        signature: 'buyETH(uint256)',
-        calldata: encodeAdminUint256(ethAmount)
-      }];
+      const usdcAmount = parseUnits(fieldValues.usdcAmount || '0', 6);
+      const groupId = `swap-buy-eth-${Date.now()}`;
+      return [
+        {
+          target: EXTERNAL_CONTRACTS.USDC.address,
+          value: '0',
+          signature: 'approve(address,uint256)',
+          calldata: encodeTransfer(TOKEN_BUYER_ADDRESS, usdcAmount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0
+        },
+        {
+          target: TOKEN_BUYER_ADDRESS,
+          value: '0',
+          signature: 'buyETH(uint256)',
+          calldata: encodeAdminUint256(usdcAmount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1
+        }
+      ];
     }
 
     case 'swap-sell-eth': {
@@ -1595,6 +1612,14 @@ export function parseActionsToTemplates(actions: ProposalAction[]): ActionTempla
     
     const action = actions[i];
     
+    // Check if this is part of a buy-eth multi-action sequence (approve + buyETH)
+    const buyEthResult = tryMatchBuyEth(actions, i);
+    if (buyEthResult) {
+      templateStates.push(buyEthResult.state);
+      buyEthResult.consumedIndices.forEach(idx => processedIndices.add(idx));
+      continue;
+    }
+
     // Check if this is part of a noun-swap multi-action sequence
     const nounSwapResult = tryMatchNounSwap(actions, i);
     if (nounSwapResult) {
@@ -1735,7 +1760,7 @@ function matchActionToTemplate(
     }
   }
   
-  // Buy ETH (TokenBuyer)
+  // Buy ETH (TokenBuyer) — legacy single-action fallback (no preceding approve)
   const TOKEN_BUYER_ADDRESS = '0x4f2aCdc74f6941390d9b1804faBc3E780388cfe5'.toLowerCase();
   if (target === TOKEN_BUYER_ADDRESS && signature === 'buyETH(uint256)') {
     const decoded = decodeCalldata(calldata, ['uint256']);
@@ -1743,7 +1768,7 @@ function matchActionToTemplate(
       return {
         templateId: 'swap-buy-eth',
         fieldValues: {
-          ethAmount: formatUnits(BigInt(decoded[0] as string), 18)
+          usdcAmount: formatUnits(BigInt(decoded[0] as string), 6)
         },
         generatedActions: []
       };
@@ -1759,6 +1784,54 @@ function matchActionToTemplate(
   }
   
   return null;
+}
+
+/**
+ * Try to match a buy-eth multi-action sequence (approve USDC + buyETH)
+ */
+function tryMatchBuyEth(
+  actions: ProposalAction[],
+  startIndex: number
+): { state: ActionTemplateState; consumedIndices: number[] } | null {
+  const action = actions[startIndex];
+  const target = action.target.toLowerCase();
+  const signature = action.signature;
+
+  const USDC_ADDRESS = EXTERNAL_CONTRACTS.USDC.address.toLowerCase();
+  const TOKEN_BUYER_ADDRESS = '0x4f2aCdc74f6941390d9b1804faBc3E780388cfe5'.toLowerCase();
+
+  // Sequence starts with approve(address,uint256) on the USDC contract
+  if (target !== USDC_ADDRESS || signature !== 'approve(address,uint256)') return null;
+
+  const approveDecoded = decodeCalldata(action.calldata || '0x', ['address', 'uint256']);
+  if (!approveDecoded) return null;
+
+  const spender = (approveDecoded[0] as string).toLowerCase();
+  if (spender !== TOKEN_BUYER_ADDRESS) return null;
+
+  // Next action must be buyETH(uint256) on the TokenBuyer
+  const nextIndex = startIndex + 1;
+  if (nextIndex >= actions.length) return null;
+
+  const nextAction = actions[nextIndex];
+  const nextTarget = nextAction.target.toLowerCase();
+  const nextSignature = nextAction.signature;
+
+  if (nextTarget !== TOKEN_BUYER_ADDRESS || nextSignature !== 'buyETH(uint256)') return null;
+
+  const buyDecoded = decodeCalldata(nextAction.calldata || '0x', ['uint256']);
+  if (!buyDecoded) return null;
+
+  const usdcAmount = formatUnits(BigInt(buyDecoded[0] as string), 6);
+
+  return {
+    state: {
+      templateId: 'swap-buy-eth',
+      fieldValues: { usdcAmount },
+      generatedActions: []
+    },
+    consumedIndices: [startIndex, nextIndex]
+  };
 }
 
 /**
