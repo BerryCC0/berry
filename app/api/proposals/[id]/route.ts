@@ -5,6 +5,50 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
+
+// RPC endpoint and contract config for dynamic quorum
+const ETH_RPC = 'https://eth.llamarpc.com';
+const NOUNS_DAO_ADDRESS = NOUNS_ADDRESSES.governor;
+// keccak256("quorumVotes(uint256)") = 0x0f7b1f08
+const QUORUM_VOTES_SELECTOR = '0x0f7b1f08';
+
+/**
+ * Fetch dynamic quorum for a proposal from the Nouns DAO contract.
+ * Returns null if the call fails (falls back to indexed value).
+ */
+async function fetchDynamicQuorum(proposalId: number): Promise<bigint | null> {
+  try {
+    const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
+    const callData = QUORUM_VOTES_SELECTOR + paddedId;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(ETH_RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{ to: NOUNS_DAO_ADDRESS, data: callData }, 'latest'],
+        id: 1,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    const json = await response.json();
+    if (json.result && json.result !== '0x') {
+      const quorum = BigInt(json.result);
+      return quorum;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -20,8 +64,8 @@ export async function GET(
   try {
     const sql = ponderSql();
 
-    // Fetch proposal, votes, and feedback in parallel
-    const [proposalRows, voteRows, feedbackRows, versionRows] = await Promise.all([
+    // Fetch proposal, votes, feedback, and dynamic quorum in parallel
+    const [proposalRows, voteRows, feedbackRows, versionRows, dynamicQuorum] = await Promise.all([
       sql`
         SELECT id, proposer, title, description, status,
                targets, "values", signatures, calldatas,
@@ -56,6 +100,7 @@ export async function GET(
         WHERE proposal_id = ${proposalId}
         ORDER BY block_timestamp DESC
       `,
+      fetchDynamicQuorum(proposalId),
     ]);
 
     if (proposalRows.length === 0) {
@@ -63,6 +108,11 @@ export async function GET(
     }
 
     const proposal = proposalRows[0];
+
+    // Override quorum_votes with dynamic on-chain value when available
+    if (dynamicQuorum !== null) {
+      proposal.quorum_votes = dynamicQuorum.toString();
+    }
 
     return NextResponse.json({
       proposal: {

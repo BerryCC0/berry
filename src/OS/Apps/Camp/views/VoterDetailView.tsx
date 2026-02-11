@@ -6,10 +6,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useEnsName, useEnsAvatar, useEnsAddress } from 'wagmi';
+import { useEnsName, useEnsAvatar, useEnsAddress, useReadContract } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { normalize } from 'viem/ens';
 import { NounImage } from '@/app/lib/nouns/components';
+import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import { useVoter } from '../hooks';
 import { getSupportLabel, getSupportColor } from '../types';
 import { ShareButton } from '../components/ShareButton';
@@ -135,9 +136,6 @@ function AddressLink({
   );
 }
 
-// Quorum is approximately 127 votes (10% of ~1270 total Nouns)
-const QUORUM_VOTES = 127;
-
 type TabType = 'proposals' | 'candidates' | 'sponsored';
 
 export function VoterDetailView({ address: addressInput, onNavigate, onBack, showBackButton = true, isOwnAccount = false }: VoterDetailViewProps) {
@@ -208,9 +206,19 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   const votesWithReason = recentVotes.filter((v: any) => v.reason && v.reason.trim().length > 0).length;
   const reasonPercentage = totalVotes > 0 ? Math.round((votesWithReason / totalVotes) * 100) : 0;
 
-  // Quorum percentage
+  // Voting power and supply percentage
   const votingPower = Number(voter?.delegatedVotes || 0);
-  const quorumPercentage = ((votingPower / QUORUM_VOTES) * 100).toFixed(1);
+
+  // Fetch adjusted total supply from the governor for accurate percentage
+  const { data: adjustedTotalSupply } = useReadContract({
+    address: NOUNS_CONTRACTS.governor.address,
+    abi: NOUNS_CONTRACTS.governor.abi,
+    functionName: 'adjustedTotalSupply',
+  });
+
+  const supplyPercentage = adjustedTotalSupply
+    ? ((votingPower / Number(adjustedTotalSupply)) * 100).toFixed(1)
+    : null;
 
   // Filter activity
   const filteredVotes = activityFilter === 'with-reason' 
@@ -499,7 +507,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
           {/* Voting Power Stats */}
           <div className={styles.statsCard}>
             <div className={styles.statsHeader}>
-              {votingPower} nouns represented (~{quorumPercentage}% of quorum)
+              {votingPower} nouns represented{supplyPercentage ? ` (~${supplyPercentage}% of supply)` : ''}
             </div>
 
             {/* Vote Distribution Bar */}

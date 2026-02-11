@@ -5,6 +5,67 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
+
+// Dynamic quorum: keccak256("quorumVotes(uint256)") = 0x0f7b1f08
+const ETH_RPC = 'https://eth.llamarpc.com';
+const QUORUM_VOTES_SELECTOR = '0x0f7b1f08';
+const FINALIZED_STATUSES = ['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'];
+
+/**
+ * Fetch dynamic quorum for a single proposal from the Nouns DAO contract.
+ */
+async function fetchDynamicQuorum(proposalId: number): Promise<bigint | null> {
+  try {
+    const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
+    const callData = QUORUM_VOTES_SELECTOR + paddedId;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(ETH_RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{ to: NOUNS_ADDRESSES.governor, data: callData }, 'latest'],
+        id: 1,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    const json = await response.json();
+    if (json.result && json.result !== '0x') {
+      return BigInt(json.result);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Batch-fetch dynamic quorum for non-finalized proposals.
+ */
+async function fetchDynamicQuorumBatch(proposals: any[]): Promise<Map<number, bigint>> {
+  const results = new Map<number, bigint>();
+  const nonFinalized = proposals.filter((p: any) => !FINALIZED_STATUSES.includes(p.status));
+  if (nonFinalized.length === 0) return results;
+
+  await Promise.all(
+    nonFinalized.map(async (p: any) => {
+      const quorum = await fetchDynamicQuorum(Number(p.id));
+      if (quorum !== null) {
+        results.set(Number(p.id), quorum);
+      }
+    })
+  );
+
+  return results;
+}
 
 export async function GET(
   request: NextRequest,
@@ -92,6 +153,10 @@ export async function GET(
     `;
     const delegatingTo = delegatingToRows[0]?.to_delegate || null;
 
+    // Fetch dynamic quorum for non-finalized proposals and sponsored proposals
+    const allProposalRows = [...proposalRows, ...sponsoredRows];
+    const quorumMap = await fetchDynamicQuorumBatch(allProposalRows);
+
     return NextResponse.json({
       voter: {
         id: voter?.address || addr,
@@ -109,19 +174,22 @@ export async function GET(
           reason: v.reason,
           blockTimestamp: String(v.block_timestamp),
         })),
-        proposals: proposalRows.map((p: any) => ({
-          id: String(p.id),
-          title: p.title || 'Untitled Proposal',
-          status: p.status,
-          forVotes: String(p.for_votes),
-          againstVotes: String(p.against_votes),
-          abstainVotes: String(p.abstain_votes),
-          quorumVotes: String(p.quorum_votes),
-          startBlock: String(p.start_block),
-          endBlock: String(p.end_block),
-          createdTimestamp: String(p.created_timestamp),
-          signers: p.signers || [],
-        })),
+        proposals: proposalRows.map((p: any) => {
+          const dynamicQuorum = quorumMap.get(Number(p.id));
+          return {
+            id: String(p.id),
+            title: p.title || 'Untitled Proposal',
+            status: p.status,
+            forVotes: String(p.for_votes),
+            againstVotes: String(p.against_votes),
+            abstainVotes: String(p.abstain_votes),
+            quorumVotes: dynamicQuorum !== undefined ? dynamicQuorum.toString() : String(p.quorum_votes),
+            startBlock: String(p.start_block),
+            endBlock: String(p.end_block),
+            createdTimestamp: String(p.created_timestamp),
+            signers: p.signers || [],
+          };
+        }),
         candidates: candidateRows.map((c: any) => ({
           id: c.id,
           slug: c.slug,
@@ -129,19 +197,22 @@ export async function GET(
           title: c.title || 'Untitled Candidate',
           createdTimestamp: String(c.created_timestamp),
         })),
-        sponsored: sponsoredRows.map((p: any) => ({
-          id: String(p.id),
-          title: p.title || 'Untitled Proposal',
-          status: p.status,
-          proposer: p.proposer,
-          forVotes: String(p.for_votes),
-          againstVotes: String(p.against_votes),
-          abstainVotes: String(p.abstain_votes),
-          quorumVotes: String(p.quorum_votes),
-          startBlock: String(p.start_block),
-          endBlock: String(p.end_block),
-          createdTimestamp: String(p.created_timestamp),
-        })),
+        sponsored: sponsoredRows.map((p: any) => {
+          const dynamicQuorum = quorumMap.get(Number(p.id));
+          return {
+            id: String(p.id),
+            title: p.title || 'Untitled Proposal',
+            status: p.status,
+            proposer: p.proposer,
+            forVotes: String(p.for_votes),
+            againstVotes: String(p.against_votes),
+            abstainVotes: String(p.abstain_votes),
+            quorumVotes: dynamicQuorum !== undefined ? dynamicQuorum.toString() : String(p.quorum_votes),
+            startBlock: String(p.start_block),
+            endBlock: String(p.end_block),
+            createdTimestamp: String(p.created_timestamp),
+          };
+        }),
         nounsOwned: nounsOwnedRows.map((n: any) => ({
           id: String(n.id),
           seed: {

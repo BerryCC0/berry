@@ -8,8 +8,12 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 
 export const runtime = 'nodejs';
+
+// Dynamic quorum: keccak256("quorumVotes(uint256)") = 0x0f7b1f08
+const QUORUM_VOTES_SELECTOR = '0x0f7b1f08';
 
 // Proposal status colors
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -82,6 +86,33 @@ async function getCurrentBlock(): Promise<number> {
   }
 }
 
+async function fetchDynamicQuorum(proposalId: string): Promise<number | null> {
+  try {
+    const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
+    const callData = QUORUM_VOTES_SELECTOR + paddedId;
+
+    const response = await fetch('https://eth.llamarpc.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{ to: NOUNS_ADDRESSES.governor, data: callData }, 'latest'],
+        id: 1,
+      }),
+    });
+
+    const json = await response.json();
+    if (json.result && json.result !== '0x') {
+      const quorum = parseInt(json.result, 16);
+      if (!isNaN(quorum) && quorum >= 0) return quorum;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function formatTimeRemaining(blocksRemaining: number): string {
   if (blocksRemaining <= 0) return 'Ended';
 
@@ -120,7 +151,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const proposal = await fetchProposal(id);
+  const [proposal, dynamicQuorum] = await Promise.all([
+    fetchProposal(id),
+    fetchDynamicQuorum(id),
+  ]);
 
   if (!proposal) {
     return new ImageResponse(
@@ -150,7 +184,8 @@ export async function GET(
   const forVotes = Number(proposal.for_votes);
   const againstVotes = Number(proposal.against_votes);
   const abstainVotes = Number(proposal.abstain_votes);
-  const quorumVotes = Number(proposal.quorum_votes);
+  // Use dynamic on-chain quorum when available, fall back to indexed value
+  const quorumVotes = dynamicQuorum ?? Number(proposal.quorum_votes);
   const fundingRequest = extractFundingRequest(proposal.description || '');
 
   // Calculate time remaining for active proposals

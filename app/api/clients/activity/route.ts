@@ -5,6 +5,44 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
+
+// Dynamic quorum: keccak256("quorumVotes(uint256)") = 0x0f7b1f08
+const ETH_RPC = 'https://eth.llamarpc.com';
+const QUORUM_VOTES_SELECTOR = '0x0f7b1f08';
+const FINALIZED_STATUSES = ['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'];
+
+async function fetchDynamicQuorum(proposalId: number): Promise<string | null> {
+  try {
+    const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
+    const callData = QUORUM_VOTES_SELECTOR + paddedId;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(ETH_RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{ to: NOUNS_ADDRESSES.governor, data: callData }, 'latest'],
+        id: 1,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    const json = await response.json();
+    if (json.result && json.result !== '0x') {
+      return BigInt(json.result).toString();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -118,9 +156,34 @@ export async function GET(request: NextRequest) {
           `,
     ]);
 
+    // Fetch dynamic quorum for non-finalized proposals
+    const nonFinalized = proposalRows.filter(
+      (p: any) => !FINALIZED_STATUSES.includes(p.status)
+    );
+    const quorumMap = new Map<number, string>();
+    if (nonFinalized.length > 0) {
+      await Promise.all(
+        nonFinalized.map(async (p: any) => {
+          const quorum = await fetchDynamicQuorum(Number(p.id));
+          if (quorum !== null) {
+            quorumMap.set(Number(p.id), quorum);
+          }
+        })
+      );
+    }
+
+    // Override quorum_votes with dynamic values where available
+    const proposalsWithDynamicQuorum = proposalRows.map((p: any) => {
+      const dynamicQuorum = quorumMap.get(Number(p.id));
+      if (dynamicQuorum !== undefined) {
+        return { ...p, quorum_votes: dynamicQuorum };
+      }
+      return p;
+    });
+
     return NextResponse.json({
       votes: voteRows,
-      proposals: proposalRows,
+      proposals: proposalsWithDynamicQuorum,
       withdrawals: withdrawalRows,
       bids: bidRows,
     });

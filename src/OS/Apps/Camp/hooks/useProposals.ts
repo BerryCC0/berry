@@ -18,6 +18,9 @@ const NOUNS_DAO_PROXY = NOUNS_ADDRESSES.governor;
 // state() function selector: keccak256("state(uint256)") = 0x3e4f49e6
 const STATE_FUNCTION_SELECTOR = '0x3e4f49e6';
 
+// quorumVotes() function selector: keccak256("quorumVotes(uint256)") = 0x0f7b1f08
+const QUORUM_VOTES_SELECTOR = '0x0f7b1f08';
+
 // ProposalState enum from contract
 const PROPOSAL_STATE_MAP: Record<number, ProposalStatus> = {
   0: 'PENDING',
@@ -113,6 +116,66 @@ async function getOnChainState(proposalId: string): Promise<ProposalStatus | nul
   } catch {
     return null;
   }
+}
+
+/**
+ * Get dynamic quorum for a proposal directly from the Nouns DAO contract.
+ * The contract computes: min(maxQuorum, minQuorum + (againstVotes * coefficient / 1e6))
+ * This increases as Against votes accumulate, unlike the static value stored at creation.
+ */
+async function getOnChainQuorum(proposalId: string): Promise<number | null> {
+  try {
+    const paddedId = BigInt(proposalId).toString(16).padStart(64, '0');
+    const callData = QUORUM_VOTES_SELECTOR + paddedId;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(ETH_RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{ to: NOUNS_DAO_PROXY, data: callData }, 'latest'],
+        id: 1,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    const json = await response.json();
+    if (json.result && json.result !== '0x') {
+      const quorum = parseInt(json.result, 16);
+      if (!isNaN(quorum) && quorum >= 0) {
+        return quorum;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Batch-fetch dynamic quorum for multiple proposals in parallel.
+ * Returns a map of proposalId -> quorum value.
+ */
+async function getOnChainQuorumBatch(proposalIds: string[]): Promise<Map<string, number>> {
+  const results = new Map<string, number>();
+  if (proposalIds.length === 0) return results;
+
+  // Fetch all in parallel with a reasonable concurrency
+  const promises = proposalIds.map(async (id) => {
+    const quorum = await getOnChainQuorum(id);
+    if (quorum !== null) {
+      results.set(id, quorum);
+    }
+  });
+
+  await Promise.all(promises);
+  return results;
 }
 
 /**
@@ -231,6 +294,9 @@ interface ProposalVote {
   blockTimestamp: string;
 }
 
+// Statuses where the proposal is finalized and quorum won't change
+const FINALIZED_STATUSES = ['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'];
+
 async function fetchProposals(
   first: number,
   skip: number,
@@ -253,8 +319,23 @@ async function fetchProposals(
   if (!response.ok) throw new Error('Failed to fetch proposals');
 
   const json = await response.json();
-  return (json.proposals || []).map((p: any) => {
-    const mapped = mapProposal(p);
+  const proposals = (json.proposals || []).map((p: any) => mapProposal(p));
+
+  // Batch-fetch dynamic quorum for non-finalized proposals (active, pending, succeeded, defeated, queued)
+  // These are proposals where the quorum value matters for display accuracy
+  const nonFinalizedIds = proposals
+    .filter((p: Proposal) => !FINALIZED_STATUSES.includes(p.status))
+    .map((p: Proposal) => p.id);
+
+  const quorumMap = await getOnChainQuorumBatch(nonFinalizedIds);
+
+  return proposals.map((mapped: Proposal) => {
+    // Override quorum with dynamic on-chain value when available
+    const onChainQuorum = quorumMap.get(mapped.id);
+    if (onChainQuorum !== undefined) {
+      mapped.quorumVotes = String(onChainQuorum);
+    }
+
     // Compute real-time status from block data (PENDING->ACTIVE, ACTIVE->DEFEATED/SUCCEEDED)
     mapped.status = calculateStatusFallback(
       mapped.status,
@@ -270,11 +351,12 @@ async function fetchProposals(
 }
 
 async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVote[]; feedback: ProposalFeedback[] }> {
-  // Fetch proposal from API, current block, and on-chain state in parallel
-  const [apiResponse, currentBlock, onChainStatus] = await Promise.all([
+  // Fetch proposal from API, current block, on-chain state, and dynamic quorum in parallel
+  const [apiResponse, currentBlock, onChainStatus, onChainQuorum] = await Promise.all([
     fetch(`/api/proposals/${id}`),
     getCurrentBlock(),
     getOnChainState(id),
+    getOnChainQuorum(id),
   ]);
 
   if (!apiResponse.ok) throw new Error('Failed to fetch proposal');
@@ -283,6 +365,11 @@ async function fetchProposal(id: string): Promise<Proposal & { votes: ProposalVo
 
   const p = json.proposal;
   const proposal = mapProposal(p);
+
+  // Override quorum with dynamic on-chain value when available
+  if (onChainQuorum !== null) {
+    proposal.quorumVotes = String(onChainQuorum);
+  }
 
   // Determine status: prefer on-chain state for real-time accuracy
   let status: ProposalStatus;
