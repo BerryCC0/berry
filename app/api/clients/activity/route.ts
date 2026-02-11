@@ -10,7 +10,9 @@ import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 // Dynamic quorum: keccak256("quorumVotes(uint256)") = 0x0f7b1f08
 const ETH_RPC = 'https://eth.llamarpc.com';
 const QUORUM_VOTES_SELECTOR = '0x0f7b1f08';
-const FINALIZED_STATUSES = ['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'];
+// Only fetch dynamic quorum for proposals in the active voting lifecycle (typically 1-5).
+// Historical proposals use the indexed quorum value, avoiding excessive RPC calls.
+const ACTIVE_LIFECYCLE_STATUSES = ['ACTIVE', 'OBJECTION_PERIOD', 'PENDING', 'UPDATABLE'];
 
 async function fetchDynamicQuorum(proposalId: number): Promise<string | null> {
   try {
@@ -156,14 +158,14 @@ export async function GET(request: NextRequest) {
           `,
     ]);
 
-    // Fetch dynamic quorum for non-finalized proposals
-    const nonFinalized = proposalRows.filter(
-      (p: any) => !FINALIZED_STATUSES.includes(p.status)
+    // Fetch dynamic quorum only for proposals in the active voting lifecycle
+    const activeProposals = proposalRows.filter(
+      (p: any) => ACTIVE_LIFECYCLE_STATUSES.includes(p.status)
     );
     const quorumMap = new Map<number, string>();
-    if (nonFinalized.length > 0) {
+    if (activeProposals.length > 0) {
       await Promise.all(
-        nonFinalized.map(async (p: any) => {
+        activeProposals.map(async (p: any) => {
           const quorum = await fetchDynamicQuorum(Number(p.id));
           if (quorum !== null) {
             quorumMap.set(Number(p.id), quorum);

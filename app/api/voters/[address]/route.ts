@@ -10,7 +10,9 @@ import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 // Dynamic quorum: keccak256("quorumVotes(uint256)") = 0x0f7b1f08
 const ETH_RPC = 'https://eth.llamarpc.com';
 const QUORUM_VOTES_SELECTOR = '0x0f7b1f08';
-const FINALIZED_STATUSES = ['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'];
+// Only fetch dynamic quorum for proposals in the active voting lifecycle (typically 1-5).
+// Historical proposals use the indexed quorum value, avoiding excessive RPC calls.
+const ACTIVE_LIFECYCLE_STATUSES = ['ACTIVE', 'OBJECTION_PERIOD', 'PENDING', 'UPDATABLE'];
 
 /**
  * Fetch dynamic quorum for a single proposal from the Nouns DAO contract.
@@ -48,15 +50,15 @@ async function fetchDynamicQuorum(proposalId: number): Promise<bigint | null> {
 }
 
 /**
- * Batch-fetch dynamic quorum for non-finalized proposals.
+ * Batch-fetch dynamic quorum for proposals in the active voting lifecycle.
  */
 async function fetchDynamicQuorumBatch(proposals: any[]): Promise<Map<number, bigint>> {
   const results = new Map<number, bigint>();
-  const nonFinalized = proposals.filter((p: any) => !FINALIZED_STATUSES.includes(p.status));
-  if (nonFinalized.length === 0) return results;
+  const activeProposals = proposals.filter((p: any) => ACTIVE_LIFECYCLE_STATUSES.includes(p.status));
+  if (activeProposals.length === 0) return results;
 
   await Promise.all(
-    nonFinalized.map(async (p: any) => {
+    activeProposals.map(async (p: any) => {
       const quorum = await fetchDynamicQuorum(Number(p.id));
       if (quorum !== null) {
         results.set(Number(p.id), quorum);
@@ -153,7 +155,7 @@ export async function GET(
     `;
     const delegatingTo = delegatingToRows[0]?.to_delegate || null;
 
-    // Fetch dynamic quorum for non-finalized proposals and sponsored proposals
+    // Fetch dynamic quorum for active lifecycle proposals and sponsored proposals
     const allProposalRows = [...proposalRows, ...sponsoredRows];
     const quorumMap = await fetchDynamicQuorumBatch(allProposalRows);
 

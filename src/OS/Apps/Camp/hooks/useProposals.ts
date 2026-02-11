@@ -74,7 +74,9 @@ async function getCurrentBlock(): Promise<number> {
     }
     throw new Error('Invalid block number');
   } catch {
-    const fallback = Math.floor((Date.now() / 1000 - 1438269988) / 12);
+    // Post-Merge reference: block 21,000,000 at timestamp 1733438615 (Dec 5, 2024).
+    // Since the Merge, blocks are exactly 12 seconds apart.
+    const fallback = 21000000 + Math.floor((Date.now() / 1000 - 1733438615) / 12);
     cachedBlock = { value: fallback, timestamp: Date.now() };
     return fallback;
   }
@@ -294,8 +296,10 @@ interface ProposalVote {
   blockTimestamp: string;
 }
 
-// Statuses where the proposal is finalized and quorum won't change
-const FINALIZED_STATUSES = ['EXECUTED', 'CANCELLED', 'VETOED', 'EXPIRED'];
+// Statuses where dynamic quorum matters visually (proposals in the active voting lifecycle).
+// Only these get on-chain quorum fetches to avoid hammering the RPC with calls for
+// historical proposals (DEFEATED, SUCCEEDED, QUEUED, EXECUTED, etc.)
+const ACTIVE_LIFECYCLE_STATUSES = ['ACTIVE', 'OBJECTION_PERIOD', 'PENDING', 'UPDATABLE'];
 
 async function fetchProposals(
   first: number,
@@ -321,13 +325,13 @@ async function fetchProposals(
   const json = await response.json();
   const proposals = (json.proposals || []).map((p: any) => mapProposal(p));
 
-  // Batch-fetch dynamic quorum for non-finalized proposals (active, pending, succeeded, defeated, queued)
-  // These are proposals where the quorum value matters for display accuracy
-  const nonFinalizedIds = proposals
-    .filter((p: Proposal) => !FINALIZED_STATUSES.includes(p.status))
+  // Batch-fetch dynamic quorum only for proposals in the active voting lifecycle (typically 1-5).
+  // Historical proposals (DEFEATED, SUCCEEDED, etc.) use the indexed quorum value.
+  const activeIds = proposals
+    .filter((p: Proposal) => ACTIVE_LIFECYCLE_STATUSES.includes(p.status))
     .map((p: Proposal) => p.id);
 
-  const quorumMap = await getOnChainQuorumBatch(nonFinalizedIds);
+  const quorumMap = await getOnChainQuorumBatch(activeIds);
 
   return proposals.map((mapped: Proposal) => {
     // Override quorum with dynamic on-chain value when available

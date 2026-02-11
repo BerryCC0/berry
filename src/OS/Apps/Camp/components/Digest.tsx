@@ -141,11 +141,11 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
   const isLoading = proposalsLoading || candidatesLoading;
   const hasError = proposalsError || candidatesError;
   
-  // Estimate current block: Block 19,000,000 was Jan 17, 2024 (timestamp 1705500000)
-  // ~12 seconds per block since then
+  // Estimate current block using a post-Merge reference point.
+  // Block 21,000,000 was at timestamp 1733438615 (Dec 5, 2024). Since the Merge, blocks are exactly 12s apart.
   const estimatedBlock = useMemo(() => {
-    const referenceBlock = 19000000;
-    const referenceTimestamp = 1705500000; // Jan 17, 2024
+    const referenceBlock = 21000000;
+    const referenceTimestamp = 1733438615; // Dec 5, 2024
     const secondsSinceReference = Math.floor(Date.now() / 1000) - referenceTimestamp;
     const blocksSinceReference = Math.floor(secondsSinceReference / 12);
     return referenceBlock + blocksSinceReference;
