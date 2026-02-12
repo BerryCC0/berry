@@ -1,0 +1,13 @@
+{
+  "name": "Berry OS",
+  "short_name": "Berry",
+  "description": "A Nounish OS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#008080",
+  "theme_color": "#008080",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icons/berry.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

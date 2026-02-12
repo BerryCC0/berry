@@ -145,9 +145,11 @@
 /* ============================================================================
    BASE STYLES
    ============================================================================ */
-html,
-body {
+html {
   height: 100%;
+  /* Ensure full coverage in standalone PWA mode on iOS (behind home indicator) */
+  height: -webkit-fill-available;
+  height: 100dvh;
   width: 100%;
   /* Apply background to both html and body for full coverage on iOS */
   background-color: var(--berry-desktop-bg);
@@ -159,6 +161,16 @@ body {
 }
 
 body {
+  height: 100%;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  width: 100%;
+  background-color: var(--berry-desktop-bg);
+  background-image: var(--berry-wallpaper, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   font-family: var(--berry-font-system);
   font-size: var(--berry-font-size-base);
   color: var(--berry-text-primary);
