@@ -261,14 +261,14 @@ function parseParamTypes(paramTypesStr: string): string[] {
 export function decodeTransaction(action: ProposalAction): DecodedTransaction {
   const target = action.target.toLowerCase();
   const targetName = getContractName(target);
-  const signature = action.signature;
+  const signature = action.signature || '';
   
   // Extract function name from signature
   const functionMatch = signature.match(/^(\w+)\(/);
   const functionName = functionMatch ? functionMatch[1] : 'Unknown';
   
   // Try to decode parameters
-  const params = tryDecodeParams(signature, action.calldata);
+  const params = signature ? tryDecodeParams(signature, action.calldata) : null;
   
   // Build decoded transaction
   const decoded: DecodedTransaction = {
@@ -444,7 +444,7 @@ function buildDecodingContext(actions: ProposalAction[]): DecodingContext {
   
   for (const action of actions) {
     // Look for createStream calls and extract predicted stream addresses
-    if (action.signature.startsWith('createStream(')) {
+    if (action.signature && action.signature.startsWith('createStream(')) {
       const params = tryDecodeParams(action.signature, action.calldata);
       if (params) {
         // param6 is the predicted stream address
@@ -465,14 +465,14 @@ function buildDecodingContext(actions: ProposalAction[]): DecodingContext {
 function decodeTransactionWithContext(action: ProposalAction, ctx: DecodingContext): DecodedTransaction {
   const target = action.target.toLowerCase();
   const targetName = getContractName(target);
-  const signature = action.signature;
+  const signature = action.signature || '';
   
   // Extract function name from signature
   const functionMatch = signature.match(/^(\w+)\(/);
   const functionName = functionMatch ? functionMatch[1] : 'Unknown';
   
   // Try to decode parameters
-  const params = tryDecodeParams(signature, action.calldata);
+  const params = signature ? tryDecodeParams(signature, action.calldata) : null;
   
   // Build decoded transaction
   const decoded: DecodedTransaction = {
