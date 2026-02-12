@@ -84,13 +84,23 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
     const status = (p.status || '').toUpperCase();
 
     let derivedStatus: 'active' | 'pending' | 'succeeded' | 'defeated' | undefined;
-    let isCancelled = status === 'CANCELLED';
-    let isExecuted = status === 'EXECUTED';
-    let isQueued = status === 'QUEUED';
+    const isCancelled = status === 'CANCELLED';
+    const isExecuted = status === 'EXECUTED';
+    const isQueued = status === 'QUEUED';
+    const isTerminal = isCancelled || isExecuted || isQueued
+      || status === 'DEFEATED' || status === 'VETOED' || status === 'EXPIRED';
     let votingEnded = false;
 
     if (currentBlock !== undefined) {
-      if (currentBlock < startBlock) {
+      if (isTerminal) {
+        // Terminal statuses override block-based derivation
+        votingEnded = true;
+        if (isCancelled || status === 'DEFEATED' || status === 'VETOED' || status === 'EXPIRED') {
+          derivedStatus = 'defeated';
+        } else {
+          derivedStatus = 'succeeded';
+        }
+      } else if (currentBlock < startBlock) {
         derivedStatus = 'pending';
       } else if (currentBlock >= startBlock && currentBlock <= endBlock) {
         derivedStatus = 'active';
@@ -140,12 +150,17 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
       let endTimestamp: string;
 
       if (currentBlock !== undefined && currentBlock > endBlock) {
+        // Voting period has passed -- estimate when the end block was mined
         const blocksAgo = currentBlock - endBlock;
         const secondsAgo = blocksAgo * BLOCK_TIME_SECONDS;
         endTimestamp = String(now - secondsAgo);
       } else {
+        // Voting period hasn't ended yet (proposal was terminated early)
+        // or block number isn't available. Estimate end time from blocks.
         const createdTime = Number(p.created_timestamp);
-        endTimestamp = String(createdTime + Math.abs(endBlock - startBlock) * BLOCK_TIME_SECONDS);
+        const estimatedEnd = createdTime + Math.abs(endBlock - startBlock) * BLOCK_TIME_SECONDS;
+        // Cap at current time so terminated-early proposals don't get future timestamps
+        endTimestamp = String(Math.min(estimatedEnd, now));
       }
 
       if (isCancelled) {

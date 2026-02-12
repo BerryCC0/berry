@@ -62,6 +62,8 @@ export function formatTimeAgo(timestamp: number): string {
   const now = Date.now() / 1000;
   const diff = now - timestamp;
 
+  // Guard against future timestamps
+  if (diff < 0) return 'just now';
   if (diff < 60) return 'just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
