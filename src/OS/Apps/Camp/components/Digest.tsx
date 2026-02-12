@@ -2,24 +2,21 @@
  * Digest Component
  * Shows proposals and candidates grouped by state/priority
  * Compact view for the Activity sidebar
+ * 
+ * Business logic is in useDigest hook.
+ * This file contains only presentation logic.
  */
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useAccount, useBlockNumber, useEnsName, useEnsAvatar } from 'wagmi';
+import { useEnsName, useEnsAvatar } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
-import { useProposals, useCandidates, useVoter, useVoters } from '../hooks';
+import { useDigest } from '../hooks/useDigest';
+import { formatSlugToTitle } from '../utils/formatUtils';
 import { getClientName } from '@/OS/lib/clientNames';
 import { BerryLoader } from './BerryLoader';
-import type { Proposal, Candidate, Voter } from '../types';
+import type { Proposal, Candidate, Voter, DigestTab } from '../types';
 import styles from './Digest.module.css';
-
-// Treasury addresses to filter from voter list
-const TREASURY_ADDRESSES = [
-  '0xb1a32fc9f9d8b2cf86c068cae13108809547ef71', // treasury (nouns.eth)
-  '0x0bc3807ec262cb779b38d65b38158acc3bfede10', // treasuryV1
-];
 
 /**
  * ENSName - Resolves and displays ENS name for an address
@@ -61,196 +58,36 @@ function VoterIdentity({ address }: { address: string }) {
   );
 }
 
-type DigestTab = 'digest' | 'proposals' | 'candidates' | 'voters';
-
 interface DigestProps {
   onNavigate: (path: string) => void;
   activeTab?: DigestTab;
   onTabChange?: (tab: DigestTab) => void;
+  /** When true, the internal tab bar is hidden (used when parent provides its own tabs) */
+  hideTabs?: boolean;
 }
 
-/**
- * Format relative time (e.g., "Ends in 5 hours", "Starts in 2 days")
- */
-function formatRelativeTime(timestamp: number, prefix: string): string {
-  const now = Math.floor(Date.now() / 1000);
-  const diff = timestamp - now;
-  
-  if (diff < 0) {
-    return 'Ended';
-  }
-  
-  if (diff < 3600) {
-    const mins = Math.floor(diff / 60);
-    return `${prefix} ${mins} minute${mins !== 1 ? 's' : ''}`;
-  }
-  
-  if (diff < 86400) {
-    const hours = Math.floor(diff / 3600);
-    return `${prefix} ${hours} hour${hours !== 1 ? 's' : ''}`;
-  }
-  
-  const days = Math.floor(diff / 86400);
-  return `${prefix} ${days} day${days !== 1 ? 's' : ''}`;
-}
-
-/**
- * Calculate end time from endBlock (rough estimate: 12 sec/block)
- */
-function estimateEndTime(endBlock: string, currentBlock: number): number {
-  const blocksRemaining = Number(endBlock) - currentBlock;
-  const secondsRemaining = blocksRemaining * 12;
-  return Math.floor(Date.now() / 1000) + secondsRemaining;
-}
-
-/**
- * Calculate start time from startBlock (rough estimate: 12 sec/block)
- */
-function estimateStartTime(startBlock: string, currentBlock: number): number {
-  const blocksUntilStart = Number(startBlock) - currentBlock;
-  const secondsUntilStart = blocksUntilStart * 12;
-  return Math.floor(Date.now() / 1000) + secondsUntilStart;
-}
-
-interface DigestSection {
-  id: string;
-  title: string;
-  subtitle?: string;
-  items: (Proposal | Candidate)[];
-  type: 'proposal' | 'candidate';
-  collapsed: boolean;
-}
-
-export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: DigestProps) {
-  const { address } = useAccount();
-  const [internalTab, setInternalTab] = useState<DigestTab>('digest');
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['ongoing']));
-  
-  // Use controlled state if provided, otherwise use internal state
-  const activeTab = controlledTab ?? internalTab;
-  const setActiveTab = onTabChange ?? setInternalTab;
-  
-  // Fetch data
-  const { data: proposals, isLoading: proposalsLoading, error: proposalsError } = useProposals(50, 'all', 'newest');
-  const { data: candidates, isLoading: candidatesLoading, error: candidatesError } = useCandidates(50);
-  const { data: voters, isLoading: votersLoading, error: votersError } = useVoters(50, 'power');
-  const { data: voterData } = useVoter(address || null);
-  const { data: blockNumber } = useBlockNumber({ watch: true });
-  
-  // Combined loading/error states
-  const isLoading = proposalsLoading || candidatesLoading;
-  const hasError = proposalsError || candidatesError;
-  
-  // Estimate current block using a post-Merge reference point.
-  // Block 21,000,000 was at timestamp 1733438615 (Dec 5, 2024). Since the Merge, blocks are exactly 12s apart.
-  const estimatedBlock = useMemo(() => {
-    const referenceBlock = 21000000;
-    const referenceTimestamp = 1733438615; // Dec 5, 2024
-    const secondsSinceReference = Math.floor(Date.now() / 1000) - referenceTimestamp;
-    const blocksSinceReference = Math.floor(secondsSinceReference / 12);
-    return referenceBlock + blocksSinceReference;
-  }, []);
-  
-  // Use actual block number from chain, or estimated if not available yet
-  const currentBlock = blockNumber ? Number(blockNumber) : estimatedBlock;
-  
-  // Get proposals the user has already voted on
-  const votedProposalIds = useMemo(() => {
-    if (!voterData?.recentVotes) return new Set<string>();
-    return new Set(voterData.recentVotes.map((v: { proposalId: string }) => v.proposalId));
-  }, [voterData]);
-  
-  // Group proposals and candidates into sections
-  const sections = useMemo<DigestSection[]>(() => {
-    if (!proposals) return [];
-    
-    const result: DigestSection[] = [];
-    
-    // Helper to check if proposal voting is still active
-    // Must have active status AND endBlock must not have passed
-    const isVotingActive = (p: Proposal) => 
-      ['ACTIVE', 'OBJECTION_PERIOD'].includes(p.status) && 
-      Number(p.endBlock) > currentBlock;
-    
-    // Active proposals user hasn't voted on
-    const notVoted = proposals.filter(p => 
-      isVotingActive(p) && 
-      address && 
-      !votedProposalIds.has(p.id)
-    );
-    
-    if (notVoted.length > 0) {
-      result.push({
-        id: 'not-voted',
-        title: 'NOT YET VOTED',
-        items: notVoted,
-        type: 'proposal',
-        collapsed: collapsedSections.has('not-voted'),
-      });
-    }
-    
-    // Ongoing proposals (currently voting)
-    const ongoing = proposals.filter(p => isVotingActive(p));
-    
-    if (ongoing.length > 0) {
-      result.push({
-        id: 'ongoing',
-        title: 'ONGOING PROPOSALS',
-        subtitle: 'Currently voting',
-        items: ongoing,
-        type: 'proposal',
-        collapsed: collapsedSections.has('ongoing'),
-      });
-    }
-    
-    // Upcoming proposals (pending/updatable)
-    const upcoming = proposals.filter(p => 
-      ['PENDING', 'UPDATABLE'].includes(p.status)
-    );
-    
-    if (upcoming.length > 0) {
-      result.push({
-        id: 'upcoming',
-        title: 'UPCOMING PROPOSALS',
-        items: upcoming,
-        type: 'proposal',
-        collapsed: collapsedSections.has('upcoming'),
-      });
-    }
-    
-    // New candidates (created in last 7 days)
-    if (candidates && candidates.length > 0) {
-      const oneWeekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
-      const newCandidates = candidates.filter(c => 
-        Number(c.createdTimestamp) > oneWeekAgo
-      );
-      
-      if (newCandidates.length > 0) {
-        result.push({
-          id: 'new-candidates',
-          title: 'NEW CANDIDATES',
-          subtitle: 'Created within the last 7 days',
-          items: newCandidates,
-          type: 'candidate',
-          collapsed: collapsedSections.has('new-candidates'),
-        });
-      }
-    }
-    
-    return result;
-  }, [proposals, candidates, address, votedProposalIds, collapsedSections]);
-  
-  const toggleSection = (sectionId: string) => {
-    setCollapsedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) {
-        next.delete(sectionId);
-      } else {
-        next.add(sectionId);
-      }
-      return next;
-    });
-  };
+export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hideTabs }: DigestProps) {
+  const {
+    activeTab,
+    setActiveTab,
+    proposals,
+    candidates,
+    filteredVoters,
+    sections,
+    currentBlock,
+    isLoading,
+    hasError,
+    proposalsLoading,
+    proposalsError,
+    candidatesLoading,
+    candidatesError,
+    votersLoading,
+    votersError,
+    toggleSection,
+    getEndTime,
+    getStartTime,
+    getRelativeTime,
+  } = useDigest({ activeTab: controlledTab, onTabChange });
   
   const handleProposalClick = (proposal: Proposal) => {
     onNavigate(`proposal/${proposal.id}`);
@@ -304,8 +141,8 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
       forVotes >= quorum && forVotes > againstVotes
     );
     
-    const endTime = estimateEndTime(proposal.endBlock, currentBlock);
-    const startTime = estimateStartTime(proposal.startBlock, currentBlock);
+    const endTime = getEndTime(proposal.endBlock);
+    const startTime = getStartTime(proposal.startBlock);
     
     // Determine status display - order matters!
     // Check terminal states first, then calculated states, then active states
@@ -362,13 +199,13 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
               <span className={styles.voteCount}>{forVotes} ↑ / {quorum}</span>
               {abstainVotes > 0 && <span className={styles.voteCount}>{abstainVotes}</span>}
               {againstVotes > 0 && <span className={styles.voteCount}>{againstVotes} ↓</span>}
-              <span className={styles.timeRemaining}>{formatRelativeTime(endTime, 'Ends in')}</span>
+              <span className={styles.timeRemaining}>{getRelativeTime(endTime, 'Ends in')}</span>
             </>
           )}
           
           {/* Show start time for pending */}
           {isPending && (
-            <span className={styles.timeRemaining}>{formatRelativeTime(startTime, 'Starts in')}</span>
+            <span className={styles.timeRemaining}>{getRelativeTime(startTime, 'Starts in')}</span>
           )}
           
           {/* Badge on right for ended proposals */}
@@ -418,12 +255,6 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
       </div>
     );
   };
-  
-  // Filter out treasury addresses from voters
-  const filteredVoters = useMemo(() => {
-    if (!voters) return [];
-    return voters.filter(v => !TREASURY_ADDRESSES.includes(v.id.toLowerCase()));
-  }, [voters]);
   
   // Render content based on active tab
   const renderTabContent = () => {
@@ -506,33 +337,35 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
   
   return (
     <div className={styles.container}>
-      {/* Tabs */}
-      <div className={styles.tabs}>
-        <button 
-          className={`${styles.tab} ${activeTab === 'digest' ? styles.active : ''}`}
-          onClick={() => setActiveTab('digest')}
-        >
-          Digest
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'proposals' ? styles.active : ''}`}
-          onClick={() => setActiveTab('proposals')}
-        >
-          Proposals
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'candidates' ? styles.active : ''}`}
-          onClick={() => setActiveTab('candidates')}
-        >
-          Candidates
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'voters' ? styles.active : ''}`}
-          onClick={() => setActiveTab('voters')}
-        >
-          Voters
-        </button>
-      </div>
+      {/* Tabs — hidden when parent provides its own tab bar */}
+      {!hideTabs && (
+        <div className={styles.tabs}>
+          <button 
+            className={`${styles.tab} ${activeTab === 'digest' ? styles.active : ''}`}
+            onClick={() => setActiveTab('digest')}
+          >
+            Digest
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'proposals' ? styles.active : ''}`}
+            onClick={() => setActiveTab('proposals')}
+          >
+            Proposals
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'candidates' ? styles.active : ''}`}
+            onClick={() => setActiveTab('candidates')}
+          >
+            Candidates
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'voters' ? styles.active : ''}`}
+            onClick={() => setActiveTab('voters')}
+          >
+            Voters
+          </button>
+        </div>
+      )}
       
       {/* Content */}
       <div className={styles.content}>
@@ -540,12 +373,4 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange }: Di
       </div>
     </div>
   );
-}
-
-function formatSlugToTitle(slug: string): string {
-  return slug
-    .replace(/---+/g, ' - ')
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase())
-    .replace(/^./, c => c.toUpperCase());
 }

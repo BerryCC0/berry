@@ -237,6 +237,7 @@ function processCandidateSignatures(signatures: any[]): ActivityItem[] {
     type: 'candidate_sponsored' as const,
     timestamp: String(s.block_timestamp),
     actor: s.signer,
+    candidateSlug: s.candidate_slug,
     candidateTitle: s.candidate_title,
     candidateProposer: s.candidate_proposer,
     reason: s.reason || undefined,

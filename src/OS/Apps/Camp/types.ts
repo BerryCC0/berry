@@ -336,6 +336,21 @@ export interface ActivityItem {
 }
 
 // ============================================================================
+// Digest Types
+// ============================================================================
+
+export type DigestTab = 'digest' | 'proposals' | 'candidates' | 'voters';
+
+export interface DigestSection {
+  id: string;
+  title: string;
+  subtitle?: string;
+  items: (Proposal | Candidate)[];
+  type: 'proposal' | 'candidate';
+  collapsed: boolean;
+}
+
+// ============================================================================
 // Filter/Sort Types
 // ============================================================================
 

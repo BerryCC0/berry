@@ -1,0 +1,33 @@
+/**
+ * AddressWithAvatar Styles
+ */
+
+.addressWithAvatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.addressWithAvatar:hover .addressName {
+  text-decoration: underline;
+}
+
+.miniAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.miniAvatarPlaceholder {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--berry-bg-tertiary);
+}
+
+.addressName {
+  color: var(--berry-text-primary);
+  font-weight: 500;
+}

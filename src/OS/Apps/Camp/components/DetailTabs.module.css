@@ -1,0 +1,66 @@
+/**
+ * DetailTabs Styles
+ * Mobile-only tab navigation for detail views
+ * Hidden on desktop where the two-column layout is used instead
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab bar - styled like the Digest tabs */
+.tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tabBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  color: var(--berry-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tab:hover {
+  color: var(--berry-text-primary);
+}
+
+.tab.active {
+  color: var(--berry-text-primary);
+  font-weight: 600;
+  border-bottom-color: var(--berry-text-primary);
+}
+
+.tabCount {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--berry-text-tertiary);
+}
+
+.tab.active .tabCount {
+  color: var(--berry-text-secondary);
+}
+
+/* Tab content area */
+.tabContent {
+  flex: 1;
+  padding-top: 16px;
+}

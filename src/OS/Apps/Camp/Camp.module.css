@@ -100,39 +100,29 @@
 /* Mobile styles */
 @media (max-width: 768px) {
   .header {
-    flex-wrap: wrap;
     gap: 8px;
-    padding: 12px;
+    padding: 8px 12px;
   }
 
   .headerLeft {
-    width: 100%;
-    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
     gap: 8px;
   }
 
-  .tabsRight {
-    width: 100%;
-  }
-
-  .tab {
-    flex: 1;
-    padding: 10px 8px;
-    font-size: 12px;
-    text-align: center;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   .logo {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
   }
   
   .searchButton {
     flex: 1;
     min-width: unset;
+  }
+
+  .tab {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }

@@ -2,6 +2,10 @@
  * ActivityItem Component
  * Displays a single activity feed item
  * 
+ * Business logic (ENS resolution, reply/repost detection, time formatting)
+ * is in the useActivityItemData hook.
+ * This file contains only presentation logic.
+ * 
  * Supports:
  * - Votes and proposal feedback/signals
  * - Proposal and candidate creation
@@ -11,16 +15,14 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { useEnsName, useEnsAvatar } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
 import { formatEther } from 'viem';
 import { NounImageById } from '@/app/lib/nouns/components';
-import { useTranslation, useContentTranslation } from '@/OS/lib/i18n';
+import { useTranslation } from '@/OS/lib/i18n';
 import { getSupportLabel, getSupportColor, type ActivityItem as ActivityItemType } from '../types';
 import { getClientName } from '@/OS/lib/clientNames';
+import { formatSlugToTitle } from '../utils/formatUtils';
+import { useActivityItemData } from '../hooks/useActivityItemData';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import { parseRepost, parseReply } from '../utils/repostParser';
 import styles from './ActivityItem.module.css';
 
 interface ActivityItemProps {
@@ -32,142 +34,26 @@ interface ActivityItemProps {
   onClickAuction?: (nounId: string) => void;
 }
 
-/**
- * Format a candidate slug into a readable title
- * e.g., "the-great-delegation---case-study-(part-ii-of-ii)" → "The Great Delegation - Case Study (Part II of II)"
- */
-function formatSlugToTitle(slug: string): string {
-  return slug
-    // Replace multiple hyphens with a single dash surrounded by spaces
-    .replace(/---+/g, ' - ')
-    // Replace remaining hyphens with spaces
-    .replace(/-/g, ' ')
-    // Capitalize first letter of each word
-    .replace(/\b\w/g, c => c.toUpperCase())
-    // Fix common patterns
-    .replace(/\bIi\b/g, 'II')
-    .replace(/\bIii\b/g, 'III')
-    .replace(/\bIv\b/g, 'IV')
-    .replace(/\bOf\b/g, 'of')
-    .replace(/\bThe\b/g, 'the')
-    .replace(/\bA\b/g, 'a')
-    .replace(/\bAn\b/g, 'an')
-    .replace(/\bAnd\b/g, 'and')
-    .replace(/\bFor\b/g, 'for')
-    .replace(/\bTo\b/g, 'to')
-    // Always capitalize first character
-    .replace(/^./, c => c.toUpperCase());
-}
-
-// Helper to find the original poster from a reply
-function findOriginalPosterAddress(
-  reason: string | undefined,
-  allItems: ActivityItemType[] | undefined
-): string | undefined {
-  if (!reason || !allItems) return undefined;
-  
-  const replyInfo = parseReply(reason);
-  if (!replyInfo) return undefined;
-  
-  const truncatedTarget = replyInfo.targetAuthor.toLowerCase();
-  
-  // Find a post where:
-  // 1. The actor matches the truncated address
-  // 2. The reason matches the quoted text
-  for (const otherItem of allItems) {
-    if (!otherItem.reason) continue;
-    
-    // Check if actor matches the truncated pattern
-    const truncatedActor = `${otherItem.actor.slice(0, 6)}...${otherItem.actor.slice(-4)}`.toLowerCase();
-    if (truncatedActor !== truncatedTarget) continue;
-    
-    // Check if the reason contains the quoted text (or matches exactly)
-    const normalizedOther = otherItem.reason.trim().toLowerCase();
-    const normalizedQuote = replyInfo.quotedText.trim().toLowerCase();
-    
-    if (normalizedOther === normalizedQuote || normalizedOther.includes(normalizedQuote)) {
-      return otherItem.actor;
-    }
-  }
-  
-  return undefined;
-}
-
-// Helper to find the original poster from a repost
-function findRepostOriginalPosterAddress(
-  reason: string | undefined,
-  allItems: ActivityItemType[] | undefined
-): string | undefined {
-  if (!reason || !allItems) return undefined;
-  
-  const repostInfo = parseRepost(reason);
-  if (!repostInfo) return undefined;
-  
-  // Find a post where the reason matches the quoted text
-  for (const otherItem of allItems) {
-    if (!otherItem.reason) continue;
-    
-    // Check if the reason matches the quoted text
-    const normalizedOther = otherItem.reason.trim().toLowerCase();
-    const normalizedQuote = repostInfo.originalReason.trim().toLowerCase();
-    
-    if (normalizedOther === normalizedQuote || normalizedOther.includes(normalizedQuote)) {
-      return otherItem.actor;
-    }
-  }
-  
-  return undefined;
-}
-
 export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, onClickCandidate, onClickAuction }: ActivityItemProps) {
   const { t } = useTranslation();
   
-  // Find original poster addresses BEFORE calling hooks (so hooks are always called in same order)
-  const replyOriginalPosterAddress = findOriginalPosterAddress(item.reason, allItems);
-  const repostOriginalPosterAddress = findRepostOriginalPosterAddress(item.reason, allItems);
-
-  const { data: actorEns } = useEnsName({
-    address: item.actor as `0x${string}`,
-    chainId: mainnet.id,
-  });
-
-  const { data: actorAvatar } = useEnsAvatar({
-    name: actorEns || undefined,
-    chainId: mainnet.id,
-  });
-
-  const { data: toAddressEns } = useEnsName({
-    address: item.toAddress as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
-
-  const { data: winnerEns } = useEnsName({
-    address: item.winner as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
-
-  const { data: settlerEns } = useEnsName({
-    address: item.settler as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
-
-  // Resolve ENS for the original poster (if this is a reply)
-  const { data: replyOriginalPosterEns } = useEnsName({
-    address: replyOriginalPosterAddress as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
-
-  // Resolve ENS for the original poster (if this is a repost)
-  const { data: repostOriginalPosterEns } = useEnsName({
-    address: repostOriginalPosterAddress as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
-
-  const formatAddress = (address: string, ensName?: string | null) => 
-    ensName || `${address.slice(0, 6)}...${address.slice(-4)}`;
-
-  const displayName = formatAddress(item.actor, actorEns);
-  const timeAgo = formatTimeAgo(Number(item.timestamp));
+  // All ENS resolution, reply/repost detection, and computed values from hook
+  const {
+    actorAvatar,
+    toAddressEns,
+    winnerEns,
+    settlerEns,
+    replyOriginalPosterEns,
+    repostOriginalPosterEns,
+    replyOriginalPosterAddress,
+    repostOriginalPosterAddress,
+    displayName,
+    timeAgo,
+    nounId,
+    repostInfo,
+    replyInfo,
+    formatAddr,
+  } = useActivityItemData(item, allItems);
 
   // Render actor with optional avatar
   const renderActor = (avatar?: string | null, name?: string, onClick?: () => void) => (
@@ -180,9 +66,6 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
       </span>
     </span>
   );
-
-  // Parse noun ID for image rendering
-  const nounId = item.nounId ? parseInt(item.nounId, 10) : undefined;
 
   const handleActorClick = () => {
     onClickVoter?.(item.actor);
@@ -201,22 +84,10 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
   };
 
   const handleCandidateClick = () => {
-    if (item.candidateProposer && item.candidateSlug) {
-      onClickCandidate?.(item.candidateProposer, item.candidateSlug);
+    if (item.candidateSlug) {
+      onClickCandidate?.(item.candidateProposer || '', item.candidateSlug);
     }
   };
-
-  // Detect repost pattern in reason
-  const repostInfo = useMemo(() => {
-    if (!item.reason) return null;
-    return parseRepost(item.reason);
-  }, [item.reason]);
-
-  // Detect reply pattern in reason  
-  const replyInfo = useMemo(() => {
-    if (!item.reason) return null;
-    return parseReply(item.reason);
-  }, [item.reason]);
 
   // Render the reason content - handles reposts and replies specially
   const renderReason = () => {
@@ -227,7 +98,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
     if (repostInfo) {
       // Use resolved ENS name if available, otherwise use the address
       const repostAuthorDisplay = repostOriginalPosterEns 
-        || (repostOriginalPosterAddress ? formatAddress(repostOriginalPosterAddress, null) : null);
+        || (repostOriginalPosterAddress ? formatAddr(repostOriginalPosterAddress, null) : null);
       
       return (
         <div className={styles.quotedReply}>
@@ -245,7 +116,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
     if (replyInfo) {
       // Use resolved ENS name if available, otherwise use the original poster address, or fall back to truncated
       const originalPosterDisplay = replyOriginalPosterEns 
-        || (replyOriginalPosterAddress ? formatAddress(replyOriginalPosterAddress, null) : replyInfo.targetAuthor);
+        || (replyOriginalPosterAddress ? formatAddr(replyOriginalPosterAddress, null) : replyInfo.targetAuthor);
       
       return (
         <div className={styles.replyContainer}>
@@ -523,9 +394,9 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             <div className={styles.header}>
               {renderActor(actorAvatar, displayName, handleActorClick)}
               <span className={styles.action}>sponsored</span>
-              {item.candidateTitle && (
-                <span className={styles.titleLink}>
-                  {item.candidateTitle}
+              {(item.candidateTitle || item.candidateSlug) && (
+                <span className={styles.titleLink} onClick={handleCandidateClick} role="button" tabIndex={0}>
+                  {item.candidateTitle || formatSlugToTitle(item.candidateSlug!)}
                 </span>
               )}
             </div>
@@ -570,7 +441,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
               <span className={styles.salePrice}>{priceInEth} ETH</span>
               <span className={styles.action}>to</span>
               <span className={styles.actor} onClick={handleToAddressClick} role="button" tabIndex={0}>
-                {item.toAddress && formatAddress(item.toAddress, toAddressEns)}
+                {item.toAddress && formatAddr(item.toAddress, toAddressEns)}
               </span>
             </div>
           );
@@ -589,7 +460,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
             <span className={styles.action}>to</span>
             <span className={styles.actor} onClick={handleToAddressClick} role="button" tabIndex={0}>
-              {item.toAddress && formatAddress(item.toAddress, toAddressEns)}
+              {item.toAddress && formatAddr(item.toAddress, toAddressEns)}
             </span>
           </div>
         );
@@ -607,7 +478,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
             <span className={styles.action}>to</span>
             <span className={styles.actor} onClick={handleToAddressClick} role="button" tabIndex={0}>
-              {item.toAddress && formatAddress(item.toAddress, toAddressEns)}
+              {item.toAddress && formatAddr(item.toAddress, toAddressEns)}
             </span>
           </div>
         );
@@ -629,7 +500,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
                 <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
                 <span className={styles.action}>won by</span>
                 <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-                  {item.winner && formatAddress(item.winner, winnerEns)}
+                  {item.winner && formatAddr(item.winner, winnerEns)}
                 </span>
               </div>
               <div className={styles.auctionDetails}>
@@ -642,7 +513,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
                   <span className={styles.settlerInfo}>
                     <span className={styles.action}>Settled by</span>
                     <span className={styles.actor} onClick={handleSettledSettlerClick} role="button" tabIndex={0}>
-                      {formatAddress(item.settler, settlerEns)}
+                      {formatAddr(item.settler, settlerEns)}
                     </span>
                   </span>
                 )}
@@ -683,7 +554,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
                 <div className={styles.header}>
                   <span className={styles.action}> Settled by</span>
                   <span className={styles.actor} onClick={handleSettlerClick} role="button" tabIndex={0}>
-                    {formatAddress(item.settler, settlerEns)}
+                    {formatAddr(item.settler, settlerEns)}
                   </span>
                 </div>
               )}
@@ -709,17 +580,4 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
       <div className={styles.time}>{timeAgo}</div>
     </div>
   );
-}
-
-function formatTimeAgo(timestamp: number): string {
-  const now = Date.now() / 1000;
-  const diff = now - timestamp;
-
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

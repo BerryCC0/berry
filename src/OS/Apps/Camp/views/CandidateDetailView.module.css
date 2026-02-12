@@ -176,6 +176,14 @@
   gap: 6px;
 }
 
+/* Mobile status section (always visible above tabs) */
+.mobileStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 /* Owner Actions */
 .ownerActions {
   display: flex;
