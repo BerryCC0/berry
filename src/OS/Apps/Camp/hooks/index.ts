@@ -10,4 +10,5 @@ export { useDigest } from './useDigest';
 export type { UseDigestReturn } from './useDigest';
 export { useActivityItemData } from './useActivityItemData';
 export type { ActivityItemData } from './useActivityItemData';
+export { useSalePrice } from './useSalePrice';
 

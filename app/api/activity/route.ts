@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       `,
       // Transfers (exclude mints and auction settlements)
       sql`
-        SELECT id, "from", "to", token_id, block_timestamp
+        SELECT id, "from", "to", token_id, block_timestamp, tx_hash
         FROM ponder_live.transfers
         WHERE block_timestamp >= ${since}
           AND "from" != '0x0000000000000000000000000000000000000000'

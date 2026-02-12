@@ -22,6 +22,7 @@ import { getSupportLabel, getSupportColor, type ActivityItem as ActivityItemType
 import { getClientName } from '@/OS/lib/clientNames';
 import { formatSlugToTitle } from '../utils/formatUtils';
 import { useActivityItemData } from '../hooks/useActivityItemData';
+import { useSalePrice } from '../hooks/useSalePrice';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import styles from './ActivityItem.module.css';
 
@@ -54,6 +55,13 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
     replyInfo,
     formatAddr,
   } = useActivityItemData(item, allItems);
+
+  // Lazy sale detection for noun transfers
+  const isTransfer = item.type === 'noun_transfer';
+  const { isSale, salePrice } = useSalePrice(
+    isTransfer ? item.txHash : undefined,
+    isTransfer ? item.fromAddress : undefined
+  );
 
   // Render actor with optional avatar
   const renderActor = (avatar?: string | null, name?: string, onClick?: () => void) => (
@@ -425,10 +433,11 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
           </>
         );
 
-      case 'noun_transfer':
-        // Check if this was a sale (has salePrice)
-        if (item.salePrice) {
-          const priceInEth = Number(formatEther(BigInt(item.salePrice))).toFixed(3);
+      case 'noun_transfer': {
+        // Check if this was a sale (from hook or pre-populated)
+        const effectiveSalePrice = salePrice || item.salePrice;
+        if (isSale && effectiveSalePrice) {
+          const priceInEth = Number(formatEther(BigInt(effectiveSalePrice))).toFixed(3);
           return (
             <div className={styles.header}>
               {renderActor(actorAvatar, displayName, handleActorClick)}
@@ -464,6 +473,7 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
             </span>
           </div>
         );
+      }
 
       case 'noun_delegation':
         return (

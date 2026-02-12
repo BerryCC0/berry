@@ -264,6 +264,7 @@ function processTransfers(transfers: any[]): ActivityItem[] {
       nounId: String(t.token_id),
       fromAddress: t.from,
       toAddress: t.to,
+      txHash: t.tx_hash,
     });
   }
 
