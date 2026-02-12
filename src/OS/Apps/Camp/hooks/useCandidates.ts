@@ -38,7 +38,7 @@ function mapCandidateDetail(c: any): Candidate {
   const actions = c.targets?.map((target: string, i: number) => ({
     target,
     value: c.values?.[i] || '0',
-    signature: c.signatures_list?.[i] || c.signatures?.[i] || '',
+    signature: c.signatures_list?.[i] ?? '',
     calldata: c.calldatas?.[i] || '0x',
   })) || [];
 
