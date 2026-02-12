@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
     if (slug) {
       const rows = await sql`
         SELECT id, slug, proposer, title, description,
+               targets, "values", signatures AS signatures_list, calldatas,
+               encoded_proposal_hash, proposal_id_to_update,
                created_timestamp, last_updated_timestamp, canceled,
                signature_count
         FROM ponder_live.candidates

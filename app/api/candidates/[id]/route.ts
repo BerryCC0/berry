@@ -19,7 +19,7 @@ export async function GET(
     const [candidateRows, sigRows, fbRows, versionRows] = await Promise.all([
       sql`
         SELECT id, slug, proposer, title, description,
-               targets, "values", signatures, calldatas,
+               targets, "values", signatures AS signatures_list, calldatas,
                encoded_proposal_hash, proposal_id_to_update,
                canceled, signature_count,
                created_timestamp, last_updated_timestamp, block_number
