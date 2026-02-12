@@ -18,6 +18,7 @@ import type { ActivityItem } from '../types';
 // ============================================================================
 
 const AUCTION_HOUSE = '0x830bd73e4184cef73443c15111a1df14e495c706';
+const NOUNS_TREASURY = '0xb1a32fc9f9d8b2cf86c068cae13108809547ef71';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const BLOCK_TIME_SECONDS = 12;
 
@@ -252,9 +253,10 @@ function processTransfers(transfers: any[]): ActivityItem[] {
     const from = (t.from || '').toLowerCase();
     const to = (t.to || '').toLowerCase();
 
-    // The API already filters mints and auction settlements, but double-check
+    // Filter out mints, auction settlements, and treasury-to-auction transfers
     if (from === ZERO_ADDRESS || from === AUCTION_HOUSE.toLowerCase()) continue;
     if (to === ZERO_ADDRESS) continue;
+    if (from === NOUNS_TREASURY && to === AUCTION_HOUSE.toLowerCase()) continue;
 
     items.push({
       id: `transfer-${t.id}`,

@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         ORDER BY cs.block_timestamp DESC
         LIMIT ${limit}
       `,
-      // Transfers (exclude mints and auction settlements)
+      // Transfers (exclude mints, auction settlements, and treasury-to-auction)
       sql`
         SELECT id, "from", "to", token_id, block_timestamp, tx_hash
         FROM ponder_live.transfers
@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
           AND "from" != '0x0000000000000000000000000000000000000000'
           AND "from" != '0x830bd73e4184cef73443c15111a1df14e495c706'
           AND "to" != '0x0000000000000000000000000000000000000000'
+          AND NOT ("from" = '0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71' AND "to" = '0x830bd73e4184cef73443c15111a1df14e495c706')
         ORDER BY block_timestamp DESC
         LIMIT ${limit}
       `,
