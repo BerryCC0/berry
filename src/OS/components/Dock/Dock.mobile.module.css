@@ -2,6 +2,8 @@
 
 .dock {
   position: fixed;
+  /* On iOS standalone mode, bottom: 0 is the safe area boundary (above home indicator).
+     8px from there places the dock just above the home indicator area. */
   bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
@@ -9,7 +11,6 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-dock);
-  padding-bottom: env(safe-area-inset-bottom, 0);
 
   /* Icon size variable */
   --dock-icon-size: 44px;

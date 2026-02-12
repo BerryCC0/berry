@@ -4,8 +4,9 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  right: 0;
+  /* Extend past safe area to cover the full physical screen on iOS standalone mode */
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   background: #0a0a0a;
   z-index: 99999; /* Above everything */
   display: flex;

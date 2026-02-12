@@ -6,7 +6,10 @@
   top: calc(var(--berry-menubar-height) + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
-  bottom: 0;
+  /* Extend behind the home indicator so the background covers the full screen.
+     On iOS standalone mode, bottom: 0 aligns with the safe area boundary,
+     so we pull it past by the safe area inset to reach the physical edge. */
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   background-color: var(--berry-desktop-bg);
   /* Simpler pattern for mobile */
   background-image: 

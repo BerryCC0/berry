@@ -4,7 +4,11 @@
 
 .overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Extend past safe area to cover full physical screen on iOS standalone */
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   z-index: 99999;
   background: #000000;
   display: flex;

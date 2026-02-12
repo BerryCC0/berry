@@ -2,11 +2,13 @@
 
 .window {
   position: fixed;
-  /* Account for safe areas (notch, home indicator) */
+  /* Account for safe areas (notch) */
   top: calc(var(--berry-menubar-height) + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
-  bottom: calc(var(--berry-dock-size) + env(safe-area-inset-bottom, 0px));
+  /* On iOS standalone mode, bottom: 0 is already at the safe area boundary
+     (above the home indicator), so we only need to offset by the dock size. */
+  bottom: var(--berry-dock-size);
   display: flex;
   flex-direction: column;
   background: var(--berry-bg);
