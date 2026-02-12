@@ -57,10 +57,11 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
   } = useActivityItemData(item, allItems);
 
   // Lazy sale detection for noun transfers
+  // For bulk transfers, don't pass a specific seller so we get the total price
   const isTransfer = item.type === 'noun_transfer';
   const { isSale, salePrice } = useSalePrice(
     isTransfer ? item.txHash : undefined,
-    isTransfer ? item.fromAddress : undefined
+    isTransfer && !item.isBulkTransfer ? item.fromAddress : undefined
   );
 
   // Render actor with optional avatar
@@ -436,6 +437,49 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
       case 'noun_transfer': {
         // Check if this was a sale (from hook or pre-populated)
         const effectiveSalePrice = salePrice || item.salePrice;
+
+        // Bulk transfer: multiple nouns in one transaction
+        if (item.isBulkTransfer && item.nounIds && item.fromAddresses) {
+          const nounCount = item.nounIds.length;
+          const sellerList = item.fromAddresses.map(addr => formatAddr(addr, null));
+          const sellersDisplay = sellerList.length <= 2
+            ? sellerList.join(' and ')
+            : `${sellerList.length} sellers`;
+
+          if (isSale && effectiveSalePrice) {
+            const priceInEth = Number(formatEther(BigInt(effectiveSalePrice))).toFixed(2);
+            return (
+              <div className={styles.header}>
+                {renderActor(actorAvatar, displayName, handleActorClick)}
+                <span className={styles.action}>bought</span>
+                <span className={styles.action}>{nounCount} nouns</span>
+                {item.nounIds.map(id => (
+                  <NounImageById key={id} id={parseInt(id, 10)} size={22} className={styles.nounImageInline} />
+                ))}
+                <span className={styles.action}>from</span>
+                <span className={styles.action}>{sellersDisplay}</span>
+                <span className={styles.action}>for</span>
+                <span className={styles.salePrice}>{priceInEth} ETH</span>
+              </div>
+            );
+          }
+
+          // Bulk transfer (not a sale)
+          return (
+            <div className={styles.header}>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
+              <span className={styles.action}>received</span>
+              <span className={styles.action}>{nounCount} nouns</span>
+              {item.nounIds.map(id => (
+                <NounImageById key={id} id={parseInt(id, 10)} size={22} className={styles.nounImageInline} />
+              ))}
+              <span className={styles.action}>from</span>
+              <span className={styles.action}>{sellersDisplay}</span>
+            </div>
+          );
+        }
+
+        // Single transfer sale
         if (isSale && effectiveSalePrice) {
           const priceInEth = Number(formatEther(BigInt(effectiveSalePrice))).toFixed(3);
           return (
@@ -475,23 +519,45 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
         );
       }
 
-      case 'noun_delegation':
+      case 'noun_delegation': {
+        // Multiple nouns delegated
+        if (item.nounIds && item.nounIds.length > 0) {
+          return (
+            <div className={styles.header}>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
+              <span className={styles.action}>delegated</span>
+              {item.nounIds.map(id => (
+                <NounImageById key={id} id={parseInt(id, 10)} size={22} className={styles.nounImageInline} />
+              ))}
+              <span className={styles.action}>{item.nounIds.length} {item.nounIds.length === 1 ? 'noun' : 'nouns'}</span>
+              <span className={styles.action}>to</span>
+              <span className={styles.actor} onClick={handleToAddressClick} role="button" tabIndex={0}>
+                {item.toAddress && formatAddr(item.toAddress, toAddressEns)}
+              </span>
+            </div>
+          );
+        }
+
+        // Single noun delegated
         return (
           <div className={styles.header}>
-            <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>
-              {displayName}
-            </span>
+            {renderActor(actorAvatar, displayName, handleActorClick)}
             <span className={styles.action}>delegated</span>
             {nounId !== undefined && (
               <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
             )}
-            <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
+            {item.nounId ? (
+              <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
+            ) : (
+              <span className={styles.action}>votes</span>
+            )}
             <span className={styles.action}>to</span>
             <span className={styles.actor} onClick={handleToAddressClick} role="button" tabIndex={0}>
               {item.toAddress && formatAddr(item.toAddress, toAddressEns)}
             </span>
           </div>
         );
+      }
 
       case 'auction_settled':
         const handleSettledSettlerClick = () => {

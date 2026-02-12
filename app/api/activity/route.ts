@@ -89,13 +89,19 @@ export async function GET(request: NextRequest) {
         ORDER BY block_timestamp DESC
         LIMIT ${limit}
       `,
-      // Delegations
+      // Delegations (with noun IDs owned by delegator)
       sql`
-        SELECT id, delegator, from_delegate, to_delegate, block_timestamp
-        FROM ponder_live.delegations
-        WHERE block_timestamp >= ${since}
-          AND from_delegate != to_delegate
-        ORDER BY block_timestamp DESC
+        SELECT d.id, d.delegator, d.from_delegate, d.to_delegate, d.block_timestamp,
+               COALESCE(
+                 (SELECT json_agg(n.id ORDER BY n.id)
+                  FROM ponder_live.nouns n
+                  WHERE n.owner = d.delegator),
+                 '[]'::json
+               ) AS noun_ids
+        FROM ponder_live.delegations d
+        WHERE d.block_timestamp >= ${since}
+          AND d.from_delegate != d.to_delegate
+        ORDER BY d.block_timestamp DESC
         LIMIT ${limit}
       `,
       // Auctions

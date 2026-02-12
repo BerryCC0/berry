@@ -270,18 +270,79 @@ function processTransfers(transfers: any[]): ActivityItem[] {
     });
   }
 
-  return items;
+  // Group multi-noun purchases: transfers sharing the same txHash and buyer (toAddress)
+  const grouped = new Map<string, ActivityItem[]>();
+  const ungrouped: ActivityItem[] = [];
+
+  for (const item of items) {
+    if (item.txHash && item.toAddress) {
+      const key = `${item.txHash}-${item.toAddress.toLowerCase()}`;
+      const group = grouped.get(key);
+      if (group) {
+        group.push(item);
+      } else {
+        grouped.set(key, [item]);
+      }
+    } else {
+      ungrouped.push(item);
+    }
+  }
+
+  const result: ActivityItem[] = [...ungrouped];
+
+  for (const group of grouped.values()) {
+    if (group.length === 1) {
+      // Single transfer, pass through unchanged
+      result.push(group[0]);
+    } else {
+      // Multi-noun purchase: merge into a single bulk activity item
+      // actor = the buyer (common toAddress)
+      // fromAddresses = all unique sellers
+      // nounIds = all noun IDs
+      const buyer = group[0].toAddress!;
+      const nounIds = group.map(g => g.nounId!);
+      const fromAddresses = [...new Set(group.map(g => g.fromAddress!))];
+      const earliestTimestamp = group.reduce(
+        (min, g) => (g.timestamp < min ? g.timestamp : min),
+        group[0].timestamp
+      );
+
+      result.push({
+        id: `bulk-transfer-${group[0].txHash}`,
+        type: 'noun_transfer',
+        timestamp: earliestTimestamp,
+        actor: buyer,
+        txHash: group[0].txHash,
+        toAddress: buyer,
+        isBulkTransfer: true,
+        nounIds,
+        fromAddresses,
+        // Keep first nounId for the sale price hook (uses txHash, not nounId)
+        nounId: nounIds[0],
+        fromAddress: fromAddresses[0],
+      });
+    }
+  }
+
+  return result;
 }
 
 function processDelegations(delegations: any[]): ActivityItem[] {
-  return delegations.map(d => ({
-    id: `delegation-${d.id}`,
-    type: 'noun_delegation' as const,
-    timestamp: String(d.block_timestamp),
-    actor: d.delegator,
-    fromAddress: d.from_delegate,
-    toAddress: d.to_delegate,
-  }));
+  return delegations.map(d => {
+    const nounIdList: number[] = Array.isArray(d.noun_ids) ? d.noun_ids : [];
+    return {
+      id: `delegation-${d.id}`,
+      type: 'noun_delegation' as const,
+      timestamp: String(d.block_timestamp),
+      actor: d.delegator,
+      fromAddress: d.from_delegate,
+      toAddress: d.to_delegate,
+      // If they own a single noun, set nounId for the image
+      ...(nounIdList.length === 1 && { nounId: String(nounIdList[0]) }),
+      // If they own multiple nouns, set nounIds for bulk display
+      ...(nounIdList.length > 1 && { nounIds: nounIdList.map(String) }),
+    };
+  });
 }
 
 function processAuctions(auctions: any[]): {

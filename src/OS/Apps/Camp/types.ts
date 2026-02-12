@@ -322,6 +322,11 @@ export interface ActivityItem {
   txHash?: string;
   salePrice?: string; // ETH amount if this was a sale
   
+  // Bulk transfer specific (multiple nouns in one tx)
+  isBulkTransfer?: boolean;
+  nounIds?: string[];
+  fromAddresses?: string[];
+  
   // Auction specific
   winningBid?: string;
   winner?: string;
