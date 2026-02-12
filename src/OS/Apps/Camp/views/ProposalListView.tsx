@@ -190,8 +190,8 @@ export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) 
         
         {/* Status and stats */}
         <div className={styles.proposalStats}>
-          {/* Badge on left for active/pending proposals */}
-          {statusBadge && !votingEnded && (
+          {/* Badge on left only for upcoming/pending proposals */}
+          {statusBadge && isPending && (
             <span className={`${styles.statusBadge} ${statusBadge.className}`}>{statusBadge.label}</span>
           )}
           
@@ -210,8 +210,8 @@ export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) 
             <span className={styles.timeRemaining}>{formatRelativeTime(startTime, 'Starts in')}</span>
           )}
           
-          {/* Badge on right for ended proposals */}
-          {statusBadge && votingEnded && (
+          {/* Badge on right for all non-pending proposals */}
+          {statusBadge && !isPending && (
             <span className={`${styles.statusBadge} ${styles.rightAligned} ${statusBadge.className}`}>{statusBadge.label}</span>
           )}
         </div>

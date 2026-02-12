@@ -17,6 +17,7 @@ const KNOWN_CONTRACTS: Record<string, string> = {
   [NOUNS_ADDRESSES.tokenBuyer.toLowerCase()]: 'Token Buyer',
   [NOUNS_ADDRESSES.payer.toLowerCase()]: 'Nouns DAO Payer',
   [NOUNS_ADDRESSES.streamFactory.toLowerCase()]: 'Stream Factory',
+  [NOUNS_ADDRESSES.descriptor.toLowerCase()]: 'Nouns Descriptor',
   // Common tokens
   '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'USDC',
   '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': 'WETH',
@@ -184,7 +185,7 @@ function buildFormattedCall(
   return lines;
 }
 
-function formatTokenAmount(amount: bigint, decimals: number): string {
+export function formatTokenAmount(amount: bigint, decimals: number): string {
   const formatted = formatUnits(amount, decimals);
   const num = parseFloat(formatted);
   if (num >= 1000000) {
@@ -253,6 +254,234 @@ function parseParamTypes(paramTypesStr: string): string[] {
   }
   
   return types;
+}
+
+/**
+ * Try to decode known Nouns DAO governance functions into human-readable descriptions.
+ * Returns true if matched and decoded was mutated, false otherwise.
+ */
+function tryDecodeGovernanceFunction(
+  functionName: string,
+  params: Record<string, unknown> | null,
+  decoded: DecodedTransaction
+): boolean {
+  // BPS-based settings (basis points: 100 BPS = 1%)
+  const bpsSettings: Record<string, string> = {
+    '_setMinQuorumVotesBPS': 'Set min quorum',
+    '_setMaxQuorumVotesBPS': 'Set max quorum',
+    '_setProposalThresholdBPS': 'Set proposal threshold',
+    '_setForkThresholdBPS': 'Set fork threshold',
+  };
+
+  if (bpsSettings[functionName] && params) {
+    const bps = Number(params.param0);
+    const pct = bps % 100 === 0 ? `${bps / 100}` : `${(bps / 100).toFixed(2).replace(/0+$/, '')}`;
+    decoded.title = `${bpsSettings[functionName]} to ${pct}%`;
+    decoded.description = 'Nouns DAO Governance';
+    return true;
+  }
+
+  // Block-based settings
+  const blockSettings: Record<string, string> = {
+    '_setVotingDelay': 'Set voting delay',
+    '_setVotingPeriod': 'Set voting period',
+    '_setObjectionPeriodDurationInBlocks': 'Set objection period',
+    '_setLastMinuteWindowInBlocks': 'Set last-minute window',
+    '_setProposalUpdatablePeriodInBlocks': 'Set proposal updatable period',
+  };
+
+  if (blockSettings[functionName] && params) {
+    const blocks = Number(params.param0);
+    decoded.title = `${blockSettings[functionName]} to ${blocks.toLocaleString()} blocks`;
+    decoded.description = 'Nouns DAO Governance';
+    return true;
+  }
+
+  // Quorum coefficient
+  if (functionName === '_setQuorumCoefficient' && params) {
+    decoded.title = `Set quorum coefficient to ${Number(params.param0)}`;
+    decoded.description = 'Nouns DAO Governance';
+    return true;
+  }
+
+  // Fork period (param is seconds)
+  if (functionName === '_setForkPeriod' && params) {
+    const seconds = Number(params.param0);
+    const days = Math.round(seconds / 86400);
+    decoded.title = `Set fork period to ${days} day${days !== 1 ? 's' : ''}`;
+    decoded.description = 'Nouns DAO Governance';
+    return true;
+  }
+
+  // Simple governance actions (no numeric params to format)
+  const simpleGovernance: Record<string, string> = {
+    '_setForkDAODeployer': 'Set fork DAO deployer',
+    '_setErc20TokensToIncludeInFork': 'Set fork ERC-20 tokens',
+    '_setTimelocksAndAdmin': 'Set timelocks and admin',
+    '_burnVetoPower': 'Burn veto power',
+    '_setPendingVetoer': 'Set pending vetoer',
+  };
+
+  if (simpleGovernance[functionName]) {
+    decoded.title = simpleGovernance[functionName];
+    decoded.description = 'Nouns DAO Governance';
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Try to decode known Nouns Descriptor functions into human-readable descriptions.
+ * Returns true if matched and decoded was mutated, false otherwise.
+ */
+function tryDecodeDescriptorFunction(
+  functionName: string,
+  params: Record<string, unknown> | null,
+  decoded: DecodedTransaction
+): boolean {
+  // Trait addition functions: addHeads(bytes,uint80,uint16), etc. — param2 is the image count
+  const traitTypes: Record<string, [string, string]> = {
+    'addHeads': ['head', 'heads'],
+    'addBodies': ['body', 'bodies'],
+    'addAccessories': ['accessory', 'accessories'],
+    'addGlasses': ['glasses', 'glasses'],
+    'addBackgrounds': ['background', 'backgrounds'],
+  };
+
+  if (traitTypes[functionName]) {
+    const [singular, plural] = traitTypes[functionName];
+    // For addBackgrounds, param0 is string[] — use its length
+    // For others, param2 (uint16) is the image count
+    let count = 0;
+    if (functionName === 'addBackgrounds' && params) {
+      const arr = params.param0;
+      count = Array.isArray(arr) ? arr.length : 0;
+    } else if (params) {
+      count = Number(params.param2) || 0;
+    }
+
+    if (count > 0) {
+      const label = count === 1 ? singular : plural;
+      decoded.title = `Add ${count} new ${label}`;
+    } else {
+      decoded.title = `Add new ${plural}`;
+    }
+    decoded.description = 'Nouns Artwork';
+    return true;
+  }
+
+  // Palette functions
+  if (functionName === 'setPalette' || functionName === 'addPalette') {
+    decoded.title = functionName === 'setPalette' ? 'Update color palette' : 'Add color palette';
+    decoded.description = 'Nouns Artwork';
+    return true;
+  }
+
+  // Descriptor upgrade / toggle
+  if (functionName === 'setArt' || functionName === 'setRenderer' || functionName === 'setArtDescriptor') {
+    decoded.title = 'Update art renderer';
+    decoded.description = 'Nouns Artwork';
+    return true;
+  }
+
+  if (functionName === 'toggleDataURIEnabled') {
+    decoded.title = 'Toggle on-chain art rendering';
+    decoded.description = 'Nouns Artwork';
+    return true;
+  }
+
+  if (functionName === 'setBaseURI') {
+    decoded.title = 'Set base URI for off-chain art';
+    decoded.description = 'Nouns Artwork';
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Try to decode known Nouns Auction House functions into human-readable descriptions.
+ * Returns true if matched and decoded was mutated, false otherwise.
+ */
+function tryDecodeAuctionFunction(
+  functionName: string,
+  params: Record<string, unknown> | null,
+  actionValue: string,
+  decoded: DecodedTransaction
+): boolean {
+  // setReservePrice(uint192) — param is in wei
+  if (functionName === 'setReservePrice' && params) {
+    const wei = BigInt(String(params.param0));
+    const eth = parseFloat(formatUnits(wei, 18));
+    decoded.title = `Set auction reserve price to ${eth} ETH`;
+    decoded.description = 'Auction House';
+    return true;
+  }
+
+  // setTimeBuffer(uint56) — param is seconds
+  if (functionName === 'setTimeBuffer' && params) {
+    const seconds = Number(params.param0);
+    const minutes = Math.round(seconds / 60);
+    decoded.title = minutes > 0
+      ? `Set auction time buffer to ${minutes} min`
+      : `Set auction time buffer to ${seconds}s`;
+    decoded.description = 'Auction House';
+    return true;
+  }
+
+  // setMinBidIncrementPercentage(uint8)
+  if (functionName === 'setMinBidIncrementPercentage' && params) {
+    decoded.title = `Set min bid increment to ${Number(params.param0)}%`;
+    decoded.description = 'Auction House';
+    return true;
+  }
+
+  // createBid(uint256) or createBid(uint256,uint32) — ETH value is in action.value
+  if (functionName === 'createBid') {
+    const ethValue = BigInt(actionValue);
+    if (ethValue > BigInt(0)) {
+      const eth = parseFloat(formatUnits(ethValue, 18));
+      decoded.title = `Bid ${eth} ETH on Noun auction`;
+    } else {
+      decoded.title = 'Bid on Noun auction';
+    }
+    decoded.description = 'Auction House';
+    return true;
+  }
+
+  // settleCurrentAndCreateNewAuction / settleAuction
+  if (functionName === 'settleCurrentAndCreateNewAuction') {
+    decoded.title = 'Settle auction and start new one';
+    decoded.description = 'Auction House';
+    return true;
+  }
+  if (functionName === 'settleAuction') {
+    decoded.title = 'Settle current auction';
+    decoded.description = 'Auction House';
+    return true;
+  }
+
+  // pause / unpause
+  if (functionName === 'pause') {
+    decoded.title = 'Pause auctions';
+    decoded.description = 'Auction House';
+    return true;
+  }
+  if (functionName === 'unpause') {
+    decoded.title = 'Unpause auctions';
+    decoded.description = 'Auction House';
+    return true;
+  }
+
+  // setSanctionsOracle
+  if (functionName === 'setSanctionsOracle') {
+    decoded.title = 'Set sanctions oracle';
+    decoded.description = 'Auction House';
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -364,11 +593,12 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
   // Nouns Token: transferFrom(from, to, tokenId) or safeTransferFrom
   if ((signature.startsWith('transferFrom(') || signature.startsWith('safeTransferFrom(')) && 
       target === NOUNS_ADDRESSES.token.toLowerCase() && params) {
-    const tokenId = params.param2 as bigint;
+    const from = params.param0 as string;
     const to = params.param1 as string;
+    const tokenId = params.param2 as bigint;
     
     decoded.title = `Transfer Noun ${tokenId}`;
-    decoded.params = { to, nounId: tokenId.toString() };
+    decoded.params = { from, to, nounId: tokenId.toString() };
     return decoded;
   }
   
@@ -392,6 +622,43 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
     return decoded;
   }
   
+  // DAO Governance: known admin/config functions on the governor contract
+  if (target === NOUNS_ADDRESSES.governor.toLowerCase()) {
+    if (tryDecodeGovernanceFunction(functionName, params, decoded)) {
+      if (signature) {
+        decoded.formattedCall = buildFormattedCall(
+          action.target, functionName, signature, params, action.value
+        );
+      }
+      return decoded;
+    }
+  }
+
+  // Auction House functions
+  if (target === NOUNS_ADDRESSES.auctionHouse.toLowerCase()) {
+    if (tryDecodeAuctionFunction(functionName, params, action.value, decoded)) {
+      if (signature) {
+        decoded.formattedCall = buildFormattedCall(
+          action.target, functionName, signature, params, action.value
+        );
+      }
+      return decoded;
+    }
+  }
+
+  // Nouns Descriptor: art trait management functions
+  if (target === NOUNS_ADDRESSES.descriptor.toLowerCase()) {
+    const descriptorResult = tryDecodeDescriptorFunction(functionName, params, decoded);
+    if (descriptorResult) {
+      if (signature) {
+        decoded.formattedCall = buildFormattedCall(
+          action.target, functionName, signature, params, action.value
+        );
+      }
+      return decoded;
+    }
+  }
+
   // Default: show function call with full decoded parameters
   const ethValue = BigInt(action.value);
   const hasEthValue = ethValue > BigInt(0);
