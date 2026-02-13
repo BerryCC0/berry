@@ -1,3 +1,4 @@
+// Ponder schema — proposal lifecycle + auction/candidate/noun timestamps
 import {
   onchainTable,
   onchainView,
