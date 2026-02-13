@@ -23,14 +23,22 @@ const KNOWN_NFT_CONTRACTS: Record<string, ContractInfo> = {
   // Gondi - Multi Source Loan (V2)
   '0x478f6f994c6fb3cf3e444a489b3ad9edb8ccae16': { name: 'Gondi', type: 'lending' },
 
-  // NFTfi - Direct Loan Fixed (V2)
-  '0xf896527c49b44aab3cf22ae356fa3af8e331f280': { name: 'NFTfi', type: 'lending' },
-  // NFTfi - Direct Loan Fixed (V2.1)
-  '0x8252df1d8b29057d1afe3062bf5a64d503152bc8': { name: 'NFTfi', type: 'lending' },
-  // NFTfi - Direct Loan Fixed (V2.3)
-  '0xe52cec0e90115abeb3304baa36bc2655731f7934': { name: 'NFTfi', type: 'lending' },
-  // NFTfi - Direct Loan Coordinator
+  // NFTfi - Escrow (holds NFT collateral during loans)
   '0x2ae3e46290ade43593eabd15642ebd67157f5351': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - AssetOfferLoan (V3)
+  '0x9f10d706d789e4c76a1a6434cd1a9841c875c0a6': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - CollectionOfferLoan (V3)
+  '0xb6adec2acc851d30d5fb64f3137234bcdcbbad0d': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - DirectLoanFixedOffer (V2.3)
+  '0xd0a40eb7fd94ee97102ba8e9342243a2b2e22207': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - DirectLoanFixedCollectionOffer (V2.3)
+  '0xd0c6e59b50c32530c627107f50acc71958c4341f': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - DirectLoanFixedOffer (V2)
+  '0xf896527c49b44aab3cf22ae356fa3af8e331f280': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - DirectLoanFixedOfferRedeploy (V2.1)
+  '0x8252df1d8b29057d1afe3062bf5a64d503152bc8': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - DirectLoanFixedCollectionOffer (V2)
+  '0xe52cec0e90115abeb3304baa36bc2655731f7934': { name: 'NFTfi', type: 'lending' },
 
   // BendDAO - LendPool
   '0x085e34722e04567df9e6d2c32e82fd74f3342e79': { name: 'BendDAO', type: 'lending' },
