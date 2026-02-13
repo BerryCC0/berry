@@ -97,7 +97,7 @@ ponder.on("NounsToken:NounBurned", async ({ event, context }) => {
 
   await context.db
     .update(nouns, { id: Number(tokenId) })
-    .set({ burned: true });
+    .set({ burned: true, burnedAt: event.block.timestamp });
 });
 
 // =============================================================================

@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
       // Proposals created
       sql`
         SELECT id, title, proposer, created_timestamp, start_block, end_block,
-               status, for_votes, against_votes, quorum_votes, client_id
+               status, for_votes, against_votes, quorum_votes, client_id,
+               cancelled_timestamp, queued_timestamp, executed_timestamp, vetoed_timestamp
         FROM ponder_live.proposals
         WHERE created_timestamp >= ${since}
         ORDER BY created_timestamp DESC

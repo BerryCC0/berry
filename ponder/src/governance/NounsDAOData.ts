@@ -79,6 +79,8 @@ ponder.on("NounsDAOData:ProposalCandidateCanceled", async ({ event, context }) =
 
   await context.db.update(candidates, { id: candidateId }).set({
     canceled: true,
+    canceledTimestamp: event.block.timestamp,
+    canceledBlock: event.block.number,
   });
 });
 

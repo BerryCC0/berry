@@ -115,6 +115,7 @@ ponder.on("NounsAuctionHouse:AuctionSettled", async ({ event, context }) => {
       amount,
       settled: true,
       settlerAddress: settler,
+      settledTimestamp: event.block.timestamp,
     });
 
   // Update noun record with auction result + resolved ENS names

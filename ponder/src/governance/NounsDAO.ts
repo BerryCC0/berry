@@ -174,22 +174,36 @@ ponder.on("NounsDAO:ProposalTransactionsUpdated", async ({ event, context }) => 
 });
 
 ponder.on("NounsDAO:ProposalCanceled", async ({ event, context }) => {
-  await context.db.update(proposals, { id: Number(event.args.id) }).set({ status: "CANCELLED" });
+  await context.db.update(proposals, { id: Number(event.args.id) }).set({
+    status: "CANCELLED",
+    cancelledTimestamp: event.block.timestamp,
+    cancelledBlock: event.block.number,
+  });
 });
 
 ponder.on("NounsDAO:ProposalQueued", async ({ event, context }) => {
   await context.db.update(proposals, { id: Number(event.args.id) }).set({
     status: "QUEUED",
     executionEta: event.args.eta,
+    queuedTimestamp: event.block.timestamp,
+    queuedBlock: event.block.number,
   });
 });
 
 ponder.on("NounsDAO:ProposalExecuted", async ({ event, context }) => {
-  await context.db.update(proposals, { id: Number(event.args.id) }).set({ status: "EXECUTED" });
+  await context.db.update(proposals, { id: Number(event.args.id) }).set({
+    status: "EXECUTED",
+    executedTimestamp: event.block.timestamp,
+    executedBlock: event.block.number,
+  });
 });
 
 ponder.on("NounsDAO:ProposalVetoed", async ({ event, context }) => {
-  await context.db.update(proposals, { id: Number(event.args.id) }).set({ status: "VETOED" });
+  await context.db.update(proposals, { id: Number(event.args.id) }).set({
+    status: "VETOED",
+    vetoedTimestamp: event.block.timestamp,
+    vetoedBlock: event.block.number,
+  });
 });
 
 ponder.on("NounsDAO:ProposalObjectionPeriodSet", async ({ event, context }) => {

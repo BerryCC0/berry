@@ -33,6 +33,7 @@ export const nouns = onchainTable("nouns", (t) => ({
   winnerAddress: t.hex(),
   winnerEns: t.text(),
   burned: t.boolean().notNull().default(false),
+  burnedAt: t.bigint(),
   area: t.integer(),
   colorCount: t.integer(),
   brightness: t.integer(),
@@ -50,6 +51,7 @@ export const auctions = onchainTable("auctions", (t) => ({
   settled: t.boolean().notNull().default(false),
   clientId: t.integer(),
   settlerAddress: t.hex(),
+  settledTimestamp: t.bigint(),
   blockNumber: t.bigint().notNull(),
 }));
 
@@ -198,6 +200,15 @@ export const proposals = onchainTable(
     createdTimestamp: t.bigint(),
     createdBlock: t.bigint(),
     txHash: t.hex(),
+    // Lifecycle timestamps (stored when status changes)
+    cancelledTimestamp: t.bigint(),
+    cancelledBlock: t.bigint(),
+    queuedTimestamp: t.bigint(),
+    queuedBlock: t.bigint(),
+    executedTimestamp: t.bigint(),
+    executedBlock: t.bigint(),
+    vetoedTimestamp: t.bigint(),
+    vetoedBlock: t.bigint(),
   }),
   (table) => ({
     statusIdx: index().on(table.status),
@@ -287,6 +298,8 @@ export const candidates = onchainTable(
     encodedProposalHash: t.hex(),
     proposalIdToUpdate: t.integer(),
     canceled: t.boolean().notNull().default(false),
+    canceledTimestamp: t.bigint(),
+    canceledBlock: t.bigint(),
     signatureCount: t.integer().notNull().default(0),
     createdTimestamp: t.bigint(),
     lastUpdatedTimestamp: t.bigint(),

@@ -149,7 +149,16 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
       const now = Math.floor(Date.now() / 1000);
       let endTimestamp: string;
 
-      if (currentBlock !== undefined && currentBlock > endBlock) {
+      // Use real lifecycle timestamp when available (from Ponder event indexing)
+      const lifecycleTimestamp = isCancelled ? p.cancelled_timestamp
+        : isQueued ? p.queued_timestamp
+        : isExecuted ? p.executed_timestamp
+        : status === 'VETOED' ? p.vetoed_timestamp
+        : null;
+
+      if (lifecycleTimestamp) {
+        endTimestamp = String(lifecycleTimestamp);
+      } else if (currentBlock !== undefined && currentBlock > endBlock) {
         // Voting period has passed -- estimate when the end block was mined
         const blocksAgo = currentBlock - endBlock;
         const secondsAgo = blocksAgo * BLOCK_TIME_SECONDS;
