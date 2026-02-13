@@ -21,6 +21,9 @@ export * from './formatUtils';
 // Activity Utilities
 export * from './activityUtils';
 
+// Known Contracts
+export * from './knownContracts';
+
 // Types
 export * from './types';
 

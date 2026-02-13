@@ -53,6 +53,10 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
     nounId,
     repostInfo,
     replyInfo,
+    fromContractLabel,
+    toContractLabel,
+    isFromContract,
+    isToContract,
     formatAddr,
   } = useActivityItemData(item, allItems);
 
@@ -500,7 +504,39 @@ export function ActivityItem({ item, allItems, onClickProposal, onClickVoter, on
           );
         }
         
-        // Regular transfer (not a sale)
+        // Withdrew from contract (from is contract, to is EOA)
+        if (isFromContract && !isToContract) {
+          return (
+            <div className={styles.header}>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
+              <span className={styles.action}>withdrew</span>
+              {nounId !== undefined && (
+                <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
+              )}
+              <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
+              <span className={styles.action}>from</span>
+              <span className={styles.contractLabel}>{fromContractLabel}</span>
+            </div>
+          );
+        }
+
+        // Deposited to contract (from is EOA, to is contract)
+        if (!isFromContract && isToContract) {
+          return (
+            <div className={styles.header}>
+              {renderActor(actorAvatar, displayName, handleActorClick)}
+              <span className={styles.action}>deposited</span>
+              {nounId !== undefined && (
+                <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
+              )}
+              <span className={styles.nounBadge}>Noun <strong>{item.nounId}</strong></span>
+              <span className={styles.action}>to</span>
+              <span className={styles.contractLabel}>{toContractLabel}</span>
+            </div>
+          );
+        }
+        
+        // Regular transfer (EOA to EOA, or contract to contract)
         return (
           <div className={styles.header}>
             <span className={styles.actor} onClick={handleActorClick} role="button" tabIndex={0}>

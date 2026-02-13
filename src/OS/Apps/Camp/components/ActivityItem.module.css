@@ -239,6 +239,13 @@
   color: var(--berry-success);
 }
 
+/* Contract platform labels for transfers */
+.contractLabel {
+  font-weight: 600;
+  color: var(--berry-accent, #6366f1);
+  font-size: 13px;
+}
+
 /* Auction details */
 .auctionDetails {
   display: flex;
