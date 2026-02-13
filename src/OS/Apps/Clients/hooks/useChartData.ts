@@ -42,6 +42,7 @@ export function useChartData(
   votesByProposal?: CycleProposalVoteEntry[],
   pendingRevenue?: unknown,
   proposalRewardParams?: { proposalRewardBps: number | bigint; votingRewardBps: number | bigint; proposalEligibilityQuorumBps: number | bigint } | null,
+  incentiveQuorum?: number | null,
 ) {
   // Computed totals
   const totals = useMemo<Totals>(() => {
@@ -141,19 +142,22 @@ export function useChartData(
     return { currentPeriodProposals: current, rewardedProposals: rewarded };
   }, [proposals, lastRewardedProposalId]);
 
-  // Eligibility check for a proposal
-  const getEligibility = useCallback((proposal: { clientId?: number; forVotes: string; quorumVotes: string; status: string }) => {
+  // Eligibility check for a proposal using the contract's incentive quorum
+  // (proposalEligibilityQuorumBps * adjustedTotalSupply / 10000), NOT the DAO governance quorum.
+  // A DEFEATED proposal can still be eligible for client incentives if it meets this lower threshold.
+  const getEligibility = useCallback((proposal: { clientId?: number; forVotes: string; status: string }) => {
     const isCancelled = ['CANCELLED', 'VETOED'].includes(proposal.status);
     if (isCancelled) return 'ineligible' as const;
     if (proposal.clientId == null) return 'ineligible' as const;
+    // If we don't have the incentive quorum yet, treat as pending
+    if (incentiveQuorum == null) return 'pending' as const;
     const forVotes = Number(proposal.forVotes);
-    const quorum = Number(proposal.quorumVotes) || 1;
-    // If quorum is already met, mark eligible even if voting is still live
-    if (forVotes >= quorum) return 'eligible' as const;
+    // If For votes meet the incentive threshold, eligible regardless of governance outcome
+    if (forVotes >= incentiveQuorum) return 'eligible' as const;
     const isFinalized = ['DEFEATED', 'SUCCEEDED', 'QUEUED', 'EXECUTED', 'EXPIRED'].includes(proposal.status);
     if (!isFinalized) return 'pending' as const;
     return 'ineligible' as const;
-  }, []);
+  }, [incentiveQuorum]);
 
   // Votes by client distribution — current cycle only (from Ponder cycle-votes API)
   // Includes votes with no client attribution as "No Client"

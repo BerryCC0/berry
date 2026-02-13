@@ -31,6 +31,7 @@ export function useDashboardData() {
     nextAuctionIdForRevenue,
     lastProposalRewardsUpdate,
     pendingRevenue,
+    adjustedTotalSupply,
   } = useContractState();
 
   // Fetch vote weight per client for the current reward cycle.
@@ -46,11 +47,20 @@ export function useDashboardData() {
   // Fetch client metadata (favicons)
   const { data: clientMetadata } = useClientMetadata(clients);
 
+  // Compute incentive eligibility quorum: adjustedTotalSupply * proposalEligibilityQuorumBps / 10000
+  // This is the For-vote threshold for client incentive eligibility (different from DAO governance quorum)
+  const incentiveQuorum = useMemo(() => {
+    if (adjustedTotalSupply == null || !proposalRewardParams) return null;
+    const supply = Number(adjustedTotalSupply);
+    const bps = Number(proposalRewardParams.proposalEligibilityQuorumBps);
+    return Math.floor(supply * bps / 10000);
+  }, [adjustedTotalSupply, proposalRewardParams]);
+
   // Computed chart & table data
   const chartData = useChartData(
     clients, rewardUpdates, proposals, nextProposalIdToReward,
     cycleVotesData?.votes, cycleVotesData?.votesByProposal,
-    pendingRevenue, proposalRewardParams,
+    pendingRevenue, proposalRewardParams, incentiveQuorum,
   );
 
   // Convert BigInt contract values to serializable numbers for child components
@@ -178,6 +188,7 @@ export function useDashboardData() {
     contractWethBalanceEth,
     quorumBps,
     pendingRevenueEth,
+    incentiveQuorum,
 
     // Client metadata
     clientMetadata,

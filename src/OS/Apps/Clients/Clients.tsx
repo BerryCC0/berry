@@ -43,7 +43,7 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
   // All data orchestration
   const {
     clients, clientsLoading, rewardUpdates,
-    contractWethBalanceEth, quorumBps, pendingRevenueEth,
+    contractWethBalanceEth, quorumBps, pendingRevenueEth, incentiveQuorum,
     clientMetadata, cycleAuctionsData, cycleRewardsByClient,
     cycleProgress,
     totals, getSortedClients, rewardEconData, revenueData,
@@ -162,6 +162,7 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
           clientMetadata={clientMetadata}
           activeTab={route.tab}
           onTabChange={handleClientTabChange}
+          incentiveQuorum={incentiveQuorum}
         />
       );
     }

@@ -29,6 +29,7 @@ interface ClientDetailProps {
   clientMetadata?: ClientMetadataMap;
   activeTab?: ClientTab;
   onTabChange?: (tab: ClientTab) => void;
+  incentiveQuorum?: number | null;
 }
 
 // --- Withdraw hook ---
@@ -108,7 +109,7 @@ function useUpdateMetadata(clientId: number, name: string, description: string, 
   };
 }
 
-export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMetadata, activeTab, onTabChange }: ClientDetailProps) {
+export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMetadata, activeTab, onTabChange, incentiveQuorum }: ClientDetailProps) {
   const { data: activity, isLoading: activityLoading } = useClientActivity(client.clientId);
   const { data: rewards } = useClientRewardsTimeSeries(client.clientId);
   const { data: currentBlock } = useBlockNumber({ watch: false });
@@ -601,16 +602,16 @@ export function ClientDetail({ client, rewardUpdates, onBack, isOwner, clientMet
                         || ensMap.get(p.proposer?.toLowerCase())?.displayName
                         || `${p.proposer?.slice(0, 6)}…${p.proposer?.slice(-4)}`;
 
-                      // Eligibility: same logic as main proposals tab
+                      // Eligibility: uses incentive quorum (proposalEligibilityQuorumBps * adjustedTotalSupply / 10000)
+                      // NOT the DAO governance quorum. DEFEATED proposals can still qualify.
+                      const eligibilityThreshold = incentiveQuorum ?? quorum;
                       const eligibility = isCancelled || isVetoed
                         ? 'ineligible'
-                        : forVotes >= quorum
+                        : forVotes >= eligibilityThreshold
                           ? 'eligible'
-                          : isDefeated
-                            ? 'ineligible'
-                            : (isActive || isPending || isUpdatable)
-                              ? 'pending'
-                              : 'ineligible';
+                          : (isActive || isPending || isUpdatable)
+                            ? 'pending'
+                            : 'ineligible';
 
                       // Reward lookup: was this proposal included in a past reward distribution?
                       const rewardInfo = proposalRewardLookup.get(Number(p.id));
