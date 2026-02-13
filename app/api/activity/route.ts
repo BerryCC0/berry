@@ -105,12 +105,14 @@ export async function GET(request: NextRequest) {
         ORDER BY d.block_timestamp DESC
         LIMIT ${limit}
       `,
-      // Auctions
+      // Auctions (join nouns to get correct settler — the person who chose this noun's appearance)
       sql`
-        SELECT noun_id, start_time, end_time, winner, amount, settled, settler_address
-        FROM ponder_live.auctions
-        WHERE start_time >= ${since}
-        ORDER BY start_time DESC
+        SELECT a.noun_id, a.start_time, a.end_time, a.winner, a.amount, a.settled,
+               n.settled_by_address AS noun_settler_address
+        FROM ponder_live.auctions a
+        LEFT JOIN ponder_live.nouns n ON a.noun_id = n.id
+        WHERE a.start_time >= ${since}
+        ORDER BY a.start_time DESC
         LIMIT ${limit}
       `,
       // Proposal versions (updates)

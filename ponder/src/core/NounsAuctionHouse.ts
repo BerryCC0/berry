@@ -96,7 +96,10 @@ ponder.on("NounsAuctionHouse:AuctionExtended", async ({ event, context }) => {
 });
 
 // =============================================================================
-// AuctionSettled -- update auction, update noun with winner/settler
+// AuctionSettled -- update auction record, update noun with winner info
+// NOTE: Settler info is NOT written to the noun here. The settler of auction N
+// chose what Noun N+1 looks like, not Noun N. The correct settler for each noun
+// is written by the AuctionCreated handler (which fires for N+1 in the same tx).
 // =============================================================================
 ponder.on("NounsAuctionHouse:AuctionSettled", async ({ event, context }) => {
   const { nounId, winner, amount } = event.args;
@@ -105,9 +108,8 @@ ponder.on("NounsAuctionHouse:AuctionSettled", async ({ event, context }) => {
   // Resolve ENS for winner and settler
   const ensMap = await batchResolveAndStoreEns(context, [winner, settler]);
   const winnerEns = ensMap.get(winner.toLowerCase()) ?? null;
-  const settlerEns = ensMap.get(settler.toLowerCase()) ?? null;
 
-  // Update auction record
+  // Update auction record (keeps settler for historical reference of who settled this auction)
   await context.db
     .update(auctions, { nounId: Number(nounId) })
     .set({
@@ -118,17 +120,13 @@ ponder.on("NounsAuctionHouse:AuctionSettled", async ({ event, context }) => {
       settledTimestamp: event.block.timestamp,
     });
 
-  // Update noun record with auction result + resolved ENS names
+  // Update noun record with auction result only (winner info, NOT settler)
   await context.db
     .update(nouns, { id: Number(nounId) })
     .set({
       winningBid: amount,
       winnerAddress: winner,
       winnerEns,
-      settledByAddress: settler,
-      settledByEns: settlerEns,
-      settledAt: event.block.timestamp,
-      settledTxHash: event.transaction.hash,
     });
 });
 

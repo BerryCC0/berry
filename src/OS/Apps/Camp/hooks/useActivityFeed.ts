@@ -379,6 +379,10 @@ function processAuctions(auctions: any[]): {
   const auctionSettledItems: ActivityItem[] = [];
 
   for (const a of auctions) {
+    // noun_settler_address comes from the nouns table (set by AuctionCreated),
+    // which is the person who chose this noun's appearance (settler of auction N-1).
+    const nounSettler = a.noun_settler_address || undefined;
+
     if (a.settled && a.winner) {
       const item: ActivityItem = {
         id: `auction-settled-${a.noun_id}`,
@@ -388,7 +392,7 @@ function processAuctions(auctions: any[]): {
         nounId: String(a.noun_id),
         winningBid: String(a.amount),
         winner: a.winner,
-        settler: a.settler_address || undefined,
+        settler: nounSettler,
       };
       items.push(item);
       auctionSettledItems.push(item);
@@ -397,9 +401,9 @@ function processAuctions(auctions: any[]): {
         id: `auction-started-${a.noun_id}`,
         type: 'auction_started',
         timestamp: String(a.start_time),
-        actor: a.settler_address || AUCTION_HOUSE,
+        actor: nounSettler || AUCTION_HOUSE,
         nounId: String(a.noun_id),
-        settler: a.settler_address || undefined,
+        settler: nounSettler,
       };
       items.push(item);
       auctionStartedItems.push(item);
@@ -500,13 +504,7 @@ export function useActivityFeed(first: number = 30) {
 
   const query = useQuery({
     queryKey: ['camp', 'activity', first, sinceTimestamp],
-    queryFn: async (): Promise<{
-      items: ActivityItem[];
-      _auctionItems: {
-        auctionStartedItems: ActivityItem[];
-        auctionSettledItems: ActivityItem[];
-      };
-    }> => {
+    queryFn: async (): Promise<ActivityItem[]> => {
       const params = new URLSearchParams({
         limit: String(first),
         since: sinceTimestamp,
@@ -518,9 +516,7 @@ export function useActivityFeed(first: number = 30) {
       const data: ActivityApiResponse = await response.json();
 
       // Process all activity types
-      let allItems: ActivityItem[] = [];
-      let auctionStartedItems: ActivityItem[] = [];
-      let auctionSettledItems: ActivityItem[] = [];
+      const allItems: ActivityItem[] = [];
 
       allItems.push(...processVotes(data.votes || []));
       allItems.push(...processProposalFeedback(data.proposalFeedback || []));
@@ -530,11 +526,7 @@ export function useActivityFeed(first: number = 30) {
       allItems.push(...processCandidateSignatures(data.candidateSignatures || []));
       allItems.push(...processTransfers(data.transfers || []));
       allItems.push(...processDelegations(data.delegations || []));
-
-      const auctionResult = processAuctions(data.auctions || []);
-      allItems.push(...auctionResult.items);
-      auctionStartedItems = auctionResult.auctionStartedItems;
-      auctionSettledItems = auctionResult.auctionSettledItems;
+      allItems.push(...processAuctions(data.auctions || []).items);
 
       allItems.push(...processProposalVersions(data.proposalVersions || []));
       allItems.push(...processCandidateVersions(data.candidateVersions || []));
@@ -542,50 +534,15 @@ export function useActivityFeed(first: number = 30) {
       // Sort by timestamp descending
       allItems.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
 
-      return {
-        items: allItems,
-        _auctionItems: { auctionStartedItems, auctionSettledItems },
-      };
+      return allItems;
     },
     staleTime: 60000,
     gcTime: 300000,
     refetchInterval: 60000,
   });
 
-  // Enrich auction items with settler info (separate query, non-blocking)
-  const auctionItems = query.data?._auctionItems;
-  if (auctionItems && query.data?.items) {
-    const allAuctionItems = [...auctionItems.auctionStartedItems, ...auctionItems.auctionSettledItems];
-    const nounIds = allAuctionItems.map(item => item.nounId).filter((id): id is string => !!id);
-
-    if (nounIds.length > 0) {
-      fetch('/api/nouns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: nounIds }),
-      })
-        .then(res => res.json())
-        .then(({ nouns }) => {
-          for (const item of auctionItems.auctionStartedItems) {
-            const noun = nouns[item.nounId!];
-            if (noun?.settled_by_address && noun.settled_by_address !== ZERO_ADDRESS) {
-              item.settler = noun.settled_by_address;
-              item.actor = noun.settled_by_address;
-            }
-          }
-          for (const item of auctionItems.auctionSettledItems) {
-            const noun = nouns[item.nounId!];
-            if (noun?.settled_by_address && noun.settled_by_address !== ZERO_ADDRESS) {
-              item.settler = noun.settled_by_address;
-            }
-          }
-        })
-        .catch(() => {});
-    }
-  }
-
   return {
-    data: query.data?.items,
+    data: query.data,
     isLoading: query.isLoading,
     error: query.error as Error | null,
   };
