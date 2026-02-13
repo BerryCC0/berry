@@ -29,6 +29,8 @@ const KNOWN_NFT_CONTRACTS: Record<string, ContractInfo> = {
   '0x8252df1d8b29057d1afe3062bf5a64d503152bc8': { name: 'NFTfi', type: 'lending' },
   // NFTfi - Direct Loan Fixed (V2.3)
   '0xe52cec0e90115abeb3304baa36bc2655731f7934': { name: 'NFTfi', type: 'lending' },
+  // NFTfi - Direct Loan Coordinator
+  '0x2ae3e46290ade43593eabd15642ebd67157f5351': { name: 'NFTfi', type: 'lending' },
 
   // BendDAO - LendPool
   '0x085e34722e04567df9e6d2c32e82fd74f3342e79': { name: 'BendDAO', type: 'lending' },
