@@ -50,6 +50,7 @@ function processVotes(votes: any[]): ActivityItem[] {
     type: 'vote' as const,
     timestamp: String(v.block_timestamp),
     actor: v.voter,
+    actorEns: v.voter_ens || undefined,
     proposalId: String(v.proposal_id),
     proposalTitle: v.proposal_title || '',
     support: v.support,
@@ -65,6 +66,7 @@ function processProposalFeedback(feedback: any[]): ActivityItem[] {
     type: 'proposal_feedback' as const,
     timestamp: String(f.block_timestamp),
     actor: f.msg_sender,
+    actorEns: f.sender_ens || undefined,
     proposalId: String(f.proposal_id),
     proposalTitle: f.proposal_title || '',
     support: f.support,
@@ -137,6 +139,7 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
         type: 'proposal_created',
         timestamp: String(p.created_timestamp),
         actor: p.proposer,
+        actorEns: p.proposer_ens || undefined,
         proposalId: String(p.id),
         proposalTitle: p.title,
         proposalStatus: derivedStatus,
@@ -172,12 +175,14 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
         endTimestamp = String(Math.min(estimatedEnd, now));
       }
 
+      const actorEns = p.proposer_ens || undefined;
       if (isCancelled) {
         items.push({
           id: `proposal-cancelled-${p.id}`,
           type: 'proposal_cancelled',
           timestamp: endTimestamp,
           actor: p.proposer,
+          actorEns,
           proposalId: String(p.id),
           proposalTitle: p.title,
           proposalStatus: 'defeated',
@@ -188,6 +193,7 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
           type: 'proposal_executed',
           timestamp: endTimestamp,
           actor: p.proposer,
+          actorEns,
           proposalId: String(p.id),
           proposalTitle: p.title,
           proposalStatus: 'succeeded',
@@ -198,6 +204,7 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
           type: 'proposal_queued',
           timestamp: endTimestamp,
           actor: p.proposer,
+          actorEns,
           proposalId: String(p.id),
           proposalTitle: p.title,
           proposalStatus: 'succeeded',
@@ -208,6 +215,7 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
           type: 'proposal_succeeded',
           timestamp: endTimestamp,
           actor: p.proposer,
+          actorEns,
           proposalId: String(p.id),
           proposalTitle: p.title,
           proposalStatus: 'succeeded',
@@ -218,6 +226,7 @@ function processProposals(proposals: any[], currentBlock: number | undefined): A
           type: 'proposal_defeated',
           timestamp: endTimestamp,
           actor: p.proposer,
+          actorEns,
           proposalId: String(p.id),
           proposalTitle: p.title,
           proposalStatus: 'defeated',
@@ -235,6 +244,7 @@ function processCandidates(candidates: any[]): ActivityItem[] {
     type: 'candidate_created' as const,
     timestamp: String(c.created_timestamp),
     actor: c.proposer,
+    actorEns: c.proposer_ens || undefined,
     candidateSlug: c.slug,
     candidateTitle: c.title,
     candidateProposer: c.proposer,
@@ -247,6 +257,7 @@ function processCandidateFeedback(feedback: any[]): ActivityItem[] {
     type: 'candidate_feedback' as const,
     timestamp: String(f.block_timestamp),
     actor: f.msg_sender,
+    actorEns: f.sender_ens || undefined,
     candidateSlug: f.candidate_slug,
     candidateProposer: f.candidate_proposer,
     candidateTitle: f.candidate_title,
@@ -262,6 +273,7 @@ function processCandidateSignatures(signatures: any[]): ActivityItem[] {
     type: 'candidate_sponsored' as const,
     timestamp: String(s.block_timestamp),
     actor: s.signer,
+    actorEns: s.signer_ens || undefined,
     candidateSlug: s.candidate_slug,
     candidateTitle: s.candidate_title,
     candidateProposer: s.candidate_proposer,
@@ -287,9 +299,12 @@ function processTransfers(transfers: any[]): ActivityItem[] {
       type: 'noun_transfer',
       timestamp: String(t.block_timestamp),
       actor: from,
+      actorEns: t.from_ens || undefined,
       nounId: String(t.token_id),
       fromAddress: t.from,
+      fromAddressEns: t.from_ens || undefined,
       toAddress: t.to,
+      toAddressEns: t.to_ens || undefined,
       txHash: t.tx_hash,
     });
   }
@@ -359,8 +374,10 @@ function processDelegations(delegations: any[]): ActivityItem[] {
       type: 'noun_delegation' as const,
       timestamp: String(d.block_timestamp),
       actor: d.delegator,
+      actorEns: d.delegator_ens || undefined,
       fromAddress: d.from_delegate,
       toAddress: d.to_delegate,
+      toAddressEns: d.to_delegate_ens || undefined,
       // If they own a single noun, set nounId for the image
       ...(nounIdList.length === 1 && { nounId: String(nounIdList[0]) }),
       // If they own multiple nouns, set nounIds for bulk display
@@ -382,6 +399,7 @@ function processAuctions(auctions: any[]): {
     // noun_settler_address comes from the nouns table (set by AuctionCreated),
     // which is the person who chose this noun's appearance (settler of auction N-1).
     const nounSettler = a.noun_settler_address || undefined;
+    const settlerEns = a.settler_ens || undefined;
 
     if (a.settled && a.winner) {
       const item: ActivityItem = {
@@ -389,10 +407,13 @@ function processAuctions(auctions: any[]): {
         type: 'auction_settled',
         timestamp: String(a.end_time),
         actor: a.winner,
+        actorEns: a.winner_ens || undefined,
         nounId: String(a.noun_id),
         winningBid: String(a.amount),
         winner: a.winner,
+        winnerEns: a.winner_ens || undefined,
         settler: nounSettler,
+        settlerEns,
       };
       items.push(item);
       auctionSettledItems.push(item);
@@ -402,8 +423,10 @@ function processAuctions(auctions: any[]): {
         type: 'auction_started',
         timestamp: String(a.start_time),
         actor: nounSettler || AUCTION_HOUSE,
+        actorEns: settlerEns,
         nounId: String(a.noun_id),
         settler: nounSettler,
+        settlerEns,
       };
       items.push(item);
       auctionStartedItems.push(item);
@@ -439,6 +462,7 @@ function processProposalVersions(versions: any[]): ActivityItem[] {
       type: 'proposal_updated',
       timestamp: ts,
       actor: v.proposer,
+      actorEns: v.proposer_ens || undefined,
       proposalId: pid,
       proposalTitle: v.title || v.proposal_title || '',
       updateMessage: v.update_message,
@@ -473,6 +497,7 @@ function processCandidateVersions(versions: any[]): ActivityItem[] {
       type: 'candidate_updated',
       timestamp: ts,
       actor: v.candidate_proposer,
+      actorEns: v.proposer_ens || undefined,
       candidateSlug: v.candidate_slug,
       candidateProposer: v.candidate_proposer,
       candidateTitle: v.title,

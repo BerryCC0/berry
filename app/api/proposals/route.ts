@@ -43,15 +43,17 @@ export async function GET(request: NextRequest) {
 
     // Use raw query with dynamic filter/sort since we can't parameterize column names
     const rows = await sql`
-      SELECT id, proposer, title, description, status,
-             targets, "values", signatures, calldatas,
-             start_block, end_block, start_timestamp, end_timestamp,
-             proposal_threshold, quorum_votes,
-             for_votes, against_votes, abstain_votes,
-             execution_eta, signers, update_period_end_block,
-             objection_period_end_block, on_timelock_v_1,
-             client_id, created_timestamp, created_block, tx_hash
-      FROM ponder_live.proposals
+      SELECT p.id, p.proposer, p.title, p.description, p.status,
+             p.targets, p."values", p.signatures, p.calldatas,
+             p.start_block, p.end_block, p.start_timestamp, p.end_timestamp,
+             p.proposal_threshold, p.quorum_votes,
+             p.for_votes, p.against_votes, p.abstain_votes,
+             p.execution_eta, p.signers, p.update_period_end_block,
+             p.objection_period_end_block, p.on_timelock_v_1,
+             p.client_id, p.created_timestamp, p.created_block, p.tx_hash,
+             e.name as proposer_ens
+      FROM ponder_live.proposals p
+      LEFT JOIN ponder_live.ens_names e ON LOWER(p.proposer) = LOWER(e.address)
       WHERE 1=1 ${statusFilter ? sql.unsafe(statusFilter) : sql``}
       ORDER BY ${sql.unsafe(orderBy)}
       LIMIT ${limit} OFFSET ${offset}

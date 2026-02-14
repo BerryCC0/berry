@@ -1,21 +1,26 @@
 /**
  * useActivityItemData Hook
  * Encapsulates the data/ENS resolution layer from ActivityItem:
- * - All ENS name/avatar hook calls (actor, toAddress, winner, settler, reply OP, repost OP)
+ * - Uses pre-loaded ENS data from API for actor, toAddress, winner, settler
+ * - Falls back to batch ENS hook for reply/repost original posters (not pre-loaded)
  * - Pre-hook address resolution for reply/repost original posters
  * - Computed display values: displayName, timeAgo, nounId, repostInfo, replyInfo
  * - formatAddress helper
+ * 
+ * Performance: Eliminates 28+ individual wagmi ENS RPC calls per page by using
+ * pre-indexed ENS data from the Ponder database via API joins.
  */
 
 'use client';
 
 import { useMemo } from 'react';
-import { useEnsName, useEnsAvatar, useBytecode } from 'wagmi';
+import { useBytecode } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { parseRepost, parseReply, type RepostInfo, type ReplyInfo } from '../utils/repostParser';
 import { findOriginalPosterAddress, findRepostOriginalPosterAddress } from '../utils/activityUtils';
 import { formatTimeAgo, formatAddress } from '../utils/formatUtils';
 import { getContractLabel } from '../utils/knownContracts';
+import { useEnsDataBatch } from './useEnsData';
 import type { ActivityItem } from '../types';
 
 export interface ActivityItemData {
@@ -57,42 +62,35 @@ export function useActivityItemData(
   const replyOriginalPosterAddress = findOriginalPosterAddress(item.reason, allItems);
   const repostOriginalPosterAddress = findRepostOriginalPosterAddress(item.reason, allItems);
 
-  const { data: actorEns } = useEnsName({
-    address: item.actor as `0x${string}`,
-    chainId: mainnet.id,
-  });
+  // Use pre-loaded ENS data from API when available
+  // These fields are already populated by the activity API via SQL joins
+  const actorEns = item.actorEns ?? null;
+  const toAddressEns = item.toAddressEns ?? null;
+  const winnerEns = item.winnerEns ?? null;
+  const settlerEns = item.settlerEns ?? null;
 
-  const { data: actorAvatar } = useEnsAvatar({
-    name: actorEns || undefined,
-    chainId: mainnet.id,
-  });
+  // For reply/repost original posters, we need to fetch ENS since these are
+  // not pre-loaded by the API (they're derived from parsing the reason text)
+  const addressesToFetch = useMemo(() => {
+    const addrs: string[] = [];
+    if (replyOriginalPosterAddress) addrs.push(replyOriginalPosterAddress);
+    if (repostOriginalPosterAddress) addrs.push(repostOriginalPosterAddress);
+    return addrs;
+  }, [replyOriginalPosterAddress, repostOriginalPosterAddress]);
 
-  const { data: toAddressEns } = useEnsName({
-    address: item.toAddress as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
+  const { data: ensMap } = useEnsDataBatch(addressesToFetch);
 
-  const { data: winnerEns } = useEnsName({
-    address: item.winner as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
+  // Get ENS names for reply/repost OPs from our batch fetch
+  const replyOriginalPosterEns = replyOriginalPosterAddress
+    ? ensMap[replyOriginalPosterAddress.toLowerCase()]?.name ?? null
+    : null;
+  const repostOriginalPosterEns = repostOriginalPosterAddress
+    ? ensMap[repostOriginalPosterAddress.toLowerCase()]?.name ?? null
+    : null;
 
-  const { data: settlerEns } = useEnsName({
-    address: item.settler as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
-
-  // Resolve ENS for the original poster (if this is a reply)
-  const { data: replyOriginalPosterEns } = useEnsName({
-    address: replyOriginalPosterAddress as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
-
-  // Resolve ENS for the original poster (if this is a repost)
-  const { data: repostOriginalPosterEns } = useEnsName({
-    address: repostOriginalPosterAddress as `0x${string}` | undefined,
-    chainId: mainnet.id,
-  });
+  // For avatar, we don't have it pre-loaded currently, so it will be null
+  // A future enhancement could add avatar to the API enrichment
+  const actorAvatar = null;
 
   // --- Contract detection for noun_transfer items ---
   const isTransfer = item.type === 'noun_transfer';

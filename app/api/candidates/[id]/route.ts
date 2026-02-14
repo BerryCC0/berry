@@ -18,26 +18,32 @@ export async function GET(
     // Fetch candidate, signatures, and feedback in parallel
     const [candidateRows, sigRows, fbRows, versionRows] = await Promise.all([
       sql`
-        SELECT id, slug, proposer, title, description,
-               targets, "values", signatures AS signatures_list, calldatas,
-               encoded_proposal_hash, proposal_id_to_update,
-               canceled, signature_count,
-               created_timestamp, last_updated_timestamp, block_number
-        FROM ponder_live.candidates
-        WHERE id = ${id}
+        SELECT c.id, c.slug, c.proposer, c.title, c.description,
+               c.targets, c."values", c.signatures AS signatures_list, c.calldatas,
+               c.encoded_proposal_hash, c.proposal_id_to_update,
+               c.canceled, c.signature_count,
+               c.created_timestamp, c.last_updated_timestamp, c.block_number,
+               e.name as proposer_ens
+        FROM ponder_live.candidates c
+        LEFT JOIN ponder_live.ens_names e ON LOWER(c.proposer) = LOWER(e.address)
+        WHERE c.id = ${id}
       `,
       sql`
-        SELECT id, signer, sig, expiration_timestamp, reason,
-               block_timestamp
-        FROM ponder_live.candidate_signatures
-        WHERE candidate_id = ${id}
-        ORDER BY block_timestamp DESC
+        SELECT cs.id, cs.signer, cs.sig, cs.expiration_timestamp, cs.reason,
+               cs.block_timestamp,
+               e.name as signer_ens
+        FROM ponder_live.candidate_signatures cs
+        LEFT JOIN ponder_live.ens_names e ON LOWER(cs.signer) = LOWER(e.address)
+        WHERE cs.candidate_id = ${id}
+        ORDER BY cs.block_timestamp DESC
       `,
       sql`
-        SELECT id, msg_sender, support, reason, block_timestamp
-        FROM ponder_live.candidate_feedback
-        WHERE candidate_id = ${id}
-        ORDER BY block_timestamp DESC
+        SELECT cf.id, cf.msg_sender, cf.support, cf.reason, cf.block_timestamp,
+               e.name as sender_ens
+        FROM ponder_live.candidate_feedback cf
+        LEFT JOIN ponder_live.ens_names e ON LOWER(cf.msg_sender) = LOWER(e.address)
+        WHERE cf.candidate_id = ${id}
+        ORDER BY cf.block_timestamp DESC
         LIMIT 100
       `,
       sql`

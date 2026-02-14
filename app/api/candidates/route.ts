@@ -18,13 +18,15 @@ export async function GET(request: NextRequest) {
     // If slug is provided, find by slug (for clean URL resolution)
     if (slug) {
       const rows = await sql`
-        SELECT id, slug, proposer, title, description,
-               targets, "values", signatures AS signatures_list, calldatas,
-               encoded_proposal_hash, proposal_id_to_update,
-               created_timestamp, last_updated_timestamp, canceled,
-               signature_count
-        FROM ponder_live.candidates
-        WHERE slug = ${slug}
+        SELECT c.id, c.slug, c.proposer, c.title, c.description,
+               c.targets, c."values", c.signatures AS signatures_list, c.calldatas,
+               c.encoded_proposal_hash, c.proposal_id_to_update,
+               c.created_timestamp, c.last_updated_timestamp, c.canceled,
+               c.signature_count,
+               e.name as proposer_ens
+        FROM ponder_live.candidates c
+        LEFT JOIN ponder_live.ens_names e ON LOWER(c.proposer) = LOWER(e.address)
+        WHERE c.slug = ${slug}
         LIMIT 1
       `;
       if (rows.length === 0) {
@@ -35,17 +37,21 @@ export async function GET(request: NextRequest) {
       const candidate = rows[0];
       const [sigRows, fbRows] = await Promise.all([
         sql`
-          SELECT id, signer, sig, expiration_timestamp, reason,
-                 block_timestamp
-          FROM ponder_live.candidate_signatures
-          WHERE candidate_id = ${candidate.id}
-          ORDER BY block_timestamp DESC
+          SELECT cs.id, cs.signer, cs.sig, cs.expiration_timestamp, cs.reason,
+                 cs.block_timestamp,
+                 e.name as signer_ens
+          FROM ponder_live.candidate_signatures cs
+          LEFT JOIN ponder_live.ens_names e ON LOWER(cs.signer) = LOWER(e.address)
+          WHERE cs.candidate_id = ${candidate.id}
+          ORDER BY cs.block_timestamp DESC
         `,
         sql`
-          SELECT id, msg_sender, support, reason, block_timestamp
-          FROM ponder_live.candidate_feedback
-          WHERE candidate_id = ${candidate.id}
-          ORDER BY block_timestamp DESC
+          SELECT cf.id, cf.msg_sender, cf.support, cf.reason, cf.block_timestamp,
+                 e.name as sender_ens
+          FROM ponder_live.candidate_feedback cf
+          LEFT JOIN ponder_live.ens_names e ON LOWER(cf.msg_sender) = LOWER(e.address)
+          WHERE cf.candidate_id = ${candidate.id}
+          ORDER BY cf.block_timestamp DESC
           LIMIT 100
         `,
       ]);
@@ -61,12 +67,14 @@ export async function GET(request: NextRequest) {
 
     // List candidates
     const rows = await sql`
-      SELECT id, slug, proposer, title, description,
-             created_timestamp, last_updated_timestamp, canceled,
-             signature_count
-      FROM ponder_live.candidates
-      WHERE canceled = false
-      ORDER BY created_timestamp DESC NULLS LAST
+      SELECT c.id, c.slug, c.proposer, c.title, c.description,
+             c.created_timestamp, c.last_updated_timestamp, c.canceled,
+             c.signature_count,
+             e.name as proposer_ens
+      FROM ponder_live.candidates c
+      LEFT JOIN ponder_live.ens_names e ON LOWER(c.proposer) = LOWER(e.address)
+      WHERE c.canceled = false
+      ORDER BY c.created_timestamp DESC NULLS LAST
       LIMIT ${limit} OFFSET ${offset}
     `;
 

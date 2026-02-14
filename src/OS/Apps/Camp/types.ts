@@ -129,6 +129,7 @@ export interface Proposal {
   description: string;
   status: ProposalStatus;
   proposer: string;
+  proposerEns?: string; // ENS name (pre-loaded from API)
   forVotes: string;
   againstVotes: string;
   abstainVotes: string;
@@ -304,6 +305,7 @@ export interface ActivityItem {
   type: ActivityType;
   timestamp: string;
   actor: string;
+  actorEns?: string; // ENS name for actor (pre-loaded from API)
   
   // Context depends on type
   proposalId?: string;
@@ -321,7 +323,9 @@ export interface ActivityItem {
   // Noun transfer/delegation specific
   nounId?: string;
   fromAddress?: string;
+  fromAddressEns?: string; // ENS name for fromAddress (pre-loaded from API)
   toAddress?: string;
+  toAddressEns?: string; // ENS name for toAddress (pre-loaded from API)
   txHash?: string;
   salePrice?: string; // ETH amount if this was a sale
   
@@ -333,7 +337,9 @@ export interface ActivityItem {
   // Auction specific
   winningBid?: string;
   winner?: string;
+  winnerEns?: string; // ENS name for winner (pre-loaded from API)
   settler?: string; // Who started the auction by settling the previous one
+  settlerEns?: string; // ENS name for settler (pre-loaded from API)
   
   // Candidate sponsorship specific
   candidateTitle?: string;

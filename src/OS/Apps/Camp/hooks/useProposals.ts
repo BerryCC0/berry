@@ -271,6 +271,7 @@ function mapProposal(p: any): Proposal {
     description: p.description || '',
     status: p.status as ProposalStatus,
     proposer: p.proposer || '',
+    proposerEns: p.proposer_ens || undefined,
     forVotes: String(p.for_votes ?? '0'),
     againstVotes: String(p.against_votes ?? '0'),
     abstainVotes: String(p.abstain_votes ?? '0'),

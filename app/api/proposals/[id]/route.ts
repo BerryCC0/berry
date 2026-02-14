@@ -67,31 +67,37 @@ export async function GET(
     // Fetch proposal, votes, feedback, and dynamic quorum in parallel
     const [proposalRows, voteRows, feedbackRows, versionRows, dynamicQuorum] = await Promise.all([
       sql`
-        SELECT id, proposer, title, description, status,
-               targets, "values", signatures, calldatas,
-               start_block, end_block, start_timestamp, end_timestamp,
-               proposal_threshold, quorum_votes,
-               for_votes, against_votes, abstain_votes,
-               execution_eta, signers, update_period_end_block,
-               objection_period_end_block, on_timelock_v_1,
-               client_id, created_timestamp, created_block, tx_hash
-        FROM ponder_live.proposals
-        WHERE id = ${proposalId}
+        SELECT p.id, p.proposer, p.title, p.description, p.status,
+               p.targets, p."values", p.signatures, p.calldatas,
+               p.start_block, p.end_block, p.start_timestamp, p.end_timestamp,
+               p.proposal_threshold, p.quorum_votes,
+               p.for_votes, p.against_votes, p.abstain_votes,
+               p.execution_eta, p.signers, p.update_period_end_block,
+               p.objection_period_end_block, p.on_timelock_v_1,
+               p.client_id, p.created_timestamp, p.created_block, p.tx_hash,
+               e.name as proposer_ens
+        FROM ponder_live.proposals p
+        LEFT JOIN ponder_live.ens_names e ON LOWER(p.proposer) = LOWER(e.address)
+        WHERE p.id = ${proposalId}
       `,
       sql`
-        SELECT id, voter, proposal_id, support, votes,
-               reason, client_id, block_number, block_timestamp, tx_hash
-        FROM ponder_live.votes
-        WHERE proposal_id = ${proposalId}
-        ORDER BY votes DESC
+        SELECT v.id, v.voter, v.proposal_id, v.support, v.votes,
+               v.reason, v.client_id, v.block_number, v.block_timestamp, v.tx_hash,
+               e.name as voter_ens
+        FROM ponder_live.votes v
+        LEFT JOIN ponder_live.ens_names e ON LOWER(v.voter) = LOWER(e.address)
+        WHERE v.proposal_id = ${proposalId}
+        ORDER BY v.votes DESC
         LIMIT 500
       `,
       sql`
-        SELECT id, msg_sender, proposal_id, support, reason,
-               block_number, block_timestamp
-        FROM ponder_live.proposal_feedback
-        WHERE proposal_id = ${proposalId}
-        ORDER BY block_timestamp DESC
+        SELECT pf.id, pf.msg_sender, pf.proposal_id, pf.support, pf.reason,
+               pf.block_number, pf.block_timestamp,
+               e.name as sender_ens
+        FROM ponder_live.proposal_feedback pf
+        LEFT JOIN ponder_live.ens_names e ON LOWER(pf.msg_sender) = LOWER(e.address)
+        WHERE pf.proposal_id = ${proposalId}
+        ORDER BY pf.block_timestamp DESC
         LIMIT 100
       `,
       sql`
