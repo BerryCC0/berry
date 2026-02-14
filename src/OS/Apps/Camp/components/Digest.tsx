@@ -141,8 +141,8 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
       forVotes >= quorum && forVotes > againstVotes
     );
     
-    const endTime = getEndTime(proposal.endBlock);
-    const startTime = getStartTime(proposal.startBlock);
+    const endTime = getEndTime(proposal);
+    const startTime = getStartTime(proposal);
     
     // Determine status display - order matters!
     // Check terminal states first, then calculated states, then active states

@@ -187,6 +187,9 @@ export const proposals = onchainTable(
     calldatas: t.json().$type<string[]>(),
     startBlock: t.bigint(),
     endBlock: t.bigint(),
+    // Estimated voting timestamps (computed at index time: createdTimestamp + blocksUntil * 12)
+    startTimestamp: t.bigint(),
+    endTimestamp: t.bigint(),
     proposalThreshold: t.bigint(),
     quorumVotes: t.bigint(),
     forVotes: t.integer().notNull().default(0),

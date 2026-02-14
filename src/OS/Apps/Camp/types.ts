@@ -135,6 +135,9 @@ export interface Proposal {
   quorumVotes: string;
   startBlock: string;
   endBlock: string;
+  // Voting timestamps (computed at index time — more accurate than block estimation)
+  startTimestamp?: string;
+  endTimestamp?: string;
   createdTimestamp: string;
   createdBlock: string;
   executionETA?: string;

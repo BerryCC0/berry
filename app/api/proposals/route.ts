@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
     const rows = await sql`
       SELECT id, proposer, title, description, status,
              targets, "values", signatures, calldatas,
-             start_block, end_block, proposal_threshold, quorum_votes,
+             start_block, end_block, start_timestamp, end_timestamp,
+             proposal_threshold, quorum_votes,
              for_votes, against_votes, abstain_votes,
              execution_eta, signers, update_period_end_block,
              objection_period_end_block, on_timelock_v_1,

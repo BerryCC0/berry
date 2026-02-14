@@ -277,6 +277,8 @@ function mapProposal(p: any): Proposal {
     quorumVotes: String(p.quorum_votes ?? '0'),
     startBlock: String(p.start_block ?? '0'),
     endBlock: String(p.end_block ?? '0'),
+    startTimestamp: p.start_timestamp ? String(p.start_timestamp) : undefined,
+    endTimestamp: p.end_timestamp ? String(p.end_timestamp) : undefined,
     createdTimestamp: String(p.created_timestamp ?? '0'),
     createdBlock: String(p.created_block ?? '0'),
     executionETA: p.execution_eta ? String(p.execution_eta) : undefined,

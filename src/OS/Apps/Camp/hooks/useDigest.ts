@@ -56,8 +56,8 @@ export interface UseDigestReturn {
   toggleSection: (sectionId: string) => void;
   
   // Utility functions (bound to current state)
-  getEndTime: (endBlock: string) => number;
-  getStartTime: (startBlock: string) => number;
+  getEndTime: (proposal: Proposal) => number;
+  getStartTime: (proposal: Proposal) => number;
   getRelativeTime: (timestamp: number, prefix: string) => string;
 }
 
@@ -198,9 +198,15 @@ export function useDigest({ activeTab: controlledTab, onTabChange }: UseDigestPr
     return voters.filter(v => !TREASURY_ADDRESSES.includes(v.id.toLowerCase()));
   }, [voters]);
   
-  // Bound utility functions
-  const getEndTime = (endBlock: string) => estimateEndTime(endBlock, currentBlock);
-  const getStartTime = (startBlock: string) => estimateStartTime(startBlock, currentBlock);
+  // Bound utility functions — prefer stored timestamps, fall back to block estimation
+  const getEndTime = (proposal: Proposal) => {
+    if (proposal.endTimestamp) return Number(proposal.endTimestamp);
+    return estimateEndTime(proposal.endBlock, currentBlock);
+  };
+  const getStartTime = (proposal: Proposal) => {
+    if (proposal.startTimestamp) return Number(proposal.startTimestamp);
+    return estimateStartTime(proposal.startBlock, currentBlock);
+  };
   const getRelativeTime = (timestamp: number, prefix: string) => formatRelativeTime(timestamp, prefix);
   
   return {

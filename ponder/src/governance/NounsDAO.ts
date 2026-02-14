@@ -10,6 +10,29 @@ import {
 } from "ponder:schema";
 import { extractTitle, resolveAndStoreEns } from "../helpers/ens";
 
+// Post-Merge blocks are exactly 12 seconds apart
+const SECONDS_PER_BLOCK = 12n;
+
+/**
+ * Compute estimated voting start/end timestamps from block numbers.
+ * Since post-Merge blocks are 12s apart, we can calculate:
+ *   startTimestamp = createdTimestamp + (startBlock - createdBlock) * 12
+ *   endTimestamp = createdTimestamp + (endBlock - createdBlock) * 12
+ */
+function computeVotingTimestamps(
+  startBlock: bigint,
+  endBlock: bigint,
+  createdBlock: bigint,
+  createdTimestamp: bigint
+): { startTimestamp: bigint; endTimestamp: bigint } {
+  const blocksUntilStart = startBlock - createdBlock;
+  const blocksUntilEnd = endBlock - createdBlock;
+  return {
+    startTimestamp: createdTimestamp + blocksUntilStart * SECONDS_PER_BLOCK,
+    endTimestamp: createdTimestamp + blocksUntilEnd * SECONDS_PER_BLOCK,
+  };
+}
+
 // =============================================================================
 // PROPOSAL LIFECYCLE
 // =============================================================================
@@ -19,6 +42,14 @@ ponder.on("NounsDAO:ProposalCreated", async ({ event, context }) => {
 
   // Resolve ENS for proposer
   await resolveAndStoreEns(context, proposer);
+
+  // Compute voting timestamps at index time
+  const { startTimestamp, endTimestamp } = computeVotingTimestamps(
+    startBlock,
+    endBlock,
+    event.block.number,
+    event.block.timestamp
+  );
 
   await context.db.insert(proposals).values({
     id: Number(id),
@@ -32,6 +63,8 @@ ponder.on("NounsDAO:ProposalCreated", async ({ event, context }) => {
     calldatas: calldatas as string[],
     startBlock,
     endBlock,
+    startTimestamp,
+    endTimestamp,
     forVotes: 0,
     againstVotes: 0,
     abstainVotes: 0,
@@ -49,6 +82,14 @@ ponder.on("NounsDAO:ProposalCreatedWithRequirements(uint256 id, address proposer
   // Resolve ENS for proposer
   await resolveAndStoreEns(context, proposer);
 
+  // Compute voting timestamps at index time
+  const { startTimestamp, endTimestamp } = computeVotingTimestamps(
+    startBlock,
+    endBlock,
+    event.block.number,
+    event.block.timestamp
+  );
+
   await context.db
     .insert(proposals)
     .values({
@@ -63,6 +104,8 @@ ponder.on("NounsDAO:ProposalCreatedWithRequirements(uint256 id, address proposer
       calldatas: calldatas as string[],
       startBlock,
       endBlock,
+      startTimestamp,
+      endTimestamp,
       proposalThreshold,
       quorumVotes,
       forVotes: 0,
@@ -76,6 +119,8 @@ ponder.on("NounsDAO:ProposalCreatedWithRequirements(uint256 id, address proposer
     .onConflictDoUpdate({
       proposalThreshold,
       quorumVotes,
+      startTimestamp,
+      endTimestamp,
     });
 });
 
