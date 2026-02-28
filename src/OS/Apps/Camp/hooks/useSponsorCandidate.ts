@@ -398,6 +398,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       const expirationTimestamp = BigInt(Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60));
       const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
+      const wcBeforeSign = walletClient;
       const signature = await walletClient.signTypedData({
         domain: NOUNS_DAO_DATA_DOMAIN,
         types: PROPOSAL_TYPES,
@@ -415,14 +416,20 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       
       setIsSigning(false);
       
-      // Brief pause so the WalletConnect relay fully processes the sign
-      // response before receiving the transaction request
-      await new Promise(r => setTimeout(r, 1000));
-      
-      // Use fresh wallet client from ref -- after signTypedData completes,
-      // WalletConnect may update session state causing wagmi to recreate
-      // the wallet client, making the original closure reference stale
-      const freshWc = walletClientRef.current;
+      // After signTypedData, WalletConnect updates its session state and
+      // wagmi may recreate the wallet client. Poll until a fresh client
+      // appears (different object reference) or fall back after a timeout.
+      let freshWc: NonNullable<typeof walletClient> | null = null;
+      for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 300));
+        const current = walletClientRef.current;
+        if (current && current !== wcBeforeSign) {
+          freshWc = current;
+          break;
+        }
+      }
+      // If wagmi didn't produce a new client, use whatever the ref has
+      if (!freshWc) freshWc = walletClientRef.current ?? null;
       if (!freshWc) throw new Error('Wallet disconnected');
       
       await sendAddSignature(
