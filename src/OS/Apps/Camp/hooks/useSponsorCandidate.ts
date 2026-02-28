@@ -124,6 +124,8 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   // (bypasses useSignTypedData and useWriteContract hooks entirely
   // to avoid duplicate WalletConnect requests through AppKit)
   const { data: walletClient } = useWalletClient();
+  const walletClientRef = useRef(walletClient);
+  walletClientRef.current = walletClient;
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   
   // Transaction confirmation
@@ -392,14 +394,11 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     try {
       if (!walletClient) throw new Error('Wallet not connected');
       
-      // Capture walletClient reference before any async operations
-      const wc = walletClient;
-      
       const { proposer, targets, values, signatures, calldatas, description } = prepareProposalData(candidate);
       const expirationTimestamp = BigInt(Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60));
       const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
-      const signature = await wc.signTypedData({
+      const signature = await walletClient.signTypedData({
         domain: NOUNS_DAO_DATA_DOMAIN,
         types: PROPOSAL_TYPES,
         primaryType: 'Proposal' as const,
@@ -420,8 +419,14 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       // response before receiving the transaction request
       await new Promise(r => setTimeout(r, 1000));
       
+      // Use fresh wallet client from ref -- after signTypedData completes,
+      // WalletConnect may update session state causing wagmi to recreate
+      // the wallet client, making the original closure reference stale
+      const freshWc = walletClientRef.current;
+      if (!freshWc) throw new Error('Wallet disconnected');
+      
       await sendAddSignature(
-        wc,
+        freshWc,
         signature,
         expirationTimestamp,
         candidate.proposer as Address,
