@@ -21,8 +21,9 @@ import { mainnet } from "@reown/appkit/networks";
 // Create a query client for React Query
 const queryClient = new QueryClient();
 
-// Initialize AppKit (called once, outside of component)
-if (projectId) {
+// Initialize AppKit once -- guard against duplicate calls from module re-evaluation
+let appKitInitialized = false;
+if (projectId && !appKitInitialized) {
   createAppKit({
     adapters,
     networks: allNetworks,
@@ -31,6 +32,7 @@ if (projectId) {
     projectId,
     themeMode: "light",
   });
+  appKitInitialized = true;
 }
 
 interface Web3ProviderProps {

@@ -15,7 +15,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useAccount, useSignTypedData, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAODataABI, NounsTokenABI } from '@/app/lib/nouns/contracts';
 import { encodeAbiParameters, parseAbiParameters, keccak256, toBytes, encodePacked } from 'viem';
@@ -363,11 +363,13 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     }
   }, [signedData, isLoading, writeContractAsync]);
   
+  // Ref guard to absolutely prevent duplicate writeContractAsync calls
+  const writeGuardRef = useRef(false);
+
   /**
    * Sponsor a candidate (combined sign + submit for EOA wallets).
-   * Inlines the signing logic instead of calling signOnly to avoid
-   * setting signedData state mid-flow, which causes re-renders that
-   * can trigger duplicate writeContractAsync calls.
+   * No state updates between sign and write to prevent mid-flow re-renders
+   * that could cause wagmi hooks to produce duplicate transaction requests.
    */
   const sponsorCandidate = useCallback(async (
     candidate: CandidateData,
@@ -382,10 +384,11 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       throw new Error('No voting power');
     }
     
-    if (isLoading) {
+    if (writeGuardRef.current) {
       return;
     }
     
+    writeGuardRef.current = true;
     setIsLoading(true);
     setIsSigning(true);
     setError(null);
@@ -410,7 +413,8 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
         },
       });
       
-      setIsSigning(false);
+      // No state updates here -- go directly to write to prevent re-renders
+      // that could cause duplicate transaction requests from wagmi hooks
       
       await writeContractAsync({
         address: NOUNS_ADDRESSES.data as `0x${string}`,
@@ -428,6 +432,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       });
       
       setIsLoading(false);
+      setIsSigning(false);
       
     } catch (err) {
       setIsLoading(false);
@@ -435,8 +440,10 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       const error = err instanceof Error ? err : new Error('Failed to sponsor candidate');
       setError(error);
       throw error;
+    } finally {
+      writeGuardRef.current = false;
     }
-  }, [isConnected, address, hasVotingPower, isLoading, signTypedDataAsync, writeContractAsync, prepareProposalData, encodeProposalData]);
+  }, [isConnected, address, hasVotingPower, signTypedDataAsync, writeContractAsync, prepareProposalData, encodeProposalData]);
   
   /**
    * Reset state
