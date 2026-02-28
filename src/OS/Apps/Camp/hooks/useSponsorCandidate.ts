@@ -364,7 +364,10 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   }, [signedData, isLoading, writeContractAsync]);
   
   /**
-   * Sponsor a candidate (combined sign + submit for EOA wallets)
+   * Sponsor a candidate (combined sign + submit for EOA wallets).
+   * Inlines the signing logic instead of calling signOnly to avoid
+   * setting signedData state mid-flow, which causes re-renders that
+   * can trigger duplicate writeContractAsync calls.
    */
   const sponsorCandidate = useCallback(async (
     candidate: CandidateData,
@@ -379,30 +382,47 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       throw new Error('No voting power');
     }
     
-    // Prevent double-calls while already processing
     if (isLoading) {
       return;
     }
     
     setIsLoading(true);
+    setIsSigning(true);
     setError(null);
     
     try {
-      // Step 1: Sign
-      const data = await signOnly(candidate, reason, expirationDays);
+      const { proposer, targets, values, signatures, calldatas, description } = prepareProposalData(candidate);
+      const expirationTimestamp = BigInt(Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60));
+      const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
-      // Step 2: Submit
+      const signature = await signTypedDataAsync({
+        domain: NOUNS_DAO_DATA_DOMAIN,
+        types: PROPOSAL_TYPES,
+        primaryType: 'Proposal',
+        message: {
+          proposer,
+          targets,
+          values,
+          signatures,
+          calldatas,
+          description,
+          expiry: expirationTimestamp,
+        },
+      });
+      
+      setIsSigning(false);
+      
       await writeContractAsync({
         address: NOUNS_ADDRESSES.data as `0x${string}`,
         abi: NounsDAODataABI,
         functionName: 'addSignature',
         args: [
-          data.signature,
-          data.expirationTimestamp,
+          signature,
+          expirationTimestamp,
           candidate.proposer as Address,
           candidate.slug,
           BigInt(candidate.proposalIdToUpdate || '0'),
-          data.encodedProp,
+          encodedProp,
           reason,
         ],
       });
@@ -411,11 +431,12 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       
     } catch (err) {
       setIsLoading(false);
+      setIsSigning(false);
       const error = err instanceof Error ? err : new Error('Failed to sponsor candidate');
       setError(error);
       throw error;
     }
-  }, [isConnected, address, hasVotingPower, isLoading, signOnly, writeContractAsync]);
+  }, [isConnected, address, hasVotingPower, isLoading, signTypedDataAsync, writeContractAsync, prepareProposalData, encodeProposalData]);
   
   /**
    * Reset state
