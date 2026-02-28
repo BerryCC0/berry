@@ -16,9 +16,9 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useAccount, useSignTypedData, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi';
+import { useAccount, useSignTypedData, useWaitForTransactionReceipt, useReadContract, usePublicClient, useWalletClient } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAODataABI, NounsTokenABI } from '@/app/lib/nouns/contracts';
-import { encodeAbiParameters, parseAbiParameters, keccak256, toBytes, encodePacked } from 'viem';
+import { encodeAbiParameters, parseAbiParameters, keccak256, toBytes, encodePacked, encodeFunctionData } from 'viem';
 import type { Address, Hex } from 'viem';
 
 interface CandidateData {
@@ -126,20 +126,16 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     isPending: isSignPending,
   } = useSignTypedData();
   
-  // Write contract for addSignature
-  const {
-    writeContractAsync,
-    data: hash,
-    isPending: isWritePending,
-    error: writeError,
-    reset: resetWrite,
-  } = useWriteContract();
+  // Wallet client for direct transaction sending (bypasses useWriteContract
+  // to avoid duplicate transactions through WalletConnect/AppKit)
+  const { data: walletClient } = useWalletClient();
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   
   // Transaction confirmation
   const {
     isLoading: isConfirming,
     isSuccess,
-  } = useWaitForTransactionReceipt({ hash });
+  } = useWaitForTransactionReceipt({ hash: txHash });
   
   /**
    * Encode proposal data matching NounsDAOProposals.calcProposalEncodeData.
@@ -321,6 +317,35 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   }, [isConnected, address, hasVotingPower, signTypedDataAsync, prepareProposalData, encodeProposalData, checkIfSmartWallet, createEIP1271Signature]);
   
   /**
+   * Send addSignature transaction directly via wallet client
+   */
+  const sendAddSignature = useCallback(async (
+    sig: `0x${string}`,
+    expirationTimestamp: bigint,
+    proposer: Address,
+    slug: string,
+    proposalIdToUpdate: bigint,
+    encodedProp: `0x${string}`,
+    reason: string,
+  ): Promise<`0x${string}`> => {
+    if (!walletClient) throw new Error('Wallet not connected');
+    
+    const data = encodeFunctionData({
+      abi: NounsDAODataABI,
+      functionName: 'addSignature',
+      args: [sig, expirationTimestamp, proposer, slug, proposalIdToUpdate, encodedProp, reason],
+    });
+    
+    const hash = await walletClient.sendTransaction({
+      to: NOUNS_ADDRESSES.data as `0x${string}`,
+      data,
+    });
+    
+    setTxHash(hash);
+    return hash;
+  }, [walletClient]);
+
+  /**
    * Submit a previously signed signature
    */
   const submitSignature = useCallback(async () => {
@@ -338,20 +363,15 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     try {
       const { signature, expirationTimestamp, encodedProp, candidate, reason } = signedData;
       
-      await writeContractAsync({
-        address: NOUNS_ADDRESSES.data as `0x${string}`,
-        abi: NounsDAODataABI,
-        functionName: 'addSignature',
-        args: [
-          signature,
-          expirationTimestamp,
-          candidate.proposer as Address,
-          candidate.slug,
-          BigInt(candidate.proposalIdToUpdate || '0'),
-          encodedProp,
-          reason,
-        ],
-      });
+      await sendAddSignature(
+        signature,
+        expirationTimestamp,
+        candidate.proposer as Address,
+        candidate.slug,
+        BigInt(candidate.proposalIdToUpdate || '0'),
+        encodedProp,
+        reason,
+      );
       
       setIsLoading(false);
       
@@ -361,7 +381,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       setError(error);
       throw error;
     }
-  }, [signedData, isLoading, writeContractAsync]);
+  }, [signedData, isLoading, sendAddSignature]);
   
   // Ref guard to absolutely prevent duplicate writeContractAsync calls
   const writeGuardRef = useRef(false);
@@ -413,23 +433,15 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
         },
       });
       
-      // No state updates here -- go directly to write to prevent re-renders
-      // that could cause duplicate transaction requests from wagmi hooks
-      
-      await writeContractAsync({
-        address: NOUNS_ADDRESSES.data as `0x${string}`,
-        abi: NounsDAODataABI,
-        functionName: 'addSignature',
-        args: [
-          signature,
-          expirationTimestamp,
-          candidate.proposer as Address,
-          candidate.slug,
-          BigInt(candidate.proposalIdToUpdate || '0'),
-          encodedProp,
-          reason,
-        ],
-      });
+      await sendAddSignature(
+        signature,
+        expirationTimestamp,
+        candidate.proposer as Address,
+        candidate.slug,
+        BigInt(candidate.proposalIdToUpdate || '0'),
+        encodedProp,
+        reason,
+      );
       
       setIsLoading(false);
       setIsSigning(false);
@@ -443,7 +455,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     } finally {
       writeGuardRef.current = false;
     }
-  }, [isConnected, address, hasVotingPower, signTypedDataAsync, writeContractAsync, prepareProposalData, encodeProposalData]);
+  }, [isConnected, address, hasVotingPower, signTypedDataAsync, sendAddSignature, prepareProposalData, encodeProposalData]);
   
   /**
    * Reset state
@@ -453,17 +465,17 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     setIsSigning(false);
     setError(null);
     setSignedData(null);
-    resetWrite();
-  }, [resetWrite]);
+    setTxHash(undefined);
+  }, []);
   
   return {
     hasVotingPower,
     isLoading,
     isSigning: isSigning || isSignPending,
-    isPending: isWritePending,
+    isPending: isLoading && !isSigning && !isSignPending,
     isConfirming,
     isSuccess,
-    error: error || writeError || null,
+    error,
     signedData,
     hasPendingSignature: !!signedData && !isSuccess,
     sponsorCandidate,
