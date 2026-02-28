@@ -18,7 +18,7 @@
 import { useState, useCallback } from 'react';
 import { useAccount, useSignTypedData, useWriteContract, useWaitForTransactionReceipt, useReadContract, usePublicClient } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAODataABI, NounsTokenABI } from '@/app/lib/nouns/contracts';
-import { encodeAbiParameters, parseAbiParameters } from 'viem';
+import { encodeAbiParameters, parseAbiParameters, keccak256, toBytes, encodePacked } from 'viem';
 import type { Address, Hex } from 'viem';
 
 interface CandidateData {
@@ -63,11 +63,12 @@ interface UseSponsorCandidateReturn {
   reset: () => void;
 }
 
-// Domain for EIP-712 signature - Nouns DAO Data contract
+// Domain for EIP-712 signature - uses the DAO governor as verifyingContract,
+// matching NounsDAOProposals.sigDigest which passes nounsDao as the verifier
 const NOUNS_DAO_DATA_DOMAIN = {
   name: 'Nouns DAO',
   chainId: 1,
-  verifyingContract: NOUNS_ADDRESSES.data as `0x${string}`,
+  verifyingContract: NOUNS_ADDRESSES.governor as `0x${string}`,
 };
 
 // EIP-712 types for proposal signature
@@ -141,8 +142,9 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   } = useWaitForTransactionReceipt({ hash });
   
   /**
-   * Encode proposal data for the signature
-   * This must match what the contract expects
+   * Encode proposal data matching NounsDAOProposals.calcProposalEncodeData.
+   * Each dynamic field is individually hashed per EIP-712, producing a compact
+   * 192-byte encoding: abi.encode(address, bytes32, bytes32, bytes32, bytes32, bytes32)
    */
   const encodeProposalData = useCallback((
     proposer: Address,
@@ -152,12 +154,42 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     calldatas: `0x${string}`[],
     description: string
   ): `0x${string}` => {
-    // Encode the proposal data as the contract expects
-    const encoded = encodeAbiParameters(
-      parseAbiParameters('address, address[], uint256[], string[], bytes[], string'),
-      [proposer, targets, values, signatures, calldatas, description]
+    const targetsHash = keccak256(
+      encodeAbiParameters(
+        targets.map(() => ({ type: 'address' as const })),
+        targets
+      )
     );
-    return encoded;
+
+    const valuesHash = keccak256(
+      encodePacked(
+        values.map(() => 'uint256' as const),
+        values
+      )
+    );
+
+    const signatureHashes = signatures.map(s => keccak256(toBytes(s)));
+    const sigsHash = keccak256(
+      encodePacked(
+        signatureHashes.map(() => 'bytes32' as const),
+        signatureHashes
+      )
+    );
+
+    const calldatasHashes = calldatas.map(c => keccak256(c));
+    const calldatasHash = keccak256(
+      encodePacked(
+        calldatasHashes.map(() => 'bytes32' as const),
+        calldatasHashes
+      )
+    );
+
+    const descriptionHash = keccak256(toBytes(description));
+
+    return encodeAbiParameters(
+      parseAbiParameters('address, bytes32, bytes32, bytes32, bytes32, bytes32'),
+      [proposer, targetsHash, valuesHash, sigsHash, calldatasHash, descriptionHash]
+    );
   }, []);
   
   /**
