@@ -18,7 +18,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useAccount, useWaitForTransactionReceipt, useReadContract, usePublicClient, useWalletClient } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAODataABI, NounsTokenABI } from '@/app/lib/nouns/contracts';
-import { encodeAbiParameters, parseAbiParameters, keccak256, toBytes, encodePacked, encodeFunctionData } from 'viem';
+import { encodeAbiParameters, parseAbiParameters, keccak256, toBytes, encodePacked } from 'viem';
 import type { Address, Hex } from 'viem';
 
 interface CandidateData {
@@ -292,9 +292,12 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   }, [isConnected, address, hasVotingPower, walletClient, prepareProposalData, encodeProposalData]);
   
   /**
-   * Send addSignature transaction directly via wallet client
+   * Send addSignature transaction directly via wallet client.
+   * Uses writeContract (not sendTransaction) so viem handles ABI encoding
+   * and gas estimation, which is required for WalletConnect to work properly.
    */
   const sendAddSignature = useCallback(async (
+    wc: NonNullable<typeof walletClient>,
     sig: `0x${string}`,
     expirationTimestamp: bigint,
     proposer: Address,
@@ -303,22 +306,16 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     encodedProp: `0x${string}`,
     reason: string,
   ): Promise<`0x${string}`> => {
-    if (!walletClient) throw new Error('Wallet not connected');
-    
-    const data = encodeFunctionData({
+    const hash = await wc.writeContract({
+      address: NOUNS_ADDRESSES.data as `0x${string}`,
       abi: NounsDAODataABI,
       functionName: 'addSignature',
       args: [sig, expirationTimestamp, proposer, slug, proposalIdToUpdate, encodedProp, reason],
     });
     
-    const hash = await walletClient.sendTransaction({
-      to: NOUNS_ADDRESSES.data as `0x${string}`,
-      data,
-    });
-    
     setTxHash(hash);
     return hash;
-  }, [walletClient]);
+  }, []);
 
   /**
    * Submit a previously signed signature
@@ -326,6 +323,9 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   const submitSignature = useCallback(async () => {
     if (!signedData) {
       throw new Error('No signed data available. Please sign first.');
+    }
+    if (!walletClient) {
+      throw new Error('Wallet not connected');
     }
     
     if (isLoading) {
@@ -339,6 +339,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       const { signature, expirationTimestamp, encodedProp, candidate, reason } = signedData;
       
       await sendAddSignature(
+        walletClient,
         signature,
         expirationTimestamp,
         candidate.proposer as Address,
@@ -356,7 +357,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       setError(error);
       throw error;
     }
-  }, [signedData, isLoading, sendAddSignature]);
+  }, [signedData, isLoading, walletClient, sendAddSignature]);
   
   // Ref guard to absolutely prevent duplicate writeContractAsync calls
   const writeGuardRef = useRef(false);
@@ -391,11 +392,14 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     try {
       if (!walletClient) throw new Error('Wallet not connected');
       
+      // Capture walletClient reference before any async operations
+      const wc = walletClient;
+      
       const { proposer, targets, values, signatures, calldatas, description } = prepareProposalData(candidate);
       const expirationTimestamp = BigInt(Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60));
       const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
-      const signature = await walletClient.signTypedData({
+      const signature = await wc.signTypedData({
         domain: NOUNS_DAO_DATA_DOMAIN,
         types: PROPOSAL_TYPES,
         primaryType: 'Proposal' as const,
@@ -412,11 +416,8 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       
       setIsSigning(false);
       
-      // Brief pause to let WalletConnect session fully settle after the sign
-      // response before sending a new transaction request through the relay
-      await new Promise(r => setTimeout(r, 1000));
-      
       await sendAddSignature(
+        wc,
         signature,
         expirationTimestamp,
         candidate.proposer as Address,
