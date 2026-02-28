@@ -517,61 +517,40 @@ export function SponsorsPanel({
                     Cancel
                   </button>
                   
-                  {/* For SCW wallets: two-step flow */}
-                  {isSmartContractWallet ? (
-                    <>
-                      {!hasPendingSignature ? (
-                        <button
-                          className={styles.confirmButton}
-                          onClick={handleSignOnly}
-                          disabled={isSigning || isPending || isConfirming}
-                        >
-                          {isSigning ? 'Signing...' : 'Step 1: Sign Message'}
-                        </button>
-                      ) : (
-                        <button
-                          className={styles.confirmButton}
-                          onClick={handleSubmitSignature}
-                          disabled={isSigning || isPending || isConfirming}
-                        >
-                          {isPending ? 'Submitting...' :
-                           isConfirming ? 'Confirming...' :
-                           'Step 2: Submit Transaction'}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    /* For EOA wallets: combined flow */
+                  {/* Two-step flow for all wallets to avoid WalletConnect
+                      duplicate transaction issues with back-to-back requests */}
+                  {!hasPendingSignature ? (
                     <button
                       className={styles.confirmButton}
-                      onClick={handleSponsorSubmit}
+                      onClick={handleSignOnly}
                       disabled={isSigning || isPending || isConfirming}
                     >
-                      {isSigning ? 'Sign in wallet...' :
-                       isPending ? 'Confirm in wallet...' :
+                      {isSigning ? 'Signing...' : 'Sign Sponsorship'}
+                    </button>
+                  ) : (
+                    <button
+                      className={styles.confirmButton}
+                      onClick={handleSubmitSignature}
+                      disabled={isSigning || isPending || isConfirming}
+                    >
+                      {isPending ? 'Submitting...' :
                        isConfirming ? 'Confirming...' :
-                       'Sign & Submit'}
+                       'Submit Transaction'}
                     </button>
                   )}
                 </div>
                 
                 {(isSigning || isPending || isConfirming) && (
                   <div className={styles.statusHint}>
-                    {isSigning && (isSmartContractWallet 
-                      ? 'Please sign the message in your wallet. For multi-sig wallets, additional approvals may be needed.'
-                      : 'Step 1/2: Please sign the message in your wallet...')}
-                    {isPending && (isSmartContractWallet
-                      ? 'Please confirm the transaction in your wallet.'
-                      : 'Step 2/2: Please confirm the transaction in your wallet...')}
+                    {isSigning && 'Please sign the message in your wallet...'}
+                    {isPending && 'Please confirm the transaction in your wallet...'}
                     {isConfirming && 'Waiting for transaction confirmation...'}
                   </div>
                 )}
                 
                 {!isSigning && !isPending && !isConfirming && !hasPendingSignature && (
                   <p className={styles.processHint}>
-                    {isSmartContractWallet 
-                      ? 'This process has two steps to support multi-sig wallets.'
-                      : 'This will require a signature request followed by a transaction.'}
+                    This requires a signature followed by a transaction.
                   </p>
                 )}
               </>
