@@ -416,6 +416,10 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       
       setIsSigning(false);
       
+      // Brief pause so the WalletConnect relay fully processes the sign
+      // response before receiving the transaction request
+      await new Promise(r => setTimeout(r, 1000));
+      
       await sendAddSignature(
         wc,
         signature,

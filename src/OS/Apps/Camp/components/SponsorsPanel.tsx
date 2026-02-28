@@ -517,25 +517,38 @@ export function SponsorsPanel({
                     Cancel
                   </button>
                   
-                  {/* Two-step flow for all wallets to avoid WalletConnect
-                      duplicate transaction issues with back-to-back requests */}
-                  {!hasPendingSignature ? (
-                    <button
-                      className={styles.confirmButton}
-                      onClick={handleSignOnly}
-                      disabled={isSigning || isPending || isConfirming}
-                    >
-                      {isSigning ? 'Signing...' : 'Sign Sponsorship'}
-                    </button>
+                  {isSmartContractWallet ? (
+                    <>
+                      {!hasPendingSignature ? (
+                        <button
+                          className={styles.confirmButton}
+                          onClick={handleSignOnly}
+                          disabled={isSigning || isPending || isConfirming}
+                        >
+                          {isSigning ? 'Signing...' : 'Step 1: Sign Message'}
+                        </button>
+                      ) : (
+                        <button
+                          className={styles.confirmButton}
+                          onClick={handleSubmitSignature}
+                          disabled={isSigning || isPending || isConfirming}
+                        >
+                          {isPending ? 'Submitting...' :
+                           isConfirming ? 'Confirming...' :
+                           'Step 2: Submit Transaction'}
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <button
                       className={styles.confirmButton}
-                      onClick={handleSubmitSignature}
+                      onClick={handleSponsorSubmit}
                       disabled={isSigning || isPending || isConfirming}
                     >
-                      {isPending ? 'Submitting...' :
+                      {isSigning ? 'Sign in wallet...' :
+                       isPending ? 'Confirm in wallet...' :
                        isConfirming ? 'Confirming...' :
-                       'Submit Transaction'}
+                       'Sponsor'}
                     </button>
                   )}
                 </div>
@@ -550,7 +563,7 @@ export function SponsorsPanel({
                 
                 {!isSigning && !isPending && !isConfirming && !hasPendingSignature && (
                   <p className={styles.processHint}>
-                    This requires a signature followed by a transaction.
+                    This will require a signature request followed by a transaction.
                   </p>
                 )}
               </>
