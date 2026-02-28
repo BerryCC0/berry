@@ -16,7 +16,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useAccount, useSignTypedData, useWaitForTransactionReceipt, useReadContract, usePublicClient, useWalletClient } from 'wagmi';
+import { useAccount, useWaitForTransactionReceipt, useReadContract, usePublicClient, useWalletClient } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAODataABI, NounsTokenABI } from '@/app/lib/nouns/contracts';
 import { encodeAbiParameters, parseAbiParameters, keccak256, toBytes, encodePacked, encodeFunctionData } from 'viem';
 import type { Address, Hex } from 'viem';
@@ -120,14 +120,9 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   
   const hasVotingPower = !!votingPower && votingPower > BigInt(0);
   
-  // Sign typed data
-  const { 
-    signTypedDataAsync,
-    isPending: isSignPending,
-  } = useSignTypedData();
-  
-  // Wallet client for direct transaction sending (bypasses useWriteContract
-  // to avoid duplicate transactions through WalletConnect/AppKit)
+  // Wallet client for direct signing and transaction sending
+  // (bypasses useSignTypedData and useWriteContract hooks entirely
+  // to avoid duplicate WalletConnect requests through AppKit)
   const { data: walletClient } = useWalletClient();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   
@@ -251,23 +246,17 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     setError(null);
     
     try {
-      // Check if this is a smart contract wallet
-      const isSCW = await checkIfSmartWallet();
+      if (!walletClient) throw new Error('Wallet not connected');
       
       const { proposer, targets, values, signatures, calldatas, description } = prepareProposalData(candidate);
       
-      // Calculate expiration timestamp
       const expirationTimestamp = BigInt(Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60));
-      
-      // Encode proposal data
       const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
-      // Sign EIP-712 typed data
-      // Note: The message field 'expiry' must match the PROPOSAL_TYPEHASH in the contract
-      const rawSignature = await signTypedDataAsync({
+      const signature = await walletClient.signTypedData({
         domain: NOUNS_DAO_DATA_DOMAIN,
         types: PROPOSAL_TYPES,
-        primaryType: 'Proposal',
+        primaryType: 'Proposal' as const,
         message: {
           proposer,
           targets,
@@ -275,23 +264,9 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
           signatures,
           calldatas,
           description,
-          expiry: expirationTimestamp, // Field name is 'expiry' in the typehash
+          expiry: expirationTimestamp,
         },
       });
-      
-      // For smart contract wallets, the signature needs special handling
-      // The raw signature from signTypedData is signed by the Safe owner,
-      // but we need the Nouns contract to recognize the Safe as the signer
-      let signature = rawSignature;
-      
-      if (isSCW) {
-        // For Smart Contract Wallets (Safe, etc.):
-        // - The raw signature is signed by one of the Safe's owners
-        // - When the Safe calls addSignature, the Nouns contract will call isValidSignature on the Safe
-        // - The Safe verifies the signature is from one of its owners
-        // - Just pass the raw signature through - no special formatting needed
-        signature = createEIP1271Signature(address, rawSignature);
-      }
       
       setIsSigning(false);
       
@@ -314,7 +289,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       setError(error);
       throw error;
     }
-  }, [isConnected, address, hasVotingPower, signTypedDataAsync, prepareProposalData, encodeProposalData, checkIfSmartWallet, createEIP1271Signature]);
+  }, [isConnected, address, hasVotingPower, walletClient, prepareProposalData, encodeProposalData]);
   
   /**
    * Send addSignature transaction directly via wallet client
@@ -414,14 +389,16 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     setError(null);
     
     try {
+      if (!walletClient) throw new Error('Wallet not connected');
+      
       const { proposer, targets, values, signatures, calldatas, description } = prepareProposalData(candidate);
       const expirationTimestamp = BigInt(Math.floor(Date.now() / 1000) + (expirationDays * 24 * 60 * 60));
       const encodedProp = encodeProposalData(proposer, targets, values, signatures, calldatas, description);
       
-      const signature = await signTypedDataAsync({
+      const signature = await walletClient.signTypedData({
         domain: NOUNS_DAO_DATA_DOMAIN,
         types: PROPOSAL_TYPES,
-        primaryType: 'Proposal',
+        primaryType: 'Proposal' as const,
         message: {
           proposer,
           targets,
@@ -432,6 +409,12 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
           expiry: expirationTimestamp,
         },
       });
+      
+      setIsSigning(false);
+      
+      // Brief pause to let WalletConnect session fully settle after the sign
+      // response before sending a new transaction request through the relay
+      await new Promise(r => setTimeout(r, 1000));
       
       await sendAddSignature(
         signature,
@@ -444,7 +427,6 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
       );
       
       setIsLoading(false);
-      setIsSigning(false);
       
     } catch (err) {
       setIsLoading(false);
@@ -455,7 +437,7 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
     } finally {
       writeGuardRef.current = false;
     }
-  }, [isConnected, address, hasVotingPower, signTypedDataAsync, sendAddSignature, prepareProposalData, encodeProposalData]);
+  }, [isConnected, address, hasVotingPower, walletClient, sendAddSignature, prepareProposalData, encodeProposalData]);
   
   /**
    * Reset state
@@ -471,8 +453,8 @@ export function useSponsorCandidate(): UseSponsorCandidateReturn {
   return {
     hasVotingPower,
     isLoading,
-    isSigning: isSigning || isSignPending,
-    isPending: isLoading && !isSigning && !isSignPending,
+    isSigning,
+    isPending: isLoading && !isSigning,
     isConfirming,
     isSuccess,
     error,
