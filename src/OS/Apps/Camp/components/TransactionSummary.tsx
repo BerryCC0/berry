@@ -50,8 +50,8 @@ export function TransactionSummary({ actions }: TransactionSummaryProps) {
     for (const tx of decodedTransactions) {
       const title = tx.title;
       
-      // ETH transfers: "Transfer X ETH"
-      if (title.startsWith('Transfer') && title.includes('ETH') && !title.includes('Noun')) {
+      // ETH transfers: "Transfer X ETH" (but not WETH, STETH, etc.)
+      if (title.startsWith('Transfer') && title.endsWith(' ETH') && !title.includes('Noun')) {
         const amountStr = title.replace(/^Transfer\s+/, '').replace(/\s+ETH$/, '');
         ethTotal += parseFormattedNumber(amountStr);
         ethCount++;
