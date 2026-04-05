@@ -22,7 +22,7 @@ import { appLauncher } from "@/OS/lib/AppLauncher";
 import { osAppConfigs } from "@/OS/Apps/OSAppConfig";
 import { useBootStore } from "@/OS/store/bootStore";
 import { bootBerryOS } from "@/OS/lib/Boot";
-import { BootOverlay } from "@/OS/components/BootOverlay";
+import { BootOverlay } from "@/OS/Shell/Boot";
 import styles from "./page.module.css";
 
 // URL aliases for shorter/friendlier URLs

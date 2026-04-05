@@ -10,19 +10,27 @@
 
 import { useEffect, useRef } from "react";
 import { useSettingsStore } from "@/OS/store/settingsStore";
+import { useShallow } from "zustand/shallow";
 import { useBootStore } from "@/OS/store/bootStore";
 import { applyAppearance, applyAccessibility } from "@/OS/lib/Settings";
 
 /**
  * Hook to apply settings changes in real-time
  * Use this in a top-level component (e.g., page.tsx)
+ *
+ * Uses useShallow to avoid the React 19 "getSnapshot should be cached"
+ * infinite loop — Zustand object selectors must return stable references.
  */
 export function useApplySettings() {
-  const appearance = useSettingsStore((state) => state.settings.appearance);
-  const accessibility = useSettingsStore((state) => state.settings.accessibility);
+  const appearance = useSettingsStore(
+    useShallow((state) => state.settings.appearance)
+  );
+  const accessibility = useSettingsStore(
+    useShallow((state) => state.settings.accessibility)
+  );
   const isInitialized = useSettingsStore((state) => state.isInitialized);
   const isReady = useBootStore((state) => state.isReady);
-  
+
   // Track previous values to detect actual changes
   const prevAppearance = useRef(appearance);
   const prevAccessibility = useRef(accessibility);
@@ -31,7 +39,7 @@ export function useApplySettings() {
   useEffect(() => {
     // Only apply live changes after boot is complete
     if (!isReady || !isInitialized) return;
-    
+
     // Check if this is an actual change (not the initial value)
     if (prevAppearance.current !== appearance) {
       applyAppearance(appearance);
@@ -42,7 +50,7 @@ export function useApplySettings() {
   // Apply accessibility settings when they change AFTER boot is complete
   useEffect(() => {
     if (!isReady || !isInitialized) return;
-    
+
     if (prevAccessibility.current !== accessibility) {
       applyAccessibility(accessibility);
       prevAccessibility.current = accessibility;

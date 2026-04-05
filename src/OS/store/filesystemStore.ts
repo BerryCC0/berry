@@ -37,7 +37,7 @@ interface FilesystemStore {
   isSelected: (path: string) => boolean;
 
   // File operations
-  openFile: (path: string) => void;
+  openFile: (path: string) => Promise<void>;
 
   // Search
   search: (query: string) => Promise<VirtualFile[]>;
@@ -183,13 +183,13 @@ export const useFilesystemStore = create<FilesystemStore>((set, get) => ({
     return get().selectedPaths.has(path);
   },
 
-  openFile: (path: string) => {
+  openFile: async (path: string) => {
     const { files, navigateTo } = get();
     const file = files.find((f) => f.path === path);
     if (!file) return;
 
     if (file.type === "directory") {
-      navigateTo(path);
+      await navigateTo(path);
     } else {
       // Open with appropriate app
       const appId = getAppForMimeType(file.mimeType);
@@ -197,11 +197,11 @@ export const useFilesystemStore = create<FilesystemStore>((set, get) => ({
         appLauncher.launch(appId, {
           initialState: { filePath: path, mimeType: file.mimeType },
         });
-    } else {
-      // No app to open this file type
-      console.warn(`[FilesystemStore] No app available for: ${file.name} (${file.mimeType || 'unknown type'})`);
-      // TODO: Show notification when notification system is implemented
-    }
+      } else {
+        // No app to open this file type
+        console.warn(`[FilesystemStore] No app available for: ${file.name} (${file.mimeType || 'unknown type'})`);
+        // TODO: Show notification when notification system is implemented
+      }
     }
   },
 

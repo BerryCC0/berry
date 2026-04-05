@@ -1,0 +1,501 @@
+/* Window - Desktop Platform Styles */
+
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--berry-window-bg);
+  border: 1px solid var(--berry-window-border);
+  box-shadow: var(--berry-window-shadow, 2px 2px 0 rgba(0, 0, 0, 0.3));
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.windowFocused {
+  box-shadow: 
+    4px 4px 0 rgba(0, 0, 0, 0.4),
+    inset -1px -1px 0 #888888,
+    inset 1px 1px 0 #ffffff;
+}
+
+.windowBlurred {
+  opacity: 0.95;
+}
+
+.windowDragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.windowResizing {
+  user-select: none;
+}
+
+/* Window styles: Classic (default) */
+.windowClassic {
+  border-radius: 0;
+}
+
+/* Window styles: Modern */
+.windowModern {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.windowModern .titleBar {
+  border-radius: 8px 8px 0 0;
+}
+
+/* No shadow setting */
+.windowNoShadow {
+  box-shadow: 
+    inset -1px -1px 0 #888888,
+    inset 1px 1px 0 #ffffff !important;
+}
+
+/* Title Bar */
+.titleBar {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 4px;
+  background: var(--berry-title-bar-bg);
+  color: var(--berry-title-bar-text);
+  border-bottom: 1px solid var(--berry-window-border);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.titleBarFocused {
+  opacity: 1;
+}
+
+.titleBarDragging {
+  cursor: grabbing;
+}
+
+/* Window Controls (Traffic Lights) */
+.windowControls {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.controlButton {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  background: #c0c0c0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  color: transparent;
+}
+
+.controlButton:hover {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.closeButton {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+  border-color: #cc4444;
+}
+
+.closeButton:hover {
+  background: linear-gradient(135deg, #ff8080 0%, #ff6b6b 100%);
+}
+
+.minimizeButton {
+  background: linear-gradient(135deg, #ffd93d 0%, #f5c800 100%);
+  border-color: #c9a000;
+}
+
+.minimizeButton:hover {
+  background: linear-gradient(135deg, #ffe066 0%, #ffd93d 100%);
+}
+
+.maximizeButton {
+  background: linear-gradient(135deg, #6bcb77 0%, #4caf50 100%);
+  border-color: #388e3c;
+}
+
+.maximizeButton:hover {
+  background: linear-gradient(135deg, #81d88a 0%, #6bcb77 100%);
+}
+
+/* Title Text */
+
+.titleText {
+  flex: 1;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: inherit;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titleTextBlurred {
+  opacity: 0.6;
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  overflow: auto;
+  background: var(--berry-bg);
+}
+
+/* Resize Handles */
+.resizeHandle {
+  position: absolute;
+  z-index: 10;
+}
+
+.resizeHandleN {
+  top: -4px;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  cursor: n-resize;
+}
+
+.resizeHandleS {
+  bottom: -4px;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  cursor: s-resize;
+}
+
+.resizeHandleE {
+  top: 8px;
+  right: -4px;
+  bottom: 8px;
+  width: 8px;
+  cursor: e-resize;
+}
+
+.resizeHandleW {
+  top: 8px;
+  left: -4px;
+  bottom: 8px;
+  width: 8px;
+  cursor: w-resize;
+}
+
+.resizeHandleNE {
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: ne-resize;
+}
+
+.resizeHandleNW {
+  top: -4px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: nw-resize;
+}
+
+.resizeHandleSE {
+  bottom: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+  /* Classic Mac resize grip */
+  background: 
+    linear-gradient(135deg, transparent 50%, #888888 50%, #888888 60%, transparent 60%),
+    linear-gradient(135deg, transparent 70%, #888888 70%, #888888 80%, transparent 80%);
+}
+
+.resizeHandleSW {
+  bottom: -4px;
+  left: -4px;
+  width: 12px;
+  height: 12px;
+  cursor: sw-resize;
+}
+
+/* =============================================================================
+   ERA-SPECIFIC OVERRIDES
+   ============================================================================= */
+
+/* --- Platinum / Classic: Proper beveled 3D chrome --- */
+:global([data-window-style="platinum"]) .window,
+:global([data-window-style="classic"]) .window {
+  border-radius: 0;
+  border: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-light, #f0f0f0),
+    inset -1px -1px 0 var(--berry-bevel-dark, #808080),
+    2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+:global([data-window-style="platinum"]) .windowFocused,
+:global([data-window-style="classic"]) .windowFocused {
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-light, #f0f0f0),
+    inset -1px -1px 0 var(--berry-bevel-dark, #808080),
+    4px 4px 0 rgba(0, 0, 0, 0.4);
+}
+
+:global([data-window-style="platinum"]) .windowNoShadow,
+:global([data-window-style="classic"]) .windowNoShadow {
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-light, #f0f0f0),
+    inset -1px -1px 0 var(--berry-bevel-dark, #808080) !important;
+}
+
+:global([data-window-style="platinum"]) .titleBar,
+:global([data-window-style="classic"]) .titleBar {
+  height: var(--berry-title-bar-height, 22px);
+  background: var(--berry-title-bar-bg, linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 100%));
+  border-bottom: 1px solid #808080;
+  /* Horizontal pinstripes — period-accurate Platinum title bar */
+  background-image:
+    var(--berry-title-bar-bg, linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 100%)),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(255, 255, 255, 0.3) 1px,
+      rgba(255, 255, 255, 0.3) 2px
+    );
+}
+
+/* Platinum traffic lights: small gray BOXES, not colored circles */
+:global([data-window-style="platinum"]) .controlButton,
+:global([data-window-style="classic"]) .controlButton {
+  width: var(--berry-traffic-light-size, 12px);
+  height: var(--berry-traffic-light-size, 12px);
+  border-radius: 0;
+  background: linear-gradient(180deg, #f0f0f0 0%, #c0c0c0 100%);
+  border: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080;
+}
+
+:global([data-window-style="platinum"]) .controlButton:hover,
+:global([data-window-style="classic"]) .controlButton:hover {
+  background: linear-gradient(180deg, #fff 0%, #d0d0d0 100%);
+  color: #000;
+}
+
+:global([data-window-style="platinum"]) .controlButton:active,
+:global([data-window-style="classic"]) .controlButton:active {
+  background: linear-gradient(180deg, #999 0%, #c0c0c0 100%);
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
+}
+
+/* Override the colored traffic lights — all same gray in Platinum */
+:global([data-window-style="platinum"]) .closeButton,
+:global([data-window-style="classic"]) .closeButton {
+  background: linear-gradient(180deg, #f0f0f0 0%, #c0c0c0 100%);
+  border-color: #808080;
+}
+
+:global([data-window-style="platinum"]) .closeButton:hover,
+:global([data-window-style="classic"]) .closeButton:hover {
+  background: linear-gradient(180deg, #fff 0%, #d0d0d0 100%);
+}
+
+:global([data-window-style="platinum"]) .minimizeButton,
+:global([data-window-style="classic"]) .minimizeButton {
+  background: linear-gradient(180deg, #f0f0f0 0%, #c0c0c0 100%);
+  border-color: #808080;
+}
+
+:global([data-window-style="platinum"]) .minimizeButton:hover,
+:global([data-window-style="classic"]) .minimizeButton:hover {
+  background: linear-gradient(180deg, #fff 0%, #d0d0d0 100%);
+}
+
+:global([data-window-style="platinum"]) .maximizeButton,
+:global([data-window-style="classic"]) .maximizeButton {
+  background: linear-gradient(180deg, #f0f0f0 0%, #c0c0c0 100%);
+  border-color: #808080;
+}
+
+:global([data-window-style="platinum"]) .maximizeButton:hover,
+:global([data-window-style="classic"]) .maximizeButton:hover {
+  background: linear-gradient(180deg, #fff 0%, #d0d0d0 100%);
+}
+
+/* Platinum window content — proper inset bevel */
+:global([data-window-style="platinum"]) .content,
+:global([data-window-style="classic"]) .content {
+  border: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-dark, #808080),
+    inset -1px -1px 0 var(--berry-bevel-light, #f0f0f0);
+  margin: 2px;
+}
+
+/* Platinum resize grip — visible lines in corner */
+:global([data-window-style="platinum"]) .resizeHandleSE,
+:global([data-window-style="classic"]) .resizeHandleSE {
+  background:
+    linear-gradient(135deg, transparent 50%, #888 50%, #888 55%, transparent 55%),
+    linear-gradient(135deg, transparent 65%, #888 65%, #888 70%, transparent 70%),
+    linear-gradient(135deg, transparent 80%, #888 80%, #888 85%, transparent 85%);
+}
+
+/* --- Aqua: Gel spheres, pinstripe background, soft shadow --- */
+:global([data-window-style="aqua"]) .window {
+  border-radius: 6px 6px 0 0;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+:global([data-window-style="aqua"]) .windowFocused {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+:global([data-window-style="aqua"]) .titleBar {
+  height: 22px;
+  background: var(--berry-title-bar-bg, linear-gradient(180deg, #E8E8E8, #CCCCCC));
+  border-bottom: 1px solid #B0B0B0;
+}
+
+/* Aqua traffic lights: glossy colored gel spheres */
+:global([data-window-style="aqua"]) .closeButton {
+  background: radial-gradient(circle at 35% 35%, #FF9F9F 0%, #FF5F57 40%, #E0443C 100%);
+  border-color: #CC3E37;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+:global([data-window-style="aqua"]) .minimizeButton {
+  background: radial-gradient(circle at 35% 35%, #FFE59F 0%, #FFBD2E 40%, #DFA020 100%);
+  border-color: #CC9928;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+:global([data-window-style="aqua"]) .maximizeButton {
+  background: radial-gradient(circle at 35% 35%, #8FE89F 0%, #28C940 40%, #1CA830 100%);
+  border-color: #1A8E28;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Aqua pinstripe texture in window content */
+:global([data-window-style="aqua"]) .content {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(0, 0, 0, 0.03) 1px,
+      rgba(0, 0, 0, 0.03) 2px
+    );
+}
+
+/* --- Skeuomorphic: Warm shadows, refined gel traffic lights --- */
+:global([data-window-style="skeuomorphic"]) .window {
+  border-radius: 6px;
+  border: 1px solid var(--berry-window-border, #B0A898);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+:global([data-window-style="skeuomorphic"]) .windowFocused {
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-window-style="skeuomorphic"]) .titleBar {
+  height: 22px;
+  background: var(--berry-title-bar-bg, linear-gradient(180deg, #E8E4DE, #D6D2CC));
+  border-bottom: 1px solid #B0A898;
+}
+
+:global([data-window-style="skeuomorphic"]) .closeButton {
+  background: radial-gradient(circle at 35% 35%, #FF9F9F 0%, #FF5F57 40%, #E0443C 100%);
+  border-color: #CC3E37;
+  border-radius: 50%;
+}
+
+:global([data-window-style="skeuomorphic"]) .minimizeButton {
+  background: radial-gradient(circle at 35% 35%, #FFE59F 0%, #FFBD2E 40%, #DFA020 100%);
+  border-color: #CC9928;
+  border-radius: 50%;
+}
+
+:global([data-window-style="skeuomorphic"]) .maximizeButton {
+  background: radial-gradient(circle at 35% 35%, #8FE89F 0%, #28C940 40%, #1CA830 100%);
+  border-color: #1A8E28;
+  border-radius: 50%;
+}
+
+/* Linen texture hint in skeuomorphic content area */
+:global([data-window-style="skeuomorphic"]) .content {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.015) 2px,
+      rgba(0, 0, 0, 0.015) 4px
+    );
+}
+
+/* --- Flat / Modern: Rounded, soft shadow --- */
+:global([data-window-style="flat"]) .window,
+:global([data-window-style="modern"]) .window {
+  border-radius: var(--berry-window-radius, 6px);
+  box-shadow: var(--berry-window-shadow, 0 2px 10px rgba(0, 0, 0, 0.12));
+  overflow: hidden;
+}
+
+:global([data-window-style="flat"]) .windowFocused,
+:global([data-window-style="modern"]) .windowFocused {
+  box-shadow: var(--berry-window-shadow, 0 2px 10px rgba(0, 0, 0, 0.12));
+}
+
+:global([data-window-style="flat"]) .titleBar,
+:global([data-window-style="modern"]) .titleBar {
+  border-radius: var(--berry-window-radius, 6px) var(--berry-window-radius, 6px) 0 0;
+}
+
+/* --- Big Sur: Extra rounded --- */
+:global([data-window-style="big-sur"]) .window {
+  border-radius: var(--berry-window-radius, 10px);
+  box-shadow: var(--berry-window-shadow);
+  overflow: hidden;
+}
+
+:global([data-window-style="big-sur"]) .titleBar {
+  height: var(--berry-title-bar-height, 28px);
+}
+
+/* --- Liquid Glass: Translucent title bar --- */
+:global([data-window-style="liquid-glass"]) .window {
+  border-radius: var(--berry-window-radius, 12px);
+  box-shadow: var(--berry-window-shadow);
+  overflow: hidden;
+  border-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
+}
+
+:global([data-window-style="liquid-glass"]) .titleBar {
+  height: var(--berry-title-bar-height, 28px);
+  backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  -webkit-backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  background: rgba(255, 255, 255, var(--berry-glass-opacity, 0.45));
+}
+

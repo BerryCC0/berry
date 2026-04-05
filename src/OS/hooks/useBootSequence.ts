@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { useShallow } from "zustand/shallow";
 import { useAppKitState, useAppKitAccount } from "@reown/appkit/react";
 import { useBootStore } from "@/OS/store/bootStore";
 import { useSettingsStore } from "@/OS/store/settingsStore";
@@ -29,7 +30,7 @@ export function useBootSequence() {
   const walletCheckComplete = useBootStore((state) => state.walletCheckComplete);
   const markReady = useBootStore((state) => state.markReady);
   
-  const settings = useSettingsStore((state) => state.settings);
+  const settings = useSettingsStore(useShallow((state) => state.settings));
   const isSettingsInitialized = useSettingsStore((state) => state.isInitialized);
   
   // Track if we've already processed the boot sequence

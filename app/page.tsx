@@ -11,15 +11,15 @@
  */
 
 import { useEffect } from "react";
-import { Desktop } from "@/OS/components/Desktop";
-import { MenuBar } from "@/OS/components/MenuBar";
-import { Dock } from "@/OS/components/Dock";
-import { WindowManager } from "@/OS/components/WindowManager";
-import { BootOverlay } from "@/OS/components/BootOverlay";
-import { Launchpad } from "@/OS/components/Launchpad";
-import { SleepOverlay } from "@/OS/components/MenuBar/components/SleepOverlay";
-import { ShutdownOverlay } from "@/OS/components/MenuBar/components/ShutdownOverlay";
-import { NounsIconProvider } from "@/OS/components/NounsIconProvider";
+import { Desktop } from "@/OS/Shell/Desktop";
+import { MenuBar } from "@/OS/Shell/MenuBar";
+import { Dock } from "@/OS/Shell/Dock";
+import { WindowManager } from "@/OS/Shell/WindowManager";
+import { BootOverlay } from "@/OS/Shell/Boot";
+import { Launchpad } from "@/OS/Shell/Launchpad";
+import { SleepOverlay } from "@/OS/Shell/Boot/SleepOverlay";
+import { ShutdownOverlay } from "@/OS/Shell/Boot/ShutdownOverlay";
+import { NounsIconProvider } from "@/OS/Shell/NounsIconProvider";
 import { bootBerryOS, shutdownBerryOS } from "@/OS/lib/Boot";
 import { usePersistence, useApplySettings, useBootSequence, useRouteSync } from "@/OS/hooks";
 import { useBootStore } from "@/OS/store/bootStore";

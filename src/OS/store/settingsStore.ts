@@ -1,11 +1,13 @@
 /**
  * Settings Store
  * Zustand store for system settings with persistence support
+ *
+ * Includes migration logic for the old themeId → era + darkMode model.
  */
 
 import { create } from "zustand";
-import type { SystemSettings, CustomTheme } from "@/OS/types/settings";
-import { DEFAULT_SETTINGS } from "@/OS/lib/Settings/defaults";
+import type { SystemSettings, CustomTheme, EraId } from "@/OS/types/settings";
+import { DEFAULT_SETTINGS, migrateThemeId } from "@/OS/lib/Settings/defaults";
 
 interface SettingsStore {
   settings: SystemSettings;
@@ -45,6 +47,44 @@ interface SettingsStore {
   deleteCustomTheme: (themeId: string) => void;
 }
 
+/**
+ * Migrate legacy appearance settings (themeId + windowStyle) to
+ * the new era + darkMode model.
+ */
+function migrateAppearance(
+  appearance: Record<string, unknown>
+): SystemSettings["appearance"] {
+  // Already migrated — has `era` field and no legacy `themeId`
+  if (appearance.era && !appearance.themeId) {
+    return appearance as unknown as SystemSettings["appearance"];
+  }
+
+  // Has legacy themeId — migrate
+  if (appearance.themeId && typeof appearance.themeId === "string") {
+    const migration = migrateThemeId(appearance.themeId as string);
+    if (migration) {
+      return {
+        era: migration.era,
+        darkMode: migration.darkMode,
+        accentColor: (appearance.accentColor as string) ?? DEFAULT_SETTINGS.appearance.accentColor,
+        wallpaper: (appearance.wallpaper as string) ?? DEFAULT_SETTINGS.appearance.wallpaper,
+        desktopIconSize: (appearance.desktopIconSize as "small" | "medium" | "large") ?? DEFAULT_SETTINGS.appearance.desktopIconSize,
+        fontSize: (appearance.fontSize as "small" | "default" | "large") ?? DEFAULT_SETTINGS.appearance.fontSize,
+        reduceMotion: (appearance.reduceMotion as boolean) ?? DEFAULT_SETTINGS.appearance.reduceMotion,
+        reduceTransparency: (appearance.reduceTransparency as boolean) ?? DEFAULT_SETTINGS.appearance.reduceTransparency,
+      };
+    }
+  }
+
+  // Fallback: if era is present (partially migrated), use it
+  if (appearance.era) {
+    return appearance as unknown as SystemSettings["appearance"];
+  }
+
+  // Full fallback
+  return DEFAULT_SETTINGS.appearance;
+}
+
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
   settings: DEFAULT_SETTINGS,
   customThemes: [],
@@ -53,9 +93,24 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   initialize: (loadedSettings) => {
     if (get().isInitialized) return;
 
-    const mergedSettings = loadedSettings
-      ? deepMerge(DEFAULT_SETTINGS, loadedSettings)
-      : DEFAULT_SETTINGS;
+    let mergedSettings: SystemSettings;
+
+    if (loadedSettings) {
+      // Deep merge first, then migrate appearance
+      const rawMerged = deepMerge(DEFAULT_SETTINGS, loadedSettings);
+
+      // Migrate legacy appearance if needed
+      const migratedAppearance = migrateAppearance(
+        rawMerged.appearance as unknown as Record<string, unknown>
+      );
+
+      mergedSettings = {
+        ...rawMerged,
+        appearance: migratedAppearance,
+      };
+    } else {
+      mergedSettings = DEFAULT_SETTINGS;
+    }
 
     set({
       settings: mergedSettings,
@@ -63,7 +118,10 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     });
 
     if (process.env.NODE_ENV === "development") {
-      console.log("[SettingsStore] Initialized with settings");
+      console.log("[SettingsStore] Initialized with settings:", {
+        era: mergedSettings.appearance.era,
+        darkMode: mergedSettings.appearance.darkMode,
+      });
     }
   },
 
@@ -116,7 +174,18 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     try {
       const imported = JSON.parse(json) as Partial<SystemSettings>;
       const merged = deepMerge(DEFAULT_SETTINGS, imported);
-      set({ settings: merged });
+
+      // Migrate appearance on import too
+      const migratedAppearance = migrateAppearance(
+        merged.appearance as unknown as Record<string, unknown>
+      );
+
+      set({
+        settings: {
+          ...merged,
+          appearance: migratedAppearance,
+        },
+      });
       return true;
     } catch (error) {
       console.error("[SettingsStore] Failed to import settings:", error);
@@ -147,18 +216,36 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
 /**
  * Deep merge utility for settings objects
+ * Recursively merges source into target, handling all keys dynamically
  */
 function deepMerge(
   target: SystemSettings,
   source: Partial<SystemSettings>
 ): SystemSettings {
-  return {
-    appearance: { ...target.appearance, ...source.appearance },
-    desktop: { ...target.desktop, ...source.desktop },
-    windows: { ...target.windows, ...source.windows },
-    notifications: { ...target.notifications, ...source.notifications },
-    privacy: { ...target.privacy, ...source.privacy },
-    accessibility: { ...target.accessibility, ...source.accessibility },
-  };
-}
+  const result = { ...target };
 
+  for (const key in source) {
+    if (key in source) {
+      const sourceValue = source[key as keyof SystemSettings];
+      const targetValue = target[key as keyof SystemSettings];
+
+      if (
+        sourceValue &&
+        targetValue &&
+        typeof sourceValue === "object" &&
+        !Array.isArray(sourceValue)
+      ) {
+        // Recursively merge nested objects
+        result[key as keyof SystemSettings] = {
+          ...(targetValue as unknown as Record<string, unknown>),
+          ...(sourceValue as unknown as Record<string, unknown>),
+        } as never;
+      } else {
+        // Use source value if available
+        result[key as keyof SystemSettings] = sourceValue as never;
+      }
+    }
+  }
+
+  return result;
+}

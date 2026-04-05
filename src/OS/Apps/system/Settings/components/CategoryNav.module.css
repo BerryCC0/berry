@@ -1,0 +1,106 @@
+/* CategoryNav — Sidebar list + mobile grid */
+
+/* ── Sidebar list (desktop) ── */
+
+.list {
+  flex: 1;
+  padding: 8px 12px;
+  overflow-y: auto;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--berry-border-radius, 6px);
+  background: transparent;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+  font-family: inherit;
+}
+
+.listItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.listItemActive {
+  background: var(--berry-accent);
+  color: white;
+}
+
+.listItemActive:hover {
+  background: var(--berry-accent);
+}
+
+/* Icon badge — tinted rounded rect with monochrome SVG */
+.iconBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+}
+
+.listLabel {
+  flex: 1;
+}
+
+/* ── Mobile grid ── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+@media (min-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.gridCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border, rgba(0, 0, 0, 0.08));
+  border-radius: var(--berry-border-radius, 8px);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  text-align: center;
+  font-family: inherit;
+}
+
+.gridCard:hover {
+  background: var(--berry-bg-tertiary);
+  transform: translateY(-1px);
+}
+
+.gridCard:active {
+  transform: translateY(0);
+}
+
+/* Grid icon is rendered via the CategoryIcon component — no extra styles needed */
+
+.gridLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.gridDesc {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.3;
+}

@@ -1,0 +1,316 @@
+/* MenuBar - Desktop Platform Styles */
+
+.menuBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--berry-menubar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: var(--berry-menu-bar-bg);
+  color: var(--berry-menu-bar-text);
+  border-bottom: 1px solid var(--berry-border);
+  z-index: var(--z-menubar);
+  user-select: none;
+}
+
+.menuItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.menuItemActive {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.berryMenu {
+  padding: 0 8px;
+}
+
+.berryIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.appName {
+  font-weight: bold;
+}
+
+.menuLabel {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.statusArea {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.statusItem:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.walletButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.walletButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.walletIndicator {
+  color: #4ade80;
+  font-size: 8px;
+}
+
+.walletAddress {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 10px;
+}
+
+.walletAvatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 5%;
+  object-fit: cover;
+}
+
+.clock {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: inherit;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: var(--z-dropdown);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse);
+}
+
+.dropdownDivider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--berry-border);
+}
+
+.dropdownItemIcon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  object-fit: contain;
+}
+
+.dropdownItemDisabled {
+  color: var(--berry-text-secondary);
+  cursor: default;
+}
+
+.dropdownItemDisabled:hover {
+  background: transparent;
+  color: var(--berry-text-secondary);
+}
+
+/* =============================================================================
+   ERA-SPECIFIC OVERRIDES
+   ============================================================================= */
+
+/* --- Platinum / Classic: Solid gray bar, beveled bottom edge, no blur --- */
+:global([data-window-style="platinum"]) .menuBar,
+:global([data-window-style="classic"]) .menuBar {
+  background: var(--berry-menu-bar-bg, #E0E0E0);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid #808080;
+  box-shadow:
+    inset 0 -1px 0 var(--berry-bevel-dark, #808080),
+    inset 0 1px 0 var(--berry-bevel-light, #f0f0f0);
+}
+
+:global([data-window-style="platinum"]) .menuItem:hover,
+:global([data-window-style="classic"]) .menuItem:hover {
+  background: var(--berry-primary, #000);
+  color: #fff;
+}
+
+:global([data-window-style="platinum"]) .walletButton,
+:global([data-window-style="classic"]) .walletButton {
+  background: transparent;
+  border: 1px solid #808080;
+  border-radius: 0;
+  transition: none;
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-light, #f0f0f0),
+    inset -1px -1px 0 var(--berry-bevel-dark, #808080);
+}
+
+:global([data-window-style="platinum"]) .walletButton:hover,
+:global([data-window-style="classic"]) .walletButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+:global([data-window-style="platinum"]) .statusItem:hover,
+:global([data-window-style="classic"]) .statusItem:hover {
+  border-radius: 0;
+}
+
+:global([data-window-style="platinum"]) .dropdown,
+:global([data-window-style="classic"]) .dropdown {
+  background: var(--berry-bg, #E0E0E0);
+  border: 1px solid #808080;
+  border-radius: 0;
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-light, #f0f0f0),
+    inset -1px -1px 0 var(--berry-bevel-dark, #808080),
+    2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+:global([data-window-style="platinum"]) .dropdownItem:hover,
+:global([data-window-style="classic"]) .dropdownItem:hover {
+  background: var(--berry-primary, #000);
+  color: #fff;
+}
+
+/* --- Aqua: Slightly translucent bar, pinstripe hint --- */
+:global([data-window-style="aqua"]) .menuBar {
+  background: var(--berry-menu-bar-bg, rgba(232,232,232,0.85));
+  backdrop-filter: blur(var(--berry-menubar-blur, 0px));
+  -webkit-backdrop-filter: blur(var(--berry-menubar-blur, 0px));
+  border-bottom: 1px solid #B0B0B0;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+  /* Pinstripe texture */
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(0, 0, 0, 0.02) 1px,
+      rgba(0, 0, 0, 0.02) 2px
+    );
+}
+
+:global([data-window-style="aqua"]) .dropdown {
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border: 1px solid #B0B0B0;
+}
+
+:global([data-window-style="aqua"]) .menuItem:hover {
+  border-radius: 0;
+  background: var(--berry-primary, #2B6EFF);
+  color: #fff;
+}
+
+/* --- Skeuomorphic: Warm translucent bar --- */
+:global([data-window-style="skeuomorphic"]) .menuBar {
+  background: var(--berry-menu-bar-bg, rgba(239,235,229,0.92));
+  backdrop-filter: blur(var(--berry-menubar-blur, 8px));
+  -webkit-backdrop-filter: blur(var(--berry-menubar-blur, 8px));
+  border-bottom: 1px solid #B0A898;
+}
+
+:global([data-window-style="skeuomorphic"]) .dropdown {
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #B0A898;
+}
+
+/* --- Flat / Modern: Translucent bar with blur --- */
+:global([data-window-style="flat"]) .menuBar,
+:global([data-window-style="modern"]) .menuBar {
+  backdrop-filter: blur(var(--berry-menubar-blur, 20px)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--berry-menubar-blur, 20px)) saturate(180%);
+  border-bottom: 1px solid var(--berry-dock-border, rgba(0, 0, 0, 0.1));
+}
+
+:global([data-window-style="flat"]) .dropdown,
+:global([data-window-style="modern"]) .dropdown {
+  border-radius: var(--berry-border-radius, 4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+:global([data-window-style="flat"]) .menuItem:hover,
+:global([data-window-style="modern"]) .menuItem:hover {
+  border-radius: var(--berry-border-radius, 4px);
+}
+
+/* --- Big Sur: Extra translucent --- */
+:global([data-window-style="big-sur"]) .menuBar {
+  backdrop-filter: blur(var(--berry-menubar-blur, 20px)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--berry-menubar-blur, 20px)) saturate(180%);
+}
+
+/* --- Liquid Glass: Maximum vibrancy --- */
+:global([data-window-style="liquid-glass"]) .menuBar {
+  backdrop-filter: blur(var(--berry-menubar-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  -webkit-backdrop-filter: blur(var(--berry-menubar-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  border-bottom-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
+}
+
+:global([data-window-style="liquid-glass"]) .dropdown {
+  border-radius: var(--berry-border-radius, 10px);
+  backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  -webkit-backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  border-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+

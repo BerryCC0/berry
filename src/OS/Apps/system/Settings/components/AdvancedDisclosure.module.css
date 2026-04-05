@@ -1,0 +1,50 @@
+/* AdvancedDisclosure — styled <details> */
+
+.disclosure {
+  border-bottom: 1px solid var(--berry-border-light, rgba(0, 0, 0, 0.08));
+}
+
+.disclosure[open] .arrow {
+  transform: rotate(90deg);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-secondary);
+  list-style: none;
+  user-select: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::marker {
+  content: "";
+}
+
+.summary:hover {
+  color: var(--berry-text-primary);
+}
+
+.arrow {
+  font-size: 9px;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  width: 12px;
+  text-align: center;
+}
+
+.label {
+  flex: 1;
+}
+
+.content {
+  padding-bottom: 4px;
+}

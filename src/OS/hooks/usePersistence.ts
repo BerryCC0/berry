@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef, useCallback } from "react";
+import { useShallow } from "zustand/shallow";
 import { persistence } from "@/OS/lib/Persistence";
 import { useDockStore } from "@/OS/store/dockStore";
 import { useDesktopStore } from "@/OS/store/desktopStore";
@@ -59,7 +60,7 @@ function useDebouncedCallback<A extends unknown[], R>(
  * Hook to auto-save dock configuration when it changes
  */
 export function useDockPersistence() {
-  const pinnedApps = useDockStore((state) => state.pinnedApps);
+  const pinnedApps = useDockStore(useShallow((state) => state.pinnedApps));
   const iconSize = useDockStore((state) => state.iconSize);
   const isInitialized = useDockStore((state) => state.isInitialized);
 
@@ -94,7 +95,7 @@ export function useDockPersistence() {
  * Hook to auto-save settings when they change
  */
 export function useSettingsPersistence() {
-  const settings = useSettingsStore((state) => state.settings);
+  const settings = useSettingsStore(useShallow((state) => state.settings));
   const isInitialized = useSettingsStore((state) => state.isInitialized);
 
   // Debounced save function
@@ -125,7 +126,7 @@ export function useSettingsPersistence() {
  * Hook to auto-save desktop layout when it changes
  */
 export function useDesktopPersistence() {
-  const icons = useDesktopStore((state) => state.icons);
+  const icons = useDesktopStore(useShallow((state) => state.icons));
   const gridSize = useDesktopStore((state) => state.gridSize);
   const snapToGrid = useDesktopStore((state) => state.snapToGrid);
 

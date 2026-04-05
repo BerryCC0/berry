@@ -8,18 +8,9 @@ import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
 import { CLIENT_NAMES, getClientUrl } from '@/OS/lib/clientNames';
+import { weiToEth, formatEth } from '@/shared/format';
 
 export const runtime = 'nodejs';
-
-function weiToEth(wei: string): number {
-  return Number(BigInt(wei || '0')) / 1e18;
-}
-
-function fmtEth(n: number): string {
-  if (n >= 1) return n.toFixed(2);
-  if (n >= 0.01) return n.toFixed(3);
-  return n.toFixed(4);
-}
 
 function formatDate(timestamp: string): string {
   const ts = Number(timestamp);
@@ -222,11 +213,11 @@ export async function GET(
             >
               <div style={{ ...statBox, padding: '16px 32px', minWidth: 180 }}>
                 <span style={statLabel}>Rewarded</span>
-                <span style={statValue}>{fmtEth(rewarded)} ETH</span>
+                <span style={statValue}>{formatEth(rewarded)} ETH</span>
               </div>
               <div style={{ ...statBox, padding: '16px 32px', minWidth: 180 }}>
                 <span style={statLabel}>Balance</span>
-                <span style={statValue}>{fmtEth(balance)} ETH</span>
+                <span style={statValue}>{formatEth(balance)} ETH</span>
               </div>
             </div>
 

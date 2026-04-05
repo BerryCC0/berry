@@ -1,0 +1,76 @@
+/**
+ * TransactionsSection Styles
+ */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.actionContainer {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.removeActionButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: #ef4444;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.15s;
+}
+
+.removeActionButton:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+}
+
+.removeActionButton:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.addButtonRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.addButton {
+  padding: 6px 12px;
+  background: var(--berry-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.addButton:hover:not(:disabled) {
+  background: var(--berry-primary-hover, #0051a3);
+}
+
+.addButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

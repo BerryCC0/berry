@@ -7,10 +7,35 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { verifyWalletAuth } from '@/app/lib/auth';
 
-const sql = process.env.DATABASE_URL 
-  ? neon(process.env.DATABASE_URL) 
+const sql = process.env.DATABASE_URL
+  ? neon(process.env.DATABASE_URL)
   : null;
+
+/**
+ * Soft-launch auth check: verify wallet auth headers if present,
+ * but allow requests without headers (backward compatibility).
+ * Returns { authenticated: boolean, address: string | null, error?: string }
+ */
+async function checkWalletAuth(request: NextRequest): Promise<{
+  authenticated: boolean;
+  address: string | null;
+  error?: string;
+}> {
+  const hasAuthHeaders = request.headers.has('x-wallet-address') ||
+    request.headers.has('x-wallet-signature') ||
+    request.headers.has('x-wallet-timestamp');
+
+  if (!hasAuthHeaders) {
+    // No auth headers provided - soft launch allows this
+    return { authenticated: false, address: null };
+  }
+
+  // Auth headers present - verify them
+  const result = await verifyWalletAuth(request);
+  return result;
+}
 
 // GET - Load all drafts for a wallet
 export async function GET(request: NextRequest) {
@@ -24,6 +49,19 @@ export async function GET(request: NextRequest) {
   if (!wallet) {
     return NextResponse.json({ success: false, error: 'Wallet address required' }, { status: 400 });
   }
+
+  // Check wallet auth (soft launch: allow unauthenticated, but validate if headers present)
+  const authResult = await checkWalletAuth(request);
+  if (authResult.authenticated === true && authResult.address) {
+    // Auth headers were present and valid - verify they match the requested wallet
+    if (authResult.address.toLowerCase() !== wallet.toLowerCase()) {
+      return NextResponse.json({ success: false, error: 'Wallet mismatch' }, { status: 403 });
+    }
+  } else if (authResult.error) {
+    // Auth headers were present but invalid
+    return NextResponse.json({ success: false, error: authResult.error }, { status: 401 });
+  }
+  // Otherwise: no auth headers or soft launch allows unauthenticated access
 
   try {
     const results = await sql`
@@ -67,6 +105,19 @@ export async function POST(request: NextRequest) {
     if (!draft.wallet_address || !draft.draft_slug) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Check wallet auth (soft launch: allow unauthenticated, but validate if headers present)
+    const authResult = await checkWalletAuth(request);
+    if (authResult.authenticated === true && authResult.address) {
+      // Auth headers were present and valid - verify they match the wallet_address in body
+      if (authResult.address.toLowerCase() !== draft.wallet_address.toLowerCase()) {
+        return NextResponse.json({ success: false, error: 'Wallet mismatch' }, { status: 403 });
+      }
+    } else if (authResult.error) {
+      // Auth headers were present but invalid
+      return NextResponse.json({ success: false, error: authResult.error }, { status: 401 });
+    }
+    // Otherwise: no auth headers or soft launch allows unauthenticated access
 
     const result = await sql`
       INSERT INTO proposal_drafts (
@@ -120,6 +171,19 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Wallet and slug required' }, { status: 400 });
   }
 
+  // Check wallet auth (soft launch: allow unauthenticated, but validate if headers present)
+  const authResult = await checkWalletAuth(request);
+  if (authResult.authenticated === true && authResult.address) {
+    // Auth headers were present and valid - verify they match the wallet in query
+    if (authResult.address.toLowerCase() !== wallet.toLowerCase()) {
+      return NextResponse.json({ success: false, error: 'Wallet mismatch' }, { status: 403 });
+    }
+  } else if (authResult.error) {
+    // Auth headers were present but invalid
+    return NextResponse.json({ success: false, error: authResult.error }, { status: 401 });
+  }
+  // Otherwise: no auth headers or soft launch allows unauthenticated access
+
   try {
     await sql`
       DELETE FROM proposal_drafts
@@ -146,6 +210,19 @@ export async function PATCH(request: NextRequest) {
     if (!wallet_address || !draft_slug || !new_title) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Check wallet auth (soft launch: allow unauthenticated, but validate if headers present)
+    const authResult = await checkWalletAuth(request);
+    if (authResult.authenticated === true && authResult.address) {
+      // Auth headers were present and valid - verify they match the wallet_address in body
+      if (authResult.address.toLowerCase() !== wallet_address.toLowerCase()) {
+        return NextResponse.json({ success: false, error: 'Wallet mismatch' }, { status: 403 });
+      }
+    } else if (authResult.error) {
+      // Auth headers were present but invalid
+      return NextResponse.json({ success: false, error: authResult.error }, { status: 401 });
+    }
+    // Otherwise: no auth headers or soft launch allows unauthenticated access
 
     await sql`
       UPDATE proposal_drafts

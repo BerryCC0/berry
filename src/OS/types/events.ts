@@ -49,6 +49,12 @@ export type SystemEvents = {
   "app:closed": { appId: string; windowId: string };
   "app:crashed": { appId: string; error: string };
 
+  // Persistence events
+  "persistence:error": { type: string; message: string };
+
+  // App launch failure
+  "app:launch-failed": { appId: string; error: string };
+
   // Desktop events
   "desktop:icon-moved": { iconId: string; x: number; y: number };
   "desktop:icon-selected": { iconId: string };

@@ -1,0 +1,296 @@
+/**
+ * Button Styles
+ * Mac OS 8 classic button appearance
+ */
+
+.button {
+  font-family: var(--berry-font-system, "Geneva", sans-serif);
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  user-select: none;
+  transition: none; /* No transitions for retro feel */
+}
+
+.button:focus {
+  outline: 2px solid var(--berry-accent, #000);
+  outline-offset: 2px;
+}
+
+/* Variant: Default */
+.default {
+  background: linear-gradient(180deg, #fff 0%, #ccc 100%);
+  color: #000;
+  border: 1px solid #808080;
+  border-radius: 3px;
+  box-shadow: 
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080,
+    1px 1px 0 #000;
+}
+
+.default:hover:not(.disabled) {
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+}
+
+.default:active:not(.disabled),
+.default.active {
+  background: linear-gradient(180deg, #999 0%, #ccc 100%);
+  box-shadow: 
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
+}
+
+/* Variant: Primary */
+.primary {
+  background: var(--berry-button-primary-bg, #000);
+  color: var(--berry-button-primary-text, #fff);
+  border: 2px solid #000;
+  border-radius: 4px;
+  box-shadow: 
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.primary:hover:not(.disabled) {
+  background: #333;
+}
+
+.primary:active:not(.disabled),
+.primary.active {
+  background: #555;
+  box-shadow: 
+    inset 1px 1px 0 rgba(0, 0, 0, 0.2),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Variant: Text */
+.text {
+  background: transparent;
+  color: var(--berry-text, #000);
+  border: none;
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+.text:hover:not(.disabled) {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.text:active:not(.disabled),
+.text.active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Variant: Icon */
+.icon {
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  padding: 4px;
+  min-width: auto;
+}
+
+.icon:hover:not(.disabled) {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.icon:active:not(.disabled),
+.icon.active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Sizes */
+.small {
+  padding: 4px 10px;
+  font-size: 11px;
+  min-height: 22px;
+}
+
+.medium {
+  padding: 6px 14px;
+  font-size: 12px;
+  min-height: 26px;
+}
+
+.large {
+  padding: 8px 20px;
+  font-size: 13px;
+  min-height: 32px;
+}
+
+/* Full width */
+.fullWidth {
+  width: 100%;
+}
+
+/* Disabled */
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =============================================================================
+   ERA-SPECIFIC OVERRIDES
+   ============================================================================= */
+
+/* --- Platinum / Classic: Already close — ensure no transitions, sharp corners --- */
+:global([data-window-style="platinum"]) .button,
+:global([data-window-style="classic"]) .button {
+  transition: none;
+  border-radius: 3px;
+}
+
+:global([data-window-style="platinum"]) .default,
+:global([data-window-style="classic"]) .default {
+  background: linear-gradient(180deg, #fff 0%, #ccc 100%);
+  border: 1px solid #808080;
+  border-radius: 3px;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080,
+    1px 1px 0 #000;
+}
+
+:global([data-window-style="platinum"]) .default:active:not(.disabled),
+:global([data-window-style="classic"]) .default:active:not(.disabled) {
+  background: linear-gradient(180deg, #999 0%, #ccc 100%);
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
+}
+
+:global([data-window-style="platinum"]) .primary,
+:global([data-window-style="classic"]) .primary {
+  border-radius: 4px;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.2),
+    1px 1px 0 #000;
+}
+
+/* --- Aqua: Gel buttons — glossy multi-stop gradient with highlight --- */
+:global([data-window-style="aqua"]) .button {
+  transition: background 150ms ease-out;
+  border-radius: 4px;
+}
+
+:global([data-window-style="aqua"]) .default {
+  background: linear-gradient(180deg, #FFFFFF 0%, #E8E8E8 40%, #D0D0D0 60%, #E0E0E0 100%);
+  color: #000;
+  border: 1px solid #B0B0B0;
+  border-radius: 4px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+:global([data-window-style="aqua"]) .default:hover:not(.disabled) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 40%, #DCDCDC 60%, #EAEAEA 100%);
+}
+
+:global([data-window-style="aqua"]) .default:active:not(.disabled) {
+  background: linear-gradient(180deg, #C0C0C0 0%, #D0D0D0 40%, #B8B8B8 60%, #C8C8C8 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-window-style="aqua"]) .primary {
+  background: linear-gradient(180deg, #7CB8FF 0%, #2B6EFF 40%, #1A5CD4 60%, #4D8BFF 100%);
+  color: #fff;
+  border: 1px solid #1048AA;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 3px rgba(43, 110, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+:global([data-window-style="aqua"]) .primary:hover:not(.disabled) {
+  background: linear-gradient(180deg, #8FC4FF 0%, #3B7EFF 40%, #2A6CE4 60%, #5D9BFF 100%);
+}
+
+/* --- Skeuomorphic: Warm, refined gel buttons --- */
+:global([data-window-style="skeuomorphic"]) .button {
+  transition: background 200ms ease-out;
+  border-radius: 4px;
+}
+
+:global([data-window-style="skeuomorphic"]) .default {
+  background: linear-gradient(180deg, #FEFEFE 0%, #E8E4DE 50%, #D6D2CC 100%);
+  color: #333;
+  border: 1px solid #B0A898;
+  border-radius: 4px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+:global([data-window-style="skeuomorphic"]) .default:active:not(.disabled) {
+  background: linear-gradient(180deg, #D6D2CC 0%, #C8C4BE 50%, #BAB6B0 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+:global([data-window-style="skeuomorphic"]) .primary {
+  background: linear-gradient(180deg, #5CA0FF 0%, #007AFF 50%, #0066DD 100%);
+  color: #fff;
+  border: 1px solid #0055BB;
+  border-radius: 4px;
+  box-shadow:
+    0 1px 3px rgba(0, 122, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* --- Flat / Modern: Clean, subtle depth --- */
+:global([data-window-style="flat"]) .button,
+:global([data-window-style="modern"]) .button {
+  transition: background var(--berry-transition-speed, 0.2s) var(--berry-easing, ease);
+  border-radius: var(--berry-border-radius, 4px);
+}
+
+:global([data-window-style="flat"]) .default,
+:global([data-window-style="modern"]) .default {
+  background: var(--berry-button-bg, #E0E0E0);
+  color: var(--berry-button-text, #000);
+  border: 1px solid var(--berry-input-border, #BDBDBD);
+  border-radius: var(--berry-border-radius, 4px);
+  box-shadow: none;
+}
+
+:global([data-window-style="flat"]) .default:hover:not(.disabled),
+:global([data-window-style="modern"]) .default:hover:not(.disabled) {
+  background: var(--berry-bg-tertiary, #eee);
+}
+
+:global([data-window-style="flat"]) .default:active:not(.disabled),
+:global([data-window-style="modern"]) .default:active:not(.disabled) {
+  background: var(--berry-bg-secondary, #ddd);
+  box-shadow: none;
+}
+
+/* --- Big Sur / Liquid Glass: Rounded, vibrancy --- */
+:global([data-window-style="big-sur"]) .button,
+:global([data-window-style="liquid-glass"]) .button {
+  transition: all var(--berry-transition-speed, 0.25s) var(--berry-easing, ease);
+  border-radius: var(--berry-border-radius, 8px);
+}
+
+:global([data-window-style="big-sur"]) .default,
+:global([data-window-style="liquid-glass"]) .default {
+  background: var(--berry-button-bg, #E0E0E0);
+  color: var(--berry-button-text, #000);
+  border: 1px solid var(--berry-input-border, #d0d0d0);
+  border-radius: var(--berry-border-radius, 8px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:global([data-window-style="liquid-glass"]) .default {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
+}
+

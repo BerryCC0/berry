@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useCallback, useRef } from "react";
+import { useShallow } from "zustand/shallow";
 import { useAppKit, useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useSessionStore } from "@/OS/store/sessionStore";
 import { useSettingsStore } from "@/OS/store/settingsStore";
@@ -79,14 +80,12 @@ export function useWallet() {
   const { address, isConnected, caipAddress } = useAppKitAccount();
   const { chainId } = useAppKitNetwork();
 
-  const {
-    primaryWallet,
-    connectWallet,
-    disconnectWallet: sessionDisconnect,
-  } = useSessionStore();
+  const primaryWallet = useSessionStore(useShallow((state) => state.primaryWallet));
+  const connectWallet = useSessionStore((state) => state.connectWallet);
+  const sessionDisconnect = useSessionStore((state) => state.disconnectWallet);
 
   // Get privacy settings
-  const privacySettings = useSettingsStore((state) => state.settings.privacy);
+  const privacySettings = useSettingsStore(useShallow((state) => state.settings.privacy));
 
   // Track if we've already upgraded persistence to avoid duplicate calls
   const persistenceUpgradedRef = useRef(false);

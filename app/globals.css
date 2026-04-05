@@ -15,46 +15,96 @@
    Default values here are for Berry Classic theme.
    ============================================================================ */
 :root {
-  /* === BACKGROUNDS === */
+  /* ========================================================================
+     UNIVERSAL TOKENS — Shared across ALL themes. Never change per-era.
+     ======================================================================== */
+
+  /* --- Spacing scale (8pt grid, HIG standard) --- */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* --- Z-index scale --- */
+  --z-desktop: 0;
+  --z-window: 100;
+  --z-window-focused: 200;
+  --z-modal: 1000;
+  --z-dropdown: 1100;
+  --z-tooltip: 1200;
+  --z-dock: 1300;
+  --z-menubar: 1400;
+  --z-notification: 1500;
+
+  /* --- Animation timing functions --- */
+  --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1.0);
+  --ease-in: cubic-bezier(0.42, 0, 1.0, 1.0);
+  --ease-out: cubic-bezier(0, 0, 0.58, 1.0);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1.0);
+  --ease-glass: cubic-bezier(0.2, 0.8, 0.2, 1.0);
+
+  /* --- Breakpoints (informational — used via @media in components) --- */
+  /* --bp-mobile: 480px; --bp-tablet: 768px; --bp-desktop: 1024px; --bp-wide: 1440px; */
+
+  /* ========================================================================
+     ERA TOKENS — Set dynamically by applySettings.ts when the theme changes.
+     Defaults here are for Platinum (Berry Classic) theme.
+     ======================================================================== */
+
+  /* --- Backgrounds --- */
   --berry-bg: #e0e0e0;
   --berry-bg-secondary: #f0f0f0;
   --berry-bg-tertiary: #ffffff;
   --berry-desktop-bg: #008080;
 
-  /* === TEXT === */
+  /* --- Text --- */
   --berry-text: #000000;
   --berry-text-primary: #000000;
   --berry-text-secondary: #333333;
   --berry-text-muted: #666666;
   --berry-text-inverse: #ffffff;
 
-  /* === ACCENT / PRIMARY === */
+  /* --- Accent / Primary --- */
   --berry-accent: #e93737;
   --berry-primary: #e93737;
   --berry-primary-hover: #cc2f2f;
   --berry-accent-hover: #cc2f2f;
   --berry-accent-active: #a32525;
 
-  /* === WINDOW CHROME === */
+  /* --- Window chrome --- */
   --berry-window-bg: #f0f0f0;
   --berry-window-border: #cccccc;
   --berry-title-bar-bg: #cccccc;
   --berry-title-bar-text: #000000;
   --berry-window-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  --berry-title-bar-height: 22px;
+  --berry-window-radius: 0px;
+  --berry-traffic-light-size: 12px;
 
-  /* === CONTROLS === */
+  /* --- Controls --- */
   --berry-button-bg: #e0e0e0;
   --berry-button-text: #000000;
   --berry-input-bg: #ffffff;
   --berry-input-border: #cccccc;
   --berry-border: #cccccc;
 
-  /* === DOCK === */
+  /* --- Bevel system (Platinum era — inert in flat eras) --- */
+  --berry-bevel-light: #f0f0f0;
+  --berry-bevel-dark: #808080;
+
+  /* --- Dock --- */
   --berry-dock-bg: rgba(255, 255, 255, 0.25);
   --berry-dock-border: rgba(255, 255, 255, 0.3);
   --berry-dock-icon-size: 48px;
+  --berry-dock-radius: 16px;
+  --berry-dock-blur: 20px;
 
-  /* === LAUNCHPAD === */
+  /* --- Launchpad --- */
   --launchpad-bg: rgba(40, 40, 45, 0.92);
   --launchpad-border: rgba(255, 255, 255, 0.1);
   --launchpad-divider: rgba(255, 255, 255, 0.08);
@@ -71,27 +121,28 @@
   --launchpad-dot-hover: rgba(255, 255, 255, 0.4);
   --launchpad-dot-active: #ffffff;
 
-  /* === MENU BAR === */
+  /* --- Menu bar --- */
   --berry-menu-bar-bg: #e0e0e0;
   --berry-menu-bar-text: #000000;
   --berry-menubar-height: 28px;
+  --berry-menubar-blur: 0px;
 
-  /* === SEMANTIC COLORS === */
+  /* --- Semantic colors --- */
   --berry-success: #28a745;
   --berry-warning: #ffc107;
   --berry-error: #dc3545;
   --berry-info: #17a2b8;
 
-  /* === TYPOGRAPHY === */
+  /* --- Typography --- */
   --berry-font-system: "Chicago", "Geneva", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --berry-font-size: 12px;
   --berry-font-size-base: 14px;
 
-  /* === DESKTOP ICONS === */
+  /* --- Desktop icons --- */
   --berry-desktop-icon-size: 64px;
   --berry-desktop-icon-spacing: 16px;
 
-  /* === MISC === */
+  /* --- Misc --- */
   --berry-border-radius: 0px;
   --berry-scrollbar-width: 16px;
   --berry-scrollbar-track: var(--berry-bg-secondary);
@@ -99,16 +150,136 @@
   --berry-transition-speed: 0.15s;
   --berry-easing: ease;
 
-  /* === Z-INDEX SCALE === */
-  --z-desktop: 0;
-  --z-window: 100;
-  --z-window-focused: 200;
-  --z-modal: 1000;
-  --z-dropdown: 1100;
-  --z-tooltip: 1200;
-  --z-dock: 1300;
-  --z-menubar: 1400;
-  --z-notification: 1500;
+  /* --- Glass materials (inert unless Aqua/BigSur/LiquidGlass era) --- */
+  --berry-glass-opacity: 1;
+  --berry-glass-blur: 0px;
+  --berry-glass-saturation: 1;
+  --berry-glass-border: transparent;
+}
+
+/* ============================================================================
+   ERA-SPECIFIC DATA ATTRIBUTES
+   Applied by applySettings.ts via root.dataset.windowStyle
+   Components use these to switch rendering modes.
+   ============================================================================ */
+
+/* System 1: 1-bit monochrome, no smoothing, no transitions */
+[data-window-style="system1"] {
+  --berry-font-system: "Chicago", monospace;
+  --berry-font-size-base: 12px;
+  --berry-transition-speed: 0s;
+  --berry-border-radius: 0px;
+  --berry-window-radius: 0px;
+  --berry-window-shadow: none;
+  --berry-bevel-light: #ffffff;
+  --berry-bevel-dark: #000000;
+  --berry-dock-blur: 0px;
+  --berry-dock-radius: 0px;
+  --berry-menubar-blur: 0px;
+  -webkit-font-smoothing: none;
+}
+
+/* Platinum: beveled 3D, hard shadows, no blur */
+[data-window-style="platinum"],
+[data-window-style="classic"] {
+  --berry-font-system: "Chicago", "Geneva", -apple-system, BlinkMacSystemFont, sans-serif;
+  --berry-font-size-base: 12px;
+  --berry-transition-speed: 0s;
+  --berry-border-radius: 0px;
+  --berry-window-radius: 0px;
+  --berry-window-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  --berry-bevel-light: #f0f0f0;
+  --berry-bevel-dark: #808080;
+  --berry-dock-blur: 0px;
+  --berry-dock-radius: 0px;
+  --berry-menubar-blur: 0px;
+}
+
+/* Aqua: gel buttons, pinstripes, soft shadows, light blur */
+[data-window-style="aqua"] {
+  --berry-font-system: "Lucida Grande", "Lucida Sans Unicode", -apple-system, sans-serif;
+  --berry-font-size-base: 12px;
+  --berry-transition-speed: 0.15s;
+  --berry-easing: var(--ease-spring);
+  --berry-border-radius: 4px;
+  --berry-window-radius: 6px;
+  --berry-window-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --berry-title-bar-height: 22px;
+  --berry-dock-blur: 10px;
+  --berry-dock-radius: 0px;
+  --berry-menubar-blur: 0px;
+  --berry-glass-opacity: 0.85;
+  --berry-glass-blur: 10px;
+}
+
+/* Skeuomorphic: warm textures, soft shadows, Helvetica Neue */
+[data-window-style="skeuomorphic"] {
+  --berry-font-system: "Helvetica Neue", "Helvetica", -apple-system, sans-serif;
+  --berry-font-size-base: 14px;
+  --berry-transition-speed: 0.2s;
+  --berry-easing: var(--ease-default);
+  --berry-border-radius: 4px;
+  --berry-window-radius: 6px;
+  --berry-window-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  --berry-title-bar-height: 22px;
+  --berry-dock-blur: 10px;
+  --berry-dock-radius: 0px;
+  --berry-menubar-blur: 8px;
+}
+
+/* Flat: clarity, deference, depth — SF Pro, translucent surfaces */
+[data-window-style="flat"],
+[data-window-style="modern"] {
+  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --berry-font-size-base: 14px;
+  --berry-transition-speed: 0.2s;
+  --berry-easing: var(--ease-default);
+  --berry-border-radius: 4px;
+  --berry-window-radius: 6px;
+  --berry-window-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  --berry-title-bar-height: 22px;
+  --berry-dock-blur: 20px;
+  --berry-dock-radius: 12px;
+  --berry-menubar-blur: 20px;
+  --berry-glass-opacity: 0.7;
+  --berry-glass-blur: 20px;
+}
+
+/* Big Sur: rounded everything, thicker chrome, squircle icons */
+[data-window-style="big-sur"] {
+  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  --berry-font-size-base: 14px;
+  --berry-transition-speed: 0.25s;
+  --berry-easing: var(--ease-default);
+  --berry-border-radius: 8px;
+  --berry-window-radius: 10px;
+  --berry-window-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
+  --berry-title-bar-height: 28px;
+  --berry-dock-blur: 20px;
+  --berry-dock-radius: 16px;
+  --berry-menubar-blur: 20px;
+  --berry-glass-opacity: 0.6;
+  --berry-glass-blur: 20px;
+  --berry-glass-saturation: 1.8;
+}
+
+/* Liquid Glass: translucent refraction, dynamic light */
+[data-window-style="liquid-glass"] {
+  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  --berry-font-size-base: 14px;
+  --berry-transition-speed: 0.25s;
+  --berry-easing: var(--ease-glass);
+  --berry-border-radius: 10px;
+  --berry-window-radius: 12px;
+  --berry-window-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
+  --berry-title-bar-height: 28px;
+  --berry-dock-blur: 40px;
+  --berry-dock-radius: 20px;
+  --berry-menubar-blur: 40px;
+  --berry-glass-opacity: 0.45;
+  --berry-glass-blur: 40px;
+  --berry-glass-saturation: 1.8;
+  --berry-glass-border: rgba(255, 255, 255, 0.5);
 }
 
 /* ============================================================================
@@ -121,6 +292,74 @@
 
 [data-theme="light"] {
   color-scheme: light;
+}
+
+/* ============================================================================
+   THEME TRANSITION — smooth crossfade when switching eras/themes
+   Only applies to background/color properties, not layout. Respects reduce-motion.
+   Platinum/System1 suppress transitions via specificity, so they skip this.
+   ============================================================================ */
+html:not(.reduce-motion) body,
+html:not(.reduce-motion) .menuBar,
+html:not(.reduce-motion) .dockContainer,
+html:not(.reduce-motion) .window,
+html:not(.reduce-motion) .titleBar {
+  transition:
+    background-color 0.4s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* ============================================================================
+   ERA-SPECIFIC GLOBAL STYLES
+   ============================================================================ */
+
+/* System 1: 1-bit rendering — no anti-aliasing, pixelated icons, inverse selection */
+[data-window-style="system1"] body {
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+[data-window-style="system1"] img {
+  image-rendering: pixelated;
+}
+
+[data-window-style="system1"] ::selection {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+/* Aqua: Pinstripe body background hint */
+[data-window-style="aqua"] body {
+  background-image:
+    var(--berry-wallpaper, none),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(0, 0, 0, 0.015) 1px,
+      rgba(0, 0, 0, 0.015) 2px
+    );
+}
+
+/* Skeuomorphic: Warm linen body texture hint */
+[data-window-style="skeuomorphic"] body {
+  background-image:
+    var(--berry-wallpaper, none),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.008) 2px,
+      rgba(0, 0, 0, 0.008) 4px
+    );
+}
+
+/* Liquid Glass: Ensure backdrop-filter works on body for desktop wallpaper refraction */
+[data-window-style="liquid-glass"] body {
+  -webkit-backdrop-filter: saturate(1.2);
+  backdrop-filter: saturate(1.2);
 }
 
 /* ============================================================================
@@ -270,6 +509,119 @@ body {
 .large-click-targets input[type="radio"] {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* ============================================================================
+   ERA: PLATINUM/CLASSIC — GLOBAL TRANSITION SUPPRESSION
+   Real Mac OS 8 had zero CSS transitions on interactive elements.
+   This kills all transitions in Platinum mode at the global level.
+   ============================================================================ */
+
+[data-window-style="platinum"] button,
+[data-window-style="platinum"] a,
+[data-window-style="platinum"] input,
+[data-window-style="platinum"] select,
+[data-window-style="platinum"] [role="button"],
+[data-window-style="classic"] button,
+[data-window-style="classic"] a,
+[data-window-style="classic"] input,
+[data-window-style="classic"] select,
+[data-window-style="classic"] [role="button"] {
+  transition: none !important;
+}
+
+[data-window-style="system1"] button,
+[data-window-style="system1"] a,
+[data-window-style="system1"] input,
+[data-window-style="system1"] select,
+[data-window-style="system1"] [role="button"] {
+  transition: none !important;
+}
+
+/* ============================================================================
+   ERA-AWARE SCROLLBARS
+   Platinum keeps the classic 16px beveled scrollbar already in ScrollArea.
+   Modern eras get thin, overlay-style scrollbars.
+   ============================================================================ */
+
+/* Flat / Modern / Big Sur / Liquid Glass: thin overlay scrollbars */
+[data-window-style="flat"] *,
+[data-window-style="modern"] *,
+[data-window-style="big-sur"] *,
+[data-window-style="liquid-glass"] * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--berry-text-muted, #999) transparent;
+}
+
+[data-window-style="flat"] *::-webkit-scrollbar,
+[data-window-style="modern"] *::-webkit-scrollbar,
+[data-window-style="big-sur"] *::-webkit-scrollbar,
+[data-window-style="liquid-glass"] *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-window-style="flat"] *::-webkit-scrollbar-track,
+[data-window-style="modern"] *::-webkit-scrollbar-track,
+[data-window-style="big-sur"] *::-webkit-scrollbar-track,
+[data-window-style="liquid-glass"] *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-window-style="flat"] *::-webkit-scrollbar-thumb,
+[data-window-style="modern"] *::-webkit-scrollbar-thumb,
+[data-window-style="big-sur"] *::-webkit-scrollbar-thumb,
+[data-window-style="liquid-glass"] *::-webkit-scrollbar-thumb {
+  background: var(--berry-text-muted, #999);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+[data-window-style="flat"] *::-webkit-scrollbar-thumb:hover,
+[data-window-style="modern"] *::-webkit-scrollbar-thumb:hover,
+[data-window-style="big-sur"] *::-webkit-scrollbar-thumb:hover,
+[data-window-style="liquid-glass"] *::-webkit-scrollbar-thumb:hover {
+  background: var(--berry-text-secondary, #666);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* Hide scrollbar arrow buttons in modern eras */
+[data-window-style="flat"] *::-webkit-scrollbar-button,
+[data-window-style="modern"] *::-webkit-scrollbar-button,
+[data-window-style="big-sur"] *::-webkit-scrollbar-button,
+[data-window-style="liquid-glass"] *::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Platinum / Classic: fat 16px beveled scrollbars (period-accurate) */
+[data-window-style="platinum"] *,
+[data-window-style="classic"] * {
+  scrollbar-width: auto;
+  scrollbar-color: #808080 #c0c0c0;
+}
+
+/* System 1: simple black-on-white scrollbars */
+[data-window-style="system1"] * {
+  scrollbar-width: auto;
+  scrollbar-color: #000 #fff;
+}
+
+[data-window-style="system1"] *::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+[data-window-style="system1"] *::-webkit-scrollbar-track {
+  background: #fff;
+  border: 1px solid #000;
+}
+
+[data-window-style="system1"] *::-webkit-scrollbar-thumb {
+  background: #000;
+  border: 1px solid #000;
 }
 
 /* ============================================================================

@@ -7,7 +7,7 @@
 import { useWindowStore } from "@/OS/store/windowStore";
 import { useSettingsStore } from "@/OS/store/settingsStore";
 import { systemBus } from "@/OS/lib/EventBus";
-import { getCascadePosition, resolveWindowPosition } from "@/OS/lib/WindowManager";
+import { getCascadePosition, resolveWindowPosition, clampToViewport } from "@/OS/lib/WindowManager";
 import type { AppConfig, AppInstance, LaunchOptions } from "@/OS/types/app";
 import type { WindowConfig } from "@/OS/types/window";
 
@@ -95,8 +95,8 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
   }
 
   // Check singleton constraint
-  if (config.singleton && isAppRunning(appId)) {
-    // Focus existing window instead
+  if (config.singleton) {
+    // Atomically check and focus existing window instead (combine isAppRunning + getRunningInstances)
     const instances = getRunningInstances(appId);
     if (instances.length > 0) {
       const windowStore = useWindowStore.getState();
@@ -124,7 +124,7 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
   // Priority: LaunchOptions x/y > config.window.x/y > config.window.position preset > cascade
   let x = options.x ?? config.window.x;
   let y = options.y ?? config.window.y;
-  
+
   if (x === undefined || y === undefined) {
     const resolved = config.window.position
       ? resolveWindowPosition(config.window.position, config.window.width, config.window.height)
@@ -132,6 +132,11 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
     x = x ?? resolved.x;
     y = y ?? resolved.y;
   }
+
+  // Clamp to viewport: top edge stays below menu bar, bottom edge above dock
+  const clamped = clampToViewport(x, y, config.window.width, config.window.height);
+  x = clamped.x;
+  y = clamped.y;
 
   // Create window config
   const windowConfig: WindowConfig = {
@@ -149,40 +154,75 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
     initialState: options.initialState,
   };
 
-  // Create the window (reuse windowStore from max windows check above)
-  const windowId = windowStore.createWindow(appId, windowConfig);
+  // Create the window with error handling to prevent zombie windows
+  let windowId: string | null = null;
+  let window = null;
+  try {
+    // Create the window (reuse windowStore from max windows check above)
+    windowId = windowStore.createWindow(appId, windowConfig);
 
-  // Get the window to access instanceId
-  const window = windowStore.getWindow(windowId);
-  if (!window) {
-    console.error(`[AppLauncher] Failed to create window for "${appId}"`);
+    // Get the window to access instanceId
+    window = windowStore.getWindow(windowId);
+    if (!window) {
+      console.error(`[AppLauncher] Failed to create window for "${appId}"`);
+      return null;
+    }
+
+    // Track running instance
+    const instance: AppInstance = {
+      instanceId: window.instanceId,
+      appId,
+      windowId,
+      launchedAt: Date.now(),
+      state: options.initialState,
+    };
+
+    runningInstances.set(window.instanceId, instance);
+
+    // Verify window still exists (sanity check before launch event)
+    const verifyWindow = windowStore.getWindow(windowId);
+    if (!verifyWindow) {
+      console.error(
+        `[AppLauncher] Window "${windowId}" disappeared after instance tracking for "${appId}"`
+      );
+      // Clean up the instance we just tracked
+      runningInstances.delete(window.instanceId);
+      return null;
+    }
+
+    // Emit launch event
+    systemBus.emit("app:launched", { appId, windowId });
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[AppLauncher] Launched app: ${appId} (window: ${windowId})`);
+    }
+
+    // Focus the window if requested (default true)
+    if (options.focus !== false) {
+      windowStore.focusWindow(windowId);
+    }
+
+    return windowId;
+  } catch (error) {
+    console.error(`[AppLauncher] Failed to launch app "${appId}":`, error);
+
+    // Clean up on failure
+    if (window && windowId) {
+      try {
+        // Remove instance from tracking if it was added
+        runningInstances.delete(window.instanceId);
+        // Close the window
+        windowStore.closeWindow(windowId);
+      } catch (cleanupError) {
+        console.error(`[AppLauncher] Cleanup failed for window "${windowId}":`, cleanupError);
+      }
+    }
+
+    // Emit launch failure event
+    systemBus.emit("app:launch-failed", { appId, error: error instanceof Error ? error.message : String(error) });
+
     return null;
   }
-
-  // Track running instance
-  const instance: AppInstance = {
-    instanceId: window.instanceId,
-    appId,
-    windowId,
-    launchedAt: Date.now(),
-    state: options.initialState,
-  };
-
-  runningInstances.set(window.instanceId, instance);
-
-  // Emit launch event
-  systemBus.emit("app:launched", { appId, windowId });
-
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[AppLauncher] Launched app: ${appId} (window: ${windowId})`);
-  }
-
-  // Focus the window if requested (default true)
-  if (options.focus !== false) {
-    windowStore.focusWindow(windowId);
-  }
-
-  return windowId;
 }
 
 /**

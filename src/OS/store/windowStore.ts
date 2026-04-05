@@ -56,12 +56,14 @@ interface WindowStore {
   resizeWindow: (windowId: string, width: number, height: number) => void;
   updateWindowTitle: (windowId: string, title: string) => void;
   updateAppState: (windowId: string, state: unknown) => void;
+  batchUpdate: (updates: Array<{ windowId: string; x?: number; y?: number; width?: number; height?: number }>) => void;
 
   // Queries
   getWindow: (windowId: string) => WindowState | undefined;
   getWindowsByApp: (appId: string) => WindowState[];
   getTopWindow: () => WindowState | undefined;
   getAllWindows: () => WindowState[];
+  getWindowIds: () => string[];
 }
 
 export const useWindowStore = create<WindowStore>((set, get) => ({
@@ -91,6 +93,17 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const windowId = generateWindowId();
     const instanceId = generateInstanceId(appId);
 
+    // Enforce menu bar floor on initial position
+    let initialY = config.y ?? 100;
+    if (typeof document !== "undefined") {
+      const menuBarHeight = parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--berry-menubar-height") || "28",
+        10
+      );
+      initialY = Math.max(menuBarHeight, initialY);
+    }
+
     const windowState: WindowState = {
       id: windowId,
       appId,
@@ -98,9 +111,9 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       title: config.title,
       icon: config.icon,
 
-      // Position - center if not specified
+      // Position - center if not specified, clamped below menu bar
       x: config.x ?? 100,
-      y: config.y ?? 100,
+      y: initialY,
       width: config.width,
       height: config.height,
 
@@ -387,19 +400,31 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   },
 
   moveWindow: (windowId: string, x: number, y: number) => {
+    // Enforce menu bar floor: window top edge must never go above menu bar bottom.
+    // Read the live CSS variable so this stays correct across theme/era changes.
+    let clampedY = y;
+    if (typeof document !== "undefined") {
+      const menuBarHeight = parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--berry-menubar-height") || "28",
+        10
+      );
+      clampedY = Math.max(menuBarHeight, y);
+    }
+
     set((state) => {
       const newWindows = new Map(state.windows);
       const targetWindow = newWindows.get(windowId);
 
       if (targetWindow) {
-        newWindows.set(windowId, { ...targetWindow, x, y });
+        newWindows.set(windowId, { ...targetWindow, x, y: clampedY });
       }
 
       return { windows: newWindows };
     });
 
     // Emit event
-    systemBus.emit("window:moved", { windowId, x, y });
+    systemBus.emit("window:moved", { windowId, x, y: clampedY });
   },
 
   resizeWindow: (windowId: string, width: number, height: number) => {
@@ -461,6 +486,65 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     });
   },
 
+  batchUpdate: (updates: Array<{ windowId: string; x?: number; y?: number; width?: number; height?: number }>) => {
+    // Read menu bar height once for the whole batch
+    let menuBarHeight = 28;
+    if (typeof document !== "undefined") {
+      menuBarHeight = parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--berry-menubar-height") || "28",
+        10
+      );
+    }
+
+    set((state) => {
+      const newWindows = new Map(state.windows);
+
+      updates.forEach(({ windowId, x, y, width, height }) => {
+        const targetWindow = newWindows.get(windowId);
+        if (!targetWindow) return;
+
+        let updatedWindow = targetWindow;
+
+        // Apply position updates if provided, enforcing menu bar floor
+        if (x !== undefined || y !== undefined) {
+          const clampedY = y !== undefined ? Math.max(menuBarHeight, y) : updatedWindow.y;
+          updatedWindow = {
+            ...updatedWindow,
+            x: x !== undefined ? x : updatedWindow.x,
+            y: clampedY,
+          };
+        }
+
+        // Apply size updates with constraint enforcement if provided
+        if (width !== undefined || height !== undefined) {
+          const finalWidth = width !== undefined
+            ? Math.max(
+                updatedWindow.minWidth,
+                Math.min(width, updatedWindow.maxWidth ?? Infinity)
+              )
+            : updatedWindow.width;
+          const finalHeight = height !== undefined
+            ? Math.max(
+                updatedWindow.minHeight,
+                Math.min(height, updatedWindow.maxHeight ?? Infinity)
+              )
+            : updatedWindow.height;
+
+          updatedWindow = {
+            ...updatedWindow,
+            width: finalWidth,
+            height: finalHeight,
+          };
+        }
+
+        newWindows.set(windowId, updatedWindow);
+      });
+
+      return { windows: newWindows };
+    });
+  },
+
   // Queries
   getWindow: (windowId: string) => {
     return get().windows.get(windowId);
@@ -493,5 +577,9 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
   getAllWindows: () => {
     return Array.from(get().windows.values());
+  },
+
+  getWindowIds: () => {
+    return Array.from(get().windows.keys());
   },
 }));

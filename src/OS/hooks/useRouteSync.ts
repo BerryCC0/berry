@@ -24,12 +24,15 @@ import type { WindowState } from "@/OS/types/window";
 export function useRouteSync() {
   const router = useRouter();
   const pathname = usePathname();
-  const windows = useWindowStore((state) => state.windows);
   const focusedWindowId = useWindowStore((state) => state.focusedWindowId);
   const focusWindow = useWindowStore((state) => state.focusWindow);
-  
-  // Track the focused window's appState directly to trigger re-renders
-  // when internal navigation happens (e.g., clicking a proposal in Camp)
+
+  // Derive primitive values from the focused window to avoid subscribing
+  // to the full windows Map (which changes on any window update)
+  const focusedAppId = useWindowStore((state) => {
+    if (!state.focusedWindowId) return null;
+    return state.windows.get(state.focusedWindowId)?.appId ?? null;
+  });
   const focusedWindowAppState = useWindowStore((state) => {
     if (!state.focusedWindowId) return null;
     const win = state.windows.get(state.focusedWindowId);
@@ -107,7 +110,8 @@ export function useRouteSync() {
       return;
     }
 
-    const focusedWindow = windows.get(focusedWindowId);
+    // Read the focused window from the store snapshot (not a reactive subscription to the Map)
+    const focusedWindow = useWindowStore.getState().windows.get(focusedWindowId);
     if (!focusedWindow) {
       return;
     }
@@ -116,7 +120,7 @@ export function useRouteSync() {
     // This allows internal navigation (e.g., Camp proposal clicks) to update URL
     const isOnRoot = pathname === "/";
     const isOnThisAppRoute = pathname.startsWith(`/${focusedWindow.appId}`);
-    
+
     if (!isOnRoot && !isOnThisAppRoute) {
       // We're on some other page (shouldn't happen normally)
       return;
@@ -135,7 +139,7 @@ export function useRouteSync() {
         url
       );
     }
-  }, [focusedWindowId, focusedWindowAppState, windows, pathname, buildUrlForWindow]);
+  }, [focusedWindowId, focusedAppId, focusedWindowAppState, pathname, buildUrlForWindow]);
 
   /**
    * Handle browser back/forward navigation
@@ -160,8 +164,9 @@ export function useRouteSync() {
       const appId = segments[0];
 
       if (appId) {
-        // Check if a window for this app already exists
-        const existingWindow = Array.from(windows.values()).find((w) => w.appId === appId);
+        // Read current windows from store snapshot (event handler, not reactive)
+        const currentWindows = useWindowStore.getState().windows;
+        const existingWindow = Array.from(currentWindows.values()).find((w) => w.appId === appId);
 
         if (existingWindow) {
           // Focus existing window instead of opening new one
@@ -174,7 +179,7 @@ export function useRouteSync() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [windows, focusWindow]);
+  }, [focusWindow]);
 
   return {
     buildUrlForWindow,

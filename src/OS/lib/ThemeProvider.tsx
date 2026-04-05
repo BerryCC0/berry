@@ -9,6 +9,7 @@
  */
 
 import { useEffect, type ReactNode } from "react";
+import { useShallow } from "zustand/shallow";
 import { useThemeStore } from "@/OS/store/themeStore";
 import type { Theme } from "@/OS/types/theme";
 
@@ -109,7 +110,7 @@ function applyThemeToRoot(theme: Theme): void {
  * Subscribes to theme changes and applies them to the document root
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const currentTheme = useThemeStore((state) => state.currentTheme);
+  const currentTheme = useThemeStore(useShallow((state) => state.currentTheme));
 
   // Apply theme on mount and whenever it changes
   useEffect(() => {
@@ -123,6 +124,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
  * Hook to get current theme (for components that need direct access)
  */
 export function useTheme(): Theme {
-  return useThemeStore((state) => state.currentTheme);
+  return useThemeStore(useShallow((state) => state.currentTheme));
 }
 

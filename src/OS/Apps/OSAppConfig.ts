@@ -10,23 +10,23 @@ import type { AppConfig } from "@/OS/types/app";
 import { getIcon } from "@/OS/lib/IconRegistry";
 
 // Lazy load all app components - each becomes its own chunk
-const Finder = lazy(() => import("./Finder/Finder").then(m => ({ default: m.Finder })));
-const Calculator = lazy(() => import("./Calculator/Calculator").then(m => ({ default: m.Calculator })));
-const Settings = lazy(() => import("./Settings/Settings").then(m => ({ default: m.Settings })));
-const WalletPanel = lazy(() => import("./WalletPanel/WalletPanel").then(m => ({ default: m.WalletPanel })));
-const TextEditor = lazy(() => import("./TextEditor/TextEditor").then(m => ({ default: m.TextEditor })));
-const ImageViewer = lazy(() => import("./ImageViewer/ImageViewer").then(m => ({ default: m.ImageViewer })));
-const SoundJam = lazy(() => import("./SoundJam/SoundJam").then(m => ({ default: m.SoundJam })));
-const MoviePlayer = lazy(() => import("./MoviePlayer/MoviePlayer").then(m => ({ default: m.MoviePlayer })));
-const PDFViewer = lazy(() => import("./PDFViewer/PDFViewer").then(m => ({ default: m.PDFViewer })));
-const NounsAuction = lazy(() => import("./NounsAuction/NounsAuction").then(m => ({ default: m.NounsAuction })));
-const Camp = lazy(() => import("./Camp/Camp").then(m => ({ default: m.Camp })));
-const Treasury = lazy(() => import("./Treasury/Treasury").then(m => ({ default: m.Treasury })));
-const Nounspot = lazy(() => import("./Nounspot/Nounspot").then(m => ({ default: m.Nounspot })));
-const CrystalBall = lazy(() => import("./CrystalBall/CrystalBall").then(m => ({ default: m.CrystalBall })));
-const Probe = lazy(() => import("./Probe/Probe").then(m => ({ default: m.Probe })));
-const Clients = lazy(() => import("./Clients/Clients").then(m => ({ default: m.Clients })));
-const BIM = lazy(() => import("./BIM/BIM").then(m => ({ default: m.BIM })));
+const Finder = lazy(() => import("./system/Finder/Finder").then(m => ({ default: m.Finder })));
+const Calculator = lazy(() => import("./utilities/Calculator/Calculator").then(m => ({ default: m.Calculator })));
+const Settings = lazy(() => import("./system/Settings/Settings").then(m => ({ default: m.Settings })));
+const WalletPanel = lazy(() => import("./system/WalletPanel/WalletPanel").then(m => ({ default: m.WalletPanel })));
+const TextEditor = lazy(() => import("./utilities/TextEditor/TextEditor").then(m => ({ default: m.TextEditor })));
+const ImageViewer = lazy(() => import("./utilities/ImageViewer/ImageViewer").then(m => ({ default: m.ImageViewer })));
+const SoundJam = lazy(() => import("./utilities/SoundJam/SoundJam").then(m => ({ default: m.SoundJam })));
+const MoviePlayer = lazy(() => import("./utilities/MoviePlayer/MoviePlayer").then(m => ({ default: m.MoviePlayer })));
+const PDFViewer = lazy(() => import("./utilities/PDFViewer/PDFViewer").then(m => ({ default: m.PDFViewer })));
+const Auction = lazy(() => import("./nouns/Auction/Auction").then(m => ({ default: m.Auction })));
+const Camp = lazy(() => import("./nouns/Camp/Camp").then(m => ({ default: m.Camp })));
+const Treasury = lazy(() => import("./nouns/Treasury/Treasury").then(m => ({ default: m.Treasury })));
+const Nounspot = lazy(() => import("./nouns/Nounspot/Nounspot").then(m => ({ default: m.Nounspot })));
+const CrystalBall = lazy(() => import("./nouns/CrystalBall/CrystalBall").then(m => ({ default: m.CrystalBall })));
+const Probe = lazy(() => import("./nouns/Probe/Probe").then(m => ({ default: m.Probe })));
+const Clients = lazy(() => import("./nouns/Clients/Clients").then(m => ({ default: m.Clients })));
+const BIM = lazy(() => import("./social/BIM/BIM").then(m => ({ default: m.BIM })));
 
 /**
  * Finder - File browser
@@ -235,7 +235,7 @@ const nounsAuctionConfig: AppConfig = {
     isResizable: true,
   },
   permissions: [],
-  component: NounsAuction,
+  component: Auction,
 };
 
 /**

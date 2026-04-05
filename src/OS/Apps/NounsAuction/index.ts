@@ -1,2 +1,0 @@
-export { NounsAuction } from './NounsAuction';
-

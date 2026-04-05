@@ -25,6 +25,7 @@ interface ThemeStore {
 
 /**
  * Helper to set nested property by path
+ * Validates that intermediate path values are objects before spreading
  */
 function setNestedProperty<T extends object>(
   obj: T,
@@ -37,7 +38,17 @@ function setNestedProperty<T extends object>(
 
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    current[key] = { ...(current[key] as object) };
+    const currentValue = current[key];
+
+    // Validate that intermediate value is an object, not a primitive
+    if (currentValue !== null && currentValue !== undefined && typeof currentValue !== "object") {
+      console.warn(
+        `[themeStore] Cannot set nested property "${path}": intermediate path "${keys.slice(0, i + 1).join(".")}" is not an object (got ${typeof currentValue})`
+      );
+      return obj;
+    }
+
+    current[key] = { ...(currentValue as object) };
     current = current[key] as Record<string, unknown>;
   }
 
@@ -60,20 +71,23 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
 
   updateThemeProperty: <T>(path: string, value: T) => {
     const { currentTheme } = get();
-    const updatedTheme = setNestedProperty(currentTheme, path, value);
+    let updatedTheme = setNestedProperty(currentTheme, path, value);
 
-    // Mark as custom if modifying a preset theme
+    // Mark as custom if modifying a preset theme, using spread to avoid mutation
     if (updatedTheme.preset !== "custom") {
-      updatedTheme.preset = "custom";
-      updatedTheme.id = `custom-${Date.now()}`;
-      updatedTheme.name = `${updatedTheme.name} (Custom)`;
+      updatedTheme = {
+        ...updatedTheme,
+        preset: "custom",
+        id: `custom-${Date.now()}`,
+        name: `${updatedTheme.name} (Custom)`,
+      };
     }
 
     set({ currentTheme: updatedTheme });
-    
+
     // Emit property-level event for fine-grained updates
     systemBus.emit("theme:property-changed", { path, value });
-    
+
     // Also emit full theme change
     systemBus.emit("theme:changed", { theme: updatedTheme });
   },

@@ -10,6 +10,7 @@ import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
+import { formatWei } from '@/shared/format';
 
 // Use Node.js runtime — edge has issues with large SVG payloads + ImageData import
 export const runtime = 'nodejs';
@@ -40,11 +41,6 @@ function svgToDataUri(svg: string): string {
 
 function truncateAddress(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
-
-function formatEth(wei: string): string {
-  const eth = Number(BigInt(wei)) / 1e18;
-  return `Ξ ${eth.toFixed(2)}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -160,9 +156,9 @@ export async function GET(
 
       // Winning bid
       const bid = noun.winning_bid
-        ? formatEth(noun.winning_bid)
+        ? formatWei(noun.winning_bid, { symbol: true, decimals: 2 })
         : auction.amount && auction.amount !== '0'
-          ? formatEth(auction.amount)
+          ? formatWei(auction.amount, { symbol: true, decimals: 2 })
           : null;
 
       if (bid) {
@@ -188,7 +184,7 @@ export async function GET(
         if (ens) bidderName = ens;
         infoLines.push({
           label: 'CURRENT BID',
-          value: `${formatEth(topBid.amount)} by ${bidderName}`,
+          value: `${formatWei(topBid.amount, { symbol: true, decimals: 2 })} by ${bidderName}`,
         });
       }
 

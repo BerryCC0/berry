@@ -1,10 +1,16 @@
 /**
  * Apply Settings
- * Functions to apply settings to the DOM and OS state
+ * Functions to apply settings to the DOM and OS state.
+ *
+ * The theme system has two layers:
+ *   1. Era tokens (set via data-window-style attribute in CSS)
+ *   2. Theme colors (set via CSS custom properties from the resolved era theme)
+ *
+ * The model resolves themes via: getActiveTheme(era, darkMode)
  */
 
 import type { SystemSettings, CustomTheme } from "@/OS/types/settings";
-import { BUILT_IN_THEMES } from "./defaults";
+import { ERA_THEMES, getActiveTheme } from "./defaults";
 
 /**
  * Update the theme-color meta tag for mobile browser chrome
@@ -26,12 +32,22 @@ function updateThemeColorMeta(color: string) {
 export function applyAppearance(appearance: SystemSettings["appearance"]) {
   const root = document.documentElement;
 
-  // Get theme colors
-  const themeId = appearance.themeId as keyof typeof BUILT_IN_THEMES;
-  const theme: CustomTheme | undefined = BUILT_IN_THEMES[themeId];
+  // --- Layer 1: Era tokens via data attribute ---
+  // The CSS in globals.css uses [data-window-style="..."] selectors
+  // to set era-specific tokens (font, radii, shadows, blur, etc.)
+  root.dataset.windowStyle = appearance.era;
 
-  if (theme) {
-    applyThemeColors(theme);
+  // --- Layer 2: Resolve and apply theme colors ---
+  const theme = getActiveTheme(appearance.era, appearance.darkMode);
+
+  applyThemeColors(theme);
+
+  // Apply extended era tokens from theme if present
+  if (theme.typography) {
+    applyTypography(theme.typography);
+  }
+  if (theme.windowChrome) {
+    applyWindowChrome(theme.windowChrome);
   }
 
   // Override accent color if custom
@@ -41,28 +57,36 @@ export function applyAppearance(appearance: SystemSettings["appearance"]) {
   // Track the effective desktop background color for theme-color meta
   let effectiveDesktopBg = getComputedStyle(root).getPropertyValue('--berry-desktop-bg').trim() || '#008080';
 
-  // Wallpaper - can be a color (#hex) or image URL
+  // Wallpaper — can be a solid color (#hex/rgb), CSS gradient, or image URL
   if (appearance.wallpaper && appearance.wallpaper !== "none") {
-    const isColor = appearance.wallpaper.startsWith("#") || appearance.wallpaper.startsWith("rgb");
-    
+    const wp = appearance.wallpaper;
+    const isColor = wp.startsWith("#") || wp.startsWith("rgb");
+    const isGradient = wp.startsWith("linear-gradient") || wp.startsWith("radial-gradient");
+
     if (isColor) {
-      // Solid color wallpaper - set as desktop background, no image
-      root.style.setProperty("--berry-desktop-bg", appearance.wallpaper);
+      // Solid color wallpaper
+      root.style.setProperty("--berry-desktop-bg", wp);
       root.style.removeProperty("--berry-wallpaper");
-      root.style.setProperty("--berry-wallpaper-stipple", "0.3"); // Subtle stipple on solid colors
-      effectiveDesktopBg = appearance.wallpaper;
-    } else {
-      // Image URL wallpaper - use a dark color as the background behind the image
-      root.style.setProperty("--berry-wallpaper", `url(${appearance.wallpaper})`);
-      root.style.setProperty("--berry-wallpaper-stipple", "0"); // No stipple on images
-      // Set a neutral dark background color that shows behind/around the image
+      root.style.setProperty("--berry-wallpaper-stipple", "0.3");
+      effectiveDesktopBg = wp;
+    } else if (isGradient) {
+      // CSS gradient wallpaper — applied as background-image
+      root.style.setProperty("--berry-wallpaper", wp);
+      root.style.setProperty("--berry-wallpaper-stipple", "0");
+      // Use a neutral dark bg behind the gradient for theme-color meta
       root.style.setProperty("--berry-desktop-bg", "#1a1a1a");
-      effectiveDesktopBg = '#1a1a1a';
+      effectiveDesktopBg = "#1a1a1a";
+    } else {
+      // Image URL wallpaper
+      root.style.setProperty("--berry-wallpaper", `url(${wp})`);
+      root.style.setProperty("--berry-wallpaper-stipple", "0");
+      root.style.setProperty("--berry-desktop-bg", "#1a1a1a");
+      effectiveDesktopBg = "#1a1a1a";
     }
   } else {
-    // No wallpaper - use theme's default desktop color with stipple
+    // No wallpaper — use theme's default desktop color with stipple
     root.style.removeProperty("--berry-wallpaper");
-    root.style.setProperty("--berry-wallpaper-stipple", "1"); // Full stipple
+    root.style.setProperty("--berry-wallpaper-stipple", "1");
   }
 
   // Update browser chrome color on mobile
@@ -85,9 +109,6 @@ export function applyAppearance(appearance: SystemSettings["appearance"]) {
   } else {
     root.classList.remove("reduce-transparency");
   }
-
-  // Window style
-  root.dataset.windowStyle = appearance.windowStyle;
 
   // Desktop icon size
   const iconSizes = { small: "48px", medium: "64px", large: "80px" };
@@ -153,13 +174,67 @@ export function applyThemeColors(theme: CustomTheme) {
     root.style.setProperty("--berry-border-radius", radiusMap[theme.borderRadius]);
   }
 
+  // Window shadow (theme-level override)
+  if (theme.windowShadow) {
+    root.style.setProperty("--berry-window-shadow", theme.windowShadow);
+  }
+
+  // Font family (theme-level override)
+  if (theme.fontFamily) {
+    root.style.setProperty("--berry-font-system", theme.fontFamily);
+  }
+
   // Determine if dark theme and set desktop background
   const isDark = isColorDark(colors.bgPrimary);
   root.dataset.theme = isDark ? "dark" : "light";
-  
+
   // Desktop background - derive from theme
   const desktopBg = isDark ? "#1a3a3a" : "#008080"; // Teal variants
   root.style.setProperty("--berry-desktop-bg", desktopBg);
+}
+
+/**
+ * Apply extended typography tokens from theme
+ */
+function applyTypography(typo: NonNullable<CustomTheme["typography"]>) {
+  const root = document.documentElement;
+  root.style.setProperty("--berry-font-system", typo.systemFont);
+  root.style.setProperty("--berry-font-size-base", `${typo.baseFontSize}px`);
+
+  // Font smoothing
+  switch (typo.fontSmoothing) {
+    case "none":
+      root.style.setProperty("-webkit-font-smoothing", "none");
+      break;
+    case "antialiased":
+      root.style.setProperty("-webkit-font-smoothing", "antialiased");
+      break;
+    default:
+      root.style.setProperty("-webkit-font-smoothing", "auto");
+  }
+}
+
+/**
+ * Apply extended window chrome tokens from theme
+ */
+function applyWindowChrome(chrome: NonNullable<CustomTheme["windowChrome"]>) {
+  const root = document.documentElement;
+  root.style.setProperty("--berry-title-bar-height", `${chrome.titleBarHeight}px`);
+  root.style.setProperty("--berry-traffic-light-size", `${chrome.trafficLightSize}px`);
+
+  if (chrome.titleBarGradient) {
+    root.style.setProperty("--berry-title-bar-bg", chrome.titleBarGradient);
+  }
+
+  // Shadow style
+  const shadows: Record<string, string> = {
+    none: "none",
+    hard: "2px 2px 0 rgba(0, 0, 0, 0.3)",
+    soft: "0 4px 16px rgba(0, 0, 0, 0.15)",
+    elevated: "0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05)",
+    glass: "0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.6)",
+  };
+  root.style.setProperty("--berry-window-shadow", shadows[chrome.shadowStyle] ?? shadows.soft);
 }
 
 /**
@@ -225,4 +300,3 @@ function isColorDark(hexColor: string): boolean {
   // Default to light
   return false;
 }
-

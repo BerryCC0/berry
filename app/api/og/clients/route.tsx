@@ -6,18 +6,9 @@
 import { ImageResponse } from 'next/og';
 import { ponderSql } from '@/app/lib/ponder-db';
 import { CLIENT_NAMES } from '@/OS/lib/clientNames';
+import { weiToEth, formatEth } from '@/shared/format';
 
 export const runtime = 'nodejs';
-
-function weiToEth(wei: string): number {
-  return Number(BigInt(wei || '0')) / 1e18;
-}
-
-function fmtEth(n: number): string {
-  if (n >= 1) return n.toFixed(2);
-  if (n >= 0.01) return n.toFixed(3);
-  return n.toFixed(4);
-}
 
 const BAR_COLORS = [
   '#5B8DEF', '#34c759', '#ff9500', '#ff3b30', '#af52de',
@@ -113,7 +104,7 @@ export async function GET() {
           >
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span style={{ fontSize: 32, fontWeight: 700, color: '#5B8DEF' }}>
-                {fmtEth(totalDistributed)} ETH
+                {formatEth(totalDistributed)} ETH
               </span>
               <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.5)' }}>
                 distributed
@@ -210,7 +201,7 @@ export async function GET() {
                             color: 'rgba(0,0,0,0.6)',
                           }}
                         >
-                          {fmtEth(client.rewarded)}
+                          {formatEth(client.rewarded)}
                         </span>
                       )}
                     </div>
@@ -226,7 +217,7 @@ export async function GET() {
                         width: 80,
                       }}
                     >
-                      {fmtEth(client.rewarded)}
+                      {formatEth(client.rewarded)}
                     </span>
                   )}
                 </div>

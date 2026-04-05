@@ -9,6 +9,7 @@ import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
+import { truncateAddress } from '@/shared/format';
 
 export const runtime = 'nodejs';
 
@@ -46,18 +47,14 @@ async function fetchProposal(id: string) {
   }
 }
 
-function formatAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
 async function resolveENS(address: string): Promise<string> {
   try {
     const res = await fetch(`https://api.ensideas.com/ens/resolve/${address.toLowerCase()}`);
-    if (!res.ok) return formatAddress(address);
+    if (!res.ok) return truncateAddress(address);
     const data = await res.json();
-    return data.name || formatAddress(address);
+    return data.name || truncateAddress(address);
   } catch {
-    return formatAddress(address);
+    return truncateAddress(address);
   }
 }
 

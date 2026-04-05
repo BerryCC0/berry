@@ -21,7 +21,8 @@
     "paths": {
       "@/*": ["./*"],
       "@/OS/*": ["./src/OS/*"],
-      "@/Apps/*": ["./src/Apps/*"]
+      "@/Apps/*": ["./src/Apps/*"],
+      "@/shared/*": ["./src/shared/*"]
     }
   },
   "include": [

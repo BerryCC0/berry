@@ -10,6 +10,7 @@
  */
 
 import { useSettingsStore } from "@/OS/store/settingsStore";
+import { truncateAddress } from "@/shared/format";
 
 // Cache types
 interface CacheEntry<T> {
@@ -244,7 +245,7 @@ class ENSServiceClass {
     if (!address || address.length !== 42) {
       return address || "";
     }
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    return truncateAddress(address);
   }
 
   /**

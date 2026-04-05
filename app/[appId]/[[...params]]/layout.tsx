@@ -9,7 +9,7 @@ import { osAppConfigs } from "@/OS/Apps/OSAppConfig";
 import { ponderSql } from '@/app/lib/ponder-db';
 import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
 import { CLIENT_NAMES } from '@/OS/lib/clientNames';
-import { slugifyClientName } from '@/OS/Apps/Clients/types';
+import { slugifyClientName } from '@/OS/Apps/nouns/Clients/types';
 
 interface LayoutProps {
   children: React.ReactNode;

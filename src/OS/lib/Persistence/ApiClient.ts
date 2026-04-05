@@ -87,8 +87,12 @@ export class ApiClientAdapter implements PersistenceAdapter {
     address: string,
     chain: string
   ): Promise<void> {
-    // TODO: Implement in API
-    console.warn("[ApiClient] setPrimaryWallet not implemented");
+    await callApi({
+      type: "setPrimaryWallet",
+      profileId,
+      address,
+      chain,
+    });
   }
 
   async updateLastActive(profileId: string): Promise<void> {

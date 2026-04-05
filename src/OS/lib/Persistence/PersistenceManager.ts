@@ -20,12 +20,14 @@ import type {
 } from "./types";
 import { InMemoryAdapter } from "./InMemoryAdapter";
 import { ApiClientAdapter } from "./ApiClient";
+import { systemBus } from "@/OS/lib/EventBus";
 
 class PersistenceManagerClass {
   private adapter: PersistenceAdapter;
   private profileId: string | null = null;
   private profile: UserProfile | null = null;
   private isUsingNeon = false;
+  private upgradeInProgress = false;
 
   constructor() {
     // Start with in-memory adapter
@@ -61,6 +63,15 @@ class PersistenceManagerClass {
   async upgradeToWallet(
     wallet: Omit<WalletInfo, "linkedAt">
   ): Promise<UserProfile> {
+    // Guard against concurrent upgrades (e.g. rapid wallet connect/disconnect)
+    if (this.upgradeInProgress) {
+      console.warn("[Persistence] Upgrade already in progress, skipping");
+      if (this.profile) return this.profile;
+      throw new Error("Persistence upgrade already in progress");
+    }
+
+    this.upgradeInProgress = true;
+
     try {
       // Get current ephemeral data before switching
       const currentData = await this.adapter.loadAllUserData(this.profileId!);
@@ -91,7 +102,7 @@ class PersistenceManagerClass {
         await this.migrateData(apiAdapter, profile.id, currentData);
       }
 
-      // Switch to API adapter
+      // Atomic swap — all fields updated together
       this.adapter = apiAdapter;
       this.profileId = profile.id;
       this.profile = profile;
@@ -103,10 +114,20 @@ class PersistenceManagerClass {
       return profile;
     } catch (error) {
       console.error("[Persistence] Failed to upgrade to persistent storage:", error);
-      // Stay with in-memory adapter
+
+      // Notify the UI so the user knows data won't persist
+      systemBus.emit("persistence:error", {
+        type: "upgrade-failed",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+
+      // Stay with in-memory adapter but mark explicitly as NOT persistent
+      this.isUsingNeon = false;
       const profile = await this.adapter.createProfile(wallet);
       this.profile = profile;
       return profile;
+    } finally {
+      this.upgradeInProgress = false;
     }
   }
 
@@ -133,28 +154,42 @@ class PersistenceManagerClass {
     profileId: string,
     data: UserData
   ): Promise<void> {
-    const migrations: Promise<void>[] = [];
+    const migrations: Array<{ label: string; task: Promise<void> }> = [];
 
     if (data.theme) {
-      migrations.push(targetAdapter.saveTheme(profileId, data.theme));
+      migrations.push({ label: "theme", task: targetAdapter.saveTheme(profileId, data.theme) });
     }
     if (data.settings) {
-      migrations.push(targetAdapter.saveSettings(profileId, data.settings));
+      migrations.push({ label: "settings", task: targetAdapter.saveSettings(profileId, data.settings) });
     }
     if (data.desktopLayout) {
-      migrations.push(targetAdapter.saveDesktopLayout(profileId, data.desktopLayout));
+      migrations.push({ label: "desktopLayout", task: targetAdapter.saveDesktopLayout(profileId, data.desktopLayout) });
     }
     if (data.windowState.length > 0) {
-      migrations.push(targetAdapter.saveWindowState(profileId, data.windowState));
+      migrations.push({ label: "windowState", task: targetAdapter.saveWindowState(profileId, data.windowState) });
     }
     if (data.dockConfig) {
-      migrations.push(targetAdapter.saveDockConfig(profileId, data.dockConfig));
+      migrations.push({ label: "dockConfig", task: targetAdapter.saveDockConfig(profileId, data.dockConfig) });
     }
 
-    await Promise.all(migrations);
+    const results = await Promise.allSettled(migrations.map((m) => m.task));
+
+    const failures = results
+      .map((r, i) => (r.status === "rejected" ? migrations[i].label : null))
+      .filter(Boolean);
+
+    if (failures.length > 0) {
+      console.error(
+        `[Persistence] Migration partially failed: ${failures.join(", ")} (${failures.length}/${results.length})`
+      );
+      // Continue — partial data is better than no data.
+      // The user can re-save from the UI to retry failed categories.
+    }
 
     if (process.env.NODE_ENV === "development") {
-      console.log("[Persistence] Migrated ephemeral data to profile");
+      console.log(
+        `[Persistence] Migrated ephemeral data to profile (${results.length - failures.length}/${results.length} succeeded)`
+      );
     }
   }
 

@@ -12,7 +12,7 @@
 
 import { useWindowStore } from "@/OS/store/windowStore";
 import { systemBus } from "./EventBus";
-import type { WindowState, WindowConfig, WindowPositionPreset } from "@/OS/types/window";
+import type { WindowState, WindowPositionPreset } from "@/OS/types/window";
 
 /** Cascade offset for new windows */
 const CASCADE_OFFSET_X = 24;
@@ -21,8 +21,8 @@ const CASCADE_OFFSET_Y = 24;
 /** Minimum visible area when window is dragged off-screen */
 const MIN_VISIBLE_AREA = 50;
 
-/** Menu bar height */
-const MENU_BAR_HEIGHT = 24;
+/** Menu bar height (matches --berry-menubar-height: 28px) */
+const MENU_BAR_HEIGHT = 28;
 
 /** Dock height (approximate for calculations) */
 const DOCK_HEIGHT = 70;
@@ -117,43 +117,86 @@ export function resolveWindowPosition(
 }
 
 /**
+ * Clamp a window position so it stays within the usable viewport.
+ * - Top edge never goes above menu bar
+ * - Bottom edge is pushed up so the title bar (at minimum) stays above the dock
+ * - Horizontally keeps at least MIN_VISIBLE_AREA on screen
+ *
+ * Call this on any calculated position before creating a window.
+ */
+export function clampToViewport(
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  const viewport = getViewportBounds();
+
+  // Top edge: never above menu bar
+  let clampedY = Math.max(viewport.top, y);
+
+  // Bottom edge: if the window would extend below the dock,
+  // push it up so it fits — but never above the menu bar
+  if (clampedY + height > viewport.bottom) {
+    clampedY = Math.max(viewport.top, viewport.bottom - height);
+  }
+
+  // Horizontal: keep at least MIN_VISIBLE_AREA on screen
+  let clampedX = x;
+  if (clampedX + width < MIN_VISIBLE_AREA) {
+    clampedX = MIN_VISIBLE_AREA - width;
+  }
+  if (clampedX > viewport.width - MIN_VISIBLE_AREA) {
+    clampedX = viewport.width - MIN_VISIBLE_AREA;
+  }
+
+  return { x: clampedX, y: clampedY };
+}
+
+/**
  * Tile all visible windows in a grid
  */
 export function tileWindows(): void {
   const store = useWindowStore.getState();
   const windows = store.getAllWindows().filter(w => !w.isMinimized);
-  
+
   if (windows.length === 0) return;
-  
+
   const viewport = getViewportBounds();
   const usableHeight = viewport.bottom - viewport.top;
-  
+
   // Calculate grid dimensions
   const cols = Math.ceil(Math.sqrt(windows.length));
   const rows = Math.ceil(windows.length / cols);
-  
+
   const tileWidth = Math.floor(viewport.width / cols);
   const tileHeight = Math.floor(usableHeight / rows);
-  
-  windows.forEach((win, index) => {
+
+  // Collect all updates into a single batch
+  const updates = windows.map((win, index) => {
     const col = index % cols;
     const row = Math.floor(index / cols);
-    
+
     const x = col * tileWidth;
     const y = viewport.top + row * tileHeight;
     const width = tileWidth;
     const height = tileHeight;
-    
-    store.moveWindow(win.id, x, y);
-    if (win.isResizable) {
-      store.resizeWindow(win.id, width, height);
-    }
+
+    return {
+      windowId: win.id,
+      x,
+      y,
+      ...(win.isResizable && { width, height }),
+    };
   });
-  
-  systemBus.emit("window:moved", { 
-    windowId: "all", 
-    x: 0, 
-    y: 0 
+
+  // Apply all updates in a single state change
+  store.batchUpdate(updates);
+
+  systemBus.emit("window:moved", {
+    windowId: "all",
+    x: 0,
+    y: 0
   });
 }
 
@@ -163,16 +206,28 @@ export function tileWindows(): void {
 export function stackWindows(): void {
   const store = useWindowStore.getState();
   const windows = store.getAllWindows().filter(w => !w.isMinimized);
-  
+
   if (windows.length === 0) return;
-  
+
   const viewport = getViewportBounds();
-  
-  windows.forEach((win, index) => {
+
+  // Collect all position updates into a single batch
+  const updates = windows.map((win, index) => {
     const x = CASCADE_OFFSET_X + (index * CASCADE_OFFSET_X);
     const y = viewport.top + CASCADE_OFFSET_Y + (index * CASCADE_OFFSET_Y);
-    
-    store.moveWindow(win.id, x, y);
+
+    return {
+      windowId: win.id,
+      x,
+      y,
+    };
+  });
+
+  // Apply all position updates in a single state change
+  store.batchUpdate(updates);
+
+  // Focus each window in order (last one ends up on top)
+  windows.forEach((win) => {
     store.focusWindow(win.id);
   });
 }
@@ -337,6 +392,7 @@ export const windowManager = {
   // Positioning
   getCascadePosition,
   resolveWindowPosition,
+  clampToViewport,
   getViewportBounds,
   
   // Arrangement

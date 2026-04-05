@@ -92,16 +92,25 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         (w) => w.address !== address
       );
 
-      // If disconnecting primary, set a new primary
+      // If disconnecting primary, promote next wallet
       if (state.primaryWallet?.address === address) {
-        const newPrimary = newLinkedWallets[0] ?? null;
-        if (newPrimary) {
-          newPrimary.isPrimary = true;
-        }
+        const nextWallet = newLinkedWallets[0] ?? null;
+        const newPrimary = nextWallet
+          ? { ...nextWallet, isPrimary: true }
+          : null;
+
+        // Update the promoted wallet in the list too
+        const updatedLinkedWallets = newPrimary
+          ? newLinkedWallets.map((w) =>
+              w.address === newPrimary.address
+                ? { ...w, isPrimary: true }
+                : w
+            )
+          : newLinkedWallets;
 
         return {
           primaryWallet: newPrimary,
-          linkedWallets: newLinkedWallets,
+          linkedWallets: updatedLinkedWallets,
         };
       }
 

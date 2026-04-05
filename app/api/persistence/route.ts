@@ -30,6 +30,7 @@ type PersistenceAction =
   | { type: "createProfile"; wallet: { address: string; chain: string; chainId: number } }
   | { type: "linkWallet"; profileId: string; wallet: { address: string; chain: string; chainId: number; label?: string } }
   | { type: "unlinkWallet"; profileId: string; address: string; chain: string }
+  | { type: "setPrimaryWallet"; profileId: string; address: string; chain: string }
   | { type: "updateLastActive"; profileId: string }
   | { type: "saveTheme"; profileId: string; theme: Theme }
   | { type: "loadTheme"; profileId: string }
@@ -69,6 +70,11 @@ export async function POST(request: NextRequest) {
 
       case "unlinkWallet": {
         await db.unlinkWallet(action.profileId, action.address, action.chain);
+        return NextResponse.json({ success: true });
+      }
+
+      case "setPrimaryWallet": {
+        await db.setPrimaryWallet(action.profileId, action.address, action.chain);
         return NextResponse.json({ success: true });
       }
 
