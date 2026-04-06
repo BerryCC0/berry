@@ -179,7 +179,7 @@ export function TitleBar({
         </div>
 
         {/* Center slot: portal target + static items */}
-        <div className={styles.toolbarCenter}>
+        <div className={styles.toolbarCenter} data-toolbar-center>
           {portalRefs && (
             <div
               ref={portalRefs.setCenterRef}

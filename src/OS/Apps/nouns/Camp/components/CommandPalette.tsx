@@ -105,12 +105,21 @@ export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: Comma
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Compute anchor position from the search bar button ref
+  // Compute anchor position from the search bar button ref or DOM query fallback
   const [anchorStyle, setAnchorStyle] = useState<React.CSSProperties | undefined>();
 
   useEffect(() => {
-    if (isOpen && anchorRef?.current) {
-      const rect = anchorRef.current.getBoundingClientRect();
+    if (!isOpen) {
+      setAnchorStyle(undefined);
+      return;
+    }
+    // Try the explicit ref first, then fall back to DOM query for the search bar
+    // or the toolbar center slot as a last resort
+    const el = anchorRef?.current
+      ?? document.querySelector<HTMLElement>('[data-camp-search]')
+      ?? document.querySelector<HTMLElement>('[data-toolbar-center]');
+    if (el) {
+      const rect = el.getBoundingClientRect();
       // Center the modal horizontally under the search bar
       const centerX = rect.left + rect.width / 2;
       setAnchorStyle({

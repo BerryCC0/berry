@@ -99,6 +99,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar
                 className={tb.styles.toolbarSearch}
                 onClick={tb.openSearch}
                 data-toolbar-interactive="true"
+                data-camp-search
               >
                 <span className={tb.styles.toolbarSearchIcon}>⌕</span>
                 <span className={tb.styles.toolbarSearchText}>Search…</span>
@@ -150,6 +151,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar
                 className={tb.styles.toolbarSearch}
                 onClick={tb.openSearch}
                 data-toolbar-interactive="true"
+                data-camp-search
               >
                 <span className={tb.styles.toolbarSearchIcon}>⌕</span>
                 <span className={tb.styles.toolbarSearchText}>Search…</span>
@@ -219,6 +221,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar
               className={tb.styles.toolbarSearch}
               onClick={tb.openSearch}
               data-toolbar-interactive="true"
+              data-camp-search
             >
               <span className={tb.styles.toolbarSearchIcon}>⌕</span>
               <span className={tb.styles.toolbarSearchText}>Search…</span>
