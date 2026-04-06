@@ -12,7 +12,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { useAccount, useEnsAddress } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { truncateAddress } from '@/shared/format';
@@ -108,7 +108,8 @@ export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: Comma
   // Compute anchor position from the search bar button ref or DOM query fallback
   const [anchorStyle, setAnchorStyle] = useState<React.CSSProperties | undefined>();
 
-  useEffect(() => {
+  // useLayoutEffect fires before paint — prevents visible position jump
+  useLayoutEffect(() => {
     if (!isOpen) {
       setAnchorStyle(undefined);
       return;
