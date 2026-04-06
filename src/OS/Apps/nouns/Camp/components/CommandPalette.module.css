@@ -24,6 +24,14 @@
   animation: fadeIn 0.15s ease;
 }
 
+/* Integrated variant — lighter backdrop, palette is flush under search bar */
+.overlayIntegrated {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -41,6 +49,16 @@
   flex-direction: column;
   overflow: hidden;
   animation: slideDown 0.15s ease;
+}
+
+/* Integrated: flush below the toolbar search bar */
+.modalIntegrated {
+  width: auto;
+  max-width: none;
+  border-radius: 0 0 8px 8px;
+  border-top: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  animation: none;
 }
 
 @keyframes slideDown {

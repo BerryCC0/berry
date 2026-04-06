@@ -76,6 +76,12 @@ export interface CampToolbarContext {
   Logo: React.ReactNode;
   /** Ref to attach to the search bar button — used to anchor the CommandPalette */
   searchAnchorRef: React.RefObject<HTMLButtonElement | null>;
+  /** Whether the command palette is open (search bar becomes active input) */
+  isSearchOpen: boolean;
+  /** Current search query (driven by the toolbar search input) */
+  searchQuery: string;
+  /** Update the search query from the toolbar input */
+  onSearchChange: (query: string) => void;
 }
 
 interface CampInitialState {
@@ -95,8 +101,15 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
   const [route, setRoute] = useState<CampRoute>(() => parseRoute(campState?.path));
   const [history, setHistory] = useState<CampRoute[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [digestTab, setDigestTab] = useState<DigestTabId>('digest');
   const searchAnchorRef = useRef<HTMLButtonElement | null>(null);
+
+  // Reset query when palette closes
+  const closeCommandPalette = useCallback(() => {
+    setIsCommandPaletteOpen(false);
+    setSearchQuery('');
+  }, []);
 
   useEffect(() => {
     if (campState?.path !== undefined) {
@@ -161,6 +174,9 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
     openSearch: () => setIsCommandPaletteOpen(true),
     isConnected,
     searchAnchorRef,
+    isSearchOpen: isCommandPaletteOpen,
+    searchQuery,
+    onSearchChange: setSearchQuery,
     Logo: (
       <LogoSymbol
         className={styles.toolbarLogo}
@@ -307,9 +323,12 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
       {/* Command Palette Modal */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
+        onClose={closeCommandPalette}
         onNavigate={navigate}
         anchorRef={searchAnchorRef}
+        externalQuery={searchQuery}
+        onExternalQueryChange={setSearchQuery}
+        isModern={isModern}
       />
     </div>
   );

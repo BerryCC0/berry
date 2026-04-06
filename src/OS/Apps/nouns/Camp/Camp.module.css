@@ -142,6 +142,27 @@
   background: var(--berry-bg-tertiary, rgba(0, 0, 0, 0.08));
 }
 
+/* Active state: search bar becomes a real input when palette is open */
+.toolbarSearchActive {
+  justify-self: flex-start;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  min-width: 220px;
+  max-width: 380px;
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--berry-accent, #0a84ff);
+  border-radius: var(--berry-radius-button, 6px) var(--berry-radius-button, 6px) 0 0;
+  background: var(--berry-bg-secondary, rgba(255, 255, 255, 0.12));
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  outline: none;
+  box-shadow: 0 0 0 1px var(--berry-accent, #0a84ff);
+}
+
 .toolbarSearchIcon {
   font-size: 13px;
   opacity: 0.5;

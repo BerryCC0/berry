@@ -26,6 +26,12 @@ interface CommandPaletteProps {
   onNavigate: (path: string) => void;
   /** Optional ref to the search bar button — modal will position itself beneath it */
   anchorRef?: React.RefObject<HTMLButtonElement | null>;
+  /** External query driven by the toolbar search input (modern mode) */
+  externalQuery?: string;
+  /** Callback when external query changes */
+  onExternalQueryChange?: (query: string) => void;
+  /** Whether the app is in modern toolbar mode */
+  isModern?: boolean;
 }
 
 interface CommandItem {
@@ -93,9 +99,19 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: CommandPaletteProps) {
+export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef, externalQuery, onExternalQueryChange, isModern }: CommandPaletteProps) {
   const { isConnected, address } = useAccount();
-  const [query, setQuery] = useState('');
+  // In modern mode, query is driven externally by the toolbar search input
+  const useExternalQuery = isModern && externalQuery !== undefined;
+  const [internalQuery, setInternalQuery] = useState('');
+  const query = useExternalQuery ? externalQuery : internalQuery;
+  const setQuery = useCallback((q: string) => {
+    if (useExternalQuery && onExternalQueryChange) {
+      onExternalQueryChange(q);
+    } else {
+      setInternalQuery(q);
+    }
+  }, [useExternalQuery, onExternalQueryChange]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -121,19 +137,39 @@ export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: Comma
       ?? document.querySelector<HTMLElement>('[data-toolbar-center]');
     if (el) {
       const rect = el.getBoundingClientRect();
-      // Center the modal horizontally under the search bar
-      const centerX = rect.left + rect.width / 2;
-      setAnchorStyle({
-        position: 'fixed',
-        top: rect.bottom + 8,
-        left: centerX,
-        transform: 'translateX(-50%)',
-      });
+      if (isModern) {
+        // Modern mode: flush below search bar, matching its width
+        setAnchorStyle({
+          position: 'fixed',
+          top: rect.bottom,
+          left: rect.left,
+          width: rect.width,
+        });
+      } else {
+        // Legacy mode: centered below anchor
+        const centerX = rect.left + rect.width / 2;
+        setAnchorStyle({
+          position: 'fixed',
+          top: rect.bottom + 8,
+          left: centerX,
+          transform: 'translateX(-50%)',
+        });
+      }
     } else {
       setAnchorStyle(undefined);
     }
-  }, [isOpen, anchorRef]);
-  
+  }, [isOpen, anchorRef, isModern]);
+
+  // Reset state when palette closes
+  useEffect(() => {
+    if (!isOpen) {
+      setInternalQuery('');
+      setSelectedIndex(0);
+      setView('main');
+      setSearchResults(null);
+    }
+  }, [isOpen]);
+
   // Debounce the search query
   const trimmedQuery = query.trim();
   const debouncedQuery = useDebounce(trimmedQuery, 200);
@@ -449,7 +485,41 @@ export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: Comma
         break;
     }
   }, [items, selectedIndex, onClose, view, query]);
-  
+
+  // In modern mode, keyboard nav comes from the toolbar input — listen globally
+  useEffect(() => {
+    if (!isOpen || !isModern) return;
+    const handler = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(i => Math.min(i + 1, items.length - 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(i => Math.max(i - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (items[selectedIndex]) {
+            items[selectedIndex].action();
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          if (view === 'drafts') {
+            setView('main');
+            setSelectedIndex(0);
+          } else {
+            onClose();
+          }
+          break;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isOpen, isModern, items, selectedIndex, onClose, view]);
+
   // Scroll selected item into view
   useEffect(() => {
     if (listRef.current) {
@@ -466,19 +536,21 @@ export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: Comma
   }, [query]);
   
   if (!isOpen) return null;
-  
+
+  const integrated = isModern && anchorStyle;
+
   return (
-    <div className={anchorStyle ? styles.overlayAnchored : styles.overlay} onClick={onClose}>
+    <div className={integrated ? styles.overlayIntegrated : anchorStyle ? styles.overlayAnchored : styles.overlay} onClick={onClose}>
       <div
-        className={styles.modal}
+        className={`${styles.modal} ${integrated ? styles.modalIntegrated : ''}`}
         style={anchorStyle}
         onClick={e => e.stopPropagation()}
       >
         {/* Header for drafts view */}
         {view === 'drafts' && (
           <div className={styles.viewHeader}>
-            <button 
-              className={styles.backButton} 
+            <button
+              className={styles.backButton}
               onClick={() => { setView('main'); setSelectedIndex(0); }}
             >
               ← Back
@@ -486,24 +558,26 @@ export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: Comma
             <span className={styles.viewTitle}>Your Drafts</span>
           </div>
         )}
-        
-        {/* Search input */}
-        <div className={styles.inputWrapper}>
-          <input
-            ref={inputRef}
-            type="text"
-            className={styles.input}
-            placeholder={view === 'drafts' ? 'Filter drafts...' : 'Navigate Camp...'}
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          {query && (
-            <button className={styles.clearButton} onClick={() => setQuery('')}>
-              ×
-            </button>
-          )}
-        </div>
+
+        {/* Search input — hidden in modern mode (toolbar input drives search) */}
+        {!integrated && (
+          <div className={styles.inputWrapper}>
+            <input
+              ref={inputRef}
+              type="text"
+              className={styles.input}
+              placeholder={view === 'drafts' ? 'Filter drafts...' : 'Navigate Camp...'}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            {query && (
+              <button className={styles.clearButton} onClick={() => setQuery('')}>
+                ×
+              </button>
+            )}
+          </div>
+        )}
         
         {/* Results list */}
         <div className={styles.list} ref={listRef}>

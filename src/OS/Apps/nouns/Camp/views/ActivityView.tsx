@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { appLauncher } from '@/OS/lib/AppLauncher';
 import { useIsMobile } from '@/OS/lib/PlatformDetection';
 import { useActivityFeed } from '../hooks';
@@ -17,6 +17,46 @@ import { Toolbar, useToolbar } from '../components/CampToolbar';
 import type { DigestTab } from '../types';
 import type { CampToolbarContext } from '../Camp';
 import styles from './ActivityView.module.css';
+
+/** Search bar that becomes an active input when the command palette is open */
+function ToolbarSearchBar({ tb }: { tb: CampToolbarContext }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (tb.isSearchOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [tb.isSearchOpen]);
+
+  if (tb.isSearchOpen) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        className={tb.styles.toolbarSearchActive}
+        value={tb.searchQuery}
+        onChange={e => tb.onSearchChange(e.target.value)}
+        placeholder="Search..."
+        data-toolbar-interactive="true"
+        data-camp-search
+      />
+    );
+  }
+
+  return (
+    <button
+      ref={tb.searchAnchorRef}
+      className={tb.styles.toolbarSearch}
+      onClick={tb.openSearch}
+      data-toolbar-interactive="true"
+      data-camp-search
+    >
+      <span className={tb.styles.toolbarSearchIcon}>⌕</span>
+      <span className={tb.styles.toolbarSearchText}>Search…</span>
+      <kbd className={tb.styles.toolbarSearchKbd}>⌘K</kbd>
+    </button>
+  );
+}
 
 type MobileTab = 'activity' | DigestTab;
 
@@ -93,19 +133,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar
         {tb && (
           <Toolbar
             leading={tb.Logo}
-            center={
-              <button
-                ref={tb.searchAnchorRef}
-                className={tb.styles.toolbarSearch}
-                onClick={tb.openSearch}
-                data-toolbar-interactive="true"
-                data-camp-search
-              >
-                <span className={tb.styles.toolbarSearchIcon}>⌕</span>
-                <span className={tb.styles.toolbarSearchText}>Search…</span>
-                <kbd className={tb.styles.toolbarSearchKbd}>⌘K</kbd>
-              </button>
-            }
+            center={<ToolbarSearchBar tb={tb} />}
             trailing={
               tb.isConnected ? (
                 <>
@@ -145,19 +173,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar
         {tb && (
           <Toolbar
             leading={tb.Logo}
-            center={
-              <button
-                ref={tb.searchAnchorRef}
-                className={tb.styles.toolbarSearch}
-                onClick={tb.openSearch}
-                data-toolbar-interactive="true"
-                data-camp-search
-              >
-                <span className={tb.styles.toolbarSearchIcon}>⌕</span>
-                <span className={tb.styles.toolbarSearchText}>Search…</span>
-                <kbd className={tb.styles.toolbarSearchKbd}>⌘K</kbd>
-              </button>
-            }
+            center={<ToolbarSearchBar tb={tb} />}
             trailing={
               tb.isConnected ? (
                 <>
@@ -216,18 +232,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar
       {tb && (
         <Toolbar
           leading={tb.Logo}
-          center={
-            <button
-              className={tb.styles.toolbarSearch}
-              onClick={tb.openSearch}
-              data-toolbar-interactive="true"
-              data-camp-search
-            >
-              <span className={tb.styles.toolbarSearchIcon}>⌕</span>
-              <span className={tb.styles.toolbarSearchText}>Search…</span>
-              <kbd className={tb.styles.toolbarSearchKbd}>⌘K</kbd>
-            </button>
-          }
+          center={<ToolbarSearchBar tb={tb} />}
           trailing={
             tb.isConnected ? (
               <>
