@@ -58,7 +58,7 @@
 }
 
 .editSlug {
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   color: var(--berry-text-secondary);
   background: var(--berry-bg-secondary);
   padding: 2px 6px;

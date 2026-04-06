@@ -4,24 +4,46 @@
 
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { useTranslation } from '@/OS/lib/i18n';
 import { MarkdownRenderer } from '../MarkdownRenderer';
+import { addressToAvatar } from '../../utils/addressAvatar';
 import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
 
-/** Render actor name with optional avatar */
+/** Render actor name with avatar (ENS avatar or deterministic pixel fallback) */
 export function ActorName({
   avatar,
+  address,
   name,
   onClick,
 }: {
   avatar?: string | null;
+  /** Ethereum address — used to generate a deterministic pixel avatar fallback */
+  address?: string;
   name?: string;
   onClick?: () => void;
 }) {
+  const fallback = useMemo(
+    () => (address ? addressToAvatar(address) : null),
+    [address],
+  );
+
+  const src = avatar || fallback;
+
+  // If the ENS avatar URL fails to load, swap in the pixel fallback
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      if (fallback && e.currentTarget.src !== fallback) {
+        e.currentTarget.src = fallback;
+      }
+    },
+    [fallback],
+  );
+
   return (
     <span className={styles.actorWrapper}>
-      {avatar && <img src={avatar} alt="" className={styles.avatar} />}
+      {src && <img src={src} alt="" className={styles.avatar} onError={handleError} />}
       <span className={styles.actor} onClick={onClick} role="button" tabIndex={0}>
         {name}
       </span>

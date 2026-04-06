@@ -13,7 +13,9 @@ import { useIsMobile } from '@/OS/lib/PlatformDetection';
 import { useActivityFeed } from '../hooks';
 import { ActivityItem, Digest } from '../components';
 import { BerryLoader } from '../components/BerryLoader';
+import { Toolbar, useToolbar } from '../components/CampToolbar';
 import type { DigestTab } from '../types';
+import type { CampToolbarContext } from '../Camp';
 import styles from './ActivityView.module.css';
 
 type MobileTab = 'activity' | DigestTab;
@@ -22,6 +24,7 @@ interface ActivityViewProps {
   onNavigate: (path: string) => void;
   digestTab?: DigestTab;
   onDigestTabChange?: (tab: DigestTab) => void;
+  toolbar?: CampToolbarContext;
 }
 
 const MOBILE_TABS: { id: MobileTab; label: string }[] = [
@@ -32,9 +35,11 @@ const MOBILE_TABS: { id: MobileTab; label: string }[] = [
   { id: 'voters', label: 'Voters' },
 ];
 
-export function ActivityView({ onNavigate, digestTab, onDigestTabChange }: ActivityViewProps) {
+export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar }: ActivityViewProps) {
   const { data: activities, isLoading, error } = useActivityFeed(50);
   const isMobile = useIsMobile();
+  const { isModern } = useToolbar();
+  const tb = toolbar;
   
   // Mobile tab state — 'activity' shows the feed, anything else maps to a Digest tab
   const [mobileTab, setMobileTab] = useState<MobileTab>('activity');
@@ -85,6 +90,43 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange }: Activ
   if (error) {
     return (
       <div className={styles.container}>
+        {tb && (
+          <Toolbar
+            leading={tb.Logo}
+            center={
+              <button
+                ref={tb.searchAnchorRef}
+                className={tb.styles.toolbarSearch}
+                onClick={tb.openSearch}
+                data-toolbar-interactive="true"
+              >
+                <span className={tb.styles.toolbarSearchIcon}>⌕</span>
+                <span className={tb.styles.toolbarSearchText}>Search…</span>
+                <kbd className={tb.styles.toolbarSearchKbd}>⌘K</kbd>
+              </button>
+            }
+            trailing={
+              tb.isConnected ? (
+                <>
+                  <button
+                    className={tb.styles.toolbarBtn}
+                    onClick={() => tb.navigate({ view: 'create' })}
+                    data-toolbar-interactive="true"
+                  >
+                    Create
+                  </button>
+                  <button
+                    className={tb.styles.toolbarBtn}
+                    onClick={() => tb.navigate({ view: 'account' })}
+                    data-toolbar-interactive="true"
+                  >
+                    Account
+                  </button>
+                </>
+              ) : undefined
+            }
+          />
+        )}
         <div className={styles.error}>
           <p>Failed to load activity</p>
           <p className={styles.errorDetail}>{error.message}</p>
@@ -99,6 +141,43 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange }: Activ
 
     return (
       <div className={styles.mobileLayout}>
+        {tb && (
+          <Toolbar
+            leading={tb.Logo}
+            center={
+              <button
+                ref={tb.searchAnchorRef}
+                className={tb.styles.toolbarSearch}
+                onClick={tb.openSearch}
+                data-toolbar-interactive="true"
+              >
+                <span className={tb.styles.toolbarSearchIcon}>⌕</span>
+                <span className={tb.styles.toolbarSearchText}>Search…</span>
+                <kbd className={tb.styles.toolbarSearchKbd}>⌘K</kbd>
+              </button>
+            }
+            trailing={
+              tb.isConnected ? (
+                <>
+                  <button
+                    className={tb.styles.toolbarBtn}
+                    onClick={() => tb.navigate({ view: 'create' })}
+                    data-toolbar-interactive="true"
+                  >
+                    Create
+                  </button>
+                  <button
+                    className={tb.styles.toolbarBtn}
+                    onClick={() => tb.navigate({ view: 'account' })}
+                    data-toolbar-interactive="true"
+                  >
+                    Account
+                  </button>
+                </>
+              ) : undefined
+            }
+          />
+        )}
         {/* Tab bar */}
         <div className={styles.mobileTabs}>
           {MOBILE_TABS.map(tab => (
@@ -132,6 +211,42 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange }: Activ
   // Desktop: two-column layout
   return (
     <div className={styles.twoColumn}>
+      {tb && (
+        <Toolbar
+          leading={tb.Logo}
+          center={
+            <button
+              className={tb.styles.toolbarSearch}
+              onClick={tb.openSearch}
+              data-toolbar-interactive="true"
+            >
+              <span className={tb.styles.toolbarSearchIcon}>⌕</span>
+              <span className={tb.styles.toolbarSearchText}>Search…</span>
+              <kbd className={tb.styles.toolbarSearchKbd}>⌘K</kbd>
+            </button>
+          }
+          trailing={
+            tb.isConnected ? (
+              <>
+                <button
+                  className={tb.styles.toolbarBtn}
+                  onClick={() => tb.navigate({ view: 'create' })}
+                  data-toolbar-interactive="true"
+                >
+                  Create
+                </button>
+                <button
+                  className={tb.styles.toolbarBtn}
+                  onClick={() => tb.navigate({ view: 'account' })}
+                  data-toolbar-interactive="true"
+                >
+                  Account
+                </button>
+              </>
+            ) : undefined
+          }
+        />
+      )}
       {/* Left column: Activity feed */}
       <div className={styles.activityColumn}>
         {activityFeedContent}

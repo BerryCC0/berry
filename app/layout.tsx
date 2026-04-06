@@ -1,7 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import { Comic_Neue } from "next/font/google";
 import { Providers } from "./providers";
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css";
+
+const comicNeue = Comic_Neue({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-comic-neue",
+});
 
 export const metadata: Metadata = {
   title: "Berry OS",
@@ -36,13 +44,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={comicNeue.variable}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body>
         <Providers>{children}</Providers>

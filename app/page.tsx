@@ -17,11 +17,18 @@ import { Dock } from "@/OS/Shell/Dock";
 import { WindowManager } from "@/OS/Shell/WindowManager";
 import { BootOverlay } from "@/OS/Shell/Boot";
 import { Launchpad } from "@/OS/Shell/Launchpad";
+import { SnapPreview } from "@/OS/Shell/Window/components/SnapPreview";
+import { CommandPalette } from "@/OS/Shell/CommandPalette";
+import { StageStrip } from "@/OS/Shell/StageStrip";
+import { Expose } from "@/OS/Shell/Expose";
+import { TabBar } from "@/OS/Shell/TabBar";
+import { NavigationBar } from "@/OS/Shell/NavigationBar";
+import { AppSwitcher as MobileAppSwitcher } from "@/OS/Shell/AppSwitcher";
 import { SleepOverlay } from "@/OS/Shell/Boot/SleepOverlay";
 import { ShutdownOverlay } from "@/OS/Shell/Boot/ShutdownOverlay";
 import { NounsIconProvider } from "@/OS/Shell/NounsIconProvider";
 import { bootBerryOS, shutdownBerryOS } from "@/OS/lib/Boot";
-import { usePersistence, useApplySettings, useBootSequence, useRouteSync } from "@/OS/hooks";
+import { usePersistence, useApplySettings, useBootSequence, useRouteSync, useKeyboardShortcuts } from "@/OS/hooks";
 import { useBootStore } from "@/OS/store/bootStore";
 
 export default function Home() {
@@ -47,6 +54,9 @@ export default function Home() {
   // Sync URL with window state for deep linking
   useRouteSync();
 
+  // OS + per-app keyboard shortcuts (desktop)
+  useKeyboardShortcuts();
+
   return (
     <>
       {/* Boot overlay - shows until OS is fully ready */}
@@ -60,8 +70,15 @@ export default function Home() {
       <MenuBar />
       <Desktop />
       <WindowManager />
+      <SnapPreview />
       <Dock />
       <Launchpad />
+      <CommandPalette />
+      <StageStrip />
+      <Expose />
+      <TabBar />
+      <NavigationBar />
+      <MobileAppSwitcher />
       {isReady && <NounsIconProvider />}
       {isSleeping && <SleepOverlay onWake={wake} />}
       {isShutdown && <ShutdownOverlay />}

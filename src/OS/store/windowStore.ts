@@ -24,6 +24,10 @@ const WINDOW_LIMITS = {
     max: 50,
     warnAt: 40,
   },
+  tablet: {
+    max: 4,
+    warnAt: 3,
+  },
   mobile: {
     max: 10,
     warnAt: 8,
@@ -31,20 +35,38 @@ const WINDOW_LIMITS = {
 };
 
 /**
- * Check if we're on mobile (basic check, more detailed in PlatformDetection)
+ * Detect device type for window constraints (basic viewport check).
+ * More detailed detection lives in PlatformDetection.
  */
-function isMobileDevice(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.innerWidth < 768;
+function getDeviceType(): "desktop" | "tablet" | "mobile" {
+  if (typeof window === 'undefined') return "desktop";
+  const platform = document.documentElement.dataset.platform;
+  if (platform === "tablet") return "tablet";
+  if (platform === "mobile" || platform === "farcaster") return "mobile";
+  if (window.innerWidth < 768) return "mobile";
+  if (window.innerWidth < 1024) return "tablet";
+  return "desktop";
 }
+
+/** @deprecated Use getDeviceType() instead */
+function isMobileDevice(): boolean {
+  return getDeviceType() === "mobile";
+}
+
+/** Snap zone identifiers for window tiling */
+export type SnapZone = "left" | "right" | "maximize" | null;
 
 interface WindowStore {
   // State
   windows: Map<string, WindowState>;
   focusedWindowId: string | null;
   nextZIndex: number;
+  /** Active snap preview zone (shown as overlay while dragging near edge) */
+  snapPreview: SnapZone;
 
   // Actions
+  setSnapPreview: (zone: SnapZone) => void;
+  snapWindow: (windowId: string, zone: "left" | "right" | "maximize") => void;
   createWindow: (appId: string, config: WindowConfig) => string;
   closeWindow: (windowId: string) => void;
   focusWindow: (windowId: string) => void;
@@ -71,13 +93,52 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   windows: new Map(),
   focusedWindowId: null,
   nextZIndex: 100,
+  snapPreview: null,
+
+  // Snap actions
+  setSnapPreview: (zone) => set({ snapPreview: zone }),
+
+  snapWindow: (windowId, zone) => {
+    const menuBarHeight = typeof document !== "undefined"
+      ? parseInt(getComputedStyle(document.documentElement).getPropertyValue("--berry-menubar-height") || "28", 10)
+      : 28;
+    const dockHeight = 70;
+    const vw = typeof globalThis.window !== "undefined" ? globalThis.window.innerWidth : 1200;
+    const vh = typeof globalThis.window !== "undefined" ? globalThis.window.innerHeight : 800;
+    const usableHeight = vh - menuBarHeight - dockHeight;
+
+    let x = 0, y = menuBarHeight, w = vw, h = usableHeight;
+
+    if (zone === "left") {
+      w = Math.floor(vw / 2);
+    } else if (zone === "right") {
+      x = Math.floor(vw / 2);
+      w = Math.floor(vw / 2);
+    }
+    // zone === "maximize" uses full width/height defaults above
+
+    set((state) => {
+      const win = state.windows.get(windowId);
+      if (!win) return state;
+      const newWindows = new Map(state.windows);
+      newWindows.set(windowId, {
+        ...win,
+        x, y,
+        width: w,
+        height: h,
+        isMaximized: zone === "maximize",
+      });
+      return { windows: newWindows, snapPreview: null };
+    });
+  },
 
   // Actions
   createWindow: (appId: string, config: WindowConfig) => {
     const { nextZIndex, focusedWindowId: previousFocusedId, windows } = get();
     
-    // Check window limits per PERFORMANCE.md
-    const limits = isMobileDevice() ? WINDOW_LIMITS.mobile : WINDOW_LIMITS.desktop;
+    // Check window limits per PERFORMANCE.md / HIG-SPEC-TABLET §6
+    const deviceType = getDeviceType();
+    const limits = WINDOW_LIMITS[deviceType];
     const currentCount = windows.size;
     
     if (currentCount >= limits.max) {
@@ -93,8 +154,28 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const windowId = generateWindowId();
     const instanceId = generateInstanceId(appId);
 
+    // Cascade positioning: offset 22px from last window when no explicit position
+    const CASCADE_OFFSET = 22;
+    let initialX = config.x ?? undefined;
+    let initialY = config.y ?? undefined;
+
+    if (initialX === undefined || initialY === undefined) {
+      // Find the most recently created window to cascade from
+      const existingWindows = Array.from(windows.values());
+      const lastWindow = existingWindows.length > 0
+        ? existingWindows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b))
+        : null;
+
+      if (lastWindow && !lastWindow.isMinimized) {
+        initialX = initialX ?? lastWindow.x + CASCADE_OFFSET;
+        initialY = initialY ?? lastWindow.y + CASCADE_OFFSET;
+      } else {
+        initialX = initialX ?? 100;
+        initialY = initialY ?? 100;
+      }
+    }
+
     // Enforce menu bar floor on initial position
-    let initialY = config.y ?? 100;
     if (typeof document !== "undefined") {
       const menuBarHeight = parseInt(
         getComputedStyle(document.documentElement)
@@ -102,6 +183,37 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
         10
       );
       initialY = Math.max(menuBarHeight, initialY);
+
+      // Wrap cascade back if it goes off-screen
+      const maxX = globalThis.innerWidth - (config.width ?? 400);
+      const maxY = globalThis.innerHeight - 100;
+      if (initialX > maxX || initialY > maxY) {
+        initialX = 100;
+        initialY = menuBarHeight + CASCADE_OFFSET;
+      }
+    }
+
+    // Tablet-specific defaults: 70% viewport, min 320×460 (HIG-SPEC-TABLET §6)
+    const isTabletDevice = deviceType === "tablet";
+    const vw = typeof globalThis.window !== "undefined" ? globalThis.window.innerWidth : 1024;
+    const vh = typeof globalThis.window !== "undefined" ? globalThis.window.innerHeight : 768;
+
+    const defaultWidth = isTabletDevice
+      ? config.width ?? Math.floor(vw * 0.7)
+      : config.width;
+    const defaultHeight = isTabletDevice
+      ? config.height ?? Math.floor(vh * 0.7)
+      : config.height;
+    const tabletMinWidth = isTabletDevice ? 320 : DEFAULT_WINDOW_CONSTRAINTS.minWidth;
+    const tabletMinHeight = isTabletDevice ? 460 : DEFAULT_WINDOW_CONSTRAINTS.minHeight;
+
+    // Center tablet windows if no explicit position
+    if (isTabletDevice && initialX === undefined) {
+      const stageStripWidth = 80;
+      initialX = stageStripWidth + Math.floor((vw - stageStripWidth - defaultWidth) / 2);
+    }
+    if (isTabletDevice && initialY === undefined) {
+      initialY = Math.floor((vh - 56 - defaultHeight) / 2); // 56 = dock height
     }
 
     const windowState: WindowState = {
@@ -111,15 +223,15 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       title: config.title,
       icon: config.icon,
 
-      // Position - center if not specified, clamped below menu bar
-      x: config.x ?? 100,
+      // Position - cascaded from last window, clamped below menu bar
+      x: initialX,
       y: initialY,
-      width: config.width,
-      height: config.height,
+      width: defaultWidth,
+      height: defaultHeight,
 
       // Constraints
-      minWidth: config.minWidth ?? DEFAULT_WINDOW_CONSTRAINTS.minWidth,
-      minHeight: config.minHeight ?? DEFAULT_WINDOW_CONSTRAINTS.minHeight,
+      minWidth: config.minWidth ?? tabletMinWidth,
+      minHeight: config.minHeight ?? tabletMinHeight,
       maxWidth: config.maxWidth,
       maxHeight: config.maxHeight,
       isResizable: config.isResizable ?? true,

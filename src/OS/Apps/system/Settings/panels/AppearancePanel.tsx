@@ -181,7 +181,7 @@ function EraCard({
   isActive: boolean;
   onClick: () => void;
 }) {
-  const eraThemes = ERA_THEMES[era.id];
+  const eraThemes = ERA_THEMES[era.id] ?? ERA_THEMES["liquid-glass"];
   const theme = darkMode ? eraThemes.dark : eraThemes.light;
   const c = theme.colors;
   const isRounded = theme.borderRadius === "large" || theme.borderRadius === "medium";

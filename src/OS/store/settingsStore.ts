@@ -51,11 +51,20 @@ interface SettingsStore {
  * Migrate legacy appearance settings (themeId + windowStyle) to
  * the new era + darkMode model.
  */
+/** Valid era IDs — used to validate persisted values */
+const VALID_ERAS: ReadonlySet<string> = new Set([
+  "platinum", "aqua", "skeuomorphic", "flat", "big-sur", "liquid-glass",
+]);
+
+function isValidEra(value: unknown): value is EraId {
+  return typeof value === "string" && VALID_ERAS.has(value);
+}
+
 function migrateAppearance(
   appearance: Record<string, unknown>
 ): SystemSettings["appearance"] {
-  // Already migrated — has `era` field and no legacy `themeId`
-  if (appearance.era && !appearance.themeId) {
+  // Already migrated — has a *valid* `era` field and no legacy `themeId`
+  if (isValidEra(appearance.era) && !appearance.themeId) {
     return appearance as unknown as SystemSettings["appearance"];
   }
 
@@ -66,6 +75,8 @@ function migrateAppearance(
       return {
         era: migration.era,
         darkMode: migration.darkMode,
+        // Migrated users had an explicit toggle, so honor it instead of "auto"
+        colorScheme: migration.darkMode ? "dark" as const : "light" as const,
         accentColor: (appearance.accentColor as string) ?? DEFAULT_SETTINGS.appearance.accentColor,
         wallpaper: (appearance.wallpaper as string) ?? DEFAULT_SETTINGS.appearance.wallpaper,
         desktopIconSize: (appearance.desktopIconSize as "small" | "medium" | "large") ?? DEFAULT_SETTINGS.appearance.desktopIconSize,
@@ -76,12 +87,12 @@ function migrateAppearance(
     }
   }
 
-  // Fallback: if era is present (partially migrated), use it
-  if (appearance.era) {
+  // Fallback: if era is present and valid (partially migrated), use it
+  if (isValidEra(appearance.era)) {
     return appearance as unknown as SystemSettings["appearance"];
   }
 
-  // Full fallback
+  // Full fallback — era missing or unrecognized
   return DEFAULT_SETTINGS.appearance;
 }
 

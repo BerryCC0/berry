@@ -11,7 +11,9 @@ import { formatAddress } from '@/shared/format';
 import { useEnsName, useEnsAvatar } from '@/OS/hooks/useEnsData';
 import { useVoters } from '../hooks';
 import { BerryLoader } from '../components/BerryLoader';
+import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarSelect } from '../components/CampToolbar';
 import type { Voter, VoterSort } from '../types';
+import type { CampToolbarContext } from '../Camp';
 import styles from './VoterListView.module.css';
 
 // Treasury addresses to filter from voter list
@@ -44,12 +46,15 @@ function VoterIdentity({ address }: { address: string }) {
 interface VoterListViewProps {
   onNavigate: (path: string) => void;
   onBack: () => void;
+  toolbar?: CampToolbarContext;
 }
 
-export function VoterListView({ onNavigate, onBack }: VoterListViewProps) {
+export function VoterListView({ onNavigate, onBack, toolbar }: VoterListViewProps) {
   const [sort, setSort] = useState<VoterSort>('power');
 
   const { data: voters, isLoading, error } = useVoters(100, sort);
+  const { isModern } = useToolbar();
+  const tb = toolbar;
   
   // Filter out treasury addresses from voters
   const filteredVoters = useMemo(() => {
@@ -86,10 +91,32 @@ export function VoterListView({ onNavigate, onBack }: VoterListViewProps) {
 
   return (
     <div className={styles.container}>
-      <div className={styles.navBar}>
+      {tb && (
+        <Toolbar
+          leading={
+            <>
+              <ToolbarBack onClick={onBack} styles={tb.styles} />
+              <ToolbarTitle styles={tb.styles}>Voters</ToolbarTitle>
+            </>
+          }
+          center={
+            <ToolbarSelect
+              value={sort}
+              onChange={setSort}
+              options={[
+                { value: 'power', label: 'Voting Power' },
+                { value: 'votes', label: 'Votes Cast' },
+                { value: 'represented', label: 'Delegators' },
+              ]}
+              styles={tb.styles}
+            />
+          }
+        />
+      )}
+      {!isModern && <div className={styles.navBar}>
         <button className={styles.backButton} onClick={onBack}>← Back</button>
-      </div>
-      <div className={styles.controls}>
+      </div>}
+      {!isModern && <div className={styles.controls}>
         <select
           className={styles.select}
           value={sort}
@@ -99,7 +126,7 @@ export function VoterListView({ onNavigate, onBack }: VoterListViewProps) {
           <option value="votes">Votes Cast</option>
           <option value="represented">Delegators</option>
         </select>
-      </div>
+      </div>}
 
       <div className={styles.list}>
         {isLoading ? (

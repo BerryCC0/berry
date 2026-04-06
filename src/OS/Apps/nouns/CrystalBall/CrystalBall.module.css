@@ -71,7 +71,7 @@
 
 .value {
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
 }
 
 /* Traits List */
@@ -180,7 +180,7 @@
 }
 
 .countdownTime {
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
   font-size: 24px;
   font-weight: bold;
   color: var(--berry-text-primary);

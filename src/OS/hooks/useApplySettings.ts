@@ -3,9 +3,12 @@
 /**
  * useApplySettings Hook
  * Watches settings store and applies changes to the DOM in real-time.
- * 
+ *
  * Note: This hook handles LIVE changes to settings after boot.
  * The initial settings application during boot is handled by useBootSequence.
+ *
+ * Also handles `colorScheme: "auto"` by listening to the OS-level
+ * `prefers-color-scheme` media query and syncing it to `darkMode`.
  */
 
 import { useEffect, useRef } from "react";
@@ -30,10 +33,33 @@ export function useApplySettings() {
   );
   const isInitialized = useSettingsStore((state) => state.isInitialized);
   const isReady = useBootStore((state) => state.isReady);
+  const setSetting = useSettingsStore((state) => state.setSetting);
 
   // Track previous values to detect actual changes
   const prevAppearance = useRef(appearance);
   const prevAccessibility = useRef(accessibility);
+
+  // --- prefers-color-scheme auto-detection ---
+  // When colorScheme is "auto", sync darkMode to the OS preference.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (appearance.colorScheme !== "auto") return;
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+
+    // Sync the current OS preference immediately
+    const sync = (dark: boolean) => {
+      if (appearance.darkMode !== dark) {
+        setSetting("appearance", "darkMode", dark);
+      }
+    };
+
+    sync(mq.matches);
+
+    const handler = (e: MediaQueryListEvent) => sync(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [appearance.colorScheme, appearance.darkMode, setSetting]);
 
   // Apply appearance settings when they change AFTER boot is complete
   useEffect(() => {

@@ -20,7 +20,7 @@ export function CandidateContent(props: ActivityContentProps) {
     case 'candidate_created':
       return (
         <div className={styles.header}>
-          <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+          <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
           <span className={styles.action}>created</span>
           <span className={styles.badge} data-type="candidate">Candidate</span>
           {candidateTitle && (
@@ -35,7 +35,7 @@ export function CandidateContent(props: ActivityContentProps) {
       return (
         <>
           <div className={styles.header}>
-            <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+            <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
             {repostInfo ? (
               <>
                 <span className={styles.action}>reposted a</span>
@@ -70,7 +70,7 @@ export function CandidateContent(props: ActivityContentProps) {
       return (
         <>
           <div className={styles.header}>
-            <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+            <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
             <span className={styles.action}>sponsored</span>
             {candidateTitle && (
               <span className={styles.titleLink} onClick={onClickCandidate} role="button" tabIndex={0}>
@@ -88,7 +88,7 @@ export function CandidateContent(props: ActivityContentProps) {
       return (
         <>
           <div className={styles.header}>
-            <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+            <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
             <span className={styles.action}>updated</span>
             <span className={styles.badge} data-type="candidate">Candidate</span>
             {item.candidateSlug && (

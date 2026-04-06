@@ -203,7 +203,7 @@
 
 /* Code */
 .inlineCode {
-  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-family: var(--berry-font-mono);
   font-size: 12px;
   padding: 2px 6px;
   background: var(--berry-bg-tertiary);
@@ -222,7 +222,7 @@
 }
 
 .codeBlock {
-  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-family: var(--berry-font-mono);
   font-size: 12px;
   line-height: 1.5;
   color: var(--berry-text-primary);

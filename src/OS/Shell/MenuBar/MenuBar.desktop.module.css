@@ -51,7 +51,7 @@
 
 .menuLabel {
   font-family: var(--berry-font-system);
-  font-size: 12px;
+  font-size: var(--berry-font-menu, 13px);
 }
 
 .spacer {
@@ -101,7 +101,7 @@
 }
 
 .walletAddress {
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
   font-size: 10px;
 }
 
@@ -114,7 +114,7 @@
 
 .clock {
   font-family: var(--berry-font-system);
-  font-size: 12px;
+  font-size: var(--berry-font-menu, 13px);
   color: inherit;
 }
 
@@ -133,11 +133,24 @@
 .dropdownItem {
   display: flex;
   align-items: center;
-  padding: 6px 16px;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 16px;
   font-family: var(--berry-font-system);
-  font-size: 12px;
+  font-size: var(--berry-font-menu, 13px);
   color: var(--berry-text-primary);
   cursor: pointer;
+}
+
+.dropdownShortcut {
+  margin-left: 24px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.dropdownItemChecked::before {
+  content: "✓";
+  margin-right: 8px;
 }
 
 .dropdownItem:hover {

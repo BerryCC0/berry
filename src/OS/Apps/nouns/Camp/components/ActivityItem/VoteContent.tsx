@@ -20,7 +20,12 @@ export function VoteContent(props: ActivityContentProps) {
   return (
     <>
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+        {isVote && item.votes && item.support !== undefined && (
+          <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+            {item.votes} {item.votes === '1' ? 'vote' : 'votes'}
+          </span>
+        )}
         {repostInfo ? (
           <>
             <span className={styles.action}>reposted a</span>
@@ -31,20 +36,12 @@ export function VoteContent(props: ActivityContentProps) {
             )}
             <span className={styles.action}>{repostNoun}</span>
           </>
-        ) : (
-          <>
-            <span className={styles.action}>{actionWord}</span>
-            {item.support !== undefined && (
-              <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
-                {getSupportLabel(item.support)}
-              </span>
-            )}
-          </>
-        )}
-        {isVote && item.votes && (
-          <span className={styles.votes}>
-            ({item.votes} {item.votes === '1' ? 'vote' : 'votes'})
+        ) : item.support !== undefined ? (
+          <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
+            {actionWord} {getSupportLabel(item.support)}
           </span>
+        ) : (
+          <span className={styles.action}>{actionWord}</span>
         )}
         {item.clientId != null && item.clientId !== 0 && (
           <span className={styles.clientBadge}>via {getClientName(item.clientId)}</span>

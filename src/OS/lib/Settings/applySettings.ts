@@ -188,6 +188,11 @@ export function applyThemeColors(theme: CustomTheme) {
   const isDark = isColorDark(colors.bgPrimary);
   root.dataset.theme = isDark ? "dark" : "light";
 
+  // Semantic surface tokens — resolve based on dark/light mode
+  root.style.setProperty("--berry-surface", isDark ? "#1c1c1e" : "#ffffff");
+  root.style.setProperty("--berry-surface-secondary", isDark ? "#2c2c2e" : "#f2f2f7");
+  root.style.setProperty("--berry-separator", isDark ? "#38383a" : "#c6c6c8");
+
   // Desktop background - derive from theme
   const desktopBg = isDark ? "#1a3a3a" : "#008080"; // Teal variants
   root.style.setProperty("--berry-desktop-bg", desktopBg);

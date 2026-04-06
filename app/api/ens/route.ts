@@ -118,9 +118,9 @@ export async function POST(request: NextRequest) {
 
     const sql = ponderSql();
 
-    // Query ens_names table — include resolvedAt for staleness checks
+    // Query ens_names table — include resolved_at for staleness checks
     const rows = await sql`
-      SELECT address, name, avatar, "resolvedAt"
+      SELECT address, name, avatar, resolved_at AS "resolvedAt"
       FROM ponder_live.ens_names
       WHERE address = ANY(${limitedAddresses})
     `;

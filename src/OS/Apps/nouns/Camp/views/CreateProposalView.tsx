@@ -20,6 +20,8 @@ import {
 } from '../components/CreateProposal';
 import { BerryLoader } from '../components/BerryLoader';
 import { useCreateProposalForm } from '../hooks/useCreateProposalForm';
+import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarDraftStatus } from '../components/CampToolbar';
+import type { CampToolbarContext } from '../Camp';
 import styles from './CreateProposalView.module.css';
 
 interface CreateProposalViewProps {
@@ -29,6 +31,7 @@ interface CreateProposalViewProps {
   editCandidateProposer?: string;
   editCandidateSlug?: string;
   initialDraftSlug?: string;
+  toolbar?: CampToolbarContext;
 }
 
 export function CreateProposalView({
@@ -38,6 +41,7 @@ export function CreateProposalView({
   editCandidateProposer,
   editCandidateSlug,
   initialDraftSlug,
+  toolbar,
 }: CreateProposalViewProps) {
   const form = useCreateProposalForm({
     onNavigate,
@@ -46,6 +50,8 @@ export function CreateProposalView({
     editCandidateSlug,
     initialDraftSlug,
   });
+  const { isModern } = useToolbar();
+  const tb = toolbar;
 
   // Show wallet connection prompt if not connected
   if (!form.isConnected || !form.address) {
@@ -90,8 +96,9 @@ export function CreateProposalView({
   if (form.isEditingCandidate && form.candidateError) {
     return (
       <div className={styles.error}>
+        {tb && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
         <p>Failed to load candidate</p>
-        <button className={styles.backButton} onClick={onBack}>Go Back</button>
+        {!isModern && <button className={styles.backButton} onClick={onBack}>Go Back</button>}
       </div>
     );
   }
@@ -99,15 +106,38 @@ export function CreateProposalView({
   if (form.isEditingProposal && form.proposalError) {
     return (
       <div className={styles.error}>
+        {tb && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
         <p>Failed to load proposal</p>
-        <button className={styles.backButton} onClick={onBack}>Go Back</button>
+        {!isModern && <button className={styles.backButton} onClick={onBack}>Go Back</button>}
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <CreateProposalNavBar
+      {tb && (
+        <Toolbar
+          leading={
+            <>
+              <ToolbarBack onClick={onBack} label="Cancel" styles={tb.styles} />
+              <ToolbarTitle styles={tb.styles}>
+                {form.isEditingProposal ? 'Edit Proposal' : form.isEditingCandidate ? 'Edit Candidate' : 'Create'}
+              </ToolbarTitle>
+            </>
+          }
+          center={
+            form.draftTitle ? (
+              <ToolbarDraftStatus
+                saveStatus={form.saveStatus}
+                lastSaved={form.lastSaved}
+                draftTitle={form.draftTitle}
+                styles={tb.styles}
+              />
+            ) : undefined
+          }
+        />
+      )}
+      {!isModern && <CreateProposalNavBar
         onBack={onBack}
         title="Create"
         isEditingProposal={form.isEditingProposal}
@@ -118,7 +148,7 @@ export function CreateProposalView({
         saveStatus={form.saveStatus}
         lastSaved={form.lastSaved}
         isEditMode={form.isEditMode}
-      />
+      />}
 
       <div className={styles.form}>
         {/* Type & Drafts Row - hide in edit mode */}

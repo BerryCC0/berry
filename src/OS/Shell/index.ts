@@ -12,7 +12,16 @@ export { MenuBar } from "./MenuBar";
 export { Dock } from "./Dock";
 export { WindowManager } from "./WindowManager";
 export { AppErrorBoundary } from "./AppErrorBoundary";
+export { SnapPreview } from "./Window/components/SnapPreview";
 export { Launchpad } from "./Launchpad";
+export { CommandPalette } from "./CommandPalette";
+export { StageStrip } from "./StageStrip";
+export { Expose } from "./Expose";
+export { TabBar } from "./TabBar";
+export { NavigationBar } from "./NavigationBar";
+export { Sheet } from "./Sheet";
+export type { SheetProps } from "./Sheet";
+export { AppSwitcher } from "./AppSwitcher";
 
 // Lifecycle Overlays
 export { BootOverlay, ShutdownOverlay, SleepOverlay } from "./Boot";

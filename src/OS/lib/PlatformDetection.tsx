@@ -134,6 +134,11 @@ interface PlatformProviderProps {
 export function PlatformProvider({ children }: PlatformProviderProps) {
   const [platform, setPlatform] = useState<PlatformInfo>(() => detectPlatform());
 
+  // Sync data-platform attribute to root element for CSS platform-aware tokens
+  useEffect(() => {
+    document.documentElement.dataset.platform = platform.type;
+  }, [platform.type]);
+
   useEffect(() => {
     // Update platform on resize
     const handleResize = () => {

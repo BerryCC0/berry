@@ -1,0 +1,149 @@
+/**
+ * TabBar — Mobile Tab Bar Styles
+ *
+ * Per HIG-SPEC-MOBILE §2:
+ * - Height: 49px + safe-area-inset-bottom
+ * - Fixed bottom, 5 tabs max
+ * - Glass material background, era-aware
+ * - Selected: accent tint; Unselected: 50% opacity gray
+ * - Badge: 12px red circle for notification count
+ */
+
+.tabBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(49px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  z-index: var(--z-dock, 9000);
+
+  /* Glass material */
+  background: rgba(249, 249, 249, 0.94);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+
+  /* Top border — hair-width separator */
+  border-top: 0.5px solid rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .tabBar {
+    background: rgba(30, 30, 30, 0.88);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.tabItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 49px;
+  padding: 4px 0 2px;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Icon */
+.tabIcon {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: rgba(128, 128, 128, 0.8);
+  transition: color 0.15s ease;
+  position: relative;
+}
+
+.tabItemSelected .tabIcon {
+  color: var(--berry-accent, #007AFF);
+}
+
+/* Label */
+.tabLabel {
+  font-family: var(--berry-font-system, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  margin-top: 2px;
+  color: rgba(128, 128, 128, 0.8);
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.tabItemSelected .tabLabel {
+  color: var(--berry-accent, #007AFF);
+}
+
+/* Badge */
+.tabBadge {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: #FF3B30;
+  color: #fff;
+  font-family: var(--berry-font-system, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+/* ── Era Overrides ── */
+
+/* Liquid Glass / Big Sur: more transparent, stronger blur */
+:global([data-era="liquid-glass"]) .tabBar,
+:global([data-era="big-sur"]) .tabBar {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: saturate(200%) blur(30px);
+  -webkit-backdrop-filter: saturate(200%) blur(30px);
+  border-top-color: rgba(255, 255, 255, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global([data-era="liquid-glass"]) .tabBar,
+  :global([data-era="big-sur"]) .tabBar {
+    background: rgba(40, 40, 40, 0.7);
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Classic eras: opaque, no blur */
+:global([data-era="platinum"]) .tabBar,
+:global([data-era="classic"]) .tabBar {
+  background: #ddd;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: 1px solid #bbb;
+}
+
+:global([data-era="aqua"]) .tabBar {
+  background: linear-gradient(to bottom, #e8e8e8 0%, #d0d0d0 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: 1px solid #b0b0b0;
+}
+
+/* Hidden state for Farcaster (no tab bar) */
+.tabBarHidden {
+  display: none;
+}

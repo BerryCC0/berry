@@ -15,7 +15,9 @@ import { getClientName } from '@/OS/lib/clientNames';
 import { BerryLoader } from '../components/BerryLoader';
 import { formatRelativeTime, estimateEndTime, estimateStartTime } from '../utils/formatUtils';
 import { getProposalStatusBadge, getVoteBarWidths, estimateCurrentBlock } from '../utils/proposalStatus';
+import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarSelect } from '../components/CampToolbar';
 import type { Proposal, ProposalFilter, ProposalSort } from '../types';
+import type { CampToolbarContext } from '../Camp';
 import styles from './ProposalListView.module.css';
 
 /**
@@ -31,14 +33,17 @@ function ENSName({ address }: { address: string }) {
 interface ProposalListViewProps {
   onNavigate: (path: string) => void;
   onBack: () => void;
+  toolbar?: CampToolbarContext;
 }
 
-export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) {
+export function ProposalListView({ onNavigate, onBack, toolbar }: ProposalListViewProps) {
   const [filter, setFilter] = useState<ProposalFilter>('all');
   const [sort, setSort] = useState<ProposalSort>('newest');
 
   const { data: proposals, isLoading, error } = useProposals(50, filter, sort);
   const { data: blockNumber } = useBlockNumber({ watch: true });
+  const { isModern } = useToolbar();
+  const tb = toolbar;
 
   // Use actual block number from chain, or estimated if not available yet
   const currentBlock = blockNumber ? Number(blockNumber) : estimateCurrentBlock();
@@ -134,7 +139,8 @@ export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) 
   if (error) {
     return (
       <div className={styles.error}>
-        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        {tb && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
+        {!isModern && <button className={styles.backButton} onClick={onBack}>← Back</button>}
         <p>Failed to load proposals</p>
         <p className={styles.errorDetail}>{error.message}</p>
       </div>
@@ -143,10 +149,47 @@ export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) 
 
   return (
     <div className={styles.container}>
-      <div className={styles.navBar}>
+      {tb && (
+        <Toolbar
+          leading={
+            <>
+              <ToolbarBack onClick={onBack} styles={tb.styles} />
+              <ToolbarTitle styles={tb.styles}>Proposals</ToolbarTitle>
+            </>
+          }
+          center={
+            <>
+              <ToolbarSelect
+                value={filter}
+                onChange={setFilter}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'succeeded', label: 'Succeeded' },
+                  { value: 'defeated', label: 'Defeated' },
+                  { value: 'executed', label: 'Executed' },
+                ]}
+                styles={tb.styles}
+              />
+              <ToolbarSelect
+                value={sort}
+                onChange={setSort}
+                options={[
+                  { value: 'newest', label: 'Newest' },
+                  { value: 'oldest', label: 'Oldest' },
+                  { value: 'ending_soon', label: 'Ending Soon' },
+                ]}
+                styles={tb.styles}
+              />
+            </>
+          }
+        />
+      )}
+      {!isModern && <div className={styles.navBar}>
         <button className={styles.backButton} onClick={onBack}>← Back</button>
-      </div>
-      <div className={styles.controls}>
+      </div>}
+      {!isModern && <div className={styles.controls}>
         <select
           className={styles.select}
           value={filter}
@@ -169,7 +212,7 @@ export function ProposalListView({ onNavigate, onBack }: ProposalListViewProps) 
           <option value="oldest">Oldest</option>
           <option value="ending_soon">Ending Soon</option>
         </select>
-      </div>
+      </div>}
 
       <div className={styles.list}>
         {isLoading ? (

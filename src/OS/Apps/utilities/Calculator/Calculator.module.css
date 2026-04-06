@@ -10,7 +10,7 @@
   background: #9fd89f;
   border: 2px inset var(--berry-border);
   padding: 8px 12px;
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   font-size: 24px;
   text-align: right;
   margin-bottom: 8px;

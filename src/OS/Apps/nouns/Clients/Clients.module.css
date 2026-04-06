@@ -711,7 +711,7 @@
 
 .breakdownReward {
   font-weight: 600;
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--berry-font-mono);
   color: var(--berry-text-primary, #1d1d1f);
   font-variant-numeric: tabular-nums;
 }
@@ -800,7 +800,7 @@
 }
 
 .tdMono {
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--berry-font-mono);
   font-size: 12px;
 }
 
@@ -938,7 +938,7 @@
 }
 
 .nftOwnerName {
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--berry-font-mono);
   font-weight: 500;
   color: var(--berry-text-secondary, #6e6e73);
   overflow: hidden;
@@ -1285,7 +1285,7 @@
 }
 
 .voterAddress {
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--berry-font-mono);
   font-size: 11px;
   color: var(--berry-text-secondary, #6e6e73);
 }

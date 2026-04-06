@@ -70,7 +70,7 @@
 }
 
 .logo {
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   font-size: 14px;
 }
 

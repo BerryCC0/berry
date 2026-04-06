@@ -18,8 +18,9 @@ import type {
 
 export const DEFAULT_SETTINGS: SystemSettings = {
   appearance: {
-    era: "platinum",
-    darkMode: false,
+    era: "liquid-glass",
+    darkMode: true,
+    colorScheme: "auto", // Follow OS preference by default
     accentColor: "#E93737", // Nouns Red
     wallpaper: "#008080", // Classic Teal
     desktopIconSize: "medium",
@@ -724,7 +725,7 @@ export function getActiveTheme(
   era: EraId,
   darkMode: boolean,
 ): CustomTheme {
-  const eraThemes = ERA_THEMES[era];
+  const eraThemes = ERA_THEMES[era] ?? ERA_THEMES["liquid-glass"];
   return darkMode ? eraThemes.dark : eraThemes.light;
 }
 

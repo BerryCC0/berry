@@ -23,6 +23,7 @@ import { appLauncher } from "@/OS/lib/AppLauncher";
 import { getIcon } from "@/OS/lib/IconRegistry";
 import { DockIcon } from "./components/DockIcon";
 import desktopStyles from "./Dock.desktop.module.css";
+import tabletStyles from "./Dock.tablet.module.css";
 import mobileStyles from "./Dock.mobile.module.css";
 
 interface DockApp {
@@ -38,7 +39,8 @@ interface DockApp {
 export function Dock() {
   const platform = usePlatform();
   const isMobile = platform.type === "mobile" || platform.type === "farcaster";
-  const styles = isMobile ? mobileStyles : desktopStyles;
+  const isTablet = platform.type === "tablet";
+  const styles = isMobile ? mobileStyles : isTablet ? tabletStyles : desktopStyles;
 
   // Boot state - wait for OS to be ready
   const isBooted = useBootStore((state) => state.isBooted);
@@ -51,7 +53,9 @@ export function Dock() {
 
   // Settings - dock position and auto-hide
   const dockPosition = useSettingsStore((state) => state.settings.desktop.dockPosition);
-  const dockAutoHide = useSettingsStore((state) => state.settings.desktop.dockAutoHide);
+  const dockAutoHideRaw = useSettingsStore((state) => state.settings.desktop.dockAutoHide);
+  // Tablet: dock is always visible, no auto-hide (HIG-SPEC-TABLET §8)
+  const dockAutoHide = isTablet ? false : dockAutoHideRaw;
 
   // Auto-hide state
   const [isVisible, setIsVisible] = useState(!dockAutoHide);
@@ -272,8 +276,8 @@ export function Dock() {
           <>
             <div
               className={styles.dockDivider}
-              onMouseDown={handleDividerMouseDown}
-              title="Drag to resize dock"
+              onMouseDown={isTablet ? undefined : handleDividerMouseDown}
+              title={isTablet ? undefined : "Drag to resize dock"}
             />
 
             {/* Section 2: Running Unpinned Apps */}
@@ -299,13 +303,21 @@ export function Dock() {
 
         {/* Section 3: Applications (Launchpad) */}
         <div className={styles.dockSection}>
-          <div className={styles.dockIcon} onClick={handleLaunchpadClick} title="Applications">
+          <div
+            className={styles.dockIcon}
+            onClick={handleLaunchpadClick}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleLaunchpadClick(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label="Open Applications"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={getIcon("launchpad")}
-              alt="Applications"
+              alt=""
               className={styles.dockIconImage}
               draggable={false}
+              aria-hidden="true"
             />
             <span className={styles.dockIconLabel}>Applications</span>
           </div>

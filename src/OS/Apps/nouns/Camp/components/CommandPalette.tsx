@@ -17,12 +17,15 @@ import { useAccount, useEnsAddress } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { truncateAddress } from '@/shared/format';
 import { appLauncher } from '@/OS/lib/AppLauncher';
+import { BerryLoader } from './BerryLoader';
 import styles from './CommandPalette.module.css';
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigate: (path: string) => void;
+  /** Optional ref to the search bar button — modal will position itself beneath it */
+  anchorRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 interface CommandItem {
@@ -90,7 +93,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPaletteProps) {
+export function CommandPalette({ isOpen, onClose, onNavigate, anchorRef }: CommandPaletteProps) {
   const { isConnected, address } = useAccount();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -101,6 +104,25 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
   const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Compute anchor position from the search bar button ref
+  const [anchorStyle, setAnchorStyle] = useState<React.CSSProperties | undefined>();
+
+  useEffect(() => {
+    if (isOpen && anchorRef?.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
+      // Center the modal horizontally under the search bar
+      const centerX = rect.left + rect.width / 2;
+      setAnchorStyle({
+        position: 'fixed',
+        top: rect.bottom + 8,
+        left: centerX,
+        transform: 'translateX(-50%)',
+      });
+    } else {
+      setAnchorStyle(undefined);
+    }
+  }, [isOpen, anchorRef]);
   
   // Debounce the search query
   const trimmedQuery = query.trim();
@@ -436,8 +458,12 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
   if (!isOpen) return null;
   
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+    <div className={anchorStyle ? styles.overlayAnchored : styles.overlay} onClick={onClose}>
+      <div
+        className={styles.modal}
+        style={anchorStyle}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header for drafts view */}
         {view === 'drafts' && (
           <div className={styles.viewHeader}>
@@ -473,7 +499,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate }: CommandPalettePr
         <div className={styles.list} ref={listRef}>
           {view === 'drafts' ? (
             isLoadingDrafts ? (
-              <div className={styles.empty}>Loading drafts...</div>
+              <BerryLoader />
             ) : drafts.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyTitle}>No drafts yet</div>

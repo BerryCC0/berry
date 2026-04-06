@@ -18,6 +18,8 @@ import { SponsorsPanel } from '../components/SponsorsPanel';
 import { VoterRow } from '../components/VoterRow';
 import { BerryLoader } from '../components/BerryLoader';
 import { DetailTabs, useDetailTabs } from '../components/DetailTabs';
+import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarShare } from '../components/CampToolbar';
+import type { CampToolbarContext } from '../Camp';
 import styles from './CandidateDetailView.module.css';
 
 interface CandidateDetailViewProps {
@@ -25,12 +27,15 @@ interface CandidateDetailViewProps {
   slug: string;
   onNavigate: (path: string) => void;
   onBack: () => void;
+  toolbar?: CampToolbarContext;
 }
 
-export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: CandidateDetailViewProps) {
+export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolbar }: CandidateDetailViewProps) {
   const isMobile = useIsMobile();
   const detail = useCandidateDetail(proposer, slug, onNavigate);
   const { activeTab, setActiveTab } = useDetailTabs('description');
+  const { isModern } = useToolbar();
+  const tb = toolbar;
 
   const {
     candidate, isLoading, error, simulation, actualProposer,
@@ -52,7 +57,8 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
   if (error) {
     return (
       <div className={styles.error}>
-        <button className={styles.backButton} onClick={onBack}>Back</button>
+        {tb && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
+        {!isModern && <button className={styles.backButton} onClick={onBack}>Back</button>}
         <p>Failed to load candidate</p>
       </div>
     );
@@ -61,7 +67,8 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
   if (isLoading || !candidate) {
     return (
       <div className={styles.loading}>
-        <button className={styles.backButton} onClick={onBack}>Back</button>
+        {tb && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
+        {!isModern && <button className={styles.backButton} onClick={onBack}>Back</button>}
         <BerryLoader />
       </div>
     );
@@ -84,10 +91,21 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack }: Cand
 
   const headerContent = (
     <>
-      <div className={styles.navBar}>
+      {tb && (
+        <Toolbar
+          leading={
+            <>
+              <ToolbarBack onClick={onBack} styles={tb.styles} />
+              <ToolbarTitle styles={tb.styles}>Candidate</ToolbarTitle>
+            </>
+          }
+          trailing={<ToolbarShare path={`c/${slug}`} styles={tb.styles} />}
+        />
+      )}
+      {!isModern && <div className={styles.navBar}>
         <button className={styles.backButton} onClick={onBack}>Back</button>
         <ShareButton path={`c/${slug}`} />
-      </div>
+      </div>}
 
       <div className={styles.header}>
         <span className={styles.label}>Candidate</span>

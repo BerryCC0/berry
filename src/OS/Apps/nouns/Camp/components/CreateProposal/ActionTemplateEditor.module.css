@@ -157,13 +157,13 @@
 
 .generatedValue {
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-family: var(--berry-font-mono);
   word-break: break-all;
 }
 
 .generatedValueLong {
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-family: var(--berry-font-mono);
   word-break: break-all;
   font-size: 10px;
   max-height: 60px;

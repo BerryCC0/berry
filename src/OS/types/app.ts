@@ -40,6 +40,94 @@ export interface FileAssociation {
 }
 
 /**
+ * Menu item within a menu definition
+ */
+export interface MenuItem {
+  id: string;
+  label: string;
+  shortcut?: string; // e.g. "Cmd+N", "Cmd+Shift+F"
+  action: string; // action identifier dispatched via event bus
+  disabled?: boolean;
+  separator?: boolean; // renders as a divider line, ignores other fields
+  submenu?: MenuItem[];
+}
+
+/**
+ * Top-level menu (e.g. "File", "Edit", "View")
+ */
+export interface MenuDefinition {
+  id: string;
+  label: string;
+  items: MenuItem[];
+}
+
+/**
+ * Toolbar item injected into the title bar / nav bar
+ */
+export interface ToolbarItem {
+  id: string;
+  icon: string; // icon path or SF Symbol name
+  label: string; // accessible label + tooltip
+  action: string; // action identifier dispatched via event bus
+  position: "leading" | "center" | "trailing";
+  disabled?: boolean;
+}
+
+/**
+ * Keyboard shortcut definition
+ */
+export interface ShortcutDefinition {
+  id: string;
+  key: string; // e.g. "n", "f", "1"
+  modifiers: ("cmd" | "shift" | "alt" | "ctrl")[];
+  action: string; // action identifier dispatched via event bus
+  label: string; // human-readable description for command palette / shortcut overlay
+  when?: "always" | "focused"; // "always" = OS-level, "focused" = only when app is focused (default)
+}
+
+/**
+ * Tab bar configuration for mobile shell
+ */
+export interface TabConfig {
+  tab: string; // tab identifier
+  icon: string; // SF Symbol name or icon path
+  label: string; // short label (1-2 words)
+  order: number; // position in tab bar (0-4)
+}
+
+/**
+ * Platform-agnostic navigation metadata.
+ * Each platform shell reads the parts it needs and ignores the rest.
+ *
+ * - Desktop: menus → menu bar; toolbarItems → unified toolbar slots; shortcuts → keyboard handler
+ * - Tablet: toolbarItems → title bar actions; shortcuts → hardware keyboard handler
+ * - Mobile: toolbarItems → nav bar trailing buttons; tabConfig → tab bar assignment
+ */
+export interface AppNavigationConfig {
+  /** Menu bar items (desktop: shown in menu bar; tablet/mobile: ignored) */
+  menus?: MenuDefinition[];
+
+  /** Toolbar items (desktop: toolbar slots; tablet: title bar actions; mobile: nav bar trailing) */
+  toolbarItems?: ToolbarItem[];
+
+  /** Keyboard shortcuts (desktop + tablet with hardware keyboard) */
+  shortcuts?: ShortcutDefinition[];
+
+  /** Tab bar config (mobile only — which tab this app belongs to) */
+  tabConfig?: TabConfig;
+
+  /** Whether the app has a sidebar (desktop: affects toolbar leading slot width) */
+  hasSidebar?: boolean;
+
+  /**
+   * When true, the app manages its own toolbar content via the <Toolbar> portal
+   * component rather than using static `toolbarItems`. The title bar renders at
+   * full height (52px) and exposes portal target slots for the app to fill.
+   */
+  dynamicToolbar?: boolean;
+}
+
+/**
  * App configuration for registration
  */
 export interface AppConfig {
@@ -60,6 +148,9 @@ export interface AppConfig {
   showInDock?: boolean; // Show in dock when running
   showOnDesktop?: boolean; // Show icon on desktop
   launchOnStartup?: boolean; // Launch when OS starts
+
+  // Navigation — platform shells read the parts they need
+  navigation?: AppNavigationConfig;
 
   // Component (lazy loaded for user apps)
   component: ComponentType<AppComponentProps>;

@@ -323,7 +323,7 @@
   border-radius: var(--berry-border-radius);
   background: var(--berry-input-bg);
   color: var(--berry-text-primary);
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   min-width: 180px;
 }
 

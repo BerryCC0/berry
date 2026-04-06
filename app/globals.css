@@ -48,8 +48,40 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1.0);
   --ease-glass: cubic-bezier(0.2, 0.8, 0.2, 1.0);
 
+  /* --- Animation durations --- */
+  --berry-duration-fast: 150ms;
+  --berry-duration-normal: 250ms;
+  --berry-duration-slow: 400ms;
+
   /* --- Breakpoints (informational — used via @media in components) --- */
   /* --bp-mobile: 480px; --bp-tablet: 768px; --bp-desktop: 1024px; --bp-wide: 1440px; */
+
+  /* ========================================================================
+     PLATFORM-AWARE TOKENS — Desktop defaults, overridden per platform below.
+     Set via [data-platform] attribute from PlatformDetection.tsx.
+     ======================================================================== */
+
+  /* --- Typography scale (platform-aware) --- */
+  --berry-font-menu: 13px;
+  --berry-font-label: 13px;
+  --berry-font-body: 14px;
+  --berry-font-title: 16px;
+  --berry-font-heading: 20px;
+  --berry-font-caption: 11px;
+
+  /* --- Touch targets --- */
+  --berry-min-target: 28px;
+
+  /* --- Corner radii (platform-aware, era tokens can override) --- */
+  --berry-radius-window: 10px;
+  --berry-radius-card: 8px;
+  --berry-radius-button: 6px;
+  --berry-radius-input: 4px;
+
+  /* --- Layout spacing (platform-aware minimums) --- */
+  --berry-margin-horizontal: 16px;
+  --berry-padding-content: 16px;
+  --berry-gap-interactive: 8px;
 
   /* ========================================================================
      ERA TOKENS — Set dynamically by applySettings.ts when the theme changes.
@@ -133,8 +165,14 @@
   --berry-error: #dc3545;
   --berry-info: #17a2b8;
 
+  /* --- Semantic surface tokens (set by applyThemeColors based on dark/light) --- */
+  --berry-surface: #ffffff;
+  --berry-surface-secondary: #f2f2f7;
+  --berry-separator: #c6c6c8;
+
   /* --- Typography --- */
   --berry-font-system: "Chicago", "Geneva", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --berry-font-mono: "Monaco", "Courier", monospace;
   --berry-font-size: 12px;
   --berry-font-size-base: 14px;
 
@@ -166,6 +204,7 @@
 /* System 1: 1-bit monochrome, no smoothing, no transitions */
 [data-window-style="system1"] {
   --berry-font-system: "Chicago", monospace;
+  --berry-font-mono: "Chicago", monospace;
   --berry-font-size-base: 12px;
   --berry-transition-speed: 0s;
   --berry-border-radius: 0px;
@@ -183,6 +222,7 @@
 [data-window-style="platinum"],
 [data-window-style="classic"] {
   --berry-font-system: "Chicago", "Geneva", -apple-system, BlinkMacSystemFont, sans-serif;
+  --berry-font-mono: "Monaco", "Courier", monospace;
   --berry-font-size-base: 12px;
   --berry-transition-speed: 0s;
   --berry-border-radius: 0px;
@@ -198,6 +238,7 @@
 /* Aqua: gel buttons, pinstripes, soft shadows, light blur */
 [data-window-style="aqua"] {
   --berry-font-system: "Lucida Grande", "Lucida Sans Unicode", -apple-system, sans-serif;
+  --berry-font-mono: "Monaco", "Menlo", "Courier", monospace;
   --berry-font-size-base: 12px;
   --berry-transition-speed: 0.15s;
   --berry-easing: var(--ease-spring);
@@ -215,6 +256,7 @@
 /* Skeuomorphic: warm textures, soft shadows, Helvetica Neue */
 [data-window-style="skeuomorphic"] {
   --berry-font-system: "Helvetica Neue", "Helvetica", -apple-system, sans-serif;
+  --berry-font-mono: "Menlo", "Monaco", "Consolas", monospace;
   --berry-font-size-base: 14px;
   --berry-transition-speed: 0.2s;
   --berry-easing: var(--ease-default);
@@ -230,7 +272,8 @@
 /* Flat: clarity, deference, depth — SF Pro, translucent surfaces */
 [data-window-style="flat"],
 [data-window-style="modern"] {
-  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif;
+  --berry-font-mono: "SF Mono", "Menlo", "Monaco", "Consolas", ui-monospace, monospace;
   --berry-font-size-base: 14px;
   --berry-transition-speed: 0.2s;
   --berry-easing: var(--ease-default);
@@ -247,7 +290,8 @@
 
 /* Big Sur: rounded everything, thicker chrome, squircle icons */
 [data-window-style="big-sur"] {
-  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --berry-font-mono: "SF Mono", "Menlo", "Monaco", "Consolas", ui-monospace, monospace;
   --berry-font-size-base: 14px;
   --berry-transition-speed: 0.25s;
   --berry-easing: var(--ease-default);
@@ -265,7 +309,8 @@
 
 /* Liquid Glass: translucent refraction, dynamic light */
 [data-window-style="liquid-glass"] {
-  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  --berry-font-system: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --berry-font-mono: "SF Mono", "Menlo", "Monaco", "Consolas", ui-monospace, monospace;
   --berry-font-size-base: 14px;
   --berry-transition-speed: 0.25s;
   --berry-easing: var(--ease-glass);
@@ -280,6 +325,43 @@
   --berry-glass-blur: 40px;
   --berry-glass-saturation: 1.8;
   --berry-glass-border: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================================
+   PLATFORM-AWARE TOKEN OVERRIDES
+   Applied via data-platform attribute set by PlatformDetection.tsx.
+   Desktop values are the :root defaults above — only tablet/mobile need overrides.
+   ============================================================================ */
+
+/* Tablet: iPadOS-scale type, touch targets, rounder corners */
+[data-platform="tablet"] {
+  --berry-font-menu: 14px;
+  --berry-font-label: 14px;
+  --berry-font-body: 16px;
+  --berry-font-title: 17px;
+  --berry-font-heading: 28px;
+  --berry-font-caption: 12px;
+  --berry-min-target: 44px;
+  --berry-radius-window: 12px;
+  --berry-radius-card: 12px;
+  --berry-radius-button: 8px;
+  --berry-radius-input: 6px;
+}
+
+/* Mobile: iOS-scale type, 44pt touch targets, larger radii for sheets */
+[data-platform="mobile"],
+[data-platform="farcaster"] {
+  --berry-font-menu: 13px;   /* n/a on mobile, but keep for any edge use */
+  --berry-font-label: 10px;  /* tab bar labels */
+  --berry-font-body: 17px;
+  --berry-font-title: 17px;
+  --berry-font-heading: 34px; /* large title */
+  --berry-font-caption: 13px;
+  --berry-min-target: 44px;
+  --berry-radius-window: 20px; /* sheet corners */
+  --berry-radius-card: 16px;
+  --berry-radius-button: 12px;
+  --berry-radius-input: 8px;
 }
 
 /* ============================================================================

@@ -90,7 +90,7 @@
 }
 
 .tokenBalance {
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
   font-size: 14px;
   font-weight: 500;
   color: var(--berry-text-primary);

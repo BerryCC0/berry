@@ -54,7 +54,7 @@
 }
 
 .slug {
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   font-size: 10px;
   color: var(--berry-text-muted);
 }

@@ -7,8 +7,8 @@
   background: var(--berry-window-bg);
   border: 1px solid var(--berry-window-border);
   box-shadow: var(--berry-window-shadow, 2px 2px 0 rgba(0, 0, 0, 0.3));
-  min-width: 200px;
-  min-height: 150px;
+  min-width: 320px;
+  min-height: 200px;
 }
 
 .windowFocused {
@@ -53,12 +53,12 @@
     inset 1px 1px 0 #ffffff !important;
 }
 
-/* Title Bar */
+/* =============================================================================
+   TITLE BAR — Shared base
+   ============================================================================= */
 .titleBar {
   display: flex;
   align-items: center;
-  height: 22px;
-  padding: 0 4px;
   background: var(--berry-title-bar-bg);
   color: var(--berry-title-bar-text);
   border-bottom: 1px solid var(--berry-window-border);
@@ -74,6 +74,100 @@
 
 .titleBarDragging {
   cursor: grabbing;
+}
+
+/* --- Legacy title bar (System 1 → Flat): 22px classic strip --- */
+.titleBarLegacy {
+  height: 22px;
+  padding: 0 4px;
+}
+
+/* --- Modern unified toolbar (Big Sur, Liquid Glass) --- */
+.titleBarModern {
+  padding: 0 8px;
+  gap: 8px;
+}
+
+/* Full height when app has toolbar items */
+.titleBarFull {
+  height: 52px;
+}
+
+/* Compact mode: no toolbar items declared */
+.titleBarCompact {
+  height: 28px;
+}
+
+/* Scrolled state: subtle bottom border intensification */
+.titleBarScrolled {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Sidebar-aware leading slot */
+.titleBarSidebar .toolbarLeading {
+  width: var(--sidebar-width, 220px);
+  border-right: 1px solid var(--berry-window-border);
+  flex-shrink: 0;
+}
+
+/* --- Toolbar slots (modern only) --- */
+.toolbarLeading {
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  gap: 8px;
+}
+
+.toolbarCenter {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0; /* allow shrink */
+}
+
+.toolbarTrailing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbarAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: var(--berry-radius-button, 6px);
+  background: transparent;
+  color: var(--berry-title-bar-text);
+  cursor: pointer;
+  font-size: var(--berry-font-caption, 11px);
+  font-family: var(--berry-font-system);
+}
+
+.toolbarAction:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.toolbarAction:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.toolbarActionIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.toolbarActionLabel {
+  font-size: var(--berry-font-caption, 11px);
+  white-space: nowrap;
 }
 
 /* Window Controls (Traffic Lights) */
@@ -96,6 +190,20 @@
   font-size: 8px;
   line-height: 1;
   color: transparent;
+  /* Invisible hit area expansion for accessibility */
+  padding: 0;
+  position: relative;
+}
+
+/* Expand click target to min 22px for legacy, 28px handled by modern toolbar height */
+.controlButton::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
 }
 
 .controlButton:hover {
@@ -129,8 +237,7 @@
   background: linear-gradient(135deg, #81d88a 0%, #6bcb77 100%);
 }
 
-/* Title Text */
-
+/* Title Text (legacy only — hidden in modern) */
 .titleText {
   flex: 1;
   font-family: var(--berry-font-system);
@@ -211,13 +318,10 @@
 .resizeHandleSE {
   bottom: -4px;
   right: -4px;
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   cursor: se-resize;
-  /* Classic Mac resize grip */
-  background: 
-    linear-gradient(135deg, transparent 50%, #888888 50%, #888888 60%, transparent 60%),
-    linear-gradient(135deg, transparent 70%, #888888 70%, #888888 80%, transparent 80%);
+  /* Classic Mac resize grip — shown in Platinum/Aqua eras via era overrides */
 }
 
 .resizeHandleSW {
@@ -480,8 +584,11 @@
   overflow: hidden;
 }
 
-:global([data-window-style="big-sur"]) .titleBar {
-  height: var(--berry-title-bar-height, 28px);
+/* Big Sur title bar height handled by .titleBarModern / .titleBarCompact */
+
+/* Big Sur toolbar buttons: slightly more rounded */
+:global([data-window-style="big-sur"]) .toolbarAction {
+  border-radius: 6px;
 }
 
 /* --- Liquid Glass: Translucent title bar --- */
@@ -492,10 +599,15 @@
   border-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
 }
 
+/* Liquid Glass title bar height handled by .titleBarModern / .titleBarCompact */
 :global([data-window-style="liquid-glass"]) .titleBar {
-  height: var(--berry-title-bar-height, 28px);
   backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
   -webkit-backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
   background: rgba(255, 255, 255, var(--berry-glass-opacity, 0.45));
+}
+
+/* Liquid Glass toolbar buttons: glass-like hover */
+:global([data-window-style="liquid-glass"]) .toolbarAction:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 

@@ -60,14 +60,14 @@
 .address {
   font-size: 12px;
   color: var(--berry-text-muted);
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
 }
 
 .addressOnly {
   font-size: 14px;
   font-weight: 500;
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
 }
 
 /* Copy button */

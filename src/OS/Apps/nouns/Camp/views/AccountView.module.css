@@ -30,7 +30,7 @@
 
 .icon {
   font-size: 28px;
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   color: var(--berry-text-primary);
 }
 

@@ -88,8 +88,8 @@ export interface WindowConfig {
  * Default window constraints
  */
 export const DEFAULT_WINDOW_CONSTRAINTS: WindowConstraints = {
-  minWidth: 200,
-  minHeight: 150,
+  minWidth: 320,
+  minHeight: 200,
 };
 
 /**

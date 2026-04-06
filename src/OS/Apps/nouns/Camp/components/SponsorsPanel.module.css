@@ -416,7 +416,7 @@
 }
 
 .scwWarning code {
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   font-size: 9px;
   background: rgba(0, 0, 0, 0.1);
   padding: 2px 4px;

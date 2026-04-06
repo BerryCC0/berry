@@ -1,7 +1,7 @@
 /**
  * Camp - Nouns Governance
  * Comprehensive governance app with deep linking support
- * 
+ *
  * Routes:
  * - /camp                    → Activity feed
  * - /camp/proposals          → Proposals list
@@ -16,9 +16,10 @@
 
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { useTranslation } from '@/OS/lib/i18n';
+import { useToolbar } from '@/OS/Shell/Window/ToolbarContext';
 import { parseRoute, routeToPath, type CampRoute } from './types';
 import {
   ActivityView,
@@ -36,6 +37,47 @@ import styles from './Camp.module.css';
 
 import type { AppComponentProps } from '@/OS/types/app';
 
+/** Camp logo — Nouns-style tri-color symbol */
+function LogoSymbol(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" {...props}>
+      <path
+        d="M12.3334 9.77734H14.1111V8H21.2222V9.77778H19.4445V13.3334L17.6667 13.333V16.8891L15.8889 16.8887V20.4438L14.1112 20.4443V24H7V20.4443L8.77783 20.4438V16.8887H10.5555V13.333L12.3334 13.3334V9.77734Z"
+        fill="#FE630C"
+      />
+      <path
+        d="M21.1112 8H22.8889L22.889 9.77734H24.6667V11.5551V13.333H26.4445V15.1108V16.8891L28.2223 16.8887L28.2222 20.4443H30V23.9995H14V20.4443L15.7778 20.4438V16.8887H17.5557V15.1108V13.333H19.3334V11.5551V9.77734H21.1111L21.1112 8Z"
+        fill="#FFC110"
+      />
+      <path
+        d="M12.6666 9.77778H14.4444V8H9.11108V9.77734H7.33325V11.5551V13.333H5.55554V15.1108V16.8887H3.77771V20.4438L2 20.4443V23.9995H5.55551H7.33329L7.33322 20.4438H9.111L9.11105 16.8891H10.8888V15.1108L10.8888 13.333L12.6665 13.3334V11.5551L12.6666 9.77778Z"
+        fill="#146636"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Props bundle passed to every Camp view so they can render
+ * their own toolbar content. Keeps individual view prop lists lean.
+ */
+export interface CampToolbarContext {
+  /** Camp.module.css classes — toolbar elements use these */
+  styles: Record<string, string>;
+  /** Navigate within Camp */
+  navigate: (pathOrRoute: string | CampRoute) => void;
+  /** Go back in history */
+  goBack: () => void;
+  /** Open the command palette */
+  openSearch: () => void;
+  /** Whether a wallet is connected */
+  isConnected: boolean;
+  /** The Camp logo component for the leading slot */
+  Logo: React.ReactNode;
+  /** Ref to attach to the search bar button — used to anchor the CommandPalette */
+  searchAnchorRef: React.RefObject<HTMLButtonElement | null>;
+}
+
 interface CampInitialState {
   path?: string;
 }
@@ -45,22 +87,17 @@ type DigestTabId = 'digest' | 'proposals' | 'candidates' | 'voters';
 
 export function Camp({ windowId, initialState, onStateChange }: AppComponentProps) {
   const { t } = useTranslation();
-  
-  // Cast initialState to our expected shape
+  const { isModern } = useToolbar();
+
   const campState = initialState as CampInitialState | undefined;
-  
-  // Wallet connection state
   const { isConnected } = useAccount();
-  
-  // Parse initial route from initialState
+
   const [route, setRoute] = useState<CampRoute>(() => parseRoute(campState?.path));
   const [history, setHistory] = useState<CampRoute[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  
-  // Persist Digest tab selection across navigation
   const [digestTab, setDigestTab] = useState<DigestTabId>('digest');
+  const searchAnchorRef = useRef<HTMLButtonElement | null>(null);
 
-  // Update route when initialState changes (deep link)
   useEffect(() => {
     if (campState?.path !== undefined) {
       const newRoute = parseRoute(campState.path);
@@ -68,22 +105,15 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
     }
   }, [campState?.path]);
 
-  // Navigate to a new route
   const navigate = useCallback((pathOrRoute: string | CampRoute) => {
-    const newRoute = typeof pathOrRoute === 'string' 
-      ? parseRoute(pathOrRoute) 
+    const newRoute = typeof pathOrRoute === 'string'
+      ? parseRoute(pathOrRoute)
       : pathOrRoute;
-    
-    // Push current route to history
     setHistory(prev => [...prev, route]);
     setRoute(newRoute);
-    
-    // Notify parent for URL sync via state change
-    const newPath = routeToPath(newRoute);
-    onStateChange?.({ path: newPath });
+    onStateChange?.({ path: routeToPath(newRoute) });
   }, [route, onStateChange]);
 
-  // Go back in history
   const goBack = useCallback(() => {
     if (history.length > 0) {
       const prevRoute = history[history.length - 1];
@@ -91,197 +121,198 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
       setRoute(prevRoute);
       onStateChange?.({ path: routeToPath(prevRoute) });
     } else {
-      // Default to activity
       setRoute({ view: 'activity' });
       onStateChange?.({ path: '' });
     }
   }, [history, onStateChange]);
 
-  // Get current tab from route
   const getCurrentTab = (): TabId => {
     switch (route.view) {
-      case 'activity':
-        return 'activity';
-      case 'proposals':
-      case 'proposal':
-        return 'proposals';
-      case 'candidates':
-      case 'candidate':
-      case 'edit-candidate':
-        return 'candidates';
-      case 'voters':
-      case 'voter':
-      case 'vote':
-        return 'voters';
-      case 'account':
-        return 'account';
-      case 'create':
-        return 'create';
-      default:
-        return 'activity';
+      case 'activity': return 'activity';
+      case 'proposals': case 'proposal': return 'proposals';
+      case 'candidates': case 'candidate': case 'edit-candidate': return 'candidates';
+      case 'voters': case 'voter': case 'vote': return 'voters';
+      case 'account': return 'account';
+      case 'create': return 'create';
+      default: return 'activity';
     }
   };
 
   const currentTab = getCurrentTab();
 
-  // Handle tab change
   const handleTabChange = (tab: TabId) => {
-    switch (tab) {
-      case 'activity':
-        navigate({ view: 'activity' });
-        break;
-      case 'proposals':
-        navigate({ view: 'proposals' });
-        break;
-      case 'candidates':
-        navigate({ view: 'candidates' });
-        break;
-      case 'voters':
-        navigate({ view: 'voters' });
-        break;
-      case 'account':
-        navigate({ view: 'account' });
-        break;
-      case 'create':
-        navigate({ view: 'create' });
-        break;
-    }
-    setHistory([]); // Clear history on tab change
+    const viewMap: Record<TabId, CampRoute> = {
+      activity: { view: 'activity' },
+      proposals: { view: 'proposals' },
+      candidates: { view: 'candidates' },
+      voters: { view: 'voters' },
+      account: { view: 'account' },
+      create: { view: 'create' },
+    };
+    navigate(viewMap[tab]);
+    setHistory([]);
   };
 
-  // Render current view
+  // Shared toolbar context for all views
+  const toolbarCtx: CampToolbarContext = {
+    styles,
+    navigate,
+    goBack,
+    openSearch: () => setIsCommandPaletteOpen(true),
+    isConnected,
+    searchAnchorRef,
+    Logo: (
+      <LogoSymbol
+        className={styles.toolbarLogo}
+        onClick={() => navigate({ view: 'activity' })}
+        data-toolbar-interactive="true"
+      />
+    ),
+  };
+
   const renderView = () => {
     switch (route.view) {
       case 'activity':
-        return <ActivityView onNavigate={navigate} digestTab={digestTab} onDigestTabChange={setDigestTab} />;
-      
-      case 'proposals':
-        return <ProposalListView onNavigate={navigate} onBack={goBack} />;
-      
-      case 'proposal':
         return (
-          <ProposalDetailView 
-            proposalId={route.id} 
+          <ActivityView
             onNavigate={navigate}
-            onBack={goBack}
+            digestTab={digestTab}
+            onDigestTabChange={setDigestTab}
+            toolbar={toolbarCtx}
           />
         );
-      
+
+      case 'proposals':
+        return <ProposalListView onNavigate={navigate} onBack={goBack} toolbar={toolbarCtx} />;
+
+      case 'proposal':
+        return (
+          <ProposalDetailView
+            proposalId={route.id}
+            onNavigate={navigate}
+            onBack={goBack}
+            toolbar={toolbarCtx}
+          />
+        );
+
       case 'candidates':
-        return <CandidateListView onNavigate={navigate} onBack={goBack} />;
-      
+        return <CandidateListView onNavigate={navigate} onBack={goBack} toolbar={toolbarCtx} />;
+
       case 'candidate':
         return (
-          <CandidateDetailView 
+          <CandidateDetailView
             proposer={route.proposer}
             slug={route.slug}
             onNavigate={navigate}
             onBack={goBack}
+            toolbar={toolbarCtx}
           />
         );
-      
+
       case 'voters':
-        return <VoterListView onNavigate={navigate} onBack={goBack} />;
-      
+        return <VoterListView onNavigate={navigate} onBack={goBack} toolbar={toolbarCtx} />;
+
       case 'voter':
         return (
-          <VoterDetailView 
+          <VoterDetailView
             address={route.address}
             onNavigate={navigate}
             onBack={goBack}
+            toolbar={toolbarCtx}
           />
         );
-      
+
       case 'account':
-        return <AccountView onNavigate={navigate} onBack={goBack} />;
-      
+        return <AccountView onNavigate={navigate} onBack={goBack} toolbar={toolbarCtx} />;
+
       case 'create':
         return (
-          <CreateProposalView 
+          <CreateProposalView
             onNavigate={navigate}
             onBack={goBack}
             initialDraftSlug={route.draftSlug}
+            toolbar={toolbarCtx}
           />
         );
-      
+
       case 'edit-candidate':
         return (
-          <CreateProposalView 
+          <CreateProposalView
             onNavigate={navigate}
             onBack={goBack}
             editCandidateProposer={route.proposer}
             editCandidateSlug={route.slug}
+            toolbar={toolbarCtx}
           />
         );
-      
+
       case 'edit-proposal':
         return (
-          <CreateProposalView 
+          <CreateProposalView
             onNavigate={navigate}
             onBack={goBack}
             editProposalId={route.proposalId}
+            toolbar={toolbarCtx}
           />
         );
-      
+
       default:
-        return <ActivityView onNavigate={navigate} />;
+        return <ActivityView onNavigate={navigate} toolbar={toolbarCtx} />;
     }
   };
 
   return (
     <div className={styles.camp}>
-      {/* Header with logo, search, and action buttons */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <img 
-            src="/icons/camp.svg" 
-            alt="Camp" 
-            className={styles.logo}
-            onClick={() => navigate({ view: 'activity' })}
-          />
-          
-          {/* Search bar - opens command palette */}
-          <button
-            className={styles.searchButton}
-            onClick={() => setIsCommandPaletteOpen(true)}
-          >
-            <span className={styles.searchPlaceholder}>Search...</span>
-          </button>
-        </div>
-
-        {/* Right buttons - wallet-only */}
-        {isConnected && (
-          <div className={styles.tabsRight}>
+      {/* ─── Legacy header (classic eras: Platinum → Flat) ─── */}
+      {!isModern && (
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <img
+              src="/icons/camp.svg"
+              alt="Camp"
+              className={styles.logo}
+              onClick={() => navigate({ view: 'activity' })}
+            />
             <button
-              className={`${styles.tab} ${currentTab === 'create' ? styles.active : ''}`}
-              onClick={() => handleTabChange('create')}
+              className={styles.searchButton}
+              onClick={() => setIsCommandPaletteOpen(true)}
             >
-              {t('camp.create.title')}
-            </button>
-            <button
-              className={`${styles.tab} ${currentTab === 'account' ? styles.active : ''}`}
-              onClick={() => handleTabChange('account')}
-            >
-              {t('camp.tabs.account')}
+              <span className={styles.searchPlaceholder}>Search...</span>
             </button>
           </div>
-        )}
-      </div>
+          {isConnected && (
+            <div className={styles.tabsRight}>
+              <button
+                className={`${styles.tab} ${currentTab === 'create' ? styles.active : ''}`}
+                onClick={() => handleTabChange('create')}
+              >
+                {t('camp.create.title')}
+              </button>
+              <button
+                className={`${styles.tab} ${currentTab === 'account' ? styles.active : ''}`}
+                onClick={() => handleTabChange('account')}
+              >
+                {t('camp.tabs.account')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Content area */}
       <div className={styles.content}>
         {renderView()}
       </div>
-      
+
       {/* Command Palette Modal */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         onNavigate={navigate}
+        anchorRef={searchAnchorRef}
       />
     </div>
   );
 }
 
 export default Camp;
-

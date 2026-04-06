@@ -30,7 +30,7 @@
 
 .stack {
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   background: var(--berry-bg-secondary);
   border: 1px solid var(--berry-border);
   padding: 12px;

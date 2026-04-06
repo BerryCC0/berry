@@ -462,17 +462,14 @@ function processTransfers(transfers: ApiTransferRow[]): ActivityItem[] {
     }
   }
 
-  const result: ActivityItem[] = [...ungrouped];
+  const txGrouped: ActivityItem[] = [...ungrouped];
 
   for (const group of grouped.values()) {
     if (group.length === 1) {
-      // Single transfer, pass through unchanged
-      result.push(group[0]);
+      txGrouped.push(group[0]);
     } else {
       // Multi-noun purchase: merge into a single bulk activity item
       // actor = the buyer (common toAddress)
-      // fromAddresses = all unique sellers
-      // nounIds = all noun IDs
       const buyer = group[0].toAddress!;
       const nounIds = group.map(g => g.nounId!);
       const fromAddresses = [...new Set(group.map(g => g.fromAddress!))];
@@ -481,19 +478,95 @@ function processTransfers(transfers: ApiTransferRow[]): ActivityItem[] {
         group[0].timestamp
       );
 
-      result.push({
+      txGrouped.push({
         id: `bulk-transfer-${group[0].txHash}`,
         type: 'noun_transfer',
         timestamp: earliestTimestamp,
         actor: buyer,
+        actorEns: group[0].toAddressEns,
         txHash: group[0].txHash,
         toAddress: buyer,
+        toAddressEns: group[0].toAddressEns,
         isBulkTransfer: true,
         nounIds,
         fromAddresses,
-        // Keep first nounId for the sale price hook (uses txHash, not nounId)
+        fromAddressEns: group[0].fromAddressEns,
         nounId: nounIds[0],
         fromAddress: fromAddresses[0],
+      });
+    }
+  }
+
+  // --- Pass 2: Group same from→to pairs within a 1-hour time window ---
+  // This catches cases like "bid.autismcentral.eth transferred Nouns 1619,
+  // 1732, 1762, 1811 to vault.autismcentral.eth" across separate transactions.
+  const TIME_WINDOW = 3600; // 1 hour in seconds
+
+  // Sort by timestamp so we can cluster adjacent items
+  txGrouped.sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
+
+  const result: ActivityItem[] = [];
+  const consumed = new Set<number>();
+
+  for (let i = 0; i < txGrouped.length; i++) {
+    if (consumed.has(i)) continue;
+    const item = txGrouped[i];
+
+    // Only group non-bulk single transfers that have both from and to
+    if (item.isBulkTransfer || !item.fromAddress || !item.toAddress) {
+      result.push(item);
+      continue;
+    }
+
+    const fromKey = item.fromAddress.toLowerCase();
+    const toKey = item.toAddress.toLowerCase();
+    const baseTime = Number(item.timestamp);
+
+    // Collect all matching transfers within the time window
+    const cluster: ActivityItem[] = [item];
+    consumed.add(i);
+
+    for (let j = i + 1; j < txGrouped.length; j++) {
+      if (consumed.has(j)) continue;
+      const other = txGrouped[j];
+      if (other.isBulkTransfer || !other.fromAddress || !other.toAddress) continue;
+
+      const timeDiff = Math.abs(Number(other.timestamp) - baseTime);
+      if (timeDiff > TIME_WINDOW) break; // Sorted, so no more matches possible
+
+      if (
+        other.fromAddress.toLowerCase() === fromKey &&
+        other.toAddress.toLowerCase() === toKey
+      ) {
+        cluster.push(other);
+        consumed.add(j);
+      }
+    }
+
+    if (cluster.length === 1) {
+      result.push(item);
+    } else {
+      // Merge into a bulk transfer: actor = sender (from), to = receiver
+      const nounIds = cluster.map(c => c.nounId!).filter(Boolean);
+      const latestTimestamp = cluster.reduce(
+        (max, c) => (c.timestamp > max ? c.timestamp : max),
+        cluster[0].timestamp
+      );
+
+      result.push({
+        id: `bulk-pair-${fromKey.slice(0, 8)}-${toKey.slice(0, 8)}-${latestTimestamp}`,
+        type: 'noun_transfer',
+        timestamp: latestTimestamp,
+        actor: item.fromAddress!,
+        actorEns: item.actorEns ?? item.fromAddressEns,
+        toAddress: item.toAddress!,
+        toAddressEns: item.toAddressEns,
+        isBulkTransfer: true,
+        nounIds,
+        nounId: nounIds[0],
+        fromAddress: item.fromAddress!,
+        fromAddressEns: item.fromAddressEns,
+        fromAddresses: [item.fromAddress!],
       });
     }
   }

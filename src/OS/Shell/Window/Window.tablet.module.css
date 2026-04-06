@@ -1,0 +1,375 @@
+/* Window - Tablet Platform Styles (iPadOS Stage Manager)
+ *
+ * Per HIG-SPEC-TABLET §4-§6:
+ * - 36-40px title bar for touch targets
+ * - 14px traffic lights with 44px hit areas
+ * - 12px border radius
+ * - Corner-only resize (edge handles hidden)
+ * - Min size: 320×460px
+ * - Heavier shadow for overlapping windows
+ */
+
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--berry-window-bg);
+  border: 1px solid var(--berry-window-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  min-width: 320px;
+  min-height: 460px;
+  overflow: hidden;
+}
+
+.windowFocused {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  z-index: auto;
+}
+
+.windowBlurred {
+  opacity: 0.95;
+}
+
+.windowDragging {
+  opacity: 0.9;
+  transition: none;
+}
+
+.windowResizing {
+  transition: none;
+}
+
+.windowNoShadow {
+  box-shadow: none;
+}
+
+.windowModern {
+  border-radius: 12px;
+}
+
+.windowClassic {
+  border-radius: 12px; /* Tablet always uses rounded corners regardless of era */
+}
+
+/* =============================================================================
+   TITLE BAR — Touch-optimized (36px height)
+   ============================================================================= */
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--berry-titlebar-bg, linear-gradient(to bottom, #f8f8f8 0%, #e8e8e8 100%));
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.titleBarFocused {
+  background: var(--berry-titlebar-bg-focused, linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%));
+}
+
+.titleBarDragging {
+  cursor: grabbing;
+}
+
+/* Legacy title bar layout — same height on tablet */
+.titleBarLegacy {
+  height: 36px;
+}
+
+/* Modern title bar layout (Big Sur, Liquid Glass) */
+.titleBarModern {
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.titleBarFull {
+  height: 52px;
+}
+
+.titleBarCompact {
+  height: 36px;
+}
+
+.titleBarScrolled {
+  border-bottom-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Sidebar-aware toolbar leading slot */
+.titleBarSidebar .toolbarLeading {
+  border-right: 1px solid var(--berry-border);
+  padding-right: 8px;
+}
+
+/* Toolbar slots */
+.toolbarLeading,
+.toolbarCenter,
+.toolbarTrailing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbarLeading {
+  flex-shrink: 0;
+}
+
+.toolbarCenter {
+  flex: 1;
+  justify-content: center;
+}
+
+.toolbarTrailing {
+  flex-shrink: 0;
+}
+
+.toolbarAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--berry-radius-button, 6px);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--berry-text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toolbarAction:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* =============================================================================
+   WINDOW CONTROLS — 14px circles, 44px touch targets
+   ============================================================================= */
+
+.windowControls {
+  display: flex;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+.controlButton {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 44px touch target via pseudo-element */
+.controlButton::before {
+  content: "";
+  position: absolute;
+  inset: -15px;
+}
+
+.closeButton {
+  background: linear-gradient(135deg, #ff5f57, #e0443e);
+}
+
+.minimizeButton {
+  background: linear-gradient(135deg, #ffbd2e, #dea123);
+}
+
+.maximizeButton {
+  background: linear-gradient(135deg, #28c940, #1aab29);
+}
+
+/* Title */
+.titleText {
+  flex: 1;
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-body, 16px);
+  font-weight: 600;
+  color: var(--berry-text);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titleTextBlurred {
+  color: var(--berry-text-secondary);
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  overflow: auto;
+  background: var(--berry-bg);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =============================================================================
+   RESIZE HANDLES — Corner-only on tablet (§5)
+   Edge handles hidden; corners use 20px visible / 44px tappable zones
+   ============================================================================= */
+
+.resizeHandle {
+  position: absolute;
+  z-index: 10;
+}
+
+/* Edge handles: hidden on tablet */
+.resizeHandleN,
+.resizeHandleS,
+.resizeHandleE,
+.resizeHandleW {
+  display: none;
+}
+
+/* Corner handles — 20px visible with 44px tap zone via ::before */
+.resizeHandleNE {
+  top: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  cursor: ne-resize;
+}
+
+.resizeHandleNE::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.resizeHandleNW {
+  top: -2px;
+  left: -2px;
+  width: 20px;
+  height: 20px;
+  cursor: nw-resize;
+}
+
+.resizeHandleNW::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.resizeHandleSE {
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  cursor: se-resize;
+}
+
+.resizeHandleSE::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+/* Subtle diagonal grip indicator */
+.resizeHandleSE::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  background:
+    linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15) 55%, transparent 55%),
+    linear-gradient(135deg, transparent 65%, rgba(0,0,0,0.15) 65%, rgba(0,0,0,0.15) 70%, transparent 70%),
+    linear-gradient(135deg, transparent 80%, rgba(0,0,0,0.15) 80%, rgba(0,0,0,0.15) 85%, transparent 85%);
+}
+
+.resizeHandleSW {
+  bottom: -2px;
+  left: -2px;
+  width: 20px;
+  height: 20px;
+  cursor: sw-resize;
+}
+
+.resizeHandleSW::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+/* Re-enable edge resize for trackpad (pointer: fine) */
+@media (pointer: fine) {
+  .resizeHandleN,
+  .resizeHandleS,
+  .resizeHandleE,
+  .resizeHandleW {
+    display: block;
+  }
+
+  .resizeHandleN {
+    top: -4px;
+    left: 12px;
+    right: 12px;
+    height: 8px;
+    cursor: n-resize;
+  }
+
+  .resizeHandleS {
+    bottom: -4px;
+    left: 12px;
+    right: 12px;
+    height: 8px;
+    cursor: s-resize;
+  }
+
+  .resizeHandleE {
+    right: -4px;
+    top: 12px;
+    bottom: 12px;
+    width: 8px;
+    cursor: e-resize;
+  }
+
+  .resizeHandleW {
+    left: -4px;
+    top: 12px;
+    bottom: 12px;
+    width: 8px;
+    cursor: w-resize;
+  }
+}
+
+/* =============================================================================
+   ERA-SPECIFIC OVERRIDES
+   (Tablet uses same era data attribute as desktop)
+   ============================================================================= */
+
+/* Liquid Glass */
+:global([data-window-style="liquid-glass"]) .window {
+  backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  -webkit-backdrop-filter: blur(var(--berry-glass-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  border-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
+}
+
+:global([data-window-style="liquid-glass"]) .titleBar {
+  background: transparent;
+  border-bottom-color: var(--berry-glass-border, rgba(255, 255, 255, 0.3));
+}
+
+/* Big Sur */
+:global([data-window-style="big-sur"]) .window {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+:global([data-window-style="big-sur"]) .titleBar {
+  background: transparent;
+}

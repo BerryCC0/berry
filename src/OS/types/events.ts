@@ -59,6 +59,13 @@ export type SystemEvents = {
   "desktop:icon-moved": { iconId: string; x: number; y: number };
   "desktop:icon-selected": { iconId: string };
   "desktop:selection-cleared": Record<string, never>;
+
+  // Keyboard / command palette events
+  "command-palette:toggle": Record<string, never>;
+  "expose:toggle": Record<string, never>;
+  "stage:hide-current": Record<string, never>;
+  "app:shortcut": { appId: string; action: string; windowId: string | null };
+  "app-switcher:toggle": Record<string, never>;
 }
 
 /**

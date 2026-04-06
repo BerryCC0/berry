@@ -92,7 +92,7 @@
 }
 
 .address {
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   font-size: 11px;
   color: var(--berry-text-secondary);
 }
@@ -185,7 +185,7 @@
 }
 
 .addressLink {
-  font-family: monospace;
+  font-family: var(--berry-font-mono);
   font-size: 11px;
   color: var(--berry-accent);
   cursor: pointer;

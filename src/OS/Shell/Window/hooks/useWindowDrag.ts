@@ -8,8 +8,12 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useWindowStore } from "@/OS/store/windowStore";
+import type { SnapZone } from "@/OS/store/windowStore";
 import { useSettingsStore } from "@/OS/store/settingsStore";
 import { usePlatform } from "@/OS/lib/PlatformDetection";
+
+/** Edge proximity threshold for snap zone detection (px) */
+const SNAP_ZONE_EDGE = 8;
 
 interface DragOffset {
   x: number;
@@ -26,6 +30,11 @@ export function useWindowDrag(windowId: string) {
   const moveWindow = useWindowStore((state) => state.moveWindow);
   const focusWindow = useWindowStore((state) => state.focusWindow);
   const getWindow = useWindowStore((state) => state.getWindow);
+  const setSnapPreview = useWindowStore((state) => state.setSnapPreview);
+  const snapWindow = useWindowStore((state) => state.snapWindow);
+
+  /** Detect which snap zone the cursor is in (if any) */
+  const pendingSnapRef = useRef<SnapZone>(null);
 
   // Settings - snap to edges
   const snapToEdges = useSettingsStore((state) => state.settings.windows.snapToEdges);
@@ -102,9 +111,34 @@ export function useWindowDrag(windowId: string) {
       }
 
       moveWindow(windowId, newX, newY);
+
+      // Detect snap zones when snapping is enabled
+      if (snapToEdges) {
+        const viewportWidth = globalThis.window?.innerWidth || 0;
+        let zone: SnapZone = null;
+
+        if (clientX <= SNAP_ZONE_EDGE) {
+          zone = "left";
+        } else if (clientX >= viewportWidth - SNAP_ZONE_EDGE) {
+          zone = "right";
+        } else if (clientY <= SNAP_ZONE_EDGE) {
+          zone = "maximize";
+        }
+
+        if (zone !== pendingSnapRef.current) {
+          pendingSnapRef.current = zone;
+          setSnapPreview(zone);
+        }
+      }
     };
 
     const handleMouseUp = () => {
+      // Execute snap if a zone is active
+      if (pendingSnapRef.current && snapToEdges) {
+        snapWindow(windowId, pendingSnapRef.current);
+      }
+      pendingSnapRef.current = null;
+      setSnapPreview(null);
       setIsDragging(false);
     };
 

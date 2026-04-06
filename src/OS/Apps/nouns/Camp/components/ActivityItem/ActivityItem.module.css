@@ -258,7 +258,7 @@
   font-size: 15px;
   font-weight: 600;
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
 }
 
 .settlerInfo {

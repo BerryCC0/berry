@@ -33,7 +33,7 @@
 
 .value {
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, monospace);
+  font-family: var(--berry-font-mono);
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -7,6 +7,7 @@
 
 import React from 'react';
 import type { NounWithSVG } from '../../utils/hooks/useNounSelector';
+import { BerryLoader } from '../BerryLoader';
 import styles from './NounSelector.module.css';
 
 interface NounSelectorProps {
@@ -32,10 +33,7 @@ export function NounSelector({
     return (
       <div className={styles.container}>
         <div className={styles.label}>{label}</div>
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner} />
-          <span className={styles.loadingText}>Loading Nouns...</span>
-        </div>
+        <BerryLoader />
       </div>
     );
   }

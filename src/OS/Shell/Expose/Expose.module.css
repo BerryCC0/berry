@@ -1,0 +1,167 @@
+/* Exposé - Tablet Window Grid View
+ *
+ * Per HIG-SPEC-TABLET §9:
+ * - Dimmed backdrop (50% black)
+ * - Windows shown in grid, scaled to fit
+ * - Staggered entry animation
+ * - Tap to focus, swipe up to close
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  animation: fadeIn 300ms ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.grid {
+  position: fixed;
+  inset: 60px 20px 80px; /* Below menu bar area, above dock */
+  display: grid;
+  gap: 20px;
+  align-content: center;
+  justify-content: center;
+  z-index: 10001;
+}
+
+.grid1 {
+  grid-template-columns: 1fr;
+}
+
+.grid2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid3 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* Individual window card in Exposé */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: cardIn 300ms ease-out both;
+  transition: transform 0.2s ease;
+}
+
+.card:active {
+  transform: scale(0.95);
+}
+
+/* Staggered entry */
+.card:nth-child(1) { animation-delay: 0ms; }
+.card:nth-child(2) { animation-delay: 50ms; }
+.card:nth-child(3) { animation-delay: 100ms; }
+.card:nth-child(4) { animation-delay: 150ms; }
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Window preview thumbnail */
+.cardPreview {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 4/3;
+  background: var(--berry-surface, #ffffff);
+  border: 1px solid var(--berry-separator, rgba(0, 0, 0, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cardIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.cardTitle {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  color: white;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* Close button (appears on hover/long-press) */
+.cardClose {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.card:hover .cardClose {
+  opacity: 1;
+}
+
+/* Swipe-up-to-close animation */
+@keyframes flyAway {
+  to {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.8);
+  }
+}
+
+.cardClosing {
+  animation: flyAway 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+/* Empty state */
+.empty {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  color: white;
+  font-family: var(--berry-font-system);
+  font-size: 18px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}

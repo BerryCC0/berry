@@ -15,6 +15,15 @@
   animation: fadeIn 0.15s ease;
 }
 
+/* Anchored variant — modal positions itself via inline style */
+.overlayAnchored {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  animation: fadeIn 0.15s ease;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

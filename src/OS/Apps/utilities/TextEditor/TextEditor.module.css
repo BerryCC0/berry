@@ -141,7 +141,7 @@
 
 /* Text content */
 .textContent {
-  font-family: "Monaco", "Menlo", "Consolas", monospace;
+  font-family: var(--berry-font-mono);
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -201,7 +201,7 @@
   background: var(--bg-tertiary);
   padding: 2px 6px;
   border-radius: 3px;
-  font-family: "Monaco", "Menlo", monospace;
+  font-family: var(--berry-font-mono);
   font-size: 0.9em;
 }
 

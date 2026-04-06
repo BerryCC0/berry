@@ -102,7 +102,7 @@ type VerificationStep =
 
 const STEP_MESSAGES: Record<VerificationStep, string> = {
   idle: 'Ready to verify',
-  loading: 'Loading verification...',
+  loading: 'Preparing verification...',
   started: 'Verification in progress...',
   country_selected: 'Country confirmed',
   capturing_document: 'Capturing ID document...',
@@ -473,7 +473,7 @@ export function PersonaKYC({
   }, [onCancel]);
 
   const getButtonText = () => {
-    if (!sdkLoaded) return 'Loading KYC System...';
+    if (!sdkLoaded) return 'Preparing verification...';
     switch (kycStatus) {
       case 'loading':
         return STEP_MESSAGES[verificationStep];
@@ -579,7 +579,8 @@ export function PersonaKYC({
               </button>
             </div>
             <div className={styles.loadingState}>
-              <div className={styles.spinnerLarge} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/loader.gif" alt="" className={styles.loaderGif} />
               <p>{STEP_MESSAGES[verificationStep]}</p>
             </div>
           </div>

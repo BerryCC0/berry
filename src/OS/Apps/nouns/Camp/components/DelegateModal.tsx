@@ -103,7 +103,7 @@ export function DelegateModal({ userAddress, onClose }: DelegateModalProps) {
           <div className={styles.currentDelegate}>
             <span className={styles.label}>Currently delegated to:</span>
             {isLoadingDelegate ? (
-              <span className={styles.loading}>Loading...</span>
+              <img src="/icons/loader.gif" alt="" className={styles.loadingGif} />
             ) : currentDelegate ? (
               <span className={styles.delegateAddress}>
                 {isSelfDelegated ? 'Yourself' : formatAddressUtil(currentDelegate, currentDelegateEns)}

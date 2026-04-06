@@ -28,6 +28,8 @@ class PersistenceManagerClass {
   private profile: UserProfile | null = null;
   private isUsingNeon = false;
   private upgradeInProgress = false;
+  /** Resolves when the in-flight upgrade completes (if any). */
+  private upgradePromise: Promise<UserProfile> | null = null;
 
   constructor() {
     // Start with in-memory adapter
@@ -63,15 +65,15 @@ class PersistenceManagerClass {
   async upgradeToWallet(
     wallet: Omit<WalletInfo, "linkedAt">
   ): Promise<UserProfile> {
-    // Guard against concurrent upgrades (e.g. rapid wallet connect/disconnect)
-    if (this.upgradeInProgress) {
-      console.warn("[Persistence] Upgrade already in progress, skipping");
-      if (this.profile) return this.profile;
-      throw new Error("Persistence upgrade already in progress");
+    // Deduplicate concurrent upgrades — second caller waits for the first
+    if (this.upgradeInProgress && this.upgradePromise) {
+      console.warn("[Persistence] Upgrade already in progress, waiting for it");
+      return this.upgradePromise;
     }
 
     this.upgradeInProgress = true;
 
+    this.upgradePromise = (async () => {
     try {
       // Get current ephemeral data before switching
       const currentData = await this.adapter.loadAllUserData(this.profileId!);
@@ -128,7 +130,11 @@ class PersistenceManagerClass {
       return profile;
     } finally {
       this.upgradeInProgress = false;
+      this.upgradePromise = null;
     }
+    })();
+
+    return this.upgradePromise;
   }
 
   /**

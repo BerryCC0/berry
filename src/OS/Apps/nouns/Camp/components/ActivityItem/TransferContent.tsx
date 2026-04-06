@@ -35,10 +35,39 @@ export function TransferContent(props: ActivityContentProps) {
 
   const effectiveSalePrice = salePrice || item.salePrice;
 
-  // Bulk transfer: multiple nouns in one transaction
-  if (item.isBulkTransfer && item.nounIds && item.fromAddresses) {
+  // Bulk transfer: multiple nouns grouped together
+  if (item.isBulkTransfer && item.nounIds) {
     const nounCount = item.nounIds.length;
-    const sellerList = item.fromAddresses.map((addr) => formatAddr(addr, null));
+
+    // Determine if the actor is the sender or the buyer.
+    // Pair-grouped (same from→to): actor is the sender, single toAddress
+    // Tx-grouped (same txHash): actor is the buyer, fromAddresses has sellers
+    const actorIsSender =
+      item.fromAddress &&
+      item.actor.toLowerCase() === item.fromAddress.toLowerCase() &&
+      item.toAddress &&
+      item.actor.toLowerCase() !== item.toAddress.toLowerCase();
+
+    if (actorIsSender) {
+      // Sender-centric: "X transferred N nouns to Y"
+      return (
+        <div className={styles.header}>
+          <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+          <span className={styles.action}>transferred</span>
+          <span className={styles.action}>{nounCount} nouns</span>
+          {item.nounIds.map((id) => (
+            <NounImageById key={id} id={parseInt(id, 10)} size={22} className={styles.nounImageInline} />
+          ))}
+          <span className={styles.action}>to</span>
+          <span className={styles.actor} onClick={onClickToAddress} role="button" tabIndex={0}>
+            {item.toAddress && formatAddr(item.toAddress, toAddressEns)}
+          </span>
+        </div>
+      );
+    }
+
+    // Buyer-centric: "X bought/received N nouns from sellers"
+    const sellerList = (item.fromAddresses || []).map((addr) => formatAddr(addr, null));
     const sellersDisplay =
       sellerList.length <= 2 ? sellerList.join(' and ') : `${sellerList.length} sellers`;
 
@@ -46,7 +75,7 @@ export function TransferContent(props: ActivityContentProps) {
       const priceInEth = Number(formatEther(BigInt(effectiveSalePrice))).toFixed(2);
       return (
         <div className={styles.header}>
-          <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+          <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
           <span className={styles.action}>bought</span>
           <span className={styles.action}>{nounCount} nouns</span>
           {item.nounIds.map((id) => (
@@ -62,7 +91,7 @@ export function TransferContent(props: ActivityContentProps) {
 
     return (
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
         <span className={styles.action}>received</span>
         <span className={styles.action}>{nounCount} nouns</span>
         {item.nounIds.map((id) => (
@@ -79,7 +108,7 @@ export function TransferContent(props: ActivityContentProps) {
     const priceInEth = Number(formatEther(BigInt(effectiveSalePrice))).toFixed(3);
     return (
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
         <span className={styles.action}>sold</span>
         {nounId !== undefined && (
           <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
@@ -101,7 +130,7 @@ export function TransferContent(props: ActivityContentProps) {
   if (isFromContract && !isToContract) {
     return (
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
         <span className={styles.action}>withdrew</span>
         {nounId !== undefined && (
           <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
@@ -119,7 +148,7 @@ export function TransferContent(props: ActivityContentProps) {
   if (!isFromContract && isToContract) {
     return (
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
         <span className={styles.action}>deposited</span>
         {nounId !== undefined && (
           <NounImageById id={nounId} size={22} className={styles.nounImageInline} />
@@ -172,7 +201,7 @@ function DelegationContent({
   if (item.nounIds && item.nounIds.length > 0) {
     return (
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
         <span className={styles.action}>delegated</span>
         {item.nounIds.map((id) => (
           <NounImageById key={id} id={parseInt(id, 10)} size={22} className={styles.nounImageInline} />
@@ -191,7 +220,7 @@ function DelegationContent({
   // Single noun delegated
   return (
     <div className={styles.header}>
-      <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+      <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
       <span className={styles.action}>delegated</span>
       {nounId !== undefined && (
         <NounImageById id={nounId} size={22} className={styles.nounImageInline} />

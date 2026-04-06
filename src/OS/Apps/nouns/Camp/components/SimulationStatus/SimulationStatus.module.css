@@ -297,7 +297,7 @@
   padding: 12px;
   background: var(--color-bg-tertiary, rgba(0, 0, 0, 0.2));
   border-radius: 6px;
-  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-family: var(--berry-font-mono);
   font-size: 11px;
   line-height: 1.5;
   color: var(--color-text-secondary);

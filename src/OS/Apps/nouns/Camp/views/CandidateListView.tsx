@@ -8,20 +8,26 @@
 import { useCandidates } from '../hooks/useCandidates';
 import { CandidateCard } from '../components/CandidateCard';
 import { BerryLoader } from '../components/BerryLoader';
+import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle } from '../components/CampToolbar';
+import type { CampToolbarContext } from '../Camp';
 import styles from './CandidateListView.module.css';
 
 interface CandidateListViewProps {
   onNavigate: (path: string) => void;
   onBack: () => void;
+  toolbar?: CampToolbarContext;
 }
 
-export function CandidateListView({ onNavigate, onBack }: CandidateListViewProps) {
+export function CandidateListView({ onNavigate, onBack, toolbar }: CandidateListViewProps) {
   const { data: candidates, isLoading, error } = useCandidates(50);
+  const { isModern } = useToolbar();
+  const tb = toolbar;
 
   if (error) {
     return (
       <div className={styles.error}>
-        <button className={styles.backButton} onClick={onBack}>← Back</button>
+        {tb && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
+        {!isModern && <button className={styles.backButton} onClick={onBack}>← Back</button>}
         <p>Failed to load candidates</p>
         <p className={styles.errorDetail}>{error.message}</p>
       </div>
@@ -30,9 +36,19 @@ export function CandidateListView({ onNavigate, onBack }: CandidateListViewProps
 
   return (
     <div className={styles.container}>
-      <div className={styles.navBar}>
+      {tb && (
+        <Toolbar
+          leading={
+            <>
+              <ToolbarBack onClick={onBack} styles={tb.styles} />
+              <ToolbarTitle styles={tb.styles}>Candidates</ToolbarTitle>
+            </>
+          }
+        />
+      )}
+      {!isModern && <div className={styles.navBar}>
         <button className={styles.backButton} onClick={onBack}>← Back</button>
-      </div>
+      </div>}
       <div className={styles.list}>
         {isLoading ? (
           <BerryLoader />

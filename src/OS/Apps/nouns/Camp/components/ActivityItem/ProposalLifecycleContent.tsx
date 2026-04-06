@@ -20,7 +20,7 @@ export function ProposalLifecycleContent(props: ActivityContentProps) {
     case 'proposal_created':
       return (
         <div className={styles.header}>
-          <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+          <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
           <span className={styles.action}>created</span>
           <span className={styles.badge} data-type="proposal">Proposal</span>
           {item.proposalTitle && (
@@ -117,7 +117,7 @@ export function ProposalLifecycleContent(props: ActivityContentProps) {
       return (
         <>
           <div className={styles.header}>
-            <ActorName avatar={actorAvatar} name={displayName} onClick={onClickActor} />
+            <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
             <span className={styles.action}>updated</span>
             <span className={styles.badge} data-type="proposal">Proposal</span>
             {item.proposalTitle && (

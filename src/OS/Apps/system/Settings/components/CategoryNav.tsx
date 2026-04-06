@@ -66,7 +66,7 @@ function CategoryIcon({ id, size = "small" }: { id: CategoryId; size?: "small" |
     }
   }, [era]);
 
-  const iconSet = ERA_ICON_SETS[displayEra];
+  const iconSet = ERA_ICON_SETS[displayEra] ?? ERA_ICON_SETS["liquid-glass"];
   const dim = size === "large" ? 32 : 24;
   const color = getIconColor(displayEra, id);
 

@@ -2,21 +2,31 @@
 
 /**
  * Window Component
- * Mac OS 8 style window with title bar, controls, and resize handles
- * Respects settings for shadows and window style.
+ * Era-aware window with title bar, controls, resize handles,
+ * and dynamic toolbar portal support.
  */
 
-import { useCallback, type ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { usePlatform } from "@/OS/lib/PlatformDetection";
 import { useWindowStore } from "@/OS/store/windowStore";
 import { useSettingsStore } from "@/OS/store/settingsStore";
-import { appLauncher } from "@/OS/lib/AppLauncher";
+import { appLauncher, getAppConfig } from "@/OS/lib/AppLauncher";
 import type { WindowState } from "@/OS/types/window";
+import type { ToolbarItem } from "@/OS/types/app";
+import type { EraId } from "@/OS/types/settings";
 import { TitleBar } from "./components/TitleBar";
+import {
+  useToolbarPortalTargets,
+  ToolbarPortalProvider,
+} from "./ToolbarContext";
 import { useWindowDrag } from "./hooks/useWindowDrag";
 import { useWindowResize } from "./hooks/useWindowResize";
 import desktopStyles from "./Window.desktop.module.css";
+import tabletStyles from "./Window.tablet.module.css";
 import mobileStyles from "./Window.mobile.module.css";
+
+/** Eras that use the modern unified toolbar layout (must match TitleBar) */
+const MODERN_ERAS: ReadonlySet<string> = new Set(["big-sur", "liquid-glass"]);
 
 interface WindowProps {
   windowId: string;
@@ -26,7 +36,8 @@ interface WindowProps {
 export function Window({ windowId, children }: WindowProps) {
   const platform = usePlatform();
   const isMobile = platform.type === "mobile" || platform.type === "farcaster";
-  const styles = isMobile ? mobileStyles : desktopStyles;
+  const isTablet = platform.type === "tablet";
+  const styles = isMobile ? mobileStyles : isTablet ? tabletStyles : desktopStyles;
 
   const window = useWindowStore((state) => state.windows.get(windowId));
   const focusWindow = useWindowStore((state) => state.focusWindow);
@@ -91,7 +102,7 @@ interface WindowRendererProps {
   isDragging: boolean;
   isResizing: boolean;
   showShadows: boolean;
-  windowStyleSetting: import("@/OS/types/settings").EraId;
+  windowStyleSetting: EraId;
   onWindowClick: () => void;
   onDragStart: (e: React.MouseEvent | React.TouchEvent) => void;
   onClose: () => void;
@@ -119,6 +130,21 @@ function WindowRenderer({
   handleResizeStart,
   children,
 }: WindowRendererProps) {
+  // Resolve app's navigation config for toolbar items
+  const appConfig = getAppConfig(window.appId);
+  const navigation = appConfig?.navigation;
+
+  // Dynamic toolbar portal system
+  const { targets, setLeadingRef, setCenterRef, setTrailingRef } =
+    useToolbarPortalTargets();
+
+  const isModern = MODERN_ERAS.has(windowStyleSetting) && !isMobile;
+
+  const portalRefs = useMemo(
+    () => ({ setLeadingRef, setCenterRef, setTrailingRef }),
+    [setLeadingRef, setCenterRef, setTrailingRef],
+  );
+
   const windowClassName = [
     styles.window,
     window.isFocused ? styles.windowFocused : styles.windowBlurred,
@@ -159,9 +185,18 @@ function WindowRenderer({
         onMaximize={onMaximize}
         styles={styles}
         isMobile={isMobile}
+        era={windowStyleSetting}
+        toolbarItems={navigation?.toolbarItems}
+        hasSidebar={navigation?.hasSidebar}
+        dynamicToolbar={navigation?.dynamicToolbar}
+        portalRefs={portalRefs}
       />
 
-      <div className={styles.content}>{children}</div>
+      <div className={styles.content}>
+        <ToolbarPortalProvider targets={targets} isModern={isModern}>
+          {children}
+        </ToolbarPortalProvider>
+      </div>
 
       {/* Resize handles (desktop only) */}
       {!isMobile &&
@@ -176,4 +211,3 @@ function WindowRenderer({
     </div>
   );
 }
-

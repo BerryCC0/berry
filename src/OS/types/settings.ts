@@ -30,6 +30,16 @@ export type WindowStyle =
 export interface AppearanceSettings {
   era: EraId;
   darkMode: boolean;
+  /**
+   * Color scheme preference:
+   * - "light" / "dark" — explicit override (ignores OS preference)
+   * - "auto" — follows `prefers-color-scheme` media query
+   *
+   * When "auto", the resolved value is written to `darkMode` at runtime.
+   * Defaults to "auto" for new installs; existing users who toggled darkMode
+   * keep their explicit setting via migration.
+   */
+  colorScheme: "light" | "dark" | "auto";
   accentColor: string;
   wallpaper: string;
   desktopIconSize: "small" | "medium" | "large";

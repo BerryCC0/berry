@@ -1,0 +1,226 @@
+/* Dock - Tablet Platform Styles (iPadOS)
+ *
+ * Per HIG-SPEC-TABLET §8:
+ * - Always bottom, centered
+ * - Fixed 40px icon size (no resize)
+ * - No divider drag handles
+ * - Two sections: pinned (max 8) + recent (last 3)
+ * - 56px height, 16px border-radius
+ * - Always visible (no auto-hide)
+ * - Swipe up triggers Exposé
+ */
+
+.dock {
+  position: fixed;
+  bottom: max(8px, env(safe-area-inset-bottom, 8px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-dock);
+
+  /* Fixed icon size — not user-resizable */
+  --dock-icon-size: 40px;
+}
+
+/* Position variants (tablet is always bottom, but classes need to exist) */
+.dockBottom {
+  bottom: max(8px, env(safe-area-inset-bottom, 8px));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dockLeft,
+.dockRight {
+  /* Not used on tablet — always bottom */
+  bottom: max(8px, env(safe-area-inset-bottom, 8px));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* No auto-hide on tablet */
+.dockHidden {
+  /* Override: dock is always visible */
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%);
+}
+
+.dockContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  height: 56px;
+  background: var(--berry-dock-bg, rgba(255, 255, 255, 0.3));
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--berry-dock-border, rgba(255, 255, 255, 0.3));
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  max-width: calc(100vw - 32px);
+}
+
+/* Dock Section */
+.dockSection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Subtle separator — no drag resize on tablet */
+.dockDivider {
+  width: 1px;
+  height: calc(var(--dock-icon-size) * 0.5);
+  margin: 0 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 1px;
+  align-self: center;
+  /* No resize cursor on tablet */
+  cursor: default;
+}
+
+.dockDivider:hover {
+  /* No hover expansion on tablet */
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Dock Icon */
+.dockIcon {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dockIcon:active {
+  transform: scale(0.92);
+}
+
+.dockIconFocused {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Bounce animation */
+@keyframes dockBounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-10px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-5px); }
+}
+
+.dockIconBouncing {
+  animation: dockBounce 0.6s ease-in-out;
+}
+
+.dockIconImage {
+  width: var(--dock-icon-size);
+  height: var(--dock-icon-size);
+  image-rendering: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  border-radius: 22%;
+}
+
+/* Labels hidden on tablet (too small) */
+.dockIconLabel {
+  display: none;
+}
+
+/* Context menu */
+.dockContextMenu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  padding: 4px 0;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  color: white;
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-menu, 13px);
+}
+
+.dockContextMenuItem {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+}
+
+.dockContextMenuItem:active {
+  background: var(--berry-primary, #007AFF);
+  border-radius: 8px;
+  margin: 0 4px;
+  padding: 10px 12px;
+}
+
+.dockContextMenuDivider {
+  height: 1px;
+  margin: 4px 8px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Running indicator dot */
+.runningIndicator {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+}
+
+.minimizedIndicator {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Trigger zones — not used on tablet (no auto-hide) */
+.dockTrigger,
+.dockTriggerBottom,
+.dockTriggerLeft,
+.dockTriggerRight {
+  display: none;
+}
+
+/* =============================================================================
+   ERA-SPECIFIC OVERRIDES
+   ============================================================================= */
+
+:global([data-window-style="platinum"]) .dockContainer,
+:global([data-window-style="classic"]) .dockContainer {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+  background: var(--berry-dock-bg, #E0E0E0);
+  border: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-light, #f0f0f0),
+    inset -1px -1px 0 var(--berry-bevel-dark, #808080),
+    2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+:global([data-window-style="liquid-glass"]) .dockContainer {
+  border-radius: 20px;
+  backdrop-filter: blur(var(--berry-dock-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  -webkit-backdrop-filter: blur(var(--berry-dock-blur, 40px)) saturate(var(--berry-glass-saturation, 1.8));
+  border-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
+}

@@ -11,7 +11,7 @@
   border-bottom: 1px solid var(--berry-border);
   background: var(--berry-bg);
   flex-shrink: 0;
-  font-family: 'Comic Neue', cursive;
+  font-family: var(--font-comic-neue), 'Comic Neue', cursive;
 }
 
 /* ── Sort row (matches NounDetail top bar) ── */
@@ -39,7 +39,7 @@
   border: none;
   color: var(--berry-text-primary);
   opacity: 0.5;
-  font-family: 'Comic Neue', cursive;
+  font-family: var(--font-comic-neue), 'Comic Neue', cursive;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -66,7 +66,7 @@
 
 .count {
   margin-left: auto;
-  font-family: 'Comic Neue', cursive;
+  font-family: var(--font-comic-neue), 'Comic Neue', cursive;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;

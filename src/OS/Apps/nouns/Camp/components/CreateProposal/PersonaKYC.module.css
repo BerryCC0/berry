@@ -70,7 +70,7 @@
   font-size: 11px;
   color: var(--berry-text-secondary);
   margin: 4px 0 0 0;
-  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-family: var(--berry-font-mono);
 }
 
 .errorBox {
@@ -252,4 +252,10 @@
   border-top-color: var(--berry-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+.loaderGif {
+  width: 48px;
+  height: 48px;
+  opacity: 0.7;
 }

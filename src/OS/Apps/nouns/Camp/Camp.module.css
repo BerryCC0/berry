@@ -97,6 +97,222 @@
   overflow: hidden;
 }
 
+/* =============================================================================
+   DYNAMIC TOOLBAR — Modern eras (Big Sur, Liquid Glass)
+   These styles apply to content portaled into the OS title bar.
+   ============================================================================= */
+
+/* Camp logo in the toolbar leading slot */
+.toolbarLogo {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  margin-left: 8px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.toolbarLogo:hover {
+  opacity: 0.75;
+}
+
+/* Search button styled as an inline search field.
+   justify-self: flex-start keeps it left-biased within the center slot. */
+.toolbarSearch {
+  justify-self: flex-start;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  min-width: 220px;
+  max-width: 380px;
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--berry-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--berry-radius-button, 6px);
+  background: var(--berry-bg, rgba(0, 0, 0, 0.06));
+  color: var(--berry-text-secondary, #888);
+  cursor: pointer;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+}
+
+.toolbarSearch:hover {
+  background: var(--berry-bg-tertiary, rgba(0, 0, 0, 0.08));
+}
+
+.toolbarSearchIcon {
+  font-size: 13px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.toolbarSearchText {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.toolbarSearchKbd {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--berry-text-tertiary, #999);
+  flex-shrink: 0;
+}
+
+/* Action buttons in the toolbar trailing slot */
+.toolbarBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--berry-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--berry-radius-button, 6px);
+  background: transparent;
+  color: var(--berry-title-bar-text, inherit);
+  cursor: pointer;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-left: -1px;
+}
+
+.toolbarBtn:first-child {
+  margin-left: 0;
+  border-radius: var(--berry-radius-button, 6px) 0 0 var(--berry-radius-button, 6px);
+}
+
+.toolbarBtn:last-child {
+  border-radius: 0 var(--berry-radius-button, 6px) var(--berry-radius-button, 6px) 0;
+}
+
+.toolbarBtn:only-child {
+  border-radius: var(--berry-radius-button, 6px);
+  margin-left: 0;
+}
+
+.toolbarBtn:hover:not(.toolbarBtnActive) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.toolbarBtnActive {
+  background: var(--berry-primary, #3b82f6);
+  color: #fff;
+  border-color: var(--berry-primary, #3b82f6);
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Back button (leading slot) ─── */
+.toolbarBack {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--berry-radius-button, 6px);
+  background: transparent;
+  color: var(--berry-title-bar-text, inherit);
+  cursor: pointer;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.toolbarBack:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ─── Compact title (leading slot, next to back) ─── */
+.toolbarTitle {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-title-bar-text, inherit);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* ─── Share button (trailing slot) ─── */
+.toolbarShareBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--berry-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--berry-radius-button, 6px);
+  background: transparent;
+  color: var(--berry-title-bar-text, inherit);
+  cursor: pointer;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+}
+
+.toolbarShareBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.toolbarShareLabel {
+  font-size: 11px;
+}
+
+/* ─── Compact select (center slot — filter/sort) ─── */
+.toolbarSelect {
+  height: 28px;
+  padding: 0 24px 0 8px;
+  border: 1px solid var(--berry-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--berry-radius-button, 6px);
+  background: var(--berry-bg, rgba(0, 0, 0, 0.04));
+  color: var(--berry-title-bar-text, inherit);
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%23888' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.toolbarSelect:hover {
+  background-color: var(--berry-bg-tertiary, rgba(0, 0, 0, 0.06));
+}
+
+/* ─── Draft status (center slot — create view) ─── */
+.toolbarDraftStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary, #888);
+}
+
+.toolbarDraftName {
+  font-weight: 500;
+  color: var(--berry-title-bar-text, inherit);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolbarDraftSaving { color: var(--berry-text-tertiary, #999); }
+.toolbarDraftSaved { color: var(--berry-text-secondary, #888); }
+.toolbarDraftUnsaved { color: var(--berry-warning, #f59e0b); }
+.toolbarDraftError { color: var(--berry-danger, #ef4444); }
+
 /* Mobile styles */
 @media (max-width: 768px) {
   .header {

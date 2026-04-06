@@ -69,14 +69,17 @@ export function useActivityItemData(
   const winnerEns = item.winnerEns ?? null;
   const settlerEns = item.settlerEns ?? null;
 
-  // For reply/repost original posters, we need to fetch ENS since these are
-  // not pre-loaded by the API (they're derived from parsing the reason text)
+  // Batch-fetch ENS data for addresses not pre-loaded by the API:
+  // - actor: name is pre-loaded but avatar is not
+  // - reply/repost original posters: derived from parsing reason text
   const addressesToFetch = useMemo(() => {
     const addrs: string[] = [];
+    // Always include actor so we get their avatar
+    if (item.actor) addrs.push(item.actor);
     if (replyOriginalPosterAddress) addrs.push(replyOriginalPosterAddress);
     if (repostOriginalPosterAddress) addrs.push(repostOriginalPosterAddress);
     return addrs;
-  }, [replyOriginalPosterAddress, repostOriginalPosterAddress]);
+  }, [item.actor, replyOriginalPosterAddress, repostOriginalPosterAddress]);
 
   const { data: ensMap } = useEnsDataBatch(addressesToFetch);
 
@@ -88,9 +91,10 @@ export function useActivityItemData(
     ? ensMap[repostOriginalPosterAddress.toLowerCase()]?.name ?? null
     : null;
 
-  // For avatar, we don't have it pre-loaded currently, so it will be null
-  // A future enhancement could add avatar to the API enrichment
-  const actorAvatar = null;
+  // Extract actor avatar from the batch-fetched ENS data
+  const actorAvatar = item.actor
+    ? ensMap[item.actor.toLowerCase()]?.avatar ?? null
+    : null;
 
   // --- Contract detection for noun_transfer items ---
   const isTransfer = item.type === 'noun_transfer';

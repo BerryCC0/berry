@@ -31,7 +31,7 @@
   border: 1px solid var(--berry-border);
   border-radius: 6px;
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-family: var(--berry-font-mono);
   font-size: 13px;
   transition: border-color 0.15s;
 }
@@ -58,7 +58,7 @@
   border: 1px solid var(--berry-border);
   border-radius: 6px;
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-mono, 'SF Mono', Monaco, monospace);
+  font-family: var(--berry-font-mono);
   font-size: 12px;
   line-height: 1.5;
   resize: vertical;

@@ -6,7 +6,7 @@
  */
 
 import { lazy } from "react";
-import type { AppConfig } from "@/OS/types/app";
+import type { AppConfig, AppNavigationConfig } from "@/OS/types/app";
 import { getIcon } from "@/OS/lib/IconRegistry";
 
 // Lazy load all app components - each becomes its own chunk
@@ -31,6 +31,49 @@ const BIM = lazy(() => import("./social/BIM/BIM").then(m => ({ default: m.BIM })
 /**
  * Finder - File browser
  */
+const finderNavigation: AppNavigationConfig = {
+  menus: [
+    {
+      id: "file",
+      label: "File",
+      items: [
+        { id: "new-window", label: "New Finder Window", shortcut: "Cmd+N", action: "finder:new-window" },
+        { id: "close", label: "Close Window", shortcut: "Cmd+W", action: "window:close" },
+      ],
+    },
+    {
+      id: "view",
+      label: "View",
+      items: [
+        { id: "as-icons", label: "as Icons", shortcut: "Cmd+1", action: "finder:view-icons" },
+        { id: "as-list", label: "as List", shortcut: "Cmd+2", action: "finder:view-list" },
+        { id: "as-columns", label: "as Columns", shortcut: "Cmd+3", action: "finder:view-columns" },
+      ],
+    },
+    {
+      id: "go",
+      label: "Go",
+      items: [
+        { id: "back", label: "Back", shortcut: "Cmd+[", action: "finder:go-back" },
+        { id: "forward", label: "Forward", shortcut: "Cmd+]", action: "finder:go-forward" },
+        { id: "sep-1", label: "", separator: true, action: "" },
+        { id: "home", label: "Home", action: "finder:go-home" },
+        { id: "desktop", label: "Desktop", action: "finder:go-desktop" },
+      ],
+    },
+  ],
+  toolbarItems: [
+    { id: "search", icon: "magnifyingglass", label: "Search", action: "finder:search", position: "center" },
+  ],
+  shortcuts: [
+    { id: "new-window", key: "n", modifiers: ["cmd"], action: "finder:new-window", label: "New Finder Window" },
+    { id: "view-icons", key: "1", modifiers: ["cmd"], action: "finder:view-icons", label: "Icon View" },
+    { id: "view-list", key: "2", modifiers: ["cmd"], action: "finder:view-list", label: "List View" },
+    { id: "view-columns", key: "3", modifiers: ["cmd"], action: "finder:view-columns", label: "Column View" },
+  ],
+  hasSidebar: true,
+};
+
 const finderConfig: AppConfig = {
   id: "finder",
   name: "Finder",
@@ -46,6 +89,7 @@ const finderConfig: AppConfig = {
     isResizable: true,
   },
   permissions: ["filesystem:read"],
+  navigation: finderNavigation,
   component: Finder,
 };
 
@@ -220,6 +264,15 @@ const pdfViewerConfig: AppConfig = {
 /**
  * Nouns Auction - Daily Nouns auction participation
  */
+const nounsAuctionNavigation: AppNavigationConfig = {
+  tabConfig: {
+    tab: "home",
+    icon: "house.fill",
+    label: "Home",
+    order: 0,
+  },
+};
+
 const nounsAuctionConfig: AppConfig = {
   id: "nouns-auction",
   name: "Nouns Auction",
@@ -235,6 +288,7 @@ const nounsAuctionConfig: AppConfig = {
     isResizable: true,
   },
   permissions: [],
+  navigation: nounsAuctionNavigation,
   component: Auction,
 };
 
@@ -242,6 +296,48 @@ const nounsAuctionConfig: AppConfig = {
  * Camp - Nouns Governance
  * Comprehensive governance app with proposals, voting, and delegation
  */
+const campNavigation: AppNavigationConfig = {
+  menus: [
+    {
+      id: "view",
+      label: "View",
+      items: [
+        { id: "proposals", label: "Proposals", shortcut: "Cmd+1", action: "camp:view-proposals" },
+        { id: "candidates", label: "Candidates", shortcut: "Cmd+2", action: "camp:view-candidates" },
+        { id: "voters", label: "Voters", shortcut: "Cmd+3", action: "camp:view-voters" },
+        { id: "activity", label: "Activity", shortcut: "Cmd+4", action: "camp:view-activity" },
+      ],
+    },
+    {
+      id: "proposal",
+      label: "Proposal",
+      items: [
+        { id: "new", label: "New Proposal", shortcut: "Cmd+N", action: "camp:new-proposal" },
+        { id: "sep-1", label: "", separator: true, action: "" },
+        { id: "search", label: "Search Proposals", shortcut: "Cmd+F", action: "camp:search" },
+      ],
+    },
+  ],
+  // Camp uses the dynamic toolbar system — its views portal their own
+  // toolbar content into the title bar via <Toolbar> from ToolbarContext.
+  dynamicToolbar: true,
+  shortcuts: [
+    { id: "view-proposals", key: "1", modifiers: ["cmd"], action: "camp:view-proposals", label: "Show Proposals" },
+    { id: "view-candidates", key: "2", modifiers: ["cmd"], action: "camp:view-candidates", label: "Show Candidates" },
+    { id: "view-voters", key: "3", modifiers: ["cmd"], action: "camp:view-voters", label: "Show Voters" },
+    { id: "view-activity", key: "4", modifiers: ["cmd"], action: "camp:view-activity", label: "Show Activity" },
+    { id: "new-proposal", key: "n", modifiers: ["cmd"], action: "camp:new-proposal", label: "New Proposal" },
+    { id: "search", key: "f", modifiers: ["cmd"], action: "camp:search", label: "Search Proposals" },
+  ],
+  tabConfig: {
+    tab: "govern",
+    icon: "building.columns",
+    label: "Govern",
+    order: 1,
+  },
+  hasSidebar: true,
+};
+
 const campConfig: AppConfig = {
   id: "camp",
   name: "Camp",
@@ -258,6 +354,7 @@ const campConfig: AppConfig = {
     isResizable: true,
   },
   permissions: ["network", "wallet"],
+  navigation: campNavigation,
   component: Camp,
 };
 
@@ -332,6 +429,22 @@ const crystalBallConfig: AppConfig = {
  * Probe - Nouns explorer
  * Browse all Nouns with trait filtering and detail views
  */
+const probeNavigation: AppNavigationConfig = {
+  toolbarItems: [
+    { id: "filter", icon: "line.3.horizontal.decrease", label: "Filter", action: "probe:filter", position: "trailing" },
+    { id: "search", icon: "magnifyingglass", label: "Search Nouns", action: "probe:search", position: "center" },
+  ],
+  shortcuts: [
+    { id: "search", key: "f", modifiers: ["cmd"], action: "probe:search", label: "Search Nouns" },
+  ],
+  tabConfig: {
+    tab: "explore",
+    icon: "magnifyingglass",
+    label: "Explore",
+    order: 2,
+  },
+};
+
 const probeConfig: AppConfig = {
   id: "probe",
   name: "Probe",
@@ -348,6 +461,7 @@ const probeConfig: AppConfig = {
     isResizable: true,
   },
   permissions: ["network"],
+  navigation: probeNavigation,
   component: Probe,
 };
 
@@ -377,6 +491,19 @@ const clientsConfig: AppConfig = {
  * BIM - Berry Instant Messaging
  * Discord-like encrypted messaging using XMTP
  */
+const bimNavigation: AppNavigationConfig = {
+  toolbarItems: [
+    { id: "compose", icon: "square.and.pencil", label: "New Message", action: "bim:compose", position: "trailing" },
+  ],
+  tabConfig: {
+    tab: "bim",
+    icon: "bubble.left.and.bubble.right.fill",
+    label: "BIM",
+    order: 3,
+  },
+  hasSidebar: true,
+};
+
 const bimConfig: AppConfig = {
   id: "bim",
   name: "BIM",
@@ -392,6 +519,7 @@ const bimConfig: AppConfig = {
     isResizable: true,
   },
   permissions: ["network", "wallet"],
+  navigation: bimNavigation,
   component: BIM,
 };
 

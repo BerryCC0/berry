@@ -20,6 +20,8 @@ import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { DelegateModal } from '../components/DelegateModal';
 import { BerryLoader } from '../components/BerryLoader';
+import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarShare } from '../components/CampToolbar';
+import type { CampToolbarContext } from '../Camp';
 import styles from './VoterDetailView.module.css';
 
 /**
@@ -55,6 +57,7 @@ interface VoterDetailViewProps {
   onBack: () => void;
   showBackButton?: boolean;
   isOwnAccount?: boolean;
+  toolbar?: CampToolbarContext;
 }
 
 // Component to display an address with ENS resolution
@@ -89,13 +92,15 @@ function AddressLink({
 
 type TabType = 'proposals' | 'candidates' | 'sponsored';
 
-export function VoterDetailView({ address: addressInput, onNavigate, onBack, showBackButton = true, isOwnAccount = false }: VoterDetailViewProps) {
+export function VoterDetailView({ address: addressInput, onNavigate, onBack, showBackButton = true, isOwnAccount = false, toolbar }: VoterDetailViewProps) {
   const [showDelegateModal, setShowDelegateModal] = useState(false);
   const [activityFilter, setActivityFilter] = useState<'all' | 'with-reason'>('all');
-  
+
   // Estimate current block for status calculations
   const currentBlock = useMemo(() => estimateCurrentBlock(), []);
   const [activeTab, setActiveTab] = useState<TabType>('proposals');
+  const { isModern } = useToolbar();
+  const tb = toolbar;
   
   // Determine if input is ENS name or address
   const inputIsEns = useMemo(() => isEnsName(addressInput), [addressInput]);
@@ -175,7 +180,8 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   if (inputIsEns && !isResolvingEns && !resolvedAddress) {
     return (
       <div className={styles.error}>
-        {showBackButton && (
+        {tb && showBackButton && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
+        {!isModern && showBackButton && (
           <button className={styles.backButton} onClick={onBack}>← Back</button>
         )}
         <p>Could not resolve ENS name: {addressInput}</p>
@@ -186,7 +192,8 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   if (error) {
     return (
       <div className={styles.error}>
-        {showBackButton && (
+        {tb && showBackButton && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
+        {!isModern && showBackButton && (
           <button className={styles.backButton} onClick={onBack}>← Back</button>
         )}
         <p>Failed to load voter</p>
@@ -197,7 +204,8 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   if (isLoading || !voter || !address) {
     return (
       <div className={styles.loading}>
-        {showBackButton && (
+        {tb && showBackButton && <Toolbar leading={<ToolbarBack onClick={onBack} styles={tb.styles} />} />}
+        {!isModern && showBackButton && (
           <button className={styles.backButton} onClick={onBack}>← Back</button>
         )}
         <BerryLoader />
@@ -207,13 +215,24 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
 
   return (
     <div className={styles.container}>
+      {tb && (
+        <Toolbar
+          leading={
+            <>
+              <ToolbarBack onClick={onBack} styles={tb.styles} />
+              <ToolbarTitle styles={tb.styles}>{displayName || 'Voter'}</ToolbarTitle>
+            </>
+          }
+          trailing={<ToolbarShare path={`voter/${address}`} styles={tb.styles} />}
+        />
+      )}
       {/* Navigation */}
-      <div className={styles.navBar}>
+      {!isModern && <div className={styles.navBar}>
         {showBackButton && (
           <button className={styles.backButton} onClick={onBack}>← Back</button>
         )}
         <ShareButton path={`voter/${address}`} />
-      </div>
+      </div>}
 
       <div className={styles.twoColumn}>
         {/* LEFT COLUMN */}
