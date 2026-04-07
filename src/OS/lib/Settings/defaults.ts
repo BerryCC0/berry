@@ -22,7 +22,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
     darkMode: true,
     colorScheme: "auto", // Follow OS preference by default
     accentColor: "#E93737", // Nouns Red
-    wallpaper: "#008080", // Classic Teal
+    wallpaper: "#E1D7D5", // Nouns Warm
     desktopIconSize: "medium",
     fontSize: "default",
     reduceMotion: false,

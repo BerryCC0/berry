@@ -123,6 +123,100 @@
   word-break: break-all;
 }
 
+/* =============================================================================
+   TOOLBAR — Modern themes (portaled into OS title bar)
+   ============================================================================= */
+
+.toolbarNav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.toolbarNavBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  color: var(--berry-title-bar-text, inherit);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.toolbarNavBtn:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+}
+
+.toolbarNavBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.toolbarDate {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--berry-title-bar-text, var(--berry-text-primary));
+  white-space: nowrap;
+  user-select: none;
+}
+
+.toolbarSearch {
+  display: flex;
+  width: 100%;
+  max-width: 160px;
+}
+
+.toolbarSearchInput {
+  width: 100%;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  background: var(--berry-input-bg, transparent);
+  color: var(--berry-title-bar-text, var(--berry-text-primary));
+}
+
+.toolbarSearchInput:focus {
+  outline: 2px solid var(--berry-accent);
+  outline-offset: -2px;
+}
+
+.toolbarSearchInput::placeholder {
+  color: var(--berry-text-muted);
+}
+
+.toolbarCurrentBtn {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  height: 24px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--berry-title-bar-text, inherit);
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  margin-right: 4px;
+}
+
+.toolbarCurrentBtn:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+}
+
+.toolbarCurrentBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* Mobile responsive */
 @media (max-width: 600px) {
   .content {

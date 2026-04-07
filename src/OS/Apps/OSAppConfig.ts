@@ -271,6 +271,7 @@ const nounsAuctionNavigation: AppNavigationConfig = {
     label: "Home",
     order: 0,
   },
+  dynamicToolbar: true,
 };
 
 const nounsAuctionConfig: AppConfig = {

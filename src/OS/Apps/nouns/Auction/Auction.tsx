@@ -5,16 +5,18 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react';
 import { useReadContract } from 'wagmi';
 import { NounImage } from '@/app/lib/nouns/components';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
+import { Toolbar, useToolbar } from '@/OS/Shell/Window/ToolbarContext';
 import type { AppComponentProps } from '@/OS/types/app';
 import { useTranslation } from '@/OS/lib/i18n';
 import { useCurrentAuction, useAuctionById, useNounById } from './hooks/useAuctionData';
 import { AuctionNavigation, BidButton, BidHistory, SettlerDisplay, TraitsList } from './components';
 import {
   formatCountdown,
+  formatCurrentDate,
   formatTimestamp,
   getTimeRemaining,
   isNounderNoun,
@@ -45,6 +47,7 @@ function isAuctionInitialState(state: unknown): state is AuctionInitialState {
 
 export function Auction({ windowId, initialState }: AppComponentProps) {
   const { t } = useTranslation();
+  const { isModern } = useToolbar();
 
   // Safely extract nounId from initialState
   const initialNounId = isAuctionInitialState(initialState) 
@@ -54,6 +57,7 @@ export function Auction({ windowId, initialState }: AppComponentProps) {
   // Initialize viewingNounId from initialState if provided
   const [viewingNounId, setViewingNounId] = useState<string | null>(initialNounId);
   const [countdown, setCountdown] = useState<string>('');
+  const [toolbarSearchInput, setToolbarSearchInput] = useState('');
 
   // Determine if viewing current auction or historical
   const isViewingCurrent = !viewingNounId;
@@ -159,6 +163,15 @@ export function Auction({ windowId, initialState }: AppComponentProps) {
     setViewingNounId(null);
   }, []);
 
+  const handleToolbarSearch = useCallback((e: FormEvent) => {
+    e.preventDefault();
+    const searchId = Number(toolbarSearchInput);
+    if (isNaN(searchId) || searchId < 1) return;
+    if (currentAuctionId && searchId > Number(currentAuctionId)) return;
+    handleSearch(String(searchId));
+    setToolbarSearchInput('');
+  }, [toolbarSearchInput, currentAuctionId, handleSearch]);
+
   // Calculate minimum next bid from live contract parameters
   const minBidETH = useMemo(() => {
     if (!displayAuction) return '0';
@@ -198,16 +211,72 @@ export function Auction({ windowId, initialState }: AppComponentProps) {
     ? isAuctionActive(displayAuction.endTime, displayAuction.settled)
     : false;
 
+  const isAtFirst = viewingNounId === '1';
+  const isAtCurrent = !viewingNounId || viewingNounId === currentAuctionId;
+
   return (
     <div className={styles.auction}>
-      <AuctionNavigation
-        currentNounId={currentAuctionId || null}
-        viewingNounId={viewingNounId}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        onSearch={handleSearch}
-        onCurrent={handleCurrent}
-      />
+      {isModern && (
+        <Toolbar
+          leading={
+            <div className={styles.toolbarNav} data-toolbar-interactive="true">
+              <button
+                className={styles.toolbarNavBtn}
+                onClick={handlePrevious}
+                disabled={isAtFirst}
+                aria-label="Previous Noun"
+              >
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+                  <path d="M6 1L1 6l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <span className={styles.toolbarDate}>{formatCurrentDate()}</span>
+              <button
+                className={styles.toolbarNavBtn}
+                onClick={handleNext}
+                disabled={isAtCurrent}
+                aria-label="Next Noun"
+              >
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+                  <path d="M1 1l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          }
+          center={
+            <form onSubmit={handleToolbarSearch} className={styles.toolbarSearch} data-toolbar-interactive="true">
+              <input
+                type="text"
+                placeholder="Search ID"
+                value={toolbarSearchInput}
+                onChange={(e) => setToolbarSearchInput(e.target.value)}
+                className={styles.toolbarSearchInput}
+                data-toolbar-interactive="true"
+              />
+            </form>
+          }
+          trailing={
+            <button
+              className={styles.toolbarCurrentBtn}
+              onClick={handleCurrent}
+              disabled={isAtCurrent}
+              data-toolbar-interactive="true"
+            >
+              Current
+            </button>
+          }
+        />
+      )}
+      {!isModern && (
+        <AuctionNavigation
+          currentNounId={currentAuctionId || null}
+          viewingNounId={viewingNounId}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          onSearch={handleSearch}
+          onCurrent={handleCurrent}
+        />
+      )}
 
       <div className={styles.content}>
         {/* Left: Noun Image & Traits */}
