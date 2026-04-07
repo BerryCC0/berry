@@ -218,10 +218,10 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
       {tb && (
         <Toolbar
           leading={
-            <>
+            <span data-toolbar-expand>
               <ToolbarBack onClick={onBack} styles={tb.styles} />
               <ToolbarTitle styles={tb.styles}>{displayName || 'Voter'}</ToolbarTitle>
-            </>
+            </span>
           }
           trailing={<ToolbarShare path={`voter/${address}`} styles={tb.styles} />}
         />

@@ -94,10 +94,10 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
       {tb && (
         <Toolbar
           leading={
-            <>
+            <span data-toolbar-expand>
               <ToolbarBack onClick={onBack} styles={tb.styles} />
               <ToolbarTitle styles={tb.styles}>Candidate: {title}</ToolbarTitle>
-            </>
+            </span>
           }
           trailing={<ToolbarShare path={`c/${slug}`} styles={tb.styles} />}
         />

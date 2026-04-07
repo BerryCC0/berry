@@ -121,6 +121,18 @@
   min-width: 0; /* allow title truncation */
 }
 
+/* When leading content opts in to expansion (detail views with no center content),
+   let it grow to fill available space. Apps add data-toolbar-expand to their
+   leading content wrapper to trigger this. */
+.toolbarLeading:has([data-toolbar-expand]) {
+  flex: 1;
+}
+
+/* The expand marker wrapper should not affect flex layout */
+[data-toolbar-expand] {
+  display: contents;
+}
+
 .toolbarCenter {
   flex: 1;
   display: flex;
@@ -130,16 +142,11 @@
   min-width: 0; /* allow shrink */
 }
 
-/* When center slot is empty, let leading expand to fill the space */
-.toolbarCenter:not(:has([data-toolbar-portal] > *)):not(:has(button)):not(:has(select)):not(:has(input)) {
+/* Collapse center when leading has opted to expand (no center content needed) */
+.toolbarLeading:has([data-toolbar-expand]) ~ .toolbarCenter {
   flex: 0;
   min-width: 0;
   padding: 0;
-}
-
-/* Leading slot grows when center is empty (adjacent sibling is collapsed) */
-.toolbarLeading:has(~ .toolbarCenter:not(:has([data-toolbar-portal] > *)):not(:has(button)):not(:has(select)):not(:has(input))) {
-  flex: 1;
 }
 
 .toolbarTrailing {
