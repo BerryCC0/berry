@@ -5,7 +5,7 @@
     "type": "directory",
     "size": 160,
     "icon": "/icons/folder.svg",
-    "createdAt": 1766536836111,
+    "createdAt": 0,
     "modifiedAt": 1766536836111,
     "isHidden": false
   },
@@ -17,7 +17,7 @@
     "mimeType": "text/markdown",
     "extension": "md",
     "icon": "/icons/file-text.svg",
-    "createdAt": 1766536836110,
+    "createdAt": 0,
     "modifiedAt": 1766536836111,
     "isHidden": false
   },
@@ -29,7 +29,7 @@
     "mimeType": "text/plain",
     "extension": "txt",
     "icon": "/icons/file-text.svg",
-    "createdAt": 1766536836111,
+    "createdAt": 0,
     "modifiedAt": 1766536836111,
     "isHidden": false
   }

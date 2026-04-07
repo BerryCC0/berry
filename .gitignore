@@ -17,6 +17,7 @@ ponder/.ponder
 
 # next.js
 /.next/
+/.next-old/
 /out/
 
 # production
