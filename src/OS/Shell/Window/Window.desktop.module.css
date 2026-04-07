@@ -113,10 +113,12 @@
 
 /* --- Toolbar slots (modern only) --- */
 .toolbarLeading {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   padding-left: 4px;
   gap: 8px;
+  min-width: 0; /* allow title truncation */
 }
 
 .toolbarCenter {
@@ -128,7 +130,20 @@
   min-width: 0; /* allow shrink */
 }
 
+/* When center slot is empty, let leading expand to fill the space */
+.toolbarCenter:not(:has([data-toolbar-portal] > *)):not(:has(button)):not(:has(select)):not(:has(input)) {
+  flex: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+/* Leading slot grows when center is empty (adjacent sibling is collapsed) */
+.toolbarLeading:has(~ .toolbarCenter:not(:has([data-toolbar-portal] > *)):not(:has(button)):not(:has(select)):not(:has(input))) {
+  flex: 1;
+}
+
 .toolbarTrailing {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;

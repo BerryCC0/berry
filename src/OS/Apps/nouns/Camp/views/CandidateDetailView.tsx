@@ -96,7 +96,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
           leading={
             <>
               <ToolbarBack onClick={onBack} styles={tb.styles} />
-              <ToolbarTitle styles={tb.styles}>Candidate</ToolbarTitle>
+              <ToolbarTitle styles={tb.styles}>Candidate: {title}</ToolbarTitle>
             </>
           }
           trailing={<ToolbarShare path={`c/${slug}`} styles={tb.styles} />}

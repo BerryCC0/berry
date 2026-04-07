@@ -84,7 +84,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
           leading={
             <>
               <ToolbarBack onClick={onBack} styles={tb.styles} />
-              <ToolbarTitle styles={tb.styles}>Prop {proposalId}</ToolbarTitle>
+              <ToolbarTitle styles={tb.styles}>Proposal {proposalId}: {proposal.title}</ToolbarTitle>
             </>
           }
           trailing={<ToolbarShare path={`proposal/${proposalId}`} styles={tb.styles} />}

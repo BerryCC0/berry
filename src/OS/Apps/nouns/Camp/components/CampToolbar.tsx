@@ -32,16 +32,16 @@ export function ToolbarBack({ onClick, label, styles }: ToolbarBackProps) {
       onClick={onClick}
       data-toolbar-interactive="true"
     >
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
         <path
-          d="M7.5 2L3.5 6l4 4"
+          d="M6 1L1 6l5 5"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       </svg>
-      {label && <span>{label}</span>}
+      <span>{label || 'Back'}</span>
     </button>
   );
 }

@@ -5,11 +5,13 @@
 
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { formatAddress } from '@/shared/format';
-import { useEnsName } from '@/OS/hooks/useEnsData';
+import { useEnsName, useEnsAvatar } from '@/OS/hooks/useEnsData';
 import { useTranslation } from '@/OS/lib/i18n';
 import { getClientName, isBerryOSClient } from '@/OS/lib/clientNames';
 import { getSupportColor } from '../types';
+import { addressToAvatar } from '../utils/addressAvatar';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import styles from './VoterRow.module.css';
 
@@ -36,6 +38,14 @@ export function VoterRow({
 }: VoterRowProps) {
   const { t } = useTranslation();
   const ensName = useEnsName(address);
+  const ensAvatar = useEnsAvatar(address);
+  const fallbackAvatar = useMemo(() => addressToAvatar(address), [address]);
+  const avatarSrc = ensAvatar || fallbackAvatar;
+  const handleAvatarError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (fallbackAvatar && e.currentTarget.src !== fallbackAvatar) {
+      e.currentTarget.src = fallbackAvatar;
+    }
+  }, [fallbackAvatar]);
 
   const displayName = formatAddress(address, ensName);
   const date = new Date(Number(timestamp) * 1000);
@@ -61,14 +71,20 @@ export function VoterRow({
     >
       <div className={styles.header}>
         <div className={styles.headerLeft}>
+          <img
+            src={avatarSrc}
+            alt=""
+            className={styles.avatar}
+            onError={handleAvatarError}
+          />
           <span className={styles.name}>{displayName}</span>
-          <span 
+          <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
+          <span
             className={styles.support}
             style={{ color: getSupportColor(support) }}
           >
             {supportLabel}
           </span>
-          <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
         </div>
         <div className={styles.headerRight}>
           <span className={styles.date}>{dateStr}</span>

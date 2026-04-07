@@ -178,11 +178,15 @@ export function Camp({ windowId, initialState, onStateChange }: AppComponentProp
     searchQuery,
     onSearchChange: setSearchQuery,
     Logo: (
-      <LogoSymbol
-        className={styles.toolbarLogo}
+      <div
+        className={styles.toolbarLogoPair}
         onClick={() => navigate({ view: 'activity' })}
         data-toolbar-interactive="true"
-      />
+      >
+        <LogoSymbol className={styles.toolbarLogo} />
+        <span className={styles.toolbarLogoX}>×</span>
+        <img src="/icons/berry.svg" alt="" className={styles.toolbarLogoBerry} />
+      </div>
     ),
   };
 

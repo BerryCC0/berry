@@ -102,18 +102,38 @@
    These styles apply to content portaled into the OS title bar.
    ============================================================================= */
 
-/* Camp logo in the toolbar leading slot */
-.toolbarLogo {
-  width: 24px;
-  height: 24px;
+/* Camp × Berry logo pair in the toolbar leading slot */
+.toolbarLogoPair {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   cursor: pointer;
   margin-left: 8px;
   margin-right: 4px;
   flex-shrink: 0;
 }
 
-.toolbarLogo:hover {
+.toolbarLogoPair:hover {
   opacity: 0.75;
+}
+
+.toolbarLogo {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.toolbarLogoX {
+  font-size: 11px;
+  color: var(--berry-text-muted);
+  line-height: 1;
+  user-select: none;
+}
+
+.toolbarLogoBerry {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 /* Search button styled as an inline search field.
@@ -237,15 +257,15 @@
   align-items: center;
   gap: 4px;
   height: 28px;
-  padding: 0 8px;
-  border: none;
+  padding: 0 8px 0 6px;
+  border: 1px solid var(--berry-border, rgba(0, 0, 0, 0.12));
   border-radius: var(--berry-radius-button, 6px);
   background: transparent;
   color: var(--berry-title-bar-text, inherit);
   cursor: pointer;
   font-family: var(--berry-font-system);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   white-space: nowrap;
 }
 
@@ -262,7 +282,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  min-width: 0;
+  flex: 1;
 }
 
 /* ─── Share button (trailing slot) ─── */

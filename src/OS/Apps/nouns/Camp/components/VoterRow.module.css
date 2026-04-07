@@ -42,6 +42,14 @@
   flex-shrink: 0;
 }
 
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
 .name {
   font-family: var(--berry-font-system);
   font-size: 12px;

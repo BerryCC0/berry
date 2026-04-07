@@ -6,9 +6,10 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { formatAddress } from '@/shared/format';
 import { useEnsName, useEnsAvatar } from '@/OS/hooks/useEnsData';
+import { addressToAvatar } from '../utils/addressAvatar';
 import { useVoters } from '../hooks';
 import { BerryLoader } from '../components/BerryLoader';
 import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarSelect } from '../components/CampToolbar';
@@ -28,16 +29,20 @@ const TREASURY_ADDRESSES = [
 function VoterIdentity({ address }: { address: string }) {
   const ensName = useEnsName(address);
   const ensAvatar = useEnsAvatar(address);
+  const fallback = useMemo(() => addressToAvatar(address), [address]);
+  const src = ensAvatar || fallback;
+
+  const handleError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (fallback && e.currentTarget.src !== fallback) {
+      e.currentTarget.src = fallback;
+    }
+  }, [fallback]);
 
   const displayName = formatAddress(address, ensName);
-  
+
   return (
     <div className={styles.voterIdentity}>
-      {ensAvatar ? (
-        <img src={ensAvatar} alt="" className={styles.voterAvatar} />
-      ) : (
-        <div className={styles.voterAvatarPlaceholder} />
-      )}
+      <img src={src} alt="" className={styles.voterAvatar} onError={handleError} />
       <span className={styles.voterName}>{displayName}</span>
     </div>
   );
