@@ -129,7 +129,7 @@
 }
 
 /* The expand marker wrapper should not affect flex layout */
-[data-toolbar-expand] {
+.toolbarLeading [data-toolbar-expand] {
   display: contents;
 }
 

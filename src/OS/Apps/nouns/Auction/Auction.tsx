@@ -6,7 +6,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useReadContract } from 'wagmi';
 import { NounImage } from '@/app/lib/nouns/components';
+import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import type { AppComponentProps } from '@/OS/types/app';
 import { useTranslation } from '@/OS/lib/i18n';
 import { useCurrentAuction, useAuctionById, useNounById } from './hooks/useAuctionData';
@@ -58,6 +60,19 @@ export function Auction({ windowId, initialState }: AppComponentProps) {
 
   // Query current auction
   const { data: currentData, isLoading: currentLoading } = useCurrentAuction(5000);
+
+  // Read auction parameters from contract
+  const { data: minBidIncrementPct } = useReadContract({
+    address: NOUNS_CONTRACTS.auctionHouse.address,
+    abi: NOUNS_CONTRACTS.auctionHouse.abi,
+    functionName: 'minBidIncrementPercentage',
+  });
+
+  const { data: reservePrice } = useReadContract({
+    address: NOUNS_CONTRACTS.auctionHouse.address,
+    abi: NOUNS_CONTRACTS.auctionHouse.abi,
+    functionName: 'reservePrice',
+  });
 
   // Check if viewing a Nounder Noun
   const isNounder = viewingNounId ? isNounderNoun(viewingNounId) : false;
@@ -144,12 +159,22 @@ export function Auction({ windowId, initialState }: AppComponentProps) {
     setViewingNounId(null);
   }, []);
 
-  // Calculate minimum next bid
+  // Calculate minimum next bid from live contract parameters
   const minBidETH = useMemo(() => {
     if (!displayAuction) return '0';
-    const minBid = getMinimumNextBid(displayAuction.amount);
+    const incrementPct = minBidIncrementPct != null ? Number(minBidIncrementPct) : 5;
+    const currentBidWei = BigInt(displayAuction.amount || '0');
+
+    // If no bids yet, minimum is the reserve price
+    if (currentBidWei === BigInt(0)) {
+      const reserve = reservePrice != null ? BigInt(reservePrice.toString()) : BigInt(0);
+      return formatBidAmount(reserve > BigInt(0) ? reserve.toString() : '0');
+    }
+
+    // Otherwise, minimum is current bid + increment percentage
+    const minBid = getMinimumNextBid(displayAuction.amount, incrementPct);
     return formatBidAmount(minBid.toString());
-  }, [displayAuction]);
+  }, [displayAuction, minBidIncrementPct, reservePrice]);
 
   // Get display values
   const nounTitle = useMemo(() => {

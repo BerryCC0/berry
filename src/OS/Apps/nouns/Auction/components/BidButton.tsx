@@ -78,8 +78,8 @@ export function BidButton({
             id="bid-amount"
             type="number"
             step="0.01"
-            min="0"
-            placeholder={`${t('auction.minBid')}: ${minBidETH}`}
+            min={minBidETH}
+            placeholder={`${t('auction.minBid')}: Ξ ${minBidETH}`}
             value={bidAmount}
             onChange={(e) => setBidAmount(e.target.value)}
             disabled={isPending || isConfirming || disabled}

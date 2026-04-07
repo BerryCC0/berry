@@ -96,9 +96,17 @@ function mapAuctionResponse(json: ApiAuctionResponse): Auction | null {
 
   if (!a) return null;
 
+  // For unsettled auctions, amount is null — use the highest bid instead
+  const highestBidAmount = bids.length > 0
+    ? bids.reduce((max, b) => {
+        const val = BigInt(b.amount);
+        return val > max ? val : max;
+      }, BigInt(0)).toString()
+    : '0';
+
   return {
     id: String(a.noun_id),
-    amount: String(a.amount || '0'),
+    amount: String(a.amount || highestBidAmount),
     startTime: String(a.start_time),
     endTime: String(a.end_time),
     settled: a.settled || false,
