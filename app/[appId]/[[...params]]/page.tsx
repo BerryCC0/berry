@@ -147,8 +147,12 @@ function sanitizePath(path: string): string {
     .filter(part => part !== '..' && part !== '.')
     .join('/');
   
-  // Remove dangerous characters for XSS prevention
-  sanitized = sanitized.replace(/[<>'"]/g, '');
+  // Strip HTML-injection characters. Quotes are intentionally NOT stripped:
+  // Nouns candidate slugs can legitimately contain `'` and `"` (any proposal
+  // with a quoted title produces one, e.g. `proposal:-"smart-identity"-...`),
+  // and they're safe as data because downstream consumers escape them
+  // (URLSearchParams for API calls, parameterized SQL, React text children).
+  sanitized = sanitized.replace(/[<>]/g, '');
   
   // Limit length
   sanitized = sanitized.slice(0, 500);
