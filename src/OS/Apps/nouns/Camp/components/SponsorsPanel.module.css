@@ -84,48 +84,6 @@
   border-radius: 4px;
 }
 
-/* Stale sig — signature was invalidated when the candidate was edited.
-   We still render the row so the proposer can see who had sponsored and
-   ask them to re-sign, but muted + badged so it's clear it isn't counted. */
-.sponsorItemStale {
-  opacity: 0.55;
-  background: repeating-linear-gradient(
-    135deg,
-    var(--berry-bg-tertiary),
-    var(--berry-bg-tertiary) 6px,
-    var(--berry-bg-secondary) 6px,
-    var(--berry-bg-secondary) 12px
-  );
-}
-
-.staleBadge {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 2px 6px;
-  font-family: var(--berry-font-system);
-  font-size: 9px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: #ff9800;
-  background: rgba(255, 152, 0, 0.12);
-  border: 1px solid rgba(255, 152, 0, 0.4);
-  border-radius: 3px;
-  cursor: help;
-}
-
-.staleSectionHint {
-  font-family: var(--berry-font-system);
-  font-size: 10px;
-  color: var(--berry-text-muted);
-  line-height: 1.4;
-  padding: 8px 10px;
-  margin-top: 4px;
-  background: rgba(255, 152, 0, 0.06);
-  border: 1px dashed rgba(255, 152, 0, 0.3);
-  border-radius: 4px;
-}
-
 .sponsorHeader {
   display: flex;
   align-items: baseline;

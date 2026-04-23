@@ -28,12 +28,11 @@ interface SponsorsPanelProps {
 
 interface SponsorItemProps {
   signature: CandidateSignature;
-  isStale: boolean;
   onNavigate: (path: string) => void;
-  onVotesLoaded: (signer: string, votes: number, isStale: boolean) => void;
+  onVotesLoaded: (signer: string, votes: number) => void;
 }
 
-function SponsorItem({ signature, isStale, onNavigate, onVotesLoaded }: SponsorItemProps) {
+function SponsorItem({ signature, onNavigate, onVotesLoaded }: SponsorItemProps) {
   const ensName = useEnsName(signature.signer);
 
   // Get voting power for this signer
@@ -46,12 +45,9 @@ function SponsorItem({ signature, isStale, onNavigate, onVotesLoaded }: SponsorI
 
   const votes = votingPower ? Number(votingPower) : 0;
 
-  // Report votes to parent when loaded. Stale sigs still report so the parent
-  // can de-dupe signers, but the parent will exclude their votes from the
-  // promotion math.
   useEffect(() => {
-    onVotesLoaded(signature.signer.toLowerCase(), votes, isStale);
-  }, [signature.signer, votes, isStale, onVotesLoaded]);
+    onVotesLoaded(signature.signer.toLowerCase(), votes);
+  }, [signature.signer, votes, onVotesLoaded]);
 
   const displayName = ensName || `${signature.signer.slice(0, 6)}...${signature.signer.slice(-4)}`;
 
@@ -67,12 +63,8 @@ function SponsorItem({ signature, isStale, onNavigate, onVotesLoaded }: SponsorI
     day: 'numeric'
   });
 
-  const itemClassName = isStale
-    ? `${styles.sponsorItem} ${styles.sponsorItemStale}`
-    : styles.sponsorItem;
-
   return (
-    <div className={itemClassName}>
+    <div className={styles.sponsorItem}>
       <div className={styles.sponsorHeader}>
         <span
           className={styles.sponsorName}
@@ -85,14 +77,6 @@ function SponsorItem({ signature, isStale, onNavigate, onVotesLoaded }: SponsorI
         </span>
         <span className={styles.sponsorDate}>{dateStr}</span>
       </div>
-      {isStale && (
-        <div
-          className={styles.staleBadge}
-          title="The candidate was edited after this sponsor signed, so the signature no longer matches the current proposal hash and cannot be used to promote. The sponsor would need to re-sign."
-        >
-          signature invalidated — candidate was edited
-        </div>
-      )}
       {signature.reason && (
         <div className={styles.sponsorReason}>{signature.reason}</div>
       )}
@@ -322,8 +306,7 @@ export function SponsorsPanel({
   // Callback for SponsorItems to report their votes. We accept a stale
   // flag so the parent can ignore stale reports when computing promotion
   // math, but we still record the votes so the stale row can display them.
-  const handleVotesLoaded = useCallback((signer: string, votes: number, _isStale: boolean) => {
-    void _isStale;
+  const handleVotesLoaded = useCallback((signer: string, votes: number) => {
     setSponsorVotes(prev => {
       if (prev[signer] === votes) return prev;
       return { ...prev, [signer]: votes };
@@ -346,31 +329,22 @@ export function SponsorsPanel({
     [currentHash]
   );
 
-  // Split sigs into fresh vs stale up-front; the fresh set drives promotion
-  // math, the stale set still renders (muted, with a badge) for transparency.
+  // Only fresh, non-expired sigs are rendered. Stale (invalidated by a
+  // candidate edit) sigs would revert `proposeBySigs` and carry no
+  // informational value for sponsors, so they're hidden entirely.
   const freshSignatures = useMemo(
     () => signatures.filter(sig => !isSigStale(sig)),
     [signatures, isSigStale]
   );
 
-  // Get unique signers from FRESH sigs only — stale sigs must not count
-  // toward the promotion threshold (the on-chain `proposeBySigs` call
-  // would revert on them).
   const uniqueSigners = useMemo(() => {
     const signers = new Set(freshSignatures.map(s => s.signer.toLowerCase()));
     return Array.from(signers);
   }, [freshSignatures]);
 
-  // Calculate total sponsoring nouns (from fresh sponsors only)
   const sponsorNouns = useMemo(() => {
     return uniqueSigners.reduce((sum, signer) => sum + (sponsorVotes[signer] || 0), 0);
   }, [uniqueSigners, sponsorVotes]);
-
-  // Count of stale, non-expired sigs for the stale-section header
-  const staleSignatureCount = useMemo(
-    () => signatures.length - freshSignatures.length,
-    [signatures, freshSignatures]
-  );
 
   // Report sponsor votes to parent when it changes
   useEffect(() => {
@@ -417,31 +391,21 @@ export function SponsorsPanel({
         </div>
       )}
 
-      {/* Sponsors list */}
-      {signatures.length > 0 ? (
+      {/* Sponsors list — only fresh, non-expired sigs are shown */}
+      {freshSignatures.length > 0 ? (
         <div className={styles.sponsorsList}>
-          {signatures.map(sig => (
+          {freshSignatures.map(sig => (
             <SponsorItem
               key={sig.id}
               signature={sig}
-              isStale={isSigStale(sig)}
               onNavigate={onNavigate}
               onVotesLoaded={handleVotesLoaded}
             />
           ))}
-          {staleSignatureCount > 0 && (
-            <div className={styles.staleSectionHint}>
-              {staleSignatureCount} signature{staleSignatureCount !== 1 ? 's' : ''}{' '}
-              {staleSignatureCount !== 1 ? 'were' : 'was'} invalidated when the
-              candidate was edited and {staleSignatureCount !== 1 ? 'are' : 'is'} not
-              counted toward the promotion threshold. Sponsors can re-sign to be
-              counted again.
-            </div>
-          )}
         </div>
       ) : (
         <div className={styles.noSponsors}>
-          No sponsors yet. {proposerVotes >= requiredNouns 
+          No sponsors yet. {proposerVotes >= requiredNouns
             ? 'The proposer has enough nouns to promote this candidate directly.'
             : `${requiredNouns - proposerVotes} more sponsoring ${requiredNouns - proposerVotes === 1 ? 'noun is' : 'nouns are'} needed to promote.`}
         </div>
