@@ -5,6 +5,7 @@ import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { NOUNS_ADDRESSES, NounsDAOABI, NounsDAODataABI, BERRY_CLIENT_ID } from '@/app/lib/nouns';
 import { NounsDAOLogicV3ABI } from '@/app/lib/nouns/abis/NounsDAOLogicV3';
 import type { ActionTemplateState, ProposalDraft } from '../utils/types';
+import type { Candidate } from '../types';
 import { generateSlugFromTitle, generateUniqueSlug, generateSlug, generateSlugWithConflictCheck } from '../utils/slugGenerator';
 import { parseActionsToTemplates, generateActionsFromTemplate, ACTION_TEMPLATES, type ActionTemplateType } from '../utils/actionTemplates';
 import { useNounHolderStatus } from '../utils/hooks/useNounHolderStatus';
@@ -93,6 +94,10 @@ interface UseCreateProposalFormReturn {
   hasVotingPower: boolean;
   candidateCost: bigint | undefined;
   updateCandidateCost: bigint | undefined;
+
+  // Candidate being edited (exposed so the update modal can warn about
+  // signatures that will be invalidated by the edit)
+  editingCandidate: Candidate | undefined;
 
   // Handlers
   handleLoadDraft: (draft: ProposalDraft) => void;
@@ -988,6 +993,9 @@ export function useCreateProposalForm({
     hasVotingPower,
     candidateCost,
     updateCandidateCost,
+
+    // Candidate being edited
+    editingCandidate,
 
     // Handlers
     handleLoadDraft,

@@ -30,7 +30,7 @@ export async function GET(
       `,
       sql`
         SELECT cs.id, cs.signer, cs.sig, cs.expiration_timestamp, cs.reason,
-               cs.block_timestamp,
+               cs.block_timestamp, cs.encoded_prop_hash,
                e.name as signer_ens
         FROM ponder_live.candidate_signatures cs
         LEFT JOIN ponder_live.ens_names e ON LOWER(cs.signer) = LOWER(e.address)

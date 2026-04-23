@@ -240,6 +240,14 @@ export interface CandidateSignature {
   reason: string;
   canceled: boolean;
   createdTimestamp: string;
+  /**
+   * The encoded proposal hash at the moment this signature was created.
+   * A signature is "stale" (invalidated by an edit) iff this differs from the
+   * candidate's current `encodedProposalHash`. Stale sigs will cause
+   * `proposeBySigs` to revert and must not be counted toward the promotion
+   * threshold.
+   */
+  encodedPropHash: string;
 }
 
 export interface Candidate {
@@ -252,6 +260,11 @@ export interface Candidate {
   lastUpdatedTimestamp: string;
   canceled: boolean;
   proposalIdToUpdate?: string;
+  /**
+   * Current on-chain encoded proposal hash. Compared against each signature's
+   * `encodedPropHash` to detect sigs invalidated by a candidate edit.
+   */
+  encodedProposalHash?: string;
   // Actions (for simulation)
   actions?: ProposalAction[];
   // Signatures (sponsors)

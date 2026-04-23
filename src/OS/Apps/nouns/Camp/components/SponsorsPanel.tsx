@@ -28,11 +28,12 @@ interface SponsorsPanelProps {
 
 interface SponsorItemProps {
   signature: CandidateSignature;
+  isStale: boolean;
   onNavigate: (path: string) => void;
-  onVotesLoaded: (signer: string, votes: number) => void;
+  onVotesLoaded: (signer: string, votes: number, isStale: boolean) => void;
 }
 
-function SponsorItem({ signature, onNavigate, onVotesLoaded }: SponsorItemProps) {
+function SponsorItem({ signature, isStale, onNavigate, onVotesLoaded }: SponsorItemProps) {
   const ensName = useEnsName(signature.signer);
 
   // Get voting power for this signer
@@ -45,29 +46,35 @@ function SponsorItem({ signature, onNavigate, onVotesLoaded }: SponsorItemProps)
 
   const votes = votingPower ? Number(votingPower) : 0;
 
-  // Report votes to parent when loaded
+  // Report votes to parent when loaded. Stale sigs still report so the parent
+  // can de-dupe signers, but the parent will exclude their votes from the
+  // promotion math.
   useEffect(() => {
-    onVotesLoaded(signature.signer.toLowerCase(), votes);
-  }, [signature.signer, votes, onVotesLoaded]);
+    onVotesLoaded(signature.signer.toLowerCase(), votes, isStale);
+  }, [signature.signer, votes, isStale, onVotesLoaded]);
 
   const displayName = ensName || `${signature.signer.slice(0, 6)}...${signature.signer.slice(-4)}`;
-  
+
   // Calculate days until expiration
   const now = Math.floor(Date.now() / 1000);
   const expiresIn = Number(signature.expirationTimestamp) - now;
   const daysUntilExpiry = Math.ceil(expiresIn / (24 * 60 * 60));
-  
+
   // Format date
   const signedDate = new Date(Number(signature.createdTimestamp) * 1000);
-  const dateStr = signedDate.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric' 
+  const dateStr = signedDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
   });
 
+  const itemClassName = isStale
+    ? `${styles.sponsorItem} ${styles.sponsorItemStale}`
+    : styles.sponsorItem;
+
   return (
-    <div className={styles.sponsorItem}>
+    <div className={itemClassName}>
       <div className={styles.sponsorHeader}>
-        <span 
+        <span
           className={styles.sponsorName}
           onClick={() => onNavigate(`voter/${signature.signer}`)}
         >
@@ -78,11 +85,19 @@ function SponsorItem({ signature, onNavigate, onVotesLoaded }: SponsorItemProps)
         </span>
         <span className={styles.sponsorDate}>{dateStr}</span>
       </div>
+      {isStale && (
+        <div
+          className={styles.staleBadge}
+          title="The candidate was edited after this sponsor signed, so the signature no longer matches the current proposal hash and cannot be used to promote. The sponsor would need to re-sign."
+        >
+          signature invalidated — candidate was edited
+        </div>
+      )}
       {signature.reason && (
         <div className={styles.sponsorReason}>{signature.reason}</div>
       )}
       <div className={styles.sponsorExpiry}>
-        {daysUntilExpiry > 0 
+        {daysUntilExpiry > 0
           ? `Expires in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}`
           : 'Expired'}
       </div>
@@ -102,7 +117,9 @@ export function SponsorsPanel({
   const { isConnected, address } = useAccount();
   const publicClient = usePublicClient();
   
-  // Track voting power for each unique signer
+  // Track voting power for each unique signer. We track stale and fresh
+  // reports separately so a signer who has *any* stale sig doesn't poison
+  // the fresh math, but the stale row can still display their current votes.
   const [sponsorVotes, setSponsorVotes] = useState<Record<string, number>>({});
   
   // Check if connected wallet is a Smart Contract Wallet (SCW)
@@ -302,24 +319,58 @@ export function SponsorsPanel({
     }
   }, [isSigning, isPending, isConfirming, resetSponsor]);
 
-  // Callback for SponsorItems to report their votes
-  const handleVotesLoaded = useCallback((signer: string, votes: number) => {
+  // Callback for SponsorItems to report their votes. We accept a stale
+  // flag so the parent can ignore stale reports when computing promotion
+  // math, but we still record the votes so the stale row can display them.
+  const handleVotesLoaded = useCallback((signer: string, votes: number, _isStale: boolean) => {
+    void _isStale;
     setSponsorVotes(prev => {
       if (prev[signer] === votes) return prev;
       return { ...prev, [signer]: votes };
     });
   }, []);
 
-  // Get unique signers
-  const uniqueSigners = useMemo(() => {
-    const signers = new Set(signatures.map(s => s.signer.toLowerCase()));
-    return Array.from(signers);
-  }, [signatures]);
+  // A signature is "stale" iff its signing-time encoded proposal hash no
+  // longer matches the candidate's current hash. This happens after any
+  // `updateProposalCandidate` call — the hash advances and every existing
+  // sponsor sig is invalidated on-chain. We treat an empty/missing
+  // `encodedPropHash` conservatively (not stale) to avoid blowing up sigs
+  // older than the indexer-schema change that added the column.
+  const currentHash = candidate?.encodedProposalHash?.toLowerCase() || '';
+  const isSigStale = useCallback(
+    (sig: CandidateSignature) => {
+      if (!currentHash) return false;
+      if (!sig.encodedPropHash) return false;
+      return sig.encodedPropHash.toLowerCase() !== currentHash;
+    },
+    [currentHash]
+  );
 
-  // Calculate total sponsoring nouns (from sponsors only)
+  // Split sigs into fresh vs stale up-front; the fresh set drives promotion
+  // math, the stale set still renders (muted, with a badge) for transparency.
+  const freshSignatures = useMemo(
+    () => signatures.filter(sig => !isSigStale(sig)),
+    [signatures, isSigStale]
+  );
+
+  // Get unique signers from FRESH sigs only — stale sigs must not count
+  // toward the promotion threshold (the on-chain `proposeBySigs` call
+  // would revert on them).
+  const uniqueSigners = useMemo(() => {
+    const signers = new Set(freshSignatures.map(s => s.signer.toLowerCase()));
+    return Array.from(signers);
+  }, [freshSignatures]);
+
+  // Calculate total sponsoring nouns (from fresh sponsors only)
   const sponsorNouns = useMemo(() => {
     return uniqueSigners.reduce((sum, signer) => sum + (sponsorVotes[signer] || 0), 0);
   }, [uniqueSigners, sponsorVotes]);
+
+  // Count of stale, non-expired sigs for the stale-section header
+  const staleSignatureCount = useMemo(
+    () => signatures.length - freshSignatures.length,
+    [signatures, freshSignatures]
+  );
 
   // Report sponsor votes to parent when it changes
   useEffect(() => {
@@ -370,13 +421,23 @@ export function SponsorsPanel({
       {signatures.length > 0 ? (
         <div className={styles.sponsorsList}>
           {signatures.map(sig => (
-            <SponsorItem 
-              key={sig.id} 
-              signature={sig} 
+            <SponsorItem
+              key={sig.id}
+              signature={sig}
+              isStale={isSigStale(sig)}
               onNavigate={onNavigate}
               onVotesLoaded={handleVotesLoaded}
             />
           ))}
+          {staleSignatureCount > 0 && (
+            <div className={styles.staleSectionHint}>
+              {staleSignatureCount} signature{staleSignatureCount !== 1 ? 's' : ''}{' '}
+              {staleSignatureCount !== 1 ? 'were' : 'was'} invalidated when the
+              candidate was edited and {staleSignatureCount !== 1 ? 'are' : 'is'} not
+              counted toward the promotion threshold. Sponsors can re-sign to be
+              counted again.
+            </div>
+          )}
         </div>
       ) : (
         <div className={styles.noSponsors}>

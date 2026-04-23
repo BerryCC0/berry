@@ -42,7 +42,10 @@ export function usePromoteCandidate() {
     hash: transactionHash,
   });
 
-  const promoteCandidate = async (candidate: Candidate) => {
+  const promoteCandidate = async (
+    candidate: Candidate,
+    selectedSignatureIds?: string[],
+  ) => {
     if (!isConnected || !address) {
       setPromoteState({
         isSuccess: false,
@@ -70,6 +73,47 @@ export function usePromoteCandidate() {
       return;
     }
 
+    // Filter out stale signatures (encodedPropHash mismatch after a candidate
+    // edit) and expired ones. Passing these to `proposeBySigs` would revert
+    // on-chain, which breaks wallet gas estimation — causing "intrinsic gas
+    // too low" errors and missing fee estimates. Empty `encodedPropHash` is
+    // treated as fresh (pre-schema-change sigs) to avoid over-filtering.
+    const currentHash = candidate.encodedProposalHash?.toLowerCase() || '';
+    const nowSec = Math.floor(Date.now() / 1000);
+    const candidateSigs = selectedSignatureIds
+      ? candidate.signatures.filter((s) => selectedSignatureIds.includes(s.id))
+      : candidate.signatures;
+
+    const freshSignatures = candidateSigs.filter((sig) => {
+      if (Number(sig.expirationTimestamp) <= nowSec) return false;
+      if (!currentHash || !sig.encodedPropHash) return true;
+      return sig.encodedPropHash.toLowerCase() === currentHash;
+    });
+
+    // Dedupe by signer — `proposeBySigs` increments `nonces[signer]` per sig,
+    // so a second sig from the same signer fails its digest check and reverts
+    // the whole tx. Keep the latest (highest createdTimestamp) per signer.
+    const latestBySigner = new Map<string, CandidateSignature>();
+    for (const sig of freshSignatures) {
+      const key = sig.signer.toLowerCase();
+      const existing = latestBySigner.get(key);
+      if (!existing || Number(sig.createdTimestamp) > Number(existing.createdTimestamp)) {
+        latestBySigner.set(key, sig);
+      }
+    }
+    const dedupedSignatures = Array.from(latestBySigner.values());
+
+    if (dedupedSignatures.length === 0) {
+      setPromoteState({
+        isSuccess: false,
+        isError: true,
+        error: new Error(
+          'No valid signatures available — all sponsor signatures were invalidated by an edit or have expired. Sponsors must re-sign.'
+        ),
+      });
+      return;
+    }
+
     try {
       // Reset previous states
       setPromoteState({
@@ -80,7 +124,7 @@ export function usePromoteCandidate() {
       resetWrite();
 
       // Prepare the proposer signatures array
-      const proposerSignatures = candidate.signatures.map((sig: CandidateSignature) => ({
+      const proposerSignatures = dedupedSignatures.map((sig: CandidateSignature) => ({
         sig: sig.sig as `0x${string}`,
         signer: sig.signer as `0x${string}`,
         expirationTimestamp: BigInt(sig.expirationTimestamp),

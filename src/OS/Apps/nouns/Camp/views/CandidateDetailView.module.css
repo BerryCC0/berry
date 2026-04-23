@@ -357,6 +357,88 @@
   cursor: not-allowed;
 }
 
+/* Sponsor selection list inside the promote dialog */
+.sponsorSelectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--berry-border, #ccc);
+  padding: 6px;
+  border-radius: 4px;
+  background: var(--berry-surface, #fafafa);
+}
+
+.sponsorSelectionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.sponsorSelectionRow:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.sponsorSelectionRowConflict {
+  background: #fff4e5;
+}
+
+.sponsorSelectionRowConflict:hover {
+  background: #ffe8cc;
+}
+
+.sponsorSelectionSigner {
+  font-family: var(--berry-font-mono, monospace);
+  font-weight: 600;
+}
+
+.sponsorSelectionVotes {
+  color: #666;
+}
+
+.sponsorSelectionConflict {
+  margin-left: auto;
+  color: #b26a00;
+  font-size: 10px;
+  font-style: italic;
+}
+
+.sponsorSelectionHint {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: #666;
+  margin: 4px 0 8px;
+}
+
+.sponsorSelectionTotals {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 6px 0;
+  margin-bottom: 8px;
+  border-top: 1px dashed var(--berry-border, #ccc);
+  padding-top: 8px;
+}
+
+.sponsorSelectionOk {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.sponsorSelectionShort {
+  color: #c62828;
+  font-weight: 600;
+}
+
 /* Success/Error messages */
 .successMessage {
   background: #e8f5e9;

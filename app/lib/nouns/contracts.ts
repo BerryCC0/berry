@@ -312,6 +312,13 @@ export const NounsDAOABI = [
     type: 'function',
   },
   {
+    inputs: [{ name: '', type: 'address' }],
+    name: 'latestProposalIds',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [],
     name: 'adjustedTotalSupply',
     outputs: [{ name: '', type: 'uint256' }],

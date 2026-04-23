@@ -266,6 +266,7 @@ export function CreateProposalView({
         state={form.updateModalState}
         errorMessage={form.errorMessage}
         textareaRef={form.updateReasonInputRef}
+        candidate={form.editingCandidate}
       />
     </div>
   );

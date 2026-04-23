@@ -14,4 +14,5 @@ export { useSalePrice } from './useSalePrice';
 export { useEnsDataBatch, useEnsName, useEnsAvatar, useEnsData, getEnsFromMap } from './useEnsData';
 export type { EnsData } from './useEnsData';
 export { useCreateProposalForm } from './useCreateProposalForm';
+export { useSponsorActiveProposals, type SponsorConflict } from './useSponsorActiveProposals';
 

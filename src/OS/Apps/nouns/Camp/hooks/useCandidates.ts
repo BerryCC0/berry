@@ -54,6 +54,7 @@ interface ApiSignatureRow {
   block_timestamp: number;
   signer_ens: string | null;
   canceled: boolean | null;
+  encoded_prop_hash: string | null;
 }
 
 /**
@@ -104,6 +105,10 @@ function mapCandidateDetail(c: ApiCandidateDetailRow): Candidate {
   })) || [];
 
   // Build signatures array (active, non-expired sponsors)
+  // NOTE: we keep sigs here regardless of whether their `encodedPropHash`
+  // matches the candidate's current `encodedProposalHash`. Staleness is
+  // computed downstream in SponsorsPanel so the UI can still render
+  // invalidated sigs (muted, with a badge) without counting them.
   const signatures: CandidateSignature[] = (c.signatures || [])
     .filter((sig: ApiSignatureRow) => {
       // Only include non-expired signatures
@@ -118,6 +123,7 @@ function mapCandidateDetail(c: ApiCandidateDetailRow): Candidate {
       reason: sig.reason || '',
       canceled: false,
       createdTimestamp: String(sig.block_timestamp),
+      encodedPropHash: sig.encoded_prop_hash || '',
     }));
 
   // Build feedback array
@@ -140,6 +146,7 @@ function mapCandidateDetail(c: ApiCandidateDetailRow): Candidate {
     lastUpdatedTimestamp: String(c.last_updated_timestamp ?? '0'),
     canceled: c.canceled || false,
     proposalIdToUpdate: c.proposal_id_to_update || undefined,
+    encodedProposalHash: c.encoded_proposal_hash || undefined,
     actions,
     signatures,
     feedback,

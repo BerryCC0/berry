@@ -41,7 +41,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
     candidate, isLoading, error, simulation, actualProposer,
     title, createdDate, proposerDisplay,
     isConnected, hasVotingPower, isOwner, isCanceled,
-    canPromote, signatureCount, threshold, setTotalSponsorVotes,
+    canPromote, threshold, proposerVotes, setTotalSponsorVotes,
     isPending, isConfirming, isPromoting,
     promoteSuccess, promoteIsError, promoteError, promotedProposalId,
     showPromoteConfirm, setShowPromoteConfirm,
@@ -52,6 +52,9 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
     signalReason, setSignalReason, signalPending, signalConfirming,
     showSignalSuccess, handleSignal,
     refetch,
+    promotableSignatures, effectiveSelectedIds, toggleSignature,
+    conflictsBySigner, isLoadingConflicts,
+    votesBySignature, selectedSponsorVotes,
   } = detail;
 
   if (error) {
@@ -350,36 +353,97 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
         </div>
       )}
 
-      {showPromoteConfirm && (
-        <div className={styles.confirmDialog}>
-          <div className={styles.confirmDialogContent}>
-            <h3 className={styles.confirmDialogTitle}>Promote to Proposal?</h3>
-            <p className={styles.confirmDialogMessage}>
-              This will submit the candidate as a full proposal using {signatureCount} sponsor signature{signatureCount !== 1 ? 's' : ''}.
-              Once promoted, the proposal will enter the voting period.
-            </p>
-            <div className={styles.confirmDialogButtons}>
-              <button
-                className={styles.confirmDialogCancel}
-                onClick={() => {
-                  setShowPromoteConfirm(false);
-                  resetPromote();
-                }}
-                disabled={isPromoting}
-              >
-                Cancel
-              </button>
-              <button
-                className={styles.confirmDialogPromote}
-                onClick={handleConfirmPromote}
-                disabled={isPromoting}
-              >
-                {isPromoting ? 'Promoting...' : 'Promote to Proposal'}
-              </button>
+      {showPromoteConfirm && (() => {
+        const requiredNouns = threshold + 1;
+        const selectedTotal = (proposerVotes || 0) + selectedSponsorVotes;
+        const selectedCount = effectiveSelectedIds.length;
+        const hasEnough = selectedTotal >= requiredNouns;
+        return (
+          <div className={styles.confirmDialog}>
+            <div className={styles.confirmDialogContent}>
+              <h3 className={styles.confirmDialogTitle}>Promote to Proposal?</h3>
+              <p className={styles.confirmDialogMessage}>
+                Select which sponsor signatures to include. Once promoted, the proposal enters the voting period.
+              </p>
+
+              {promotableSignatures.length === 0 ? (
+                <div className={styles.errorMessage}>
+                  No valid sponsor signatures available. Sponsors must re-sign.
+                </div>
+              ) : (
+                <div className={styles.sponsorSelectionList}>
+                  {promotableSignatures.map((sig) => {
+                    const signerKey = sig.signer.toLowerCase();
+                    const conflictId = conflictsBySigner.get(signerKey);
+                    const checked = effectiveSelectedIds.includes(sig.id);
+                    const votes = votesBySignature.get(sig.id) ?? 0;
+                    const short = `${sig.signer.slice(0, 6)}...${sig.signer.slice(-4)}`;
+                    return (
+                      <label
+                        key={sig.id}
+                        className={`${styles.sponsorSelectionRow} ${conflictId ? styles.sponsorSelectionRowConflict : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSignature(sig.id)}
+                          disabled={isPromoting}
+                        />
+                        <span className={styles.sponsorSelectionSigner}>{short}</span>
+                        <span className={styles.sponsorSelectionVotes}>
+                          {votes} {votes === 1 ? 'noun' : 'nouns'}
+                        </span>
+                        {conflictId && (
+                          <span
+                            className={styles.sponsorSelectionConflict}
+                            title={`This sponsor has a live proposal (#${conflictId}). Including them will revert the promotion.`}
+                          >
+                            has active proposal #{conflictId.toString()}
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+
+              {isLoadingConflicts && (
+                <div className={styles.sponsorSelectionHint}>Checking sponsors for active proposals…</div>
+              )}
+
+              <div className={styles.sponsorSelectionTotals}>
+                <span>
+                  Selected: {selectedCount} signer{selectedCount !== 1 ? 's' : ''} ({selectedSponsorVotes} nouns)
+                </span>
+                <span className={hasEnough ? styles.sponsorSelectionOk : styles.sponsorSelectionShort}>
+                  Total voting power: {selectedTotal} / {requiredNouns} required
+                </span>
+              </div>
+
+              <div className={styles.confirmDialogButtons}>
+                <button
+                  className={styles.confirmDialogCancel}
+                  onClick={() => {
+                    setShowPromoteConfirm(false);
+                    resetPromote();
+                  }}
+                  disabled={isPromoting}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.confirmDialogPromote}
+                  onClick={handleConfirmPromote}
+                  disabled={isPromoting || !hasEnough || selectedCount === 0}
+                  title={!hasEnough ? 'Not enough voting power in selected sponsors' : undefined}
+                >
+                  {isPromoting ? 'Promoting...' : 'Promote to Proposal'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 
