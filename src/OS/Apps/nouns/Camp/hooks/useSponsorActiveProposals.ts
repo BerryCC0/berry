@@ -14,12 +14,14 @@ import { useMemo } from 'react';
 import { useReadContracts } from 'wagmi';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 
-// ProposalState enum from NounsDAOLogicV3 — only the states that count as
-// "live" for checkNoActiveProp. Keep these in sync with the contract.
+// ProposalState enum from NounsDAOLogicV3 (order matters — indexed by uint8):
+//   0 Pending, 1 Active, 2 Canceled, 3 Defeated, 4 Succeeded, 5 Queued,
+//   6 Expired, 7 Executed, 8 Vetoed, 9 ObjectionPeriod, 10 Updatable
+// Only these count as "live" for the on-chain checkNoActiveProp gate.
 const LIVE_PROPOSAL_STATES = new Set<number>([
   0, // Pending
   1, // Active
-  7, // ObjectionPeriod
+  9, // ObjectionPeriod
   10, // Updatable
 ]);
 
