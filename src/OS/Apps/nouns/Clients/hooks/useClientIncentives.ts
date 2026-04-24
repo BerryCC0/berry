@@ -70,10 +70,23 @@ async function fetchCycleVotes(proposalIds?: number[]): Promise<CycleVotesRespon
     params.set('proposalIds', proposalIds.join(','));
   }
 
-  const response = await fetch(`/api/clients/cycle-votes?${params}`);
-  if (!response.ok) throw new Error('Failed to fetch cycle votes');
-  const json = await response.json();
-  return { votes: json.votes, votesByProposal: json.votesByProposal };
+  // Abort if the endpoint hasn't responded in 15s so we don't hang forever
+  // (the server-side RPC call can stall on flaky public endpoints).
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const response = await fetch(`/api/clients/cycle-votes?${params}`, {
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new Error(`cycle-votes ${response.status}: ${body.slice(0, 200)}`);
+    }
+    const json = await response.json();
+    return { votes: json.votes, votesByProposal: json.votesByProposal };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function fetchCycleAuctions(firstNounId: number): Promise<CycleAuctionsResponse> {
@@ -163,6 +176,8 @@ export function useCycleVotes(proposalIds?: number[]) {
     staleTime: 60000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1500 * 2 ** attempt, 8000),
   });
 }
 

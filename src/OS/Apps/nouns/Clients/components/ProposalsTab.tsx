@@ -20,6 +20,7 @@ import { getClientName } from '@/OS/lib/clientNames';
 import { formatEth, clientColor } from '../utils';
 import { EthTooltip } from './ChartTooltips';
 import { ClientTick } from './ClientTick';
+import { ChartSkeleton } from './ChartSkeleton';
 import styles from '../Clients.module.css';
 
 /** Recharts LabelFormatter-compatible formatters */
@@ -51,6 +52,10 @@ interface ProposalsTabProps {
   currentPeriodProposals: Proposal[];
   getEligibility: (p: { clientId?: number; forVotes: string; quorumVotes: string; status: string }) => 'eligible' | 'pending' | 'ineligible';
   proposalBreakdowns: Map<number, ProposalBreakdownEntry[]>;
+  proposalsChartLoading: boolean;
+  votesChartLoading: boolean;
+  rewardsChartLoading: boolean;
+  cycleVotesError: boolean;
 }
 
 export const ProposalsTab = memo(function ProposalsTab({
@@ -58,7 +63,19 @@ export const ProposalsTab = memo(function ProposalsTab({
   clientMetadata, clients, pendingRevenueEth,
   eligibleCount, cycleProgress, filterEligible, setFilterEligible,
   currentPeriodProposals, getEligibility, proposalBreakdowns,
+  proposalsChartLoading, votesChartLoading, rewardsChartLoading, cycleVotesError,
 }: ProposalsTabProps) {
+  // Decide per-slot rendering: real chart if data present, skeleton if still loading,
+  // error card if upstream query failed, otherwise nothing.
+  const showProposalsChart = proposalsByClient.length > 0;
+  const showVotesChart = votesByClient.length > 0;
+  const showRewardsChart = cycleRewardsByClient.length > 0;
+  const showProposalsSkeleton = !showProposalsChart && proposalsChartLoading;
+  const showVotesSkeleton = !showVotesChart && (votesChartLoading || cycleVotesError);
+  const showRewardsSkeleton = !showRewardsChart && (rewardsChartLoading || cycleVotesError);
+  const renderChartsRow =
+    showProposalsChart || showVotesChart || showRewardsChart ||
+    showProposalsSkeleton || showVotesSkeleton || showRewardsSkeleton;
   const {
     execute: executeProposalUpdate,
     isPending: isProposalPending,
@@ -72,9 +89,9 @@ export const ProposalsTab = memo(function ProposalsTab({
   return (
     <>
       {/* Cycle distribution charts */}
-      {(proposalsByClient.length > 0 || votesByClient.length > 0 || cycleRewardsByClient.length > 0) && (
+      {renderChartsRow && (
         <div className={styles.chartsRowTriple}>
-          {proposalsByClient.length > 0 && (
+          {showProposalsChart ? (
             <div className={styles.chartCard}>
               <div className={styles.chartTitle}>Proposals by Client</div>
               <div className={styles.chartContainer}>
@@ -94,9 +111,11 @@ export const ProposalsTab = memo(function ProposalsTab({
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          ) : showProposalsSkeleton ? (
+            <ChartSkeleton title="Proposals by Client" />
+          ) : null}
 
-          {votesByClient.length > 0 && (
+          {showVotesChart ? (
             <div className={styles.chartCard}>
               <div className={styles.chartTitle}>Votes by Client</div>
               <div className={styles.chartContainer}>
@@ -116,9 +135,11 @@ export const ProposalsTab = memo(function ProposalsTab({
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          ) : showVotesSkeleton ? (
+            <ChartSkeleton title="Votes by Client" error={cycleVotesError} />
+          ) : null}
 
-          {cycleRewardsByClient.length > 0 && (
+          {showRewardsChart ? (
             <div className={styles.chartCard}>
               <div className={styles.chartTitle}>Est. Rewards by Client</div>
               <div className={styles.chartContainer}>
@@ -138,7 +159,9 @@ export const ProposalsTab = memo(function ProposalsTab({
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          ) : showRewardsSkeleton ? (
+            <ChartSkeleton title="Est. Rewards by Client" error={cycleVotesError} />
+          ) : null}
         </div>
       )}
 

@@ -257,6 +257,75 @@
   height: 200px;
 }
 
+/* ── Chart skeleton (loading placeholder) ───────────────────────────────── */
+
+.chartSkeleton {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 8px 4px 4px;
+  position: relative;
+  border-bottom: 1px dashed var(--berry-border, #e5e5e5);
+}
+
+.chartSkeletonBars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 8px;
+  flex: 1;
+  width: 100%;
+}
+
+.chartSkeletonBar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(
+    90deg,
+    var(--berry-border, #e5e5e5) 0%,
+    var(--berry-bg-tertiary, #ececf0) 50%,
+    var(--berry-border, #e5e5e5) 100%
+  );
+  background-size: 200% 100%;
+  animation: chartSkeletonShimmer 1.4s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.chartSkeletonBar:nth-child(2) { animation-delay: 0.15s; }
+.chartSkeletonBar:nth-child(3) { animation-delay: 0.3s; }
+.chartSkeletonBar:nth-child(4) { animation-delay: 0.45s; }
+.chartSkeletonBar:nth-child(5) { animation-delay: 0.6s; }
+.chartSkeletonBar:nth-child(6) { animation-delay: 0.75s; }
+
+.chartSkeletonError .chartSkeletonBar {
+  animation: none;
+  opacity: 0.35;
+  background: var(--berry-border, #e5e5e5);
+}
+
+.chartSkeletonError .chartSkeletonLabel {
+  color: var(--berry-danger, #ff3b30);
+  font-weight: 600;
+}
+
+.chartSkeletonLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: var(--berry-text-muted, #8e8e93);
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+
+@keyframes chartSkeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ── Bottom tabs ─────────────────────────────────────────────────────────── */
 
 .bottomTabs {

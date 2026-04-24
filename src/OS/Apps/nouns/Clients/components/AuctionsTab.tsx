@@ -16,6 +16,7 @@ import { weiToEth, formatEth, clientColor, clientDisplayName } from '../utils';
 import { EthTooltip } from './ChartTooltips';
 import { ClientTick } from './ClientTick';
 import { ClientAvatar } from './ClientAvatar';
+import { ChartSkeleton } from './ChartSkeleton';
 import styles from '../Clients.module.css';
 
 /** Recharts LabelFormatter-compatible formatters */
@@ -27,9 +28,20 @@ interface AuctionsTabProps {
   clientMetadata?: ClientMetadataMap;
   clients?: ClientData[];
   pendingRevenueEth: number | null;
+  chartsLoading: boolean;
+  chartsError: boolean;
 }
 
-export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendingRevenueEth }: AuctionsTabProps) {
+export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, clientMetadata, clients, pendingRevenueEth, chartsLoading, chartsError }: AuctionsTabProps) {
+  const hasBidData = !!cycleAuctionsData && cycleAuctionsData.bidsByClient.length > 0;
+  const hasWinData = !!cycleAuctionsData && cycleAuctionsData.winsByClient.length > 0;
+  // Show skeleton while upstream is loading or errored — users need to see
+  // *something* rather than a silently empty tab.
+  const showBidsSkeleton = !hasBidData && (chartsLoading || chartsError);
+  const showWinsSkeleton = !hasWinData && (chartsLoading || chartsError);
+  const showRevenueSkeleton = !hasWinData && (chartsLoading || chartsError);
+  const renderChartsRow =
+    hasBidData || hasWinData || showBidsSkeleton || showWinsSkeleton || showRevenueSkeleton;
   const {
     execute: executeAuctionUpdate,
     isPending: isAuctionPending,
@@ -43,15 +55,15 @@ export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, client
   return (
     <>
       {/* Auction distribution charts */}
-      {cycleAuctionsData && (cycleAuctionsData.winsByClient.length > 0 || cycleAuctionsData.bidsByClient.length > 0) && (
+      {renderChartsRow && (
         <div className={styles.chartsRowTriple}>
-          {cycleAuctionsData.bidsByClient.length > 0 && (
+          {hasBidData ? (
             <div className={styles.chartCard}>
               <div className={styles.chartTitle}>Bids by Client</div>
               <div className={styles.chartContainer}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={cycleAuctionsData.bidsByClient.map((b) => ({
+                    data={cycleAuctionsData!.bidsByClient.map((b) => ({
                       ...b,
                       name: clientDisplayName(b.clientId, b.name),
                       color: clientColor(b.clientId),
@@ -59,11 +71,11 @@ export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, client
                     margin={{ top: 16, right: 8, bottom: 4, left: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
-                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.bidsByClient.map((b) => ({ ...b, name: clientDisplayName(b.clientId, b.name) }))} clients={clients} />} interval={0} height={60} />
+                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData!.bidsByClient.map((b) => ({ ...b, name: clientDisplayName(b.clientId, b.name) }))} clients={clients} />} interval={0} height={60} />
                     <YAxis tick={{ fontSize: 10 }} width={40} />
                     <Tooltip />
                     <Bar dataKey="bidCount" name="Bids" radius={[3, 3, 0, 0]}>
-                      {cycleAuctionsData.bidsByClient.map((entry, i) => (
+                      {cycleAuctionsData!.bidsByClient.map((entry, i) => (
                         <Cell key={i} fill={clientColor(entry.clientId)} />
                       ))}
                       <LabelList dataKey="bidCount" position="top" fontSize={9} formatter={countFormatter} />
@@ -72,15 +84,17 @@ export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, client
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          ) : showBidsSkeleton ? (
+            <ChartSkeleton title="Bids by Client" error={chartsError} />
+          ) : null}
 
-          {cycleAuctionsData.winsByClient.length > 0 && (
+          {hasWinData ? (
             <div className={styles.chartCard}>
               <div className={styles.chartTitle}>Winning Bids by Client</div>
               <div className={styles.chartContainer}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={cycleAuctionsData.winsByClient.map((w) => ({
+                    data={cycleAuctionsData!.winsByClient.map((w) => ({
                       ...w,
                       name: clientDisplayName(w.clientId, w.name),
                       color: clientColor(w.clientId),
@@ -88,11 +102,11 @@ export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, client
                     margin={{ top: 16, right: 8, bottom: 4, left: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
-                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.winsByClient.map((w) => ({ ...w, name: clientDisplayName(w.clientId, w.name) }))} clients={clients} />} interval={0} height={60} />
+                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData!.winsByClient.map((w) => ({ ...w, name: clientDisplayName(w.clientId, w.name) }))} clients={clients} />} interval={0} height={60} />
                     <YAxis tick={{ fontSize: 10 }} width={30} allowDecimals={false} />
                     <Tooltip />
                     <Bar dataKey="winCount" name="Wins" radius={[3, 3, 0, 0]}>
-                      {cycleAuctionsData.winsByClient.map((entry, i) => (
+                      {cycleAuctionsData!.winsByClient.map((entry, i) => (
                         <Cell key={i} fill={clientColor(entry.clientId)} />
                       ))}
                       <LabelList dataKey="winCount" position="top" fontSize={9} />
@@ -101,16 +115,18 @@ export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, client
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          ) : showWinsSkeleton ? (
+            <ChartSkeleton title="Winning Bids by Client" error={chartsError} />
+          ) : null}
 
 
-          {cycleAuctionsData.winsByClient.length > 0 && (
+          {hasWinData ? (
             <div className={styles.chartCard}>
               <div className={styles.chartTitle}>DAO Revenue by Client (ETH)</div>
               <div className={styles.chartContainer}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={cycleAuctionsData.winsByClient.map((w) => ({
+                    data={cycleAuctionsData!.winsByClient.map((w) => ({
                       ...w,
                       name: clientDisplayName(w.clientId, w.name),
                       volume: weiToEth(w.winVolume || '0'),
@@ -119,11 +135,11 @@ export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, client
                     margin={{ top: 16, right: 8, bottom: 4, left: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--berry-border, #e5e5e5)" />
-                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData.winsByClient.map((w) => ({ ...w, name: clientDisplayName(w.clientId, w.name) }))} clients={clients} />} interval={0} height={60} />
+                    <XAxis dataKey="name" tick={<ClientTick clientMetadata={clientMetadata} chartData={cycleAuctionsData!.winsByClient.map((w) => ({ ...w, name: clientDisplayName(w.clientId, w.name) }))} clients={clients} />} interval={0} height={60} />
                     <YAxis tick={{ fontSize: 10 }} width={40} />
                     <Tooltip content={<EthTooltip />} />
                     <Bar dataKey="volume" name="Volume" radius={[3, 3, 0, 0]}>
-                      {cycleAuctionsData.winsByClient.map((entry, i) => (
+                      {cycleAuctionsData!.winsByClient.map((entry, i) => (
                         <Cell key={i} fill={clientColor(entry.clientId)} />
                       ))}
                       <LabelList dataKey="volume" position="top" fontSize={9} formatter={ethLabelFormatter} />
@@ -132,7 +148,9 @@ export const AuctionsTab = memo(function AuctionsTab({ cycleAuctionsData, client
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          ) : showRevenueSkeleton ? (
+            <ChartSkeleton title="DAO Revenue by Client" error={chartsError} />
+          ) : null}
         </div>
       )}
 

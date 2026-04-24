@@ -128,10 +128,12 @@ export function useChartData(
   // Eligibility check for a proposal using the contract's incentive quorum
   // (proposalEligibilityQuorumBps * adjustedTotalSupply / 10000), NOT the DAO governance quorum.
   // A DEFEATED proposal can still be eligible for client incentives if it meets this lower threshold.
+  // clientId <= 0 means "no client attribution" (either NULL from pre-clientId events
+  // or 0 sentinel from newer events); in both cases the proposer earns no reward.
   const getEligibility = useCallback((proposal: { clientId?: number; forVotes: string; status: string }) => {
     const isCancelled = ['CANCELLED', 'VETOED'].includes(proposal.status);
     if (isCancelled) return 'ineligible' as const;
-    if (proposal.clientId == null) return 'ineligible' as const;
+    if (proposal.clientId == null || proposal.clientId <= 0) return 'ineligible' as const;
     // If we don't have the incentive quorum yet, treat as pending
     if (incentiveQuorum == null) return 'pending' as const;
     const forVotes = Number(proposal.forVotes);
@@ -188,12 +190,14 @@ export function useChartData(
       }));
   }, [currentPeriodProposals]);
 
-  // Eligible count for current period
+  // Eligible count for current period.
+  // `withClient` matches the eligibility definition (clientId > 0 is attributed)
+  // so the "X/Y of Z" display stays self-consistent with the eligible filter.
   const eligibleCount = useMemo(() => {
     let eligible = 0, pending = 0;
     let withClient = 0;
     for (const p of currentPeriodProposals) {
-      if (p.clientId != null) withClient++;
+      if (p.clientId != null && p.clientId > 0) withClient++;
       const status = getEligibility(p);
       if (status === 'eligible') eligible++;
       else if (status === 'pending') pending++;
@@ -217,9 +221,14 @@ export function useChartData(
     const eligiblePropIds = new Set(eligibleProps.map((p) => Number(p.id)));
     const rewardPerProposal = eligibleProps.length > 0 ? proposalPool / eligibleProps.length : 0;
 
-    // Total eligible votes across all eligible proposals
+    // Only votes with an attributed client (clientId > 0) earn rewards on-chain.
+    // Votes with clientId === 0 (contract sentinel) or === -1 (API NULL sentinel)
+    // go to the unclaimed pool and must NOT dilute the per-vote reward or appear
+    // in the breakdown.
+    const isAttributed = (clientId: number) => clientId > 0;
+
     const totalEligibleVotes = votesByProposal
-      .filter((v) => eligiblePropIds.has(v.proposalId))
+      .filter((v) => eligiblePropIds.has(v.proposalId) && isAttributed(v.clientId))
       .reduce((sum, v) => sum + v.voteCount, 0);
     const rewardPerVote = totalEligibleVotes > 0 ? votePool / totalEligibleVotes : 0;
 
@@ -228,13 +237,15 @@ export function useChartData(
       const proposal = eligibleProps.find((p) => Number(p.id) === propId);
       if (!proposal) continue;
 
-      const propVotes = votesByProposal.filter((v) => v.proposalId === propId);
+      const propVotes = votesByProposal.filter(
+        (v) => v.proposalId === propId && isAttributed(v.clientId),
+      );
       const entries: ProposalBreakdownEntry[] = [];
 
       // Track which client IDs we've seen (for merging proposer + voter)
       const clientMap = new Map<number, ProposalBreakdownEntry>();
 
-      // Add voting clients (includes no-client votes with sentinel -1)
+      // Add voting clients — no-client rows are already filtered above
       for (const v of propVotes) {
         clientMap.set(v.clientId, {
           clientId: v.clientId,

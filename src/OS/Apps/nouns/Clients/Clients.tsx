@@ -49,6 +49,8 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
     totals, getSortedClients, rewardEconData, revenueData,
     votesByClient, proposalsByClient, currentPeriodProposals,
     getEligibility, eligibleCount, proposalBreakdowns,
+    proposalsChartLoading, votesChartLoading, rewardsChartLoading, auctionsChartLoading,
+    cycleVotesError, cycleAuctionsError,
   } = useDashboardData();
 
   // Client NFT ownership detection
@@ -262,6 +264,8 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
             clientMetadata={clientMetadata}
             clients={clients}
             pendingRevenueEth={pendingRevenueEth}
+            chartsLoading={auctionsChartLoading}
+            chartsError={cycleAuctionsError}
           />
         </div>
 
@@ -280,6 +284,10 @@ export function Clients({ windowId, initialState, onStateChange }: AppComponentP
             currentPeriodProposals={currentPeriodProposals}
             getEligibility={getEligibility}
             proposalBreakdowns={proposalBreakdowns}
+            proposalsChartLoading={proposalsChartLoading}
+            votesChartLoading={votesChartLoading}
+            rewardsChartLoading={rewardsChartLoading}
+            cycleVotesError={cycleVotesError}
           />
         </div>
 

@@ -37,12 +37,19 @@ export function useDashboardData() {
   // Fetch vote weight per client for the current reward cycle.
   // No args = server auto-determines eligible proposals from Ponder DB,
   // so this fetch starts immediately in parallel with proposals + contract reads.
-  const { data: cycleVotesData } = useCycleVotes();
+  const {
+    data: cycleVotesData,
+    isLoading: cycleVotesLoading,
+    isError: cycleVotesError,
+  } = useCycleVotes();
 
   // Fetch current cycle auction data
-  const { data: cycleAuctionsData } = useCycleAuctions(
-    nextAuctionIdForRevenue != null ? Number(nextAuctionIdForRevenue) : undefined,
-  );
+  const firstNounIdForCycle = nextAuctionIdForRevenue != null ? Number(nextAuctionIdForRevenue) : undefined;
+  const {
+    data: cycleAuctionsData,
+    isLoading: cycleAuctionsLoading,
+    isError: cycleAuctionsError,
+  } = useCycleAuctions(firstNounIdForCycle);
 
   // Fetch client metadata (favicons)
   const { data: clientMetadata } = useClientMetadata(clients);
@@ -178,6 +185,25 @@ export function useDashboardData() {
     };
   }, [proposalRewardParams, lastProposalRewardsUpdate, now, chartData.eligibleCount.eligible, chartData.eligibleCount.pending, qualifyingPendingCount, lastEligibleProposalTimestamp]);
 
+  // ── Loading flags per chart slot ──
+  // A chart is "loading" when upstream data hasn't arrived yet. These are
+  // consumed by *Tab components to decide skeleton vs chart vs hide.
+  //
+  //   proposalsChartLoading  — Camp proposals query hasn't returned
+  //   votesChartLoading      — /api/clients/cycle-votes hasn't returned
+  //   rewardsChartLoading    — breakdown deps (cycle-votes + wagmi reads) not all ready
+  //   auctionsChartLoading   — /api/clients/cycle-auctions hasn't returned
+  //                            (includes waiting on its prerequisite wagmi read)
+  const proposalsChartLoading = proposals === undefined;
+  const votesChartLoading = cycleVotesData === undefined && cycleVotesLoading;
+  const rewardsChartLoading =
+    cycleVotesData === undefined ||
+    pendingRevenue == null ||
+    proposalRewardParams == null ||
+    proposals === undefined;
+  const auctionsChartLoading =
+    firstNounIdForCycle === undefined || (cycleAuctionsData === undefined && cycleAuctionsLoading);
+
   return {
     // Loading / data
     clients,
@@ -197,6 +223,17 @@ export function useDashboardData() {
     cycleAuctionsData,
     cycleRewardsByClient,
     cycleProgress,
+
+    // Per-chart loading flags
+    proposalsChartLoading,
+    votesChartLoading,
+    rewardsChartLoading,
+    auctionsChartLoading,
+
+    // Error flags — surfaced so tabs can render an explicit failure state
+    // rather than silently collapsing to nothing when an API returns an error.
+    cycleVotesError,
+    cycleAuctionsError,
 
     // Chart data (spread all computed values)
     ...chartData,
