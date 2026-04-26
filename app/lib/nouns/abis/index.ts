@@ -9,6 +9,7 @@
 
 export { NounsTokenABI } from './NounsToken';
 export { NounsAuctionHouseABI } from './NounsAuctionHouse';
+export { NFTBackedTokenABI } from './NFTBackedToken';
 
 // ============================================================================
 // GOVERNANCE

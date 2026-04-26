@@ -30,6 +30,9 @@ export const NOUNS_ADDRESSES = {
   // Fork Contracts
   forkEscrow: '0x44d97D22B3d37d837cE4b22773aAd9d1566055D9' as const,
   forkDeployer: '0xcD65e61f70e0b1Aa433ca1d9A6FC2332e9e73cE3' as const,
+
+  // $nouns ERC-20 / NFT-backed token swap (proxy → impl 0xa219262Ba7843CBA309A9f37a289fd0314A1d535)
+  tokenSwap: '0x5c1760c98be951A4067DF234695c8014D8e7619C' as const,
 } as const;
 
 export type NounsContractName = keyof typeof NOUNS_ADDRESSES;
@@ -608,6 +611,55 @@ export const ERC20ABI = [
   },
 ] as const;
 
+/**
+ * Token Swap ABI (minimal — NFT-for-NFT only)
+ *
+ * Only the swap function and its supporting reads are exposed here. The same
+ * contract is also the $nouns ERC-20 with deposit/redeem (NFT ↔ ERC-20), but
+ * the ERC-20 side is effectively defunct and the Swap app does not surface
+ * those paths. The full ABI is preserved at abis/NFTBackedToken.ts for
+ * reference and indexer use.
+ *
+ * Approval: NFT approval (setApprovalForAll on the Nouns Token contract) is
+ * required before swap can pull the caller's NFTs.
+ */
+export const TokenSwapABI = [
+  {
+    inputs: [],
+    name: 'nft',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'paused',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'tokensIn', type: 'uint256[]' },
+      { name: 'tokensOut', type: 'uint256[]' },
+    ],
+    name: 'swap',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: false, name: 'tokensIn', type: 'uint256[]' },
+      { indexed: false, name: 'tokensOut', type: 'uint256[]' },
+      { indexed: true, name: 'to', type: 'address' },
+    ],
+    name: 'Swap',
+    type: 'event',
+  },
+] as const;
+
 // ============================================================================
 // CONTRACT CONFIGS (address + abi combined)
 // ============================================================================
@@ -628,6 +680,10 @@ export const NOUNS_CONTRACTS = {
   data: {
     address: NOUNS_ADDRESSES.data,
     abi: NounsDAODataABI,
+  },
+  tokenSwap: {
+    address: NOUNS_ADDRESSES.tokenSwap,
+    abi: TokenSwapABI,
   },
 } as const;
 

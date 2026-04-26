@@ -20,3 +20,6 @@ export {
 } from './useNoun';
 
 export { useEthPrice } from './useEthPrice';
+
+export { useSwapPool, type SwapPoolNoun } from './useSwapPool';
+export { useTokenSwap, type UseTokenSwapResult } from './useTokenSwap';

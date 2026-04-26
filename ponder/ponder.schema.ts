@@ -168,6 +168,33 @@ export const descriptorConfigChanges = onchainTable(
   })
 );
 
+/**
+ * $nouns NFT-backed token swap events.
+ * One row per Deposit / Redeem / Swap. Lets the activity feed distinguish
+ * these from ordinary Noun transfers, since underneath they look the same.
+ *   - deposit: Noun(s) into pool, $nouns minted    (tokensIn populated)
+ *   - redeem:  $nouns burned, Noun(s) out of pool (tokensOut populated)
+ *   - swap:    Noun(s) ↔ Noun(s)                  (both populated, equal length)
+ */
+export const tokenSwapEvents = onchainTable(
+  "token_swap_events",
+  (t) => ({
+    id: t.text().primaryKey(),
+    kind: t.text().notNull(),
+    actor: t.hex().notNull(),
+    tokensIn: t.json().$type<number[]>().notNull().default([]),
+    tokensOut: t.json().$type<number[]>().notNull().default([]),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    actorIdx: index().on(table.actor),
+    kindIdx: index().on(table.kind),
+    timestampIdx: index().on(table.blockTimestamp),
+  })
+);
+
 // =============================================================================
 // SUBGRAPH 2: GOVERNANCE
 // =============================================================================

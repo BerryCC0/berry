@@ -1,0 +1,22 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <!-- Background -->
+  <rect width="64" height="64" rx="12" fill="#ABDCE6"/>
+
+  <!-- Top arrow: right-pointing, Nouns red -->
+  <!-- Body bar -->
+  <rect x="8" y="24" width="28" height="8" fill="#D22209"/>
+  <!-- Arrowhead pixel staircase, rows widen toward the tip then taper -->
+  <rect x="36" y="20" width="8"  height="4" fill="#D22209"/>
+  <rect x="36" y="24" width="12" height="4" fill="#D22209"/>
+  <rect x="36" y="28" width="16" height="4" fill="#D22209"/>
+  <rect x="36" y="32" width="12" height="4" fill="#D22209"/>
+  <rect x="36" y="36" width="8"  height="4" fill="#D22209"/>
+
+  <!-- Bottom arrow: left-pointing, Nouns yellow -->
+  <rect x="28" y="44" width="28" height="8" fill="#FFC925"/>
+  <rect x="20" y="40" width="8"  height="4" fill="#FFC925"/>
+  <rect x="16" y="44" width="12" height="4" fill="#FFC925"/>
+  <rect x="12" y="48" width="16" height="4" fill="#FFC925"/>
+  <rect x="16" y="52" width="12" height="4" fill="#FFC925"/>
+  <rect x="20" y="56" width="8"  height="4" fill="#FFC925"/>
+</svg>

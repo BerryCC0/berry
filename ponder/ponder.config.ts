@@ -12,6 +12,7 @@ import { ClientRewardsABI } from "../app/lib/nouns/abis/ClientRewards";
 import { TokenBuyerABI } from "../app/lib/nouns/abis/TokenBuyer";
 import { PayerABI } from "../app/lib/nouns/abis/Payer";
 import { StreamFactoryABI } from "../app/lib/nouns/abis/StreamFactory";
+import { NFTBackedTokenABI } from "../app/lib/nouns/abis/NFTBackedToken";
 
 export default createConfig({
   database: {
@@ -115,6 +116,16 @@ export default createConfig({
       abi: StreamFactoryABI,
       address: "0x0fd206FC7A7dBcD5661157eDCb1FFDD0D02A61ff",
       startBlock: 15816284,
+    },
+
+    // $nouns ERC-20 / NFT-backed token. Same contract holds the swap pool and
+    // exposes deposit / redeem / swap. Lets the activity feed categorize what
+    // would otherwise look like plain Noun transfers.
+    TokenSwap: {
+      chain: "mainnet",
+      abi: NFTBackedTokenABI,
+      address: "0x5c1760c98be951A4067DF234695c8014D8e7619C",
+      startBlock: 20025445,
     },
   },
 });

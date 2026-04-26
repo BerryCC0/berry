@@ -130,6 +130,33 @@
       "any": "Qualquer {trait}"
     }
   },
+  "swap": {
+    "title": "Swap",
+    "pool": {
+      "title": "Pool ({count})",
+      "hint": "Pick Nouns to receive",
+      "empty": "No Nouns in the pool right now."
+    },
+    "owned": {
+      "title": "Your Nouns ({count})",
+      "hint": "Pick Nouns to send",
+      "emptyConnect": "Connect a wallet to see your Nouns.",
+      "emptyNone": "You don't hold any Nouns."
+    },
+    "actions": {
+      "connect": "Connect a wallet to swap.",
+      "prompt": "Pick Nouns to send (your wallet) and Nouns to receive (the pool). Equal counts.",
+      "ready": "Trade {inCount} → {outCount}",
+      "mismatch": "Trade {inCount} → {outCount} (counts must match)",
+      "button": "Swap",
+      "confirming": "Confirm in wallet…",
+      "approveOne": "Approve Noun #{id}",
+      "approvalNeeded": "{count} of {total} Nouns still need approval. Each needs its own transaction."
+    },
+    "tx": {
+      "success": "Transaction confirmed."
+    }
+  },
   "camp": {
     "title": "Camp",
     "tabs": {

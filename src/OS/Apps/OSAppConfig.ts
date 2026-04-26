@@ -27,6 +27,7 @@ const CrystalBall = lazy(() => import("./nouns/CrystalBall/CrystalBall").then(m 
 const Probe = lazy(() => import("./nouns/Probe/Probe").then(m => ({ default: m.Probe })));
 const Clients = lazy(() => import("./nouns/Clients/Clients").then(m => ({ default: m.Clients })));
 const BIM = lazy(() => import("./social/BIM/BIM").then(m => ({ default: m.BIM })));
+const Swap = lazy(() => import("./nouns/Swap/Swap").then(m => ({ default: m.Swap })));
 
 /**
  * Finder - File browser
@@ -525,8 +526,31 @@ const bimConfig: AppConfig = {
 };
 
 /**
+ * Swap - $nouns ERC-20 ↔ Noun NFT exchange
+ * Buy Nouns with $nouns, sell Nouns for $nouns, or trade Noun-for-Noun
+ * via the NFTBackedToken contract.
+ */
+const swapConfig: AppConfig = {
+  id: "swap",
+  name: "Swap",
+  icon: getIcon("swap"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 820,
+    height: 600,
+    minWidth: 520,
+    minHeight: 420,
+    isResizable: true,
+  },
+  permissions: ["network", "wallet"],
+  component: Swap,
+};
+
+/**
  * All OS app configurations
- * 
+ *
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
  */
 export const osAppConfigs: AppConfig[] = [
@@ -547,6 +571,7 @@ export const osAppConfigs: AppConfig[] = [
   probeConfig,
   clientsConfig,
   bimConfig,
+  swapConfig,
 ];
 
 /**
