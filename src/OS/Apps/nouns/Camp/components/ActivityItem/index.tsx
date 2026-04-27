@@ -24,6 +24,7 @@ import { VoteContent } from './VoteContent';
 import { ProposalLifecycleContent } from './ProposalLifecycleContent';
 import { CandidateContent } from './CandidateContent';
 import { TransferContent } from './TransferContent';
+import { SwapContent } from './SwapContent';
 import { AuctionContent } from './AuctionContent';
 import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
@@ -112,6 +113,9 @@ function ActivityItemInner({
       case 'noun_transfer':
       case 'noun_delegation':
         return <TransferContent {...contentProps} />;
+
+      case 'noun_swap':
+        return <SwapContent {...contentProps} />;
 
       case 'auction_settled':
       case 'auction_started':

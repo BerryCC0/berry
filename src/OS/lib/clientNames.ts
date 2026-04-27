@@ -33,6 +33,7 @@ export const CLIENT_REGISTRY: Record<number, ClientInfo> = {
   16: { name: 'Lighthouse' },
   18: { name: 'ANouns' },
   22: { name: 'Nouncil',        url: 'https://nouncil.club' },
+  37: { name: 'Noun.wtf',       url: 'https://noun.wtf' },
 };
 
 // Backwards-compatible flat name map derived from registry

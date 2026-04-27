@@ -161,6 +161,17 @@ interface ApiCandidateVersionRow {
   proposer_ens: string | null;
 }
 
+interface ApiSwapRow {
+  id: string;
+  kind: 'deposit' | 'redeem' | 'swap';
+  actor: string;
+  actor_ens: string | null;
+  tokens_in: number[] | null;
+  tokens_out: number[] | null;
+  block_timestamp: string;
+  tx_hash: string;
+}
+
 interface ActivityApiResponse {
   votes: ApiVoteRow[];
   proposalFeedback: ApiProposalFeedbackRow[];
@@ -173,6 +184,7 @@ interface ActivityApiResponse {
   auctions: ApiAuctionRow[];
   proposalVersions: ApiProposalVersionRow[];
   candidateVersions: ApiCandidateVersionRow[];
+  swaps: ApiSwapRow[];
 }
 
 // ============================================================================
@@ -680,6 +692,28 @@ function processProposalVersions(versions: ApiProposalVersionRow[]): ActivityIte
   return items;
 }
 
+function processSwaps(swaps: ApiSwapRow[]): ActivityItem[] {
+  return swaps.map(s => {
+    const tokensIn = (s.tokens_in ?? []).map(String);
+    const tokensOut = (s.tokens_out ?? []).map(String);
+    // For display: prefer outbound IDs (what the actor received) for the
+    // primary thumbnail, falling back to inbound for deposits.
+    const primaryNounId = tokensOut[0] ?? tokensIn[0];
+    return {
+      id: `swap-${s.id}`,
+      type: 'noun_swap' as const,
+      timestamp: String(s.block_timestamp),
+      actor: s.actor,
+      actorEns: s.actor_ens || undefined,
+      txHash: s.tx_hash,
+      swapKind: s.kind,
+      nounIdsIn: tokensIn,
+      nounIdsOut: tokensOut,
+      nounId: primaryNounId,
+    };
+  });
+}
+
 function processCandidateVersions(versions: ApiCandidateVersionRow[]): ActivityItem[] {
   const items: ActivityItem[] = [];
 
@@ -760,6 +794,7 @@ export function useActivityFeed(first: number = 30) {
       allItems.push(...processTransfers(data.transfers || []));
       allItems.push(...processDelegations(data.delegations || []));
       allItems.push(...processAuctions(data.auctions || []).items);
+      allItems.push(...processSwaps(data.swaps || []));
 
       allItems.push(...processProposalVersions(data.proposalVersions || []));
       allItems.push(...processCandidateVersions(data.candidateVersions || []));

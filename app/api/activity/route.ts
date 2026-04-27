@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Fetch all activity types in parallel
     const [voteRows, feedbackRows, proposalRows, candidateRows, candidateFbRows,
            signatureRows, transferRows, delegationRows, auctionRows, proposalVersionRows,
-           candidateVersionRows] = await Promise.all([
+           candidateVersionRows, swapRows] = await Promise.all([
       // Votes
       sql`
         SELECT v.id, v.voter, v.proposal_id, v.support, v.votes, v.reason,
@@ -91,7 +91,9 @@ export async function GET(request: NextRequest) {
         ORDER BY cs.block_timestamp DESC
         LIMIT ${limit}
       `,
-      // Transfers (exclude mints, auction settlements, and treasury-to-auction)
+      // Transfers (exclude mints, auction settlements, treasury-to-auction,
+      // and any transfer that's part of a $nouns Deposit/Redeem/Swap event —
+      // those are surfaced separately via the swaps feed below).
       sql`
         SELECT t.id, t."from", t."to", t.token_id, t.block_timestamp, t.tx_hash,
                ef.name as from_ens,
@@ -104,6 +106,10 @@ export async function GET(request: NextRequest) {
           AND t."from" != '0x830bd73e4184cef73443c15111a1df14e495c706'
           AND t."to" != '0x0000000000000000000000000000000000000000'
           AND NOT (t."from" = '0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71' AND t."to" = '0x830bd73e4184cef73443c15111a1df14e495c706')
+          AND NOT EXISTS (
+            SELECT 1 FROM ponder_live.token_swap_events s
+            WHERE s.tx_hash = t.tx_hash
+          )
         ORDER BY t.block_timestamp DESC
         LIMIT ${limit}
       `,
@@ -164,6 +170,19 @@ export async function GET(request: NextRequest) {
         ORDER BY cv.block_timestamp DESC
         LIMIT ${limit}
       `,
+      // $nouns swap activity (Deposit / Redeem / Swap events on the
+      // NFTBackedToken contract). Replaces the constituent Noun Transfers
+      // that would otherwise show up in the transfers feed above.
+      sql`
+        SELECT s.id, s.kind, s.actor, s.tokens_in, s.tokens_out,
+               s.block_timestamp, s.tx_hash,
+               e.name as actor_ens
+        FROM ponder_live.token_swap_events s
+        LEFT JOIN ponder_live.ens_names e ON LOWER(s.actor) = LOWER(e.address)
+        WHERE s.block_timestamp >= ${since}
+        ORDER BY s.block_timestamp DESC
+        LIMIT ${limit}
+      `,
     ]);
 
     return NextResponse.json({
@@ -178,6 +197,7 @@ export async function GET(request: NextRequest) {
       auctions: auctionRows,
       proposalVersions: proposalVersionRows,
       candidateVersions: candidateVersionRows,
+      swaps: swapRows,
     });
   } catch (error) {
     console.error('Failed to fetch activity:', error);

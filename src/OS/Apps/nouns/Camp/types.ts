@@ -310,6 +310,7 @@ export type ActivityType =
   | 'proposal_executed'
   | 'noun_transfer'
   | 'noun_delegation'
+  | 'noun_swap'
   | 'auction_settled'
   | 'auction_started';
 
@@ -346,6 +347,13 @@ export interface ActivityItem {
   isBulkTransfer?: boolean;
   nounIds?: string[];
   fromAddresses?: string[];
+
+  // Swap-specific ($nouns NFTBackedToken: deposit/redeem/swap)
+  swapKind?: 'deposit' | 'redeem' | 'swap';
+  /** Noun IDs sent INTO the contract (populated for deposit + swap). */
+  nounIdsIn?: string[];
+  /** Noun IDs sent OUT of the contract (populated for redeem + swap). */
+  nounIdsOut?: string[];
   
   // Auction specific
   winningBid?: string;
