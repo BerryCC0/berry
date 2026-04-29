@@ -485,8 +485,8 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
               case 'activity':
                 return (
                   <>
-                    {feedbackContent}
                     {commentBoxContent}
+                    {feedbackContent}
                   </>
                 );
               case 'sponsors':
@@ -524,8 +524,8 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
           {transactionsContent}
           {metaContent}
           {sponsorsContent}
-          {feedbackContent}
           {commentBoxContent}
+          {feedbackContent}
         </div>
       </div>
 
