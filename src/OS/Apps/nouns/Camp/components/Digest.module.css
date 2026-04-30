@@ -286,36 +286,23 @@
   gap: 12px;
 }
 
-.voterIdentity {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.voterAvatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.voterAvatarPlaceholder {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--berry-bg-tertiary);
-}
-
-.voterName {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--berry-text-primary);
-}
-
 .voterVotes {
   font-size: 11px;
   color: var(--berry-text-tertiary);
   flex-shrink: 0;
+}
+
+/* Infinite-scroll affordances for the voters tab */
+.scrollSentinel {
+  height: 1px;
+  width: 100%;
+}
+
+.loadingMore {
+  text-align: center;
+  padding: 12px;
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
 }
 
 /* Loading state */

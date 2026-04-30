@@ -6,12 +6,10 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { formatAddress } from '@/shared/format';
-import { useEnsName, useEnsAvatar } from '@/OS/hooks/useEnsData';
-import { addressToAvatar } from '../utils/addressAvatar';
-import { useVoters } from '../hooks';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useInfiniteVoters } from '../hooks';
 import { BerryLoader } from '../components/BerryLoader';
+import { VoterIdentity } from '../components/VoterIdentity';
 import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarSelect } from '../components/CampToolbar';
 import type { Voter, VoterSort } from '../types';
 import type { CampToolbarContext } from '../Camp';
@@ -23,31 +21,6 @@ const TREASURY_ADDRESSES = [
   '0x0bc3807ec262cb779b38d65b38158acc3bfede10', // treasuryV1
 ];
 
-/**
- * VoterIdentity - Shows ENS avatar and name for a voter
- */
-function VoterIdentity({ address }: { address: string }) {
-  const ensName = useEnsName(address);
-  const ensAvatar = useEnsAvatar(address);
-  const fallback = useMemo(() => addressToAvatar(address), [address]);
-  const src = ensAvatar || fallback;
-
-  const handleError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (fallback && e.currentTarget.src !== fallback) {
-      e.currentTarget.src = fallback;
-    }
-  }, [fallback]);
-
-  const displayName = formatAddress(address, ensName);
-
-  return (
-    <div className={styles.voterIdentity}>
-      <img src={src} alt="" className={styles.voterAvatar} onError={handleError} />
-      <span className={styles.voterName}>{displayName}</span>
-    </div>
-  );
-}
-
 interface VoterListViewProps {
   onNavigate: (path: string) => void;
   onBack: () => void;
@@ -57,15 +30,44 @@ interface VoterListViewProps {
 export function VoterListView({ onNavigate, onBack, toolbar }: VoterListViewProps) {
   const [sort, setSort] = useState<VoterSort>('power');
 
-  const { data: voters, isLoading, error } = useVoters(100, sort);
+  const {
+    voters,
+    isLoading,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteVoters(sort);
   const { isModern } = useToolbar();
   const tb = toolbar;
-  
+
   // Filter out treasury addresses from voters
   const filteredVoters = useMemo(() => {
-    if (!voters) return [];
+    if (!voters || voters.length === 0) return [];
     return voters.filter(v => !TREASURY_ADDRESSES.includes(v.id.toLowerCase()));
   }, [voters]);
+
+  // Infinite scroll: when the sentinel becomes visible inside .list, fetch next page.
+  const listRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const root = listRef.current;
+    if (!sentinel || !root || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { root, rootMargin: '200px', threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderVoterItem = (voter: Voter) => {
     const votes = Number(voter.delegatedVotes);
@@ -133,11 +135,17 @@ export function VoterListView({ onNavigate, onBack, toolbar }: VoterListViewProp
         </select>
       </div>}
 
-      <div className={styles.list}>
-        {isLoading ? (
+      <div className={styles.list} ref={listRef}>
+        {isLoading && filteredVoters.length === 0 ? (
           <BerryLoader />
         ) : filteredVoters.length > 0 ? (
-          filteredVoters.map(voter => renderVoterItem(voter))
+          <>
+            {filteredVoters.map(voter => renderVoterItem(voter))}
+            {hasNextPage && <div ref={sentinelRef} className={styles.scrollSentinel} />}
+            {isFetchingNextPage && (
+              <div className={styles.loadingMore}>Loading more...</div>
+            )}
+          </>
         ) : (
           <div className={styles.empty}>No voters found</div>
         )}

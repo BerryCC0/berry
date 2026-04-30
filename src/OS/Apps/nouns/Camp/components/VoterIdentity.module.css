@@ -1,0 +1,31 @@
+/**
+ * VoterIdentity Styles
+ * Avatar + name pair for voter rows
+ */
+
+.voterIdentity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.voterAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
+}
+
+.voterName {
+  font-family: var(--berry-font-system);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}

@@ -5,8 +5,11 @@
 
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import type { Voter, VoterSort, NounWithSeed } from '../types';
+
+/** Default page size for paginated voter queries */
+export const VOTERS_PAGE_SIZE = 50;
 
 // ============================================================================
 // TYPES
@@ -93,6 +96,22 @@ interface SponsoredProposal {
 }
 
 /**
+ * Noun delegated to a voter (with seed and current owner).
+ * The owner is the *current* delegator for this Noun.
+ */
+interface ApiNounRepresented {
+  id: number;
+  seed: {
+    background: number;
+    body: number;
+    accessory: number;
+    head: number;
+    glasses: number;
+  };
+  owner: string | null;
+}
+
+/**
  * Full voter detail response from API (already camelCase)
  */
 interface ApiVoterDetailResponse {
@@ -100,7 +119,7 @@ interface ApiVoterDetailResponse {
   delegatedVotes: string;
   totalVotes: string;
   ensName: string | null;
-  nounsRepresented: number[];
+  nounsRepresented: ApiNounRepresented[];
   recentVotes: ApiRecentVote[];
   proposals: ProposalSummary[];
   candidates: CandidateSummary[];
@@ -126,11 +145,12 @@ interface VoterResult extends Voter {
 
 async function fetchVoters(
   first: number,
-  _skip: number,
+  skip: number,
   sort: VoterSort
 ): Promise<Voter[]> {
   const params = new URLSearchParams({
     limit: String(first),
+    offset: String(skip),
     sort,
   });
 
@@ -167,7 +187,10 @@ async function fetchVoter(address: string): Promise<VoterResult> {
       ? v.nounsRepresented.length
       : 0,
     nounsRepresented: Array.isArray(v.nounsRepresented)
-      ? v.nounsRepresented.map((id: number) => ({ id: String(id) }))
+      ? v.nounsRepresented.map((n: ApiNounRepresented) => ({
+          id: String(n.id),
+          seed: n.seed,
+        }))
       : [],
     votes: [],
     recentVotes: v.recentVotes || [],
@@ -193,6 +216,46 @@ export function useVoters(first: number = 50, sort: VoterSort = 'power') {
     queryFn: () => fetchVoters(first, 0, sort),
     staleTime: 60000,
   });
+}
+
+/**
+ * useInfiniteVoters
+ *
+ * Paginated voter list using offset-based pagination. Each page returns up to
+ * `pageSize` voters; when a page returns fewer than `pageSize` rows we know we've
+ * reached the end. Use this for infinite-scroll surfaces (Digest voters tab,
+ * VoterListView) instead of `useVoters`, which fetches a single fixed-size page.
+ *
+ * Returns flattened `voters: Voter[]` for convenience plus the standard
+ * react-query infinite-query helpers (`fetchNextPage`, `hasNextPage`,
+ * `isFetchingNextPage`).
+ */
+export function useInfiniteVoters(
+  sort: VoterSort = 'power',
+  pageSize: number = VOTERS_PAGE_SIZE,
+) {
+  const query = useInfiniteQuery({
+    queryKey: ['camp', 'voters-infinite', sort, pageSize],
+    queryFn: ({ pageParam = 0 }) => fetchVoters(pageSize, pageParam as number, sort),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      // A short page = last page. Otherwise next offset is the running total.
+      if (!lastPage || lastPage.length < pageSize) return undefined;
+      return allPages.reduce((sum, page) => sum + page.length, 0);
+    },
+    staleTime: 60000,
+  });
+
+  const voters = query.data?.pages.flat() ?? [];
+
+  return {
+    voters,
+    isLoading: query.isLoading,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: !!query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
+    error: query.error,
+  };
 }
 
 export function useVoter(address: string | null) {

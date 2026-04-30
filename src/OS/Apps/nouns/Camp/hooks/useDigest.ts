@@ -13,9 +13,9 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useAccount, useBlockNumber } from 'wagmi';
-import { useProposals, useCandidates, useVoter, useVoters } from './index';
+import { useProposals, useCandidates, useVoter, useInfiniteVoters } from './index';
 import { estimateEndTime, estimateStartTime, formatRelativeTime } from '../utils/formatUtils';
 import type { Proposal, Candidate, Voter, DigestTab, DigestSection } from '../types';
 
@@ -34,14 +34,19 @@ export interface UseDigestReturn {
   // Tab state
   activeTab: DigestTab;
   setActiveTab: (tab: DigestTab) => void;
-  
+
   // Data
   proposals: Proposal[] | undefined;
   candidates: Candidate[] | undefined;
   filteredVoters: Voter[];
   sections: DigestSection[];
   currentBlock: number;
-  
+
+  // Voter pagination
+  hasMoreVoters: boolean;
+  fetchMoreVoters: () => void;
+  isFetchingMoreVoters: boolean;
+
   // Loading/error states
   isLoading: boolean;
   hasError: boolean;
@@ -51,10 +56,10 @@ export interface UseDigestReturn {
   candidatesError: unknown;
   votersLoading: boolean;
   votersError: unknown;
-  
+
   // Section management
   toggleSection: (sectionId: string) => void;
-  
+
   // Utility functions (bound to current state)
   getEndTime: (proposal: Proposal) => number;
   getStartTime: (proposal: Proposal) => number;
@@ -73,7 +78,14 @@ export function useDigest({ activeTab: controlledTab, onTabChange }: UseDigestPr
   // Fetch data
   const { data: proposals, isLoading: proposalsLoading, error: proposalsError } = useProposals(50, 'all', 'newest');
   const { data: candidates, isLoading: candidatesLoading, error: candidatesError } = useCandidates(50);
-  const { data: voters, isLoading: votersLoading, error: votersError } = useVoters(50, 'power');
+  const {
+    voters,
+    isLoading: votersLoading,
+    error: votersError,
+    hasNextPage: hasMoreVoters,
+    fetchNextPage: fetchMoreVoters,
+    isFetchingNextPage: isFetchingMoreVoters,
+  } = useInfiniteVoters('power');
   const { data: voterData } = useVoter(address || null);
   const { data: blockNumber } = useBlockNumber({ watch: true });
   
@@ -194,9 +206,16 @@ export function useDigest({ activeTab: controlledTab, onTabChange }: UseDigestPr
   
   // Filter out treasury addresses from voters
   const filteredVoters = useMemo(() => {
-    if (!voters) return [];
+    if (!voters || voters.length === 0) return [];
     return voters.filter(v => !TREASURY_ADDRESSES.includes(v.id.toLowerCase()));
   }, [voters]);
+
+  // Stable callback wrapping fetchNextPage so consumers can safely use it as
+  // a dependency in IntersectionObserver effects without recreating observers
+  // on every render.
+  const fetchMoreVotersStable = useCallback(() => {
+    fetchMoreVoters();
+  }, [fetchMoreVoters]);
   
   // Bound utility functions — prefer stored timestamps, fall back to block estimation
   const getEndTime = (proposal: Proposal) => {
@@ -217,6 +236,9 @@ export function useDigest({ activeTab: controlledTab, onTabChange }: UseDigestPr
     filteredVoters,
     sections,
     currentBlock,
+    hasMoreVoters,
+    fetchMoreVoters: fetchMoreVotersStable,
+    isFetchingMoreVoters,
     isLoading,
     hasError,
     proposalsLoading,

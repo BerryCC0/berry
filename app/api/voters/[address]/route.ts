@@ -79,8 +79,8 @@ export async function GET(
   try {
     const sql = ponderSql();
 
-    // Fetch voter, votes, proposals, candidates, and nouns owned in parallel
-    const [voterRows, voteRows, proposalRows, candidateRows, nounsOwnedRows, delegationRows, sponsoredRows] = await Promise.all([
+    // Fetch voter, votes, proposals, candidates, nouns owned, represented Nouns, and delegating-to in parallel
+    const [voterRows, voteRows, proposalRows, candidateRows, nounsOwnedRows, sponsoredRows, nounsRepresentedRows, delegatingToRows] = await Promise.all([
       // Voter/delegate data
       sql`
         SELECT address, ens_name, delegated_votes, nouns_represented,
@@ -123,15 +123,6 @@ export async function GET(
         WHERE owner = ${addr}
         ORDER BY id ASC
       `,
-      // Who is delegating to this address (delegators)
-      sql`
-        SELECT DISTINCT delegator
-        FROM ponder_live.delegations
-        WHERE to_delegate = ${addr}
-        AND delegator != ${addr}
-        ORDER BY delegator
-        LIMIT 50
-      `,
       // Proposals where this address is a signer (sponsored)
       sql`
         SELECT id, title, status, proposer, for_votes, against_votes,
@@ -141,18 +132,49 @@ export async function GET(
         ORDER BY created_timestamp DESC
         LIMIT 50
       `,
+      // Currently-represented Nouns: every Noun whose voting power is presently
+      // delegated to this address. The indexer's voters.nouns_represented column
+      // isn't maintained, so we derive it from authoritative state:
+      //   - Each owner's CURRENT delegate = latest toDelegate in delegations
+      //     (or owner itself if no delegation event exists — the contract default
+      //     for auction winners and other implicit self-delegators).
+      //   - A Noun is represented by `addr` iff its owner's current delegate is `addr`.
+      // Owners != addr in this set are the active delegators.
+      sql`
+        WITH latest_delegations AS (
+          SELECT DISTINCT ON (delegator) delegator, to_delegate
+          FROM ponder_live.delegations
+          ORDER BY delegator, block_timestamp DESC, block_number DESC
+        )
+        SELECT n.id, n.background, n.body, n.accessory, n.head, n.glasses, n.owner
+        FROM ponder_live.nouns n
+        LEFT JOIN latest_delegations ld ON ld.delegator = n.owner
+        WHERE n.burned = false
+          AND n.owner IS NOT NULL
+          AND COALESCE(ld.to_delegate, n.owner) = ${addr}
+        ORDER BY n.id ASC
+      `,
+      // Who this address is delegating to (most recent delegation FROM this address)
+      sql`
+        SELECT to_delegate
+        FROM ponder_live.delegations
+        WHERE delegator = ${addr}
+        ORDER BY block_timestamp DESC
+        LIMIT 1
+      `,
     ]);
 
     const voter = voterRows[0] || null;
 
-    // Find who this address is delegating to (most recent delegation FROM this address)
-    const delegatingToRows = await sql`
-      SELECT to_delegate
-      FROM ponder_live.delegations
-      WHERE delegator = ${addr}
-      ORDER BY block_timestamp DESC
-      LIMIT 1
-    `;
+    // Active delegators = unique current owners of represented Nouns, excluding self.
+    const delegators = Array.from(
+      new Set(
+        nounsRepresentedRows
+          .map((n: any) => (n.owner ? String(n.owner).toLowerCase() : null))
+          .filter((o: string | null): o is string => !!o && o !== addr)
+      )
+    ).sort();
+
     const delegatingTo = delegatingToRows[0]?.to_delegate || null;
 
     // Fetch dynamic quorum for active lifecycle proposals and sponsored proposals
@@ -165,7 +187,17 @@ export async function GET(
         delegatedVotes: voter?.delegated_votes?.toString() || '0',
         totalVotes: voter?.total_votes || 0,
         ensName: voter?.ens_name || null,
-        nounsRepresented: voter?.nouns_represented || [],
+        nounsRepresented: nounsRepresentedRows.map((n: any) => ({
+          id: Number(n.id),
+          seed: {
+            background: n.background,
+            body: n.body,
+            accessory: n.accessory,
+            head: n.head,
+            glasses: n.glasses,
+          },
+          owner: n.owner ? String(n.owner).toLowerCase() : null,
+        })),
         recentVotes: voteRows.map((v: any) => ({
           id: v.id,
           voter: v.voter,
@@ -226,7 +258,7 @@ export async function GET(
           },
         })),
         delegatingTo,
-        delegators: delegationRows.map((d: any) => d.delegator),
+        delegators,
       },
     });
   } catch (error) {

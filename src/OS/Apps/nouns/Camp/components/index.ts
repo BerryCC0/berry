@@ -7,6 +7,7 @@ export { Digest } from './Digest';
 export { ProposalCard } from './ProposalCard';
 export { TransactionSummary } from './TransactionSummary';
 export { VoterCard } from './VoterCard';
+export { VoterIdentity } from './VoterIdentity';
 export { CandidateCard } from './CandidateCard';
 export { ShareButton } from './ShareButton';
 export { MarkdownRenderer } from './MarkdownRenderer';

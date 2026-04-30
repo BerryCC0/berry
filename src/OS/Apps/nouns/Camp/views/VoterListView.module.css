@@ -130,3 +130,16 @@
   color: var(--berry-error);
   margin-top: 4px;
 }
+
+/* Infinite-scroll affordances */
+.scrollSentinel {
+  height: 1px;
+  width: 100%;
+}
+
+.loadingMore {
+  text-align: center;
+  padding: 12px;
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}

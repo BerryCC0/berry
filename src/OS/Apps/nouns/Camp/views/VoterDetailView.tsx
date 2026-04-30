@@ -288,21 +288,26 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
             </div>
           )}
 
-          {/* Nouns Grid */}
+          {/* Nouns Represented (held by self + delegated to this address) */}
           {nounsRepresented.length > 0 && (
-            <div className={styles.nounsGrid}>
-              {[...nounsRepresented]
-                .sort((a, b) => Number(a.id) - Number(b.id))
-                .map((noun) => (
-                <div key={noun.id} className={styles.nounCard}>
-                  {noun.seed ? (
-                    <NounImage seed={noun.seed} size={48} className={styles.nounImage} />
-                  ) : (
-                    <div className={styles.nounImagePlaceholder} />
-                  )}
-                  <span className={styles.nounId}>{noun.id}</span>
-                </div>
-              ))}
+            <div className={styles.nounsSection}>
+              <span className={styles.nounsLabel}>
+                Nouns represented ({nounsRepresented.length})
+              </span>
+              <div className={styles.nounsGrid}>
+                {[...nounsRepresented]
+                  .sort((a, b) => Number(a.id) - Number(b.id))
+                  .map((noun) => (
+                  <div key={noun.id} className={styles.nounCard}>
+                    {noun.seed ? (
+                      <NounImage seed={noun.seed} size={48} className={styles.nounImage} />
+                    ) : (
+                      <div className={styles.nounImagePlaceholder} />
+                    )}
+                    <span className={styles.nounId}>{noun.id}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

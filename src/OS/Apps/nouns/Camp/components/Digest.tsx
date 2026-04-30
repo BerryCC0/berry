@@ -9,12 +9,14 @@
 
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useDigest } from '../hooks/useDigest';
-import { useEnsName, useEnsAvatar } from '@/OS/hooks/useEnsData';
+import { useEnsName } from '@/OS/hooks/useEnsData';
 import { formatSlugToTitle, formatAddress } from '../utils/formatUtils';
 import { getClientName } from '@/OS/lib/clientNames';
 import { getProposalStatusBadge, getVoteBarWidths } from '../utils/proposalStatus';
 import { BerryLoader } from './BerryLoader';
+import { VoterIdentity } from './VoterIdentity';
 import type { Proposal, Candidate, Voter, DigestTab } from '../types';
 import styles from './Digest.module.css';
 
@@ -25,27 +27,6 @@ function ENSName({ address }: { address: string }) {
   const ensName = useEnsName(address);
 
   return <>{formatAddress(address, ensName)}</>;
-}
-
-/**
- * VoterIdentity - Shows ENS avatar and name for a voter
- */
-function VoterIdentity({ address }: { address: string }) {
-  const ensName = useEnsName(address);
-  const ensAvatar = useEnsAvatar(address);
-
-  const displayName = formatAddress(address, ensName);
-  
-  return (
-    <div className={styles.voterIdentity}>
-      {ensAvatar ? (
-        <img src={ensAvatar} alt="" className={styles.voterAvatar} />
-      ) : (
-        <div className={styles.voterAvatarPlaceholder} />
-      )}
-      <span className={styles.voterName}>{displayName}</span>
-    </div>
-  );
 }
 
 interface DigestProps {
@@ -65,6 +46,9 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
     filteredVoters,
     sections,
     currentBlock,
+    hasMoreVoters,
+    fetchMoreVoters,
+    isFetchingMoreVoters,
     isLoading,
     hasError,
     proposalsLoading,
@@ -78,6 +62,30 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
     getStartTime,
     getRelativeTime,
   } = useDigest({ activeTab: controlledTab, onTabChange });
+
+  // Infinite-scroll sentinel for the voters tab. The Digest's `.content` div is
+  // the scroll container (overflow-y: auto), so we use it as the observer root.
+  const contentRef = useRef<HTMLDivElement>(null);
+  const votersSentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeTab !== 'voters') return;
+    const sentinel = votersSentinelRef.current;
+    const root = contentRef.current;
+    if (!sentinel || !root || !hasMoreVoters || isFetchingMoreVoters) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchMoreVoters();
+        }
+      },
+      { root, rootMargin: '200px', threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, hasMoreVoters, isFetchingMoreVoters, fetchMoreVoters]);
   
   const handleProposalClick = (proposal: Proposal) => {
     onNavigate(`proposal/${proposal.id}`);
@@ -238,13 +246,18 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
         );
       
       case 'voters':
-        if (votersLoading) return <BerryLoader />;
+        if (votersLoading && filteredVoters.length === 0) return <BerryLoader />;
         if (votersError) return <div className={styles.error}>Failed to load voters</div>;
         return (
           <div className={styles.listContent}>
             {filteredVoters.map(voter => renderVoterItem(voter))}
-            {filteredVoters.length === 0 && (
+            {filteredVoters.length === 0 && !votersLoading && (
               <div className={styles.empty}>No voters found</div>
+            )}
+            {/* Infinite-scroll sentinel — when this enters the viewport we fetch the next page. */}
+            {hasMoreVoters && <div ref={votersSentinelRef} className={styles.scrollSentinel} />}
+            {isFetchingMoreVoters && (
+              <div className={styles.loadingMore}>Loading more...</div>
             )}
           </div>
         );
@@ -322,7 +335,7 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
       )}
       
       {/* Content */}
-      <div className={styles.content}>
+      <div className={styles.content} ref={contentRef}>
         {renderTabContent()}
       </div>
     </div>

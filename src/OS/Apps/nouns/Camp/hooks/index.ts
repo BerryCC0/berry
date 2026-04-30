@@ -1,6 +1,6 @@
 export { useActivityFeed } from './useActivityFeed';
 export { useProposals, useProposal } from './useProposals';
-export { useVoters, useVoter } from './useVoters';
+export { useVoters, useVoter, useInfiniteVoters, VOTERS_PAGE_SIZE } from './useVoters';
 export { useCandidates, useCandidate } from './useCandidates';
 export { useSignal, type SupportType } from './useSignal';
 export { useSponsorCandidate } from './useSponsorCandidate';
