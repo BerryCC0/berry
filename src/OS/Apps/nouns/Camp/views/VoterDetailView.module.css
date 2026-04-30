@@ -192,10 +192,14 @@
 .delegatorsList {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px 10px;
+  align-items: center;
 }
 
 .addressLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--berry-font-mono);
   font-size: 11px;
   color: var(--berry-accent);
@@ -204,6 +208,17 @@
 
 .addressLink:hover {
   text-decoration: underline;
+}
+
+/* Tiny avatar prefix shown next to delegator addresses. Sized to align with
+   the 11px monospace text so it reads as part of the same chip. */
+.addressLinkAvatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
 }
 
 .moreCount {

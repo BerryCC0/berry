@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useEnsAddress, useReadContract } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { formatAddress, truncateAddress } from '@/shared/format';
@@ -13,6 +13,7 @@ import { useEnsName, useEnsAvatar } from '@/OS/hooks/useEnsData';
 import { normalize } from 'viem/ens';
 import { NounImage } from '@/app/lib/nouns/components';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
+import { addressToAvatar } from '../utils/addressAvatar';
 import { useVoter } from '../hooks';
 import { getSupportLabel, getSupportColor } from '../types';
 import { getProposalStatusBadge, estimateCurrentBlock } from '../utils/proposalStatus';
@@ -60,32 +61,58 @@ interface VoterDetailViewProps {
   toolbar?: CampToolbarContext;
 }
 
-// Component to display an address with ENS resolution
+// Component to display an address with ENS resolution and blockies-style avatar.
+// The avatar prefers the ENS avatar but falls back to a deterministic blockies
+// pattern if no ENS avatar is set OR the ENS avatar URL fails to load (broken IPFS,
+// dead URLs, etc.). `showAvatar` lets callers opt out for inline contexts (e.g. the
+// "Delegating to <name>" sentence) where a tiny avatar would look out of place.
 function AddressLink({
   address,
-  onClick
+  onClick,
+  showAvatar = false,
 }: {
   address: string;
   onClick?: (e?: React.MouseEvent) => void;
+  showAvatar?: boolean;
 }) {
   const ensName = useEnsName(address);
+  const ensAvatar = useEnsAvatar(address);
+  const fallback = useMemo(() => addressToAvatar(address), [address]);
+  const avatarSrc = ensAvatar || fallback;
 
   const displayName = formatAddress(address, ensName);
-  
+
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
       onClick(e);
     }
   };
-  
+
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      if (fallback && e.currentTarget.src !== fallback) {
+        e.currentTarget.src = fallback;
+      }
+    },
+    [fallback],
+  );
+
   return (
-    <span 
-      className={styles.addressLink} 
+    <span
+      className={styles.addressLink}
       onClick={handleClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      {displayName}
+      {showAvatar && avatarSrc && (
+        <img
+          src={avatarSrc}
+          alt=""
+          className={styles.addressLinkAvatar}
+          onError={handleError}
+        />
+      )}
+      <span>{displayName}</span>
     </span>
   );
 }
@@ -120,6 +147,25 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
   // Get ENS name for display (if we have an address)
   const ensName = useEnsName(address || undefined);
   const ensAvatar = useEnsAvatar(address || undefined);
+
+  // Deterministic blockies-style fallback for the profile header avatar.
+  // Used when no ENS avatar exists OR when the ENS avatar URL fails to load
+  // (e.g. dead IPFS gateway). Skipped before the address resolves to avoid
+  // generating an avatar for an empty string.
+  const profileFallbackAvatar = useMemo(
+    () => (address ? addressToAvatar(address) : null),
+    [address],
+  );
+  const profileAvatarSrc = ensAvatar || profileFallbackAvatar;
+
+  const handleProfileAvatarError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      if (profileFallbackAvatar && e.currentTarget.src !== profileFallbackAvatar) {
+        e.currentTarget.src = profileFallbackAvatar;
+      }
+    },
+    [profileFallbackAvatar],
+  );
 
   // Combined loading state
   const isLoading = isResolvingEns || isLoadingVoter;
@@ -239,8 +285,13 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
         <div className={styles.leftColumn}>
           {/* Profile Header */}
           <div className={styles.profileHeader}>
-            {ensAvatar && (
-              <img src={ensAvatar} alt="" className={styles.avatar} />
+            {profileAvatarSrc && (
+              <img
+                src={profileAvatarSrc}
+                alt=""
+                className={styles.avatar}
+                onError={handleProfileAvatarError}
+              />
             )}
             <div className={styles.profileMain}>
               <h1 className={styles.name}>{displayName}</h1>
@@ -275,9 +326,10 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
               <span className={styles.delegatorsLabel}>Delegators ({delegators.length})</span>
               <div className={styles.delegatorsList}>
                 {delegators.slice(0, 8).map((delegator) => (
-                  <AddressLink 
+                  <AddressLink
                     key={delegator}
-                    address={delegator} 
+                    address={delegator}
+                    showAvatar
                     onClick={() => onNavigate(`voter/${delegator}`)}
                   />
                 ))}
