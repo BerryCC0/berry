@@ -44,8 +44,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={comicNeue.variable}>
+    <html lang="en" translate="no" className={comicNeue.variable}>
       <head>
+        <meta name="google" content="notranslate" />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body>

@@ -80,6 +80,14 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     setMounted(true);
   }, []);
 
+  // Keep <html lang> in sync with the active locale so browsers don't
+  // offer to auto-translate Berry (which breaks React reconciliation).
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+    }
+  }, [locale]);
+
   // Listen for locale changes
   useEffect(() => {
     const handleLocaleChange = (e: CustomEvent<Locale>) => {
