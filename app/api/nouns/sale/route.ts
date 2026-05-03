@@ -14,8 +14,14 @@ import { mainnet } from 'viem/chains';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 
-// Known token contracts
-const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' as const;
+// Tokens that are 1:1 redeemable for ETH and used as the settlement asset on
+// major NFT marketplaces. Blur Pool is the bidding/settlement token for Blur —
+// without it, accept-bid sales on Blur look like plain transfers because the
+// seller never receives WETH or raw ETH at settlement time.
+const ETH_EQUIVALENT_TOKENS = new Set<string>([
+  '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // WETH
+  '0x0000000000a39bb272e79075ade125fd351887ac', // Blur Pool (BLUR-ETH)
+]);
 
 // ERC20 Transfer event signature: Transfer(address,address,uint256)
 const TRANSFER_EVENT_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' as const;
@@ -70,12 +76,12 @@ export async function GET(request: Request) {
       client.getTransaction({ hash: txHash as Hex }),
     ]);
 
-    // 1. Check transaction receipt logs for WETH transfers
+    // 1. Check transaction receipt logs for ETH-equivalent token transfers
     if (receipt.logs.length > 0) {
-      // First pass: look for WETH Transfer to the seller specifically
+      // First pass: look for an ETH-equivalent Transfer to the seller specifically
       for (const log of receipt.logs) {
         if (
-          log.address.toLowerCase() === WETH_ADDRESS &&
+          ETH_EQUIVALENT_TOKENS.has(log.address.toLowerCase()) &&
           log.topics[0] === TRANSFER_EVENT_TOPIC &&
           log.topics[2] // to address
         ) {
@@ -90,22 +96,22 @@ export async function GET(request: Request) {
         }
       }
 
-      // Second pass: fallback to largest WETH transfer in the tx
-      let maxWethTransfer = BigInt(0);
+      // Second pass: fallback to largest ETH-equivalent transfer in the tx
+      let maxTokenTransfer = BigInt(0);
       for (const log of receipt.logs) {
         if (
-          log.address.toLowerCase() === WETH_ADDRESS &&
+          ETH_EQUIVALENT_TOKENS.has(log.address.toLowerCase()) &&
           log.topics[0] === TRANSFER_EVENT_TOPIC
         ) {
           const amount = BigInt(log.data);
-          if (amount > maxWethTransfer) {
-            maxWethTransfer = amount;
+          if (amount > maxTokenTransfer) {
+            maxTokenTransfer = amount;
           }
         }
       }
 
-      if (maxWethTransfer > BigInt(0)) {
-        return NextResponse.json({ isSale: true, price: maxWethTransfer.toString() });
+      if (maxTokenTransfer > BigInt(0)) {
+        return NextResponse.json({ isSale: true, price: maxTokenTransfer.toString() });
       }
     }
 
