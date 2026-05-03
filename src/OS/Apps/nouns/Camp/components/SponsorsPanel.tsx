@@ -184,11 +184,20 @@ export function SponsorsPanel({
 
   const proposerVotes = proposerVotingPower ? Number(proposerVotingPower) : 0;
   
-  // Check if user has already sponsored
+  // Only count sigs that are still valid on-chain. A `updateProposalCandidate`
+  // call advances `encodedProposalHash`, invalidating every prior sig — the
+  // user must (and can) sign again. Stale sigs would revert `proposeBySigs`.
   const hasAlreadySponsored = useMemo(() => {
     if (!address) return false;
-    return signatures.some(s => s.signer.toLowerCase() === address.toLowerCase());
-  }, [signatures, address]);
+    const currentHash = candidate?.encodedProposalHash?.toLowerCase() || '';
+    return signatures.some(s => {
+      if (s.signer.toLowerCase() !== address.toLowerCase()) return false;
+      if (currentHash && s.encodedPropHash && s.encodedPropHash.toLowerCase() !== currentHash) {
+        return false;
+      }
+      return true;
+    });
+  }, [signatures, address, candidate?.encodedProposalHash]);
   
   // Check if user is the proposer
   const isProposer = useMemo(() => {
