@@ -322,10 +322,15 @@ function processProposals(proposals: ApiProposalRow[], currentBlock: number | un
         endTimestamp = String(Math.min(estimatedEnd, now));
       }
 
+      // Stable id across the SUCCEEDED → QUEUED → EXECUTED progression so
+      // React reuses the same DOM row when a proposal advances stages,
+      // instead of unmount/remount flicker. The `type` field still drives
+      // what label is rendered.
+      const outcomeId = `proposal-outcome-${p.id}`;
       const actorEns = p.proposer_ens || undefined;
       if (isCancelled) {
         items.push({
-          id: `proposal-cancelled-${p.id}`,
+          id: outcomeId,
           type: 'proposal_cancelled',
           timestamp: endTimestamp,
           actor: p.proposer,
@@ -336,7 +341,7 @@ function processProposals(proposals: ApiProposalRow[], currentBlock: number | un
         });
       } else if (isExecuted) {
         items.push({
-          id: `proposal-executed-${p.id}`,
+          id: outcomeId,
           type: 'proposal_executed',
           timestamp: endTimestamp,
           actor: p.proposer,
@@ -347,7 +352,7 @@ function processProposals(proposals: ApiProposalRow[], currentBlock: number | un
         });
       } else if (isQueued) {
         items.push({
-          id: `proposal-queued-${p.id}`,
+          id: outcomeId,
           type: 'proposal_queued',
           timestamp: endTimestamp,
           actor: p.proposer,
@@ -358,7 +363,7 @@ function processProposals(proposals: ApiProposalRow[], currentBlock: number | un
         });
       } else if (derivedStatus === 'succeeded') {
         items.push({
-          id: `proposal-succeeded-${p.id}`,
+          id: outcomeId,
           type: 'proposal_succeeded',
           timestamp: endTimestamp,
           actor: p.proposer,
@@ -369,7 +374,7 @@ function processProposals(proposals: ApiProposalRow[], currentBlock: number | un
         });
       } else if (derivedStatus === 'defeated') {
         items.push({
-          id: `proposal-defeated-${p.id}`,
+          id: outcomeId,
           type: 'proposal_defeated',
           timestamp: endTimestamp,
           actor: p.proposer,
@@ -755,9 +760,11 @@ function processCandidateVersions(versions: ApiCandidateVersionRow[]): ActivityI
 // ============================================================================
 
 export function useActivityFeed(first: number = 30) {
-  // Get current Ethereum block number for accurate proposal status
+  // Watch the head block so currentBlock stays fresh. Without this, the
+  // fallback endTimestamp = now - (currentBlock - endBlock) * 12 drifts
+  // forward as `now` advances while `currentBlock` is stuck at mount-time.
   const { data: blockNumber } = useBlockNumber({
-    watch: false,
+    watch: true,
   });
   const currentBlock = blockNumber ? Number(blockNumber) : undefined;
 
