@@ -16,7 +16,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useAccount, useBlockNumber } from 'wagmi';
 import { useProposals, useCandidates, useVoter, useInfiniteVoters } from './index';
-import { estimateEndTime, estimateStartTime, formatRelativeTime } from '../utils/formatUtils';
+import { estimateEndTime, estimateStartTime, formatRelativeTimeCompact } from '../utils/formatUtils';
 import type { Proposal, Candidate, Voter, DigestTab, DigestSection } from '../types';
 
 // Treasury addresses to filter from voter list
@@ -217,16 +217,27 @@ export function useDigest({ activeTab: controlledTab, onTabChange }: UseDigestPr
     fetchMoreVoters();
   }, [fetchMoreVoters]);
   
-  // Bound utility functions — prefer stored timestamps, fall back to block estimation
+  // Always extrapolate from the live current block when available — the
+  // indexer's stored start/endTimestamp is a snapshot frozen at creation
+  // (createdTimestamp + blocks * 12s) and drifts vs. reality as actual
+  // block times deviate from 12s and as objection-period extensions push
+  // endBlock forward. Stored timestamps are only used as a first-render
+  // fallback before currentBlock has loaded.
   const getEndTime = (proposal: Proposal) => {
+    if (currentBlock > 0 && proposal.endBlock) {
+      return estimateEndTime(proposal.endBlock, currentBlock);
+    }
     if (proposal.endTimestamp) return Number(proposal.endTimestamp);
     return estimateEndTime(proposal.endBlock, currentBlock);
   };
   const getStartTime = (proposal: Proposal) => {
+    if (currentBlock > 0 && proposal.startBlock) {
+      return estimateStartTime(proposal.startBlock, currentBlock);
+    }
     if (proposal.startTimestamp) return Number(proposal.startTimestamp);
     return estimateStartTime(proposal.startBlock, currentBlock);
   };
-  const getRelativeTime = (timestamp: number, prefix: string) => formatRelativeTime(timestamp, prefix);
+  const getRelativeTime = (timestamp: number, prefix: string) => formatRelativeTimeCompact(timestamp, prefix);
   
   return {
     activeTab,

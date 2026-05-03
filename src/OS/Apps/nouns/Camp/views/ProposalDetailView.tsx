@@ -11,6 +11,7 @@ import { useTranslation } from '@/OS/lib/i18n';
 import { useIsMobile } from '@/OS/lib/PlatformDetection';
 import { useProposalDetail } from '../hooks/useProposalDetail';
 import { stripTitleFromDescription } from '../utils/descriptionUtils';
+import { formatAbsoluteTime } from '../utils/formatUtils';
 import { AddressWithAvatar } from '../components/AddressWithAvatar';
 import { TransactionSummary } from '../components/TransactionSummary';
 import { ShareButton } from '../components/ShareButton';
@@ -157,32 +158,39 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
         </div>
       )}
       
-      {timeRemaining && timeRemaining.type !== 'ended' && (
-        <div className={styles.timeRemaining}>
-          <span className={styles.timeIcon}>⏱</span>
-          <span className={styles.timeText}>
-            {timeRemaining.type === 'pending' 
-              ? `Voting starts in ${formatTimeRemaining(timeRemaining.seconds)}`
-              : `Voting ends in ${formatTimeRemaining(timeRemaining.seconds)}`
-            }
-          </span>
-        </div>
-      )}
+      {timeRemaining && timeRemaining.type !== 'ended' && (() => {
+        const targetTs = Math.floor(Date.now() / 1000) + timeRemaining.seconds;
+        const prefix = timeRemaining.type === 'pending' ? 'Voting starts in' : 'Voting ends in';
+        return (
+          <div className={styles.timeRemaining}>
+            <span className={styles.timeIcon}>⏱</span>
+            <div className={styles.timeText}>
+              <div>{`${prefix} ${formatTimeRemaining(timeRemaining.seconds)}`}</div>
+              <div className={styles.timeAbsolute}>{formatAbsoluteTime(targetTs)}</div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 
-  /** Proposer actions toolbar */
-  const proposerActionsSection = proposal && proposalActions.isProposer(proposal, address) ? (
+  /** Proposer-only toolbar (edit while updateable, cancel before execution). */
+  const showProposerActions =
+    proposal &&
+    proposalActions.isProposer(proposal, address) &&
+    (proposalActions.canUpdate(proposal, address) || proposalActions.canCancel(proposal, address));
+
+  const proposerActionsSection = showProposerActions ? (
     <div className={styles.proposerActions}>
       <span className={styles.proposerActionsLabel}>Proposer</span>
-      
+
       {proposerActionSuccess && (
         <div className={styles.successMessage}>{proposerActionSuccess}</div>
       )}
       {proposerActionError && (
         <div className={styles.errorMessage}>{proposerActionError}</div>
       )}
-      
+
       {proposalActions.canUpdate(proposal, address) && (
         <button
           className={styles.editButton}
@@ -192,27 +200,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
           Edit Proposal
         </button>
       )}
-      
-      {proposalActions.canQueue(proposal) && (
-        <button
-          className={styles.queueButton}
-          onClick={handleQueueProposal}
-          disabled={proposalActions.isPending || proposalActions.isConfirming}
-        >
-          {proposalActions.isPending || proposalActions.isConfirming ? 'Queueing...' : 'Queue Proposal'}
-        </button>
-      )}
-      
-      {proposalActions.canExecute(proposal) && (
-        <button
-          className={styles.executeButton}
-          onClick={handleExecuteProposal}
-          disabled={proposalActions.isPending || proposalActions.isConfirming}
-        >
-          {proposalActions.isPending || proposalActions.isConfirming ? 'Executing...' : 'Execute Proposal'}
-        </button>
-      )}
-      
+
       {proposalActions.canCancel(proposal, address) && (
         <>
           {!showCancelConfirm ? (
@@ -243,6 +231,42 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
             </div>
           )}
         </>
+      )}
+    </div>
+  ) : null;
+
+  // Queue and execute are permissionless on the GovernorBravo-style Nouns DAO —
+  // any connected wallet can call them once the proposal state allows.
+  const showPublicActions =
+    proposal && isConnected && (proposalActions.canQueue(proposal) || proposalActions.canExecute(proposal));
+
+  const publicActionsSection = showPublicActions ? (
+    <div className={styles.proposerActions}>
+      {proposerActionSuccess && (
+        <div className={styles.successMessage}>{proposerActionSuccess}</div>
+      )}
+      {proposerActionError && (
+        <div className={styles.errorMessage}>{proposerActionError}</div>
+      )}
+
+      {proposalActions.canQueue(proposal) && (
+        <button
+          className={styles.queueButton}
+          onClick={handleQueueProposal}
+          disabled={proposalActions.isPending || proposalActions.isConfirming}
+        >
+          {proposalActions.isPending || proposalActions.isConfirming ? 'Queueing...' : 'Queue Proposal'}
+        </button>
+      )}
+
+      {proposalActions.canExecute(proposal) && (
+        <button
+          className={styles.executeButton}
+          onClick={handleExecuteProposal}
+          disabled={proposalActions.isPending || proposalActions.isConfirming}
+        >
+          {proposalActions.isPending || proposalActions.isConfirming ? 'Executing...' : 'Execute Proposal'}
+        </button>
       )}
     </div>
   ) : null;
@@ -508,6 +532,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
         {/* Always-visible status section on mobile */}
         <div className={styles.mobileStatus}>
           {statusSection}
+          {publicActionsSection}
           {proposerActionsSection}
         </div>
 
@@ -579,6 +604,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
         {/* Right Column: Simulation, Votes, Actions */}
         <div className={styles.rightColumn}>
           {statusSection}
+          {publicActionsSection}
           {proposerActionsSection}
           {transactionsContent}
           {voteCountsContent}

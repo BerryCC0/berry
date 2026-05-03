@@ -42,12 +42,18 @@ export function stripTitleFromDescription(description: string, title: string): s
  */
 export function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return 'Ended';
-  
+
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
-  
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  const part = (n: number, unit: string) => `${n} ${unit}${n !== 1 ? 's' : ''}`;
+
   if (days > 0) {
-    return `${days} day${days > 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}`;
+    return hours > 0 ? `${part(days, 'day')} ${part(hours, 'hour')}` : part(days, 'day');
   }
-  return `${hours} hour${hours !== 1 ? 's' : ''}`;
+  if (hours > 0) {
+    return minutes > 0 ? `${part(hours, 'hour')} ${part(minutes, 'minute')}` : part(hours, 'hour');
+  }
+  return part(Math.max(minutes, 1), 'minute');
 }

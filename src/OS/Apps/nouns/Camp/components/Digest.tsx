@@ -12,7 +12,7 @@
 import { useEffect, useRef } from 'react';
 import { useDigest } from '../hooks/useDigest';
 import { useEnsName } from '@/OS/hooks/useEnsData';
-import { formatSlugToTitle, formatAddress } from '../utils/formatUtils';
+import { formatSlugToTitle, formatAddress, formatAbsoluteTime } from '../utils/formatUtils';
 import { getClientName } from '@/OS/lib/clientNames';
 import { getProposalStatusBadge, getVoteBarWidths } from '../utils/proposalStatus';
 import { BerryLoader } from './BerryLoader';
@@ -161,13 +161,13 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
               <span className={styles.voteCount}>{Number(proposal.forVotes)} ↑ / {Number(proposal.quorumVotes) || 1}</span>
               {Number(proposal.abstainVotes || 0) > 0 && <span className={styles.voteCount}>{Number(proposal.abstainVotes)}</span>}
               {Number(proposal.againstVotes) > 0 && <span className={styles.voteCount}>{Number(proposal.againstVotes)} ↓</span>}
-              <span className={styles.timeRemaining}>{getRelativeTime(endTime, 'Ends in')}</span>
+              <span className={styles.timeRemaining}>{getRelativeTime(endTime, 'Ends in')} · {formatAbsoluteTime(endTime)}</span>
             </>
           )}
 
           {/* Show start time for pending */}
           {isPending && (
-            <span className={styles.timeRemaining}>{getRelativeTime(startTime, 'Starts in')}</span>
+            <span className={styles.timeRemaining}>{getRelativeTime(startTime, 'Starts in')} · {formatAbsoluteTime(startTime)}</span>
           )}
 
           {/* Badge on right for all non-pending proposals */}
