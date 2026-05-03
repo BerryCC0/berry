@@ -33,7 +33,7 @@ export interface ActivityItem {
 }
 
 export interface TimeRemaining {
-  type: 'pending' | 'active' | 'ended';
+  type: 'pending' | 'active' | 'queued' | 'ended';
   seconds: number;
 }
 
@@ -69,27 +69,42 @@ export function useProposalDetail(proposalId: string, onNavigate: (path: string)
   
   // Calculate time remaining
   const timeRemaining = useMemo<TimeRemaining | null>(() => {
-    if (!blockNumber || !proposal?.startBlock || !proposal?.endBlock) return null;
-    
+    if (!proposal) return null;
+
+    // Once queued, the timelock ETA (a wall-clock timestamp) drives the
+    // countdown — block math no longer applies. Show this whether or not
+    // we have a live block number yet.
+    if (proposal.status === 'QUEUED') {
+      const eta = Number(proposal.eta || proposal.executionETA || 0);
+      if (eta > 0) {
+        const secondsUntilExecutable = eta - Math.floor(Date.now() / 1000);
+        if (secondsUntilExecutable > 0) {
+          return { type: 'queued' as const, seconds: secondsUntilExecutable };
+        }
+      }
+    }
+
+    if (!blockNumber || !proposal.startBlock || !proposal.endBlock) return null;
+
     const currentBlock = Number(blockNumber);
     const startBlock = Number(proposal.startBlock);
     const endBlock = Number(proposal.endBlock);
     // Uses shared SECONDS_PER_BLOCK from proposalStatus (imported at top)
-    
+
     if (currentBlock < startBlock) {
       const blocksUntilStart = startBlock - currentBlock;
       const secondsUntilStart = blocksUntilStart * SECONDS_PER_BLOCK;
       return { type: 'pending' as const, seconds: secondsUntilStart };
     }
-    
+
     if (currentBlock < endBlock) {
       const blocksRemaining = endBlock - currentBlock;
       const secondsRemaining = blocksRemaining * SECONDS_PER_BLOCK;
       return { type: 'active' as const, seconds: secondsRemaining };
     }
-    
+
     return { type: 'ended' as const, seconds: 0 };
-  }, [blockNumber, proposal?.startBlock, proposal?.endBlock]);
+  }, [blockNumber, proposal]);
   
   // State
   const [actionReason, setActionReason] = useState('');

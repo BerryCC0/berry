@@ -156,10 +156,10 @@ export function useDigest({ activeTab: controlledTab, onTabChange }: UseDigestPr
     }
     
     // Upcoming proposals (pending/updatable)
-    const upcoming = proposals.filter(p => 
+    const upcoming = proposals.filter(p =>
       ['PENDING', 'UPDATABLE'].includes(p.status)
     );
-    
+
     if (upcoming.length > 0) {
       result.push({
         id: 'upcoming',
@@ -167,6 +167,20 @@ export function useDigest({ activeTab: controlledTab, onTabChange }: UseDigestPr
         items: upcoming,
         type: 'proposal',
         collapsed: collapsedSections.has('upcoming'),
+      });
+    }
+
+    // Queued proposals (passed, awaiting timelock before execution)
+    const queued = proposals.filter(p => p.status === 'QUEUED');
+
+    if (queued.length > 0) {
+      result.push({
+        id: 'queued',
+        title: 'QUEUED PROPOSALS',
+        subtitle: 'Awaiting execution',
+        items: queued,
+        type: 'proposal',
+        collapsed: collapsedSections.has('queued'),
       });
     }
     

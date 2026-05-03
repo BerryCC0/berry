@@ -118,9 +118,11 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
     // Derive isActive and isPending from status badge for time display logic
     const isActive = statusBadge?.key === 'ongoing';
     const isPending = statusBadge?.key === 'upcoming';
+    const isQueued = statusBadge?.key === 'queued';
 
     const endTime = getEndTime(proposal);
     const startTime = getStartTime(proposal);
+    const etaTime = Number(proposal.eta || proposal.executionETA || 0);
     
     return (
       <div 
@@ -168,6 +170,11 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
           {/* Show start time for pending */}
           {isPending && (
             <span className={styles.timeRemaining}>{getRelativeTime(startTime, 'Starts in')} · {formatAbsoluteTime(startTime)}</span>
+          )}
+
+          {/* Show executable countdown for queued */}
+          {isQueued && etaTime > 0 && (
+            <span className={styles.timeRemaining}>{getRelativeTime(etaTime, 'Executable in')} · {formatAbsoluteTime(etaTime)}</span>
           )}
 
           {/* Badge on right for all non-pending proposals */}

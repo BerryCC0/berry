@@ -160,7 +160,10 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
       
       {timeRemaining && timeRemaining.type !== 'ended' && (() => {
         const targetTs = Math.floor(Date.now() / 1000) + timeRemaining.seconds;
-        const prefix = timeRemaining.type === 'pending' ? 'Voting starts in' : 'Voting ends in';
+        const prefix =
+          timeRemaining.type === 'pending' ? 'Voting starts in'
+          : timeRemaining.type === 'queued' ? 'Executable in'
+          : 'Voting ends in';
         return (
           <div className={styles.timeRemaining}>
             <span className={styles.timeIcon}>⏱</span>
