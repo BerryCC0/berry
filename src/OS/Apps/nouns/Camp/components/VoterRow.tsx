@@ -65,19 +65,23 @@ export function VoterRow({
   const voteLabel = isFeedback ? t('camp.vote.signal') : t('camp.vote.vote');
 
   return (
-    <div 
-      className={`${styles.row} ${isFeedback ? styles.feedback : ''}`}
-      onClick={() => onNavigate(`voter/${address}`)}
-    >
+    <div className={`${styles.row} ${isFeedback ? styles.feedback : ''}`}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <img
-            src={avatarSrc}
-            alt=""
-            className={styles.avatar}
-            onError={handleAvatarError}
-          />
-          <span className={styles.name}>{displayName}</span>
+          <button
+            type="button"
+            className={styles.identity}
+            onClick={() => onNavigate(`voter/${address}`)}
+            aria-label={`View ${displayName}'s profile`}
+          >
+            <img
+              src={avatarSrc}
+              alt=""
+              className={styles.avatar}
+              onError={handleAvatarError}
+            />
+            <span className={styles.name}>{displayName}</span>
+          </button>
           <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
           <span
             className={styles.support}

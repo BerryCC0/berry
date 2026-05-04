@@ -7,12 +7,29 @@
   background: var(--berry-bg-secondary);
   border: 1px solid var(--berry-border);
   border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.15s ease;
 }
 
-.row:hover {
-  background: var(--berry-bg-tertiary);
+.identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.identity:hover .name {
+  text-decoration: underline;
+}
+
+.identity:focus-visible {
+  outline: 2px solid var(--berry-accent);
+  outline-offset: 2px;
 }
 
 .feedback {
