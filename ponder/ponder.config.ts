@@ -1,5 +1,22 @@
 import { createConfig, rateLimit } from "ponder";
-import { http } from "viem";
+import { fallback, http } from "viem";
+
+// RPC failover: try the configured PONDER_RPC_URL_1 first (typically Alchemy
+// for fast initial sync), then transparently fall through to free public RPCs
+// if that provider is paused, rate-limited, or otherwise unavailable. This
+// keeps the indexer alive when a paid plan lapses or a key gets revoked.
+function mainnetRpcTransport() {
+  const transports = [];
+  if (process.env.PONDER_RPC_URL_1) {
+    transports.push(http(process.env.PONDER_RPC_URL_1));
+  }
+  transports.push(
+    http("https://ethereum-rpc.publicnode.com"),
+    http("https://eth.llamarpc.com"),
+    http("https://rpc.ankr.com/eth"),
+  );
+  return fallback(transports, { retryCount: 1 });
+}
 
 import { NounsTokenABI } from "../app/lib/nouns/abis/NounsToken";
 import { NounsAuctionHouseABI } from "../app/lib/nouns/abis/NounsAuctionHouse";
@@ -22,7 +39,7 @@ export default createConfig({
   chains: {
     mainnet: {
       id: 1,
-      rpc: rateLimit(http(process.env.PONDER_RPC_URL_1), {
+      rpc: rateLimit(mainnetRpcTransport(), {
         requestsPerSecond: 50,
         browser: false,
       }),

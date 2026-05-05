@@ -16,13 +16,13 @@ import {
  * tokenURI returns a data URI (data:application/json;base64,...) containing
  * JSON metadata with an `image` field (SVG data URI).
  */
-async function fetchNftImage(context: any, clientId: bigint): Promise<string | null> {
+async function fetchNftImage(context: any, clientId: number): Promise<string | null> {
   try {
     const uri = await context.client.readContract({
       abi: context.contracts.ClientRewards.abi,
       address: context.contracts.ClientRewards.address,
       functionName: "tokenURI",
-      args: [clientId],
+      args: [BigInt(clientId)],
     });
 
     if (typeof uri === "string") {

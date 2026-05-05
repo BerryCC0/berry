@@ -9,10 +9,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createPublicClient, http, type Hex } from 'viem';
-import { mainnet } from 'viem/chains';
-
-const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
+import { type Hex } from 'viem';
+import { getMainnetClient, traceCapableRpcUrls } from '@/app/lib/rpc';
 
 // Tokens that are 1:1 redeemable for ETH and used as the settlement asset on
 // major NFT marketplaces. Blur Pool is the bidding/settlement token for Blur —
@@ -45,17 +43,6 @@ interface TraceResult {
   error?: string;
 }
 
-function getClient() {
-  const rpcUrl = ALCHEMY_API_KEY
-    ? `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
-    : undefined;
-
-  return createPublicClient({
-    chain: mainnet,
-    transport: http(rpcUrl),
-  });
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const txHash = searchParams.get('txHash');
@@ -68,7 +55,7 @@ export async function GET(request: Request) {
   const sellerLower = seller?.toLowerCase();
 
   try {
-    const client = getClient();
+    const client = getMainnetClient();
 
     // Fetch receipt (logs) and transaction (value) in parallel
     const [receipt, tx] = await Promise.all([
@@ -123,24 +110,30 @@ export async function GET(request: Request) {
     // 3. Check internal transactions via trace API
     //    This catches marketplace sales where ETH flows through internal calls
     //    (e.g. Blur pool purchases, aggregator routed sales)
-    //    trace_transaction is not in viem's typed RPC schema, so we call it directly
+    //    trace_transaction is not in viem's typed RPC schema, so we call it directly.
+    //    Most public RPCs reject this method, so we only try it on providers that
+    //    actually support it (currently Alchemy when ALCHEMY_API_KEY is set).
     try {
-      const rpcUrl = ALCHEMY_API_KEY
-        ? `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
-        : 'https://eth.llamarpc.com';
+      const traceUrls = traceCapableRpcUrls();
+      let traces: TraceResult[] | undefined;
 
-      const traceResponse = await fetch(rpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'trace_transaction',
-          params: [txHash],
-        }),
-      });
-      const traceData = await traceResponse.json();
-      const traces: TraceResult[] = traceData.result;
+      for (const rpcUrl of traceUrls) {
+        const traceResponse = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'trace_transaction',
+            params: [txHash],
+          }),
+        });
+        const traceData = await traceResponse.json();
+        if (Array.isArray(traceData.result)) {
+          traces = traceData.result;
+          break;
+        }
+      }
 
       if (Array.isArray(traces)) {
         let sellerPayment = BigInt(0);

@@ -10,31 +10,23 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { mainnet } from 'viem/chains';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { getMainnetClient } from '@/app/lib/rpc';
 import { NounsDAOABI, NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import { ClientRewardsABI } from '@/app/lib/nouns/abis/ClientRewards';
 
 const CLIENT_REWARDS_ADDRESS = '0x883860178F95d0C82413eDc1D6De530cB4771d55' as const;
-const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 
 /**
  * Read the incentive eligibility quorum from on-chain:
  * adjustedTotalSupply * proposalEligibilityQuorumBps / 10000
  *
- * Uses Alchemy when ALCHEMY_API_KEY is set; falls back to viem's default
- * transport only if not. The default (Cloudflare) rate-limits aggressively
- * and has caused this endpoint to hang under load.
+ * Uses the shared mainnet client which fails over from Alchemy to public RPCs
+ * automatically — viem's default transport (Cloudflare) rate-limits aggressively
+ * and used to cause this endpoint to hang under load.
  */
 async function getIncentiveQuorum(): Promise<number> {
-  const rpcUrl = ALCHEMY_API_KEY
-    ? `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
-    : undefined;
-  const client = createPublicClient({
-    chain: mainnet,
-    transport: http(rpcUrl, { timeout: 8_000, retryCount: 2 }),
-  });
+  const client = getMainnetClient();
   const [adjustedTotalSupply, rewardParams] = await Promise.all([
     client.readContract({
       address: NOUNS_ADDRESSES.governor,
