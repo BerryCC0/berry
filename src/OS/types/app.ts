@@ -86,35 +86,22 @@ export interface ShortcutDefinition {
 }
 
 /**
- * Tab bar configuration for mobile shell
- */
-export interface TabConfig {
-  tab: string; // tab identifier
-  icon: string; // SF Symbol name or icon path
-  label: string; // short label (1-2 words)
-  order: number; // position in tab bar (0-4)
-}
-
-/**
  * Platform-agnostic navigation metadata.
  * Each platform shell reads the parts it needs and ignores the rest.
  *
  * - Desktop: menus → menu bar; toolbarItems → unified toolbar slots; shortcuts → keyboard handler
  * - Tablet: toolbarItems → title bar actions; shortcuts → hardware keyboard handler
- * - Mobile: toolbarItems → nav bar trailing buttons; tabConfig → tab bar assignment
+ * - Mobile: toolbarItems → ignored (no nav bar); menus → Berry menu on MenuBar
  */
 export interface AppNavigationConfig {
   /** Menu bar items (desktop: shown in menu bar; tablet/mobile: ignored) */
   menus?: MenuDefinition[];
 
-  /** Toolbar items (desktop: toolbar slots; tablet: title bar actions; mobile: nav bar trailing) */
+  /** Toolbar items (desktop: toolbar slots; tablet: title bar actions) */
   toolbarItems?: ToolbarItem[];
 
   /** Keyboard shortcuts (desktop + tablet with hardware keyboard) */
   shortcuts?: ShortcutDefinition[];
-
-  /** Tab bar config (mobile only — which tab this app belongs to) */
-  tabConfig?: TabConfig;
 
   /** Whether the app has a sidebar (desktop: affects toolbar leading slot width) */
   hasSidebar?: boolean;

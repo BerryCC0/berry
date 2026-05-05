@@ -7,7 +7,7 @@
     "mimeType": "application/json",
     "extension": "json",
     "icon": "/icons/file-text.svg",
-    "createdAt": 0,
+    "createdAt": 1766536836111,
     "modifiedAt": 1766536836111,
     "isHidden": false
   },
@@ -19,7 +19,7 @@
     "mimeType": "text/plain",
     "extension": "txt",
     "icon": "/icons/file-text.svg",
-    "createdAt": 0,
+    "createdAt": 1766536836111,
     "modifiedAt": 1766536836111,
     "isHidden": false
   }

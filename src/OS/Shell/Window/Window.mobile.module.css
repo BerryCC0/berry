@@ -1,21 +1,19 @@
 /**
  * Window — Mobile Platform Styles
  *
- * Per HIG-SPEC-MOBILE §8:
- * - No window chrome: no title bar, no traffic lights, no borders, no shadow
- * - Window is a logical container filling space between NavigationBar and TabBar
- * - Blurred (non-focused) windows get display:none
- * - Content fills the entire safe area between nav bar and tab bar
+ * No window chrome (no title bar, traffic lights, borders, shadow).
+ * Window fills the space between the MenuBar (top) and the Dock (bottom).
+ * Only the focused window is visible; blurred windows are hidden.
  */
 
 .window {
   position: fixed;
-  /* NavigationBar: 44px standard + safe-area-inset-top */
-  top: calc(44px + env(safe-area-inset-top, 0px));
+  /* Sit below the MenuBar (+ device notch) */
+  top: calc(var(--berry-menubar-height) + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
-  /* TabBar: 49px + safe-area-inset-bottom */
-  bottom: calc(49px + env(safe-area-inset-bottom, 0px));
+  /* Leave room for the floating Dock: ~44px icon + 16px vertical padding + 8px gap from bottom */
+  bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   background: var(--berry-bg);
@@ -96,13 +94,9 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* ── Farcaster Miniapp — no tab bar, compact ── */
-/* Applied via data-platform="farcaster" on root */
+/* ── Farcaster Miniapp — no dock, fills full height ── */
 :global([data-platform="farcaster"]) .window {
-  /* No tab bar in Farcaster (§9) */
-  bottom: 0;
-  /* Tighter top — simplified nav bar only */
-  top: calc(44px + env(safe-area-inset-top, 0px));
+  bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ── Resize Handles — HIDDEN ── */

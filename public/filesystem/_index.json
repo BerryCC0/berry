@@ -5,7 +5,7 @@
     "type": "directory",
     "size": 128,
     "icon": "/icons/folder.svg",
-    "createdAt": 0,
+    "createdAt": 1766536836110,
     "modifiedAt": 1766536836110,
     "isHidden": false
   },
@@ -15,7 +15,7 @@
     "type": "directory",
     "size": 192,
     "icon": "/icons/folder.svg",
-    "createdAt": 0,
+    "createdAt": 1766536836110,
     "modifiedAt": 1766536836111,
     "isHidden": false
   },
@@ -25,7 +25,7 @@
     "type": "directory",
     "size": 160,
     "icon": "/icons/folder.svg",
-    "createdAt": 0,
+    "createdAt": 1766536836112,
     "modifiedAt": 1766536836112,
     "isHidden": false
   },
@@ -35,7 +35,7 @@
     "type": "directory",
     "size": 160,
     "icon": "/icons/folder.svg",
-    "createdAt": 0,
+    "createdAt": 1766536836113,
     "modifiedAt": 1766536836113,
     "isHidden": false
   }

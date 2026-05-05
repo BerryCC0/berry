@@ -266,12 +266,6 @@ const pdfViewerConfig: AppConfig = {
  * Nouns Auction - Daily Nouns auction participation
  */
 const nounsAuctionNavigation: AppNavigationConfig = {
-  tabConfig: {
-    tab: "home",
-    icon: "house.fill",
-    label: "Home",
-    order: 0,
-  },
   dynamicToolbar: true,
 };
 
@@ -331,12 +325,6 @@ const campNavigation: AppNavigationConfig = {
     { id: "new-proposal", key: "n", modifiers: ["cmd"], action: "camp:new-proposal", label: "New Proposal" },
     { id: "search", key: "f", modifiers: ["cmd"], action: "camp:search", label: "Search Proposals" },
   ],
-  tabConfig: {
-    tab: "govern",
-    icon: "building.columns",
-    label: "Govern",
-    order: 1,
-  },
   hasSidebar: true,
 };
 
@@ -439,12 +427,6 @@ const probeNavigation: AppNavigationConfig = {
   shortcuts: [
     { id: "search", key: "f", modifiers: ["cmd"], action: "probe:search", label: "Search Nouns" },
   ],
-  tabConfig: {
-    tab: "explore",
-    icon: "magnifyingglass",
-    label: "Explore",
-    order: 2,
-  },
 };
 
 const probeConfig: AppConfig = {
@@ -497,12 +479,7 @@ const bimNavigation: AppNavigationConfig = {
   toolbarItems: [
     { id: "compose", icon: "square.and.pencil", label: "New Message", action: "bim:compose", position: "trailing" },
   ],
-  tabConfig: {
-    tab: "bim",
-    icon: "bubble.left.and.bubble.right.fill",
-    label: "BIM",
-    order: 3,
-  },
+
   hasSidebar: true,
 };
 

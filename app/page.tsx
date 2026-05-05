@@ -21,9 +21,6 @@ import { SnapPreview } from "@/OS/Shell/Window/components/SnapPreview";
 import { CommandPalette } from "@/OS/Shell/CommandPalette";
 import { StageStrip } from "@/OS/Shell/StageStrip";
 import { Expose } from "@/OS/Shell/Expose";
-import { TabBar } from "@/OS/Shell/TabBar";
-import { NavigationBar } from "@/OS/Shell/NavigationBar";
-import { AppSwitcher as MobileAppSwitcher } from "@/OS/Shell/AppSwitcher";
 import { SleepOverlay } from "@/OS/Shell/Boot/SleepOverlay";
 import { ShutdownOverlay } from "@/OS/Shell/Boot/ShutdownOverlay";
 import { NounsIconProvider } from "@/OS/Shell/NounsIconProvider";
@@ -76,9 +73,6 @@ export default function Home() {
       <CommandPalette />
       <StageStrip />
       <Expose />
-      <TabBar />
-      <NavigationBar />
-      <MobileAppSwitcher />
       {isReady && <NounsIconProvider />}
       {isSleeping && <SleepOverlay onWake={wake} />}
       {isShutdown && <ShutdownOverlay />}
