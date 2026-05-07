@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import styles from './MarkdownEditor.module.css';
 
@@ -34,38 +34,52 @@ export function MarkdownEditor({
   const [viewMode, setViewMode] = useState<ViewMode>('write');
   const [history, setHistory] = useState<HistoryState>({ past: [], future: [] });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lastValueRef = useRef(value);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const historyRef = useRef(history);
+  historyRef.current = history;
 
-  // Track history for undo/redo
-  useEffect(() => {
-    if (value !== lastValueRef.current) {
-      setHistory(prev => ({
-        past: [...prev.past.slice(-50), lastValueRef.current],
-        future: []
-      }));
-      lastValueRef.current = value;
-    }
-  }, [value]);
+  // Push current value to history, then apply new value. Every edit goes
+  // through this so the past/future stacks stay consistent — unlike an
+  // effect on `value`, this never fires on undo/redo and so doesn't wipe
+  // the future stack.
+  const commitChange = useCallback((newValue: string) => {
+    const current = valueRef.current;
+    if (newValue === current) return;
+    const next: HistoryState = {
+      past: [...historyRef.current.past.slice(-49), current],
+      future: [],
+    };
+    historyRef.current = next;
+    setHistory(next);
+    onChange(newValue);
+  }, [onChange]);
 
   const undo = useCallback(() => {
-    if (history.past.length === 0) return;
-    const previous = history.past[history.past.length - 1];
-    setHistory(prev => ({
-      past: prev.past.slice(0, -1),
-      future: [value, ...prev.future]
-    }));
+    const h = historyRef.current;
+    if (h.past.length === 0) return;
+    const previous = h.past[h.past.length - 1];
+    const next: HistoryState = {
+      past: h.past.slice(0, -1),
+      future: [valueRef.current, ...h.future],
+    };
+    historyRef.current = next;
+    setHistory(next);
     onChange(previous);
-  }, [history.past, value, onChange]);
+  }, [onChange]);
 
   const redo = useCallback(() => {
-    if (history.future.length === 0) return;
-    const next = history.future[0];
-    setHistory(prev => ({
-      past: [...prev.past, value],
-      future: prev.future.slice(1)
-    }));
-    onChange(next);
-  }, [history.future, value, onChange]);
+    const h = historyRef.current;
+    if (h.future.length === 0) return;
+    const nextValue = h.future[0];
+    const next: HistoryState = {
+      past: [...h.past, valueRef.current],
+      future: h.future.slice(1),
+    };
+    historyRef.current = next;
+    setHistory(next);
+    onChange(nextValue);
+  }, [onChange]);
 
   // Insert text at cursor position
   const insertText = useCallback((before: string, after: string = '', placeholder: string = '') => {
@@ -79,8 +93,8 @@ export function MarkdownEditor({
     
     const insertion = selectedText || placeholder;
     const newText = text.substring(0, start) + before + insertion + after + text.substring(end);
-    
-    onChange(newText);
+
+    commitChange(newText);
 
     // Restore cursor position
     requestAnimationFrame(() => {
@@ -91,7 +105,7 @@ export function MarkdownEditor({
         selectedText ? newCursorPos + after.length : start + before.length + placeholder.length
       );
     });
-  }, [onChange]);
+  }, [commitChange]);
 
   // Insert at line start
   const insertAtLineStart = useCallback((prefix: string) => {
@@ -108,13 +122,13 @@ export function MarkdownEditor({
     }
 
     const newText = text.substring(0, lineStart) + prefix + text.substring(lineStart);
-    onChange(newText);
+    commitChange(newText);
 
     requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(start + prefix.length, start + prefix.length);
     });
-  }, [onChange]);
+  }, [commitChange]);
 
   // Wrap selection or insert with placeholder
   const wrapSelection = useCallback((wrapper: string, placeholder: string = 'text') => {
@@ -167,14 +181,14 @@ export function MarkdownEditor({
     }
 
     const newText = text.substring(0, lineStart) + newLine + text.substring(lineEnd);
-    onChange(newText);
+    commitChange(newText);
 
     requestAnimationFrame(() => {
       textarea.focus();
       const newCursorPos = Math.max(lineStart, start + cursorOffset);
       textarea.setSelectionRange(newCursorPos, newCursorPos);
     });
-  }, [onChange]);
+  }, [commitChange]);
 
   // Formatting actions
   const formatBold = () => wrapSelection('**', 'bold text');
@@ -194,37 +208,312 @@ export function MarkdownEditor({
   };
   const formatHorizontalRule = () => insertText('\n---\n', '', '');
 
+  // Set the current line's heading level (0 = remove all #).
+  const setHeadingLevel = useCallback((level: number) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const text = textarea.value;
+    let lineStart = start;
+    while (lineStart > 0 && text[lineStart - 1] !== '\n') lineStart--;
+    let lineEnd = start;
+    while (lineEnd < text.length && text[lineEnd] !== '\n') lineEnd++;
+    const line = text.substring(lineStart, lineEnd);
+    const m = line.match(/^(#{1,6})\s+(.*)$/);
+    const content = m ? m[2] : line.replace(/^#{1,6}\s*/, '');
+    const newLine = level === 0 ? content : '#'.repeat(level) + ' ' + content;
+    const newText = text.substring(0, lineStart) + newLine + text.substring(lineEnd);
+    commitChange(newText);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const pos = lineStart + newLine.length;
+      textarea.setSelectionRange(pos, pos);
+    });
+  }, [commitChange]);
+
+  // Tab / Shift+Tab — list-aware indent on a single line, block indent on
+  // a multi-line selection.
+  const handleTab = useCallback((shift: boolean) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart, selectionEnd } = ta;
+    const text = ta.value;
+
+    // Multi-line selection: indent or outdent each touched line.
+    const spansMultipleLines =
+      selectionStart !== selectionEnd &&
+      text.substring(selectionStart, selectionEnd).includes('\n');
+    if (spansMultipleLines) {
+      let blockStart = selectionStart;
+      while (blockStart > 0 && text[blockStart - 1] !== '\n') blockStart--;
+      let blockEnd = selectionEnd;
+      while (blockEnd < text.length && text[blockEnd] !== '\n') blockEnd++;
+      const lines = text.substring(blockStart, blockEnd).split('\n');
+      let firstDelta = 0;
+      let totalDelta = 0;
+      const newLines = lines.map((line, i) => {
+        if (shift) {
+          let removed = 0;
+          if (line.startsWith('  ')) removed = 2;
+          else if (line.startsWith(' ') || line.startsWith('\t')) removed = 1;
+          if (i === 0) firstDelta = -removed;
+          totalDelta -= removed;
+          return line.slice(removed);
+        }
+        if (i === 0) firstDelta = 2;
+        totalDelta += 2;
+        return '  ' + line;
+      });
+      const newBlock = newLines.join('\n');
+      const newText = text.substring(0, blockStart) + newBlock + text.substring(blockEnd);
+      commitChange(newText);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(
+          Math.max(blockStart, selectionStart + firstDelta),
+          Math.max(blockStart, selectionEnd + totalDelta)
+        );
+      });
+      return;
+    }
+
+    // Single line / no selection: find the current line.
+    let lineStart = selectionStart;
+    while (lineStart > 0 && text[lineStart - 1] !== '\n') lineStart--;
+    let lineEnd = selectionStart;
+    while (lineEnd < text.length && text[lineEnd] !== '\n') lineEnd++;
+    const line = text.substring(lineStart, lineEnd);
+
+    if (shift) {
+      // Outdent up to 2 leading spaces (or 1 tab).
+      let removed = 0;
+      if (line.startsWith('  ')) removed = 2;
+      else if (line.startsWith(' ') || line.startsWith('\t')) removed = 1;
+      if (removed === 0) return;
+      const newText = text.substring(0, lineStart) + line.slice(removed) + text.substring(lineEnd);
+      commitChange(newText);
+      const newPos = Math.max(lineStart, selectionStart - removed);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(newPos, newPos);
+      });
+      return;
+    }
+
+    // Indent: if the line is a list item, indent the whole line so the
+    // bullet/number becomes a nested level. Otherwise insert two spaces
+    // at the cursor.
+    const isListLine = /^\s*([-*+]|\d+\.)\s+/.test(line);
+    if (isListLine) {
+      const newText = text.substring(0, lineStart) + '  ' + line + text.substring(lineEnd);
+      commitChange(newText);
+      requestAnimationFrame(() => {
+        ta.focus();
+        const pos = selectionStart + 2;
+        ta.setSelectionRange(pos, pos);
+      });
+      return;
+    }
+    const newText = text.substring(0, selectionStart) + '  ' + text.substring(selectionStart);
+    commitChange(newText);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = selectionStart + 2;
+      ta.setSelectionRange(pos, pos);
+    });
+  }, [commitChange]);
+
+  // Enter — auto-continue lists, quotes, and task lists. Pressing Enter
+  // on an empty list/quote item clears the marker. Returns true if the
+  // event was handled.
+  const handleEnter = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>): boolean => {
+    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return false;
+    const ta = textareaRef.current;
+    if (!ta) return false;
+    const { selectionStart, selectionEnd } = ta;
+    if (selectionStart !== selectionEnd) return false;
+    const text = ta.value;
+
+    let lineStart = selectionStart;
+    while (lineStart > 0 && text[lineStart - 1] !== '\n') lineStart--;
+    const lineSoFar = text.substring(lineStart, selectionStart);
+
+    type Match = { indent: string; markerForNext: string; isEmpty: boolean };
+    let match: Match | null = null;
+
+    // Task list before unordered (it's a superset).
+    let m = lineSoFar.match(/^(\s*)([-*+])\s+\[[ xX]\]\s+(.*)$/);
+    if (m) {
+      match = {
+        indent: m[1],
+        markerForNext: `${m[2]} [ ] `,
+        isEmpty: m[3].length === 0,
+      };
+    }
+    if (!match) {
+      m = lineSoFar.match(/^(\s*)([-*+])\s+(.*)$/);
+      if (m) {
+        match = {
+          indent: m[1],
+          markerForNext: `${m[2]} `,
+          isEmpty: m[3].length === 0,
+        };
+      }
+    }
+    if (!match) {
+      m = lineSoFar.match(/^(\s*)(\d+)\.\s+(.*)$/);
+      if (m) {
+        const num = parseInt(m[2], 10);
+        match = {
+          indent: m[1],
+          markerForNext: `${num + 1}. `,
+          isEmpty: m[3].length === 0,
+        };
+      }
+    }
+    if (!match) {
+      m = lineSoFar.match(/^(\s*)((?:>\s?)+)(.*)$/);
+      if (m) {
+        match = {
+          indent: m[1],
+          markerForNext: m[2],
+          isEmpty: m[3].length === 0,
+        };
+      }
+    }
+    if (!match) return false;
+
+    e.preventDefault();
+    if (match.isEmpty) {
+      // Clear the marker on the current line.
+      const newText = text.substring(0, lineStart) + text.substring(selectionStart);
+      commitChange(newText);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(lineStart, lineStart);
+      });
+      return true;
+    }
+    const insert = '\n' + match.indent + match.markerForNext;
+    const newText = text.substring(0, selectionStart) + insert + text.substring(selectionEnd);
+    commitChange(newText);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = selectionStart + insert.length;
+      ta.setSelectionRange(pos, pos);
+    });
+    return true;
+  }, [commitChange]);
+
+  // Paste — if a URL is pasted onto a non-URL selection, wrap the selection
+  // as a markdown link instead of replacing it.
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart, selectionEnd } = ta;
+    if (selectionStart === selectionEnd) return;
+    const pasted = e.clipboardData.getData('text/plain');
+    if (!pasted) return;
+    const trimmed = pasted.trim();
+    const isUrl = /^(https?:\/\/|mailto:|ftp:)\S+$/.test(trimmed);
+    if (!isUrl) return;
+    const text = ta.value;
+    const selected = text.substring(selectionStart, selectionEnd);
+    if (selected.includes('\n')) return;
+    if (/^(https?:\/\/|mailto:|ftp:)\S+$/.test(selected.trim())) return;
+    e.preventDefault();
+    const replacement = `[${selected}](${trimmed})`;
+    const newText = text.substring(0, selectionStart) + replacement + text.substring(selectionEnd);
+    commitChange(newText);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = selectionStart + replacement.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  }, [commitChange]);
+
+  // Wrap the current selection in matching brackets/quotes. Returns true if
+  // the event was handled.
+  const tryWrapBracket = useCallback((key: string): boolean => {
+    const pairs: Record<string, string> = {
+      '(': ')',
+      '[': ']',
+      '{': '}',
+      '"': '"',
+      '`': '`',
+    };
+    const close = pairs[key];
+    if (!close) return false;
+    const ta = textareaRef.current;
+    if (!ta) return false;
+    const { selectionStart, selectionEnd } = ta;
+    if (selectionStart === selectionEnd) return false;
+    const text = ta.value;
+    const selected = text.substring(selectionStart, selectionEnd);
+    const replacement = key + selected + close;
+    const newText = text.substring(0, selectionStart) + replacement + text.substring(selectionEnd);
+    commitChange(newText);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(selectionStart + 1, selectionEnd + 1);
+    });
+    return true;
+  }, [commitChange]);
+
   // Keyboard shortcuts
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const isMod = e.metaKey || e.ctrlKey;
 
-    if (isMod && e.key === 'b') {
+    if (isMod && e.altKey && /^[0-6]$/.test(e.key)) {
       e.preventDefault();
-      formatBold();
-    } else if (isMod && e.key === 'i') {
+      setHeadingLevel(parseInt(e.key, 10));
+      return;
+    }
+    if (isMod && !e.altKey && e.key === 'b') {
       e.preventDefault();
-      formatItalic();
-    } else if (isMod && e.key === 'k') {
+      wrapSelection('**', 'bold text');
+      return;
+    }
+    if (isMod && !e.altKey && e.key === 'i') {
       e.preventDefault();
-      formatLink();
-    } else if (isMod && e.shiftKey && e.key === 'x') {
+      wrapSelection('*', 'italic text');
+      return;
+    }
+    if (isMod && !e.altKey && e.key === 'k') {
       e.preventDefault();
-      formatStrikethrough();
-    } else if (isMod && e.key === 'z') {
+      insertText('[', '](url)', 'link text');
+      return;
+    }
+    if (isMod && e.shiftKey && e.key.toLowerCase() === 'x') {
       e.preventDefault();
-      if (e.shiftKey) {
-        redo();
-      } else {
-        undo();
-      }
-    } else if (isMod && e.key === 'y') {
+      wrapSelection('~~', 'strikethrough');
+      return;
+    }
+    if (isMod && e.key === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+      return;
+    }
+    if (isMod && e.key === 'y') {
       e.preventDefault();
       redo();
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      insertText('  ', '', '');
+      return;
     }
-  }, [undo, redo, insertText]);
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      handleTab(e.shiftKey);
+      return;
+    }
+    if (e.key === 'Enter') {
+      if (handleEnter(e)) return;
+    }
+    // Bracket / quote wrapping on a selection. Skip while a modifier is
+    // held so shortcuts like Cmd+[ keep working.
+    if (!isMod && !e.altKey && tryWrapBracket(e.key)) {
+      e.preventDefault();
+    }
+  }, [undo, redo, handleTab, handleEnter, tryWrapBracket, setHeadingLevel, wrapSelection, insertText]);
 
   // Toolbar button component
   const ToolbarButton = ({ 
@@ -276,7 +565,7 @@ export function MarkdownEditor({
           <ToolbarButton onClick={formatStrikethrough} title="Strikethrough (Cmd+Shift+X)">
             <StrikethroughIcon />
           </ToolbarButton>
-          <ToolbarButton onClick={formatHeading} title="Heading">
+          <ToolbarButton onClick={formatHeading} title="Heading (Cmd+Alt+1…6)">
             <HeadingIcon />
           </ToolbarButton>
 
@@ -361,8 +650,9 @@ export function MarkdownEditor({
               ref={textareaRef}
               className={styles.textarea}
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => commitChange(e.target.value)}
               onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
               disabled={disabled}
               placeholder={placeholder}
               spellCheck={true}
