@@ -1,0 +1,47 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  padding: 0 8px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.tab {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 80ms ease;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--berry-text-primary);
+}
+
+.tabActive {
+  color: var(--berry-text-primary);
+  font-weight: 600;
+  border-bottom-color: var(--berry-accent);
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}

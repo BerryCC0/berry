@@ -28,6 +28,8 @@ const Probe = lazy(() => import("./nouns/Probe/Probe").then(m => ({ default: m.P
 const Clients = lazy(() => import("./nouns/Clients/Clients").then(m => ({ default: m.Clients })));
 const BIM = lazy(() => import("./social/BIM/BIM").then(m => ({ default: m.BIM })));
 const Swap = lazy(() => import("./nouns/Swap/Swap").then(m => ({ default: m.Swap })));
+const FoodNouns = lazy(() => import("./nouns/FoodNouns/FoodNouns").then(m => ({ default: m.FoodNouns })));
+const NounsV2 = lazy(() => import("./nouns/NounsV2/NounsV2").then(m => ({ default: m.NounsV2 })));
 
 /**
  * Finder - File browser
@@ -526,6 +528,50 @@ const swapConfig: AppConfig = {
 };
 
 /**
+ * Food Nouns — V1 fork of Nouns. Auction, governance, treasury,
+ * and personal holdings rolled into one window.
+ */
+const foodNounsConfig: AppConfig = {
+  id: "food-nouns",
+  name: "Food Nouns",
+  icon: getIcon("food-nouns"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 1000,
+    height: 720,
+    minWidth: 600,
+    minHeight: 480,
+    isResizable: true,
+  },
+  permissions: ["network", "wallet"],
+  component: FoodNouns,
+};
+
+/**
+ * Nouns V2 — standalone V2 DAO + Small Grants pot.
+ * Auction · Governance · Treasury · Holdings · Small Grants tabs in one window.
+ */
+const nounsV2Config: AppConfig = {
+  id: "nouns-v2",
+  name: "Nouns V2",
+  icon: getIcon("nouns-v2"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 1000,
+    height: 720,
+    minWidth: 600,
+    minHeight: 480,
+    isResizable: true,
+  },
+  permissions: ["network", "wallet"],
+  component: NounsV2,
+};
+
+/**
  * All OS app configurations
  *
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -549,6 +595,8 @@ export const osAppConfigs: AppConfig[] = [
   clientsConfig,
   bimConfig,
   swapConfig,
+  foodNounsConfig,
+  nounsV2Config,
 ];
 
 /**

@@ -1,0 +1,23 @@
+.wrap {
+  position: relative;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.placeholder {
+  font-family: var(--berry-font-mono);
+  color: var(--berry-text-tertiary);
+  font-size: 18px;
+}

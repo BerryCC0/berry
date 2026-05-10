@@ -647,6 +647,173 @@ export const streams = onchainTable("streams", (t) => ({
 }));
 
 // =============================================================================
+// SUBGRAPH 4: NOUNS V2 + SMALL GRANTS
+// Independent deployment from V1; same shape, separate tables. V2 has its own
+// ERC-721, auction house, and governor/treasury. Small Grants is a separate
+// governor/treasury that reads voting power from the V1 NounsToken.
+// =============================================================================
+
+/** All NounV2 tokens — same trait shape as V1. */
+export const nounsV2 = onchainTable("nouns_v2", (t) => ({
+  id: t.integer().primaryKey(),
+  background: t.integer().notNull(),
+  body: t.integer().notNull(),
+  accessory: t.integer().notNull(),
+  head: t.integer().notNull(),
+  glasses: t.integer().notNull(),
+  owner: t.hex(),
+  /** True if the seed was overridden by the slobber rule (accessory == 143). */
+  isSlobber: t.boolean().notNull().default(false),
+  burned: t.boolean().notNull().default(false),
+  burnedAt: t.bigint(),
+  blockNumber: t.bigint().notNull(),
+  blockTimestamp: t.bigint().notNull(),
+}));
+
+/** NounV2 auction lifecycle. */
+export const nounsV2Auctions = onchainTable("nouns_v2_auctions", (t) => ({
+  nounId: t.integer().primaryKey(),
+  startTime: t.bigint().notNull(),
+  endTime: t.bigint().notNull(),
+  winner: t.hex(),
+  amount: t.bigint(),
+  settled: t.boolean().notNull().default(false),
+  settlerAddress: t.hex(),
+  settledTimestamp: t.bigint(),
+  blockNumber: t.bigint().notNull(),
+}));
+
+/** Every NounV2 auction bid. */
+export const nounsV2AuctionBids = onchainTable(
+  "nouns_v2_auction_bids",
+  (t) => ({
+    id: t.text().primaryKey(),
+    nounId: t.integer().notNull(),
+    bidder: t.hex().notNull(),
+    amount: t.bigint().notNull(),
+    extended: t.boolean().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    nounIdx: index().on(table.nounId),
+    bidderIdx: index().on(table.bidder),
+  })
+);
+
+/** NounV2 token transfers. */
+export const nounsV2Transfers = onchainTable(
+  "nouns_v2_transfers",
+  (t) => ({
+    id: t.text().primaryKey(),
+    from: t.hex().notNull(),
+    to: t.hex().notNull(),
+    tokenId: t.integer().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    tokenIdx: index().on(table.tokenId),
+    fromIdx: index().on(table.from),
+    toIdx: index().on(table.to),
+  })
+);
+
+/** NounV2 governor proposals. */
+export const nounsV2Proposals = onchainTable(
+  "nouns_v2_proposals",
+  (t) => ({
+    id: t.integer().primaryKey(),
+    proposer: t.hex().notNull(),
+    description: t.text(),
+    startBlock: t.bigint().notNull(),
+    endBlock: t.bigint().notNull(),
+    eta: t.bigint(),
+    forVotes: t.bigint().notNull().default(0n),
+    againstVotes: t.bigint().notNull().default(0n),
+    abstainVotes: t.bigint().notNull().default(0n),
+    canceled: t.boolean().notNull().default(false),
+    queued: t.boolean().notNull().default(false),
+    executed: t.boolean().notNull().default(false),
+    createdTimestamp: t.bigint().notNull(),
+    createdBlock: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    proposerIdx: index().on(table.proposer),
+    createdIdx: index().on(table.createdTimestamp),
+  })
+);
+
+/** NounV2 votes. */
+export const nounsV2Votes = onchainTable(
+  "nouns_v2_votes",
+  (t) => ({
+    id: t.text().primaryKey(),
+    voter: t.hex().notNull(),
+    proposalId: t.integer().notNull(),
+    support: t.integer().notNull(),
+    votes: t.bigint().notNull(),
+    reason: t.text(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    voterIdx: index().on(table.voter),
+    proposalIdx: index().on(table.proposalId),
+  })
+);
+
+/** Small Grants proposals — V1-Nouns-voted grant pot, same shape as V2. */
+export const smallGrantsProposals = onchainTable(
+  "small_grants_proposals",
+  (t) => ({
+    id: t.integer().primaryKey(),
+    proposer: t.hex().notNull(),
+    description: t.text(),
+    startBlock: t.bigint().notNull(),
+    endBlock: t.bigint().notNull(),
+    eta: t.bigint(),
+    forVotes: t.bigint().notNull().default(0n),
+    againstVotes: t.bigint().notNull().default(0n),
+    abstainVotes: t.bigint().notNull().default(0n),
+    canceled: t.boolean().notNull().default(false),
+    queued: t.boolean().notNull().default(false),
+    executed: t.boolean().notNull().default(false),
+    createdTimestamp: t.bigint().notNull(),
+    createdBlock: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    proposerIdx: index().on(table.proposer),
+    createdIdx: index().on(table.createdTimestamp),
+  })
+);
+
+/** Small Grants votes. */
+export const smallGrantsVotes = onchainTable(
+  "small_grants_votes",
+  (t) => ({
+    id: t.text().primaryKey(),
+    voter: t.hex().notNull(),
+    proposalId: t.integer().notNull(),
+    support: t.integer().notNull(),
+    votes: t.bigint().notNull(),
+    reason: t.text(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    voterIdx: index().on(table.voter),
+    proposalIdx: index().on(table.proposalId),
+  })
+);
+
+// =============================================================================
 // ENS CACHE
 // =============================================================================
 

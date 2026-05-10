@@ -30,6 +30,10 @@ import { TokenBuyerABI } from "../app/lib/nouns/abis/TokenBuyer";
 import { PayerABI } from "../app/lib/nouns/abis/Payer";
 import { StreamFactoryABI } from "../app/lib/nouns/abis/StreamFactory";
 import { NFTBackedTokenABI } from "../app/lib/nouns/abis/NFTBackedToken";
+import { nounV2TokenAbi } from "../app/lib/nouns-v2/abis/nounV2Token";
+import { nounV2AuctionHouseAbi } from "../app/lib/nouns-v2/abis/nounV2AuctionHouse";
+import { nounV2TreasuryAbi } from "../app/lib/nouns-v2/abis/nounV2Treasury";
+import { smallGrantsTreasuryAbi } from "../app/lib/nouns-v2/abis/smallGrantsTreasury";
 
 export default createConfig({
   database: {
@@ -143,6 +147,40 @@ export default createConfig({
       abi: NFTBackedTokenABI,
       address: "0x5c1760c98be951A4067DF234695c8014D8e7619C",
       startBlock: 20025445,
+    },
+
+    // =========================================================================
+    // Subgraph 4: Nouns V2 + Small Grants
+    // Independent fork of Nouns DAO. Same architecture, separate deployments.
+    // =========================================================================
+
+    NounV2Token: {
+      chain: "mainnet",
+      abi: nounV2TokenAbi,
+      address: "0xb1d6bdf9326dd09183c2e9d25af5e22c637293b9",
+      startBlock: 24951808,
+    },
+
+    NounV2AuctionHouse: {
+      chain: "mainnet",
+      abi: nounV2AuctionHouseAbi,
+      address: "0x9a6ddb16e23967d5482e5bfd7444a04a5d5145fc",
+      startBlock: 24951808,
+    },
+
+    NounV2Treasury: {
+      chain: "mainnet",
+      abi: nounV2TreasuryAbi,
+      address: "0x2cdeb0d251674710840d9fa990d1de138dfe7c00",
+      startBlock: 24951808,
+    },
+
+    SmallGrantsTreasury: {
+      chain: "mainnet",
+      abi: smallGrantsTreasuryAbi,
+      address: "0xbac9233725440c595b19d975309cc98cb259253a",
+      // Deployed shortly after V2; safe lower bound — Ponder skips empty blocks.
+      startBlock: 24951808,
     },
   },
 });

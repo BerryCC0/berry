@@ -1,0 +1,121 @@
+.view {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.heroRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .heroRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.heroCard {
+  padding: 18px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heroLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+}
+
+.heroValue {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--berry-text-primary);
+}
+
+.heroValueSmall {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono);
+}
+
+.heroSubtle {
+  font-size: 12px;
+  color: var(--berry-text-tertiary);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-secondary);
+}
+
+.contractList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.contractRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--berry-bg);
+  border-bottom: 1px solid var(--berry-border);
+  align-items: center;
+  font-size: 13px;
+}
+
+.contractRow:last-child {
+  border-bottom: none;
+}
+
+.contractLabel {
+  color: var(--berry-text-secondary);
+}
+
+.contractLink {
+  color: var(--berry-accent);
+  text-decoration: none;
+  font-family: var(--berry-font-mono);
+  font-size: 12px;
+}
+
+.contractLink:hover {
+  text-decoration: underline;
+}
+
+.note {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--berry-text-secondary);
+}
