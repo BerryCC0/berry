@@ -72,12 +72,25 @@ interface ToolbarShareProps {
   styles: Record<string, string>;
 }
 
+// encodeURIComponent leaves !'()* alone (RFC 3986 unreserved), but `*` in a
+// shared URL breaks markdown autolinking in Slack/Discord/X. Percent-encode
+// those chars too so pasted links stay intact.
+function encodePathSegment(s: string): string {
+  return encodeURIComponent(s).replace(
+    /[!'()*]/g,
+    (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase()
+  );
+}
+
 export function ToolbarShare({ path, styles }: ToolbarShareProps) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = useCallback(async () => {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const fullUrl = `${baseUrl}/camp/${path}`;
+    // Encode each segment so special chars in slugs (e.g. `**` from candidates
+    // created via other clients) don't break markdown autolinking in chat apps.
+    const encodedPath = path.split('/').map(encodePathSegment).join('/');
+    const fullUrl = `${baseUrl}/camp/${encodedPath}`;
     try {
       await navigator.clipboard.writeText(fullUrl);
     } catch {

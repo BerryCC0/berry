@@ -47,7 +47,6 @@ export type AppIconId =
   | "clients"
   | "bim"
   | "swap"
-  | "food-nouns"
   | "nouns-v2";
 
 /**
@@ -101,7 +100,6 @@ const iconRegistry: Record<IconId, string> = {
   "clients": `${ICONS_BASE_PATH}/clients.png`,
   "bim": `${ICONS_BASE_PATH}/BIM.png`,
   "swap": `${ICONS_BASE_PATH}/swap.svg`,
-  "food-nouns": `${ICONS_BASE_PATH}/food-nouns.svg`,
   "nouns-v2": `${ICONS_BASE_PATH}/v2.png`,
 
   // File type icons

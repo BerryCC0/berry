@@ -46,3 +46,9 @@ next-env.d.ts
 # documentation
 /docs
 .claude/
+
+# local-only apps (kept out of production builds, wired up via _localApps.ts)
+/app/api/food-nouns
+/app/lib/foodNouns
+/src/OS/Apps/nouns/FoodNouns
+/public/icons/food-nouns.svg
