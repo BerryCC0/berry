@@ -6,12 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { sql as db } from '@/app/lib/db';
 import { verifyWalletAuth } from '@/app/lib/auth';
 
-const sql = process.env.DATABASE_URL
-  ? neon(process.env.DATABASE_URL)
-  : null;
+const sql = process.env.DATABASE_URL ? db() : null;
 
 /**
  * Soft-launch auth check: verify wallet auth headers if present,

@@ -39,6 +39,7 @@
     "next-intl": "^4.7.0",
     "persona": "^5.5.0",
     "porto": "^0.2.37",
+    "postgres": "^3.4.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",

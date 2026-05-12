@@ -1,10 +1,13 @@
 /**
- * Neon Persistence Adapter
+ * Postgres Persistence Adapter
  * Used for persistent sessions (wallet connected).
- * Data is stored in Neon Postgres and survives page refresh.
+ * Data is stored in Postgres and survives page refresh.
+ *
+ * Class name kept as NeonAdapter for backwards compatibility with callers;
+ * the underlying client is now postgres-js (Railway-backed).
  */
 
-import { neon, NeonQueryFunction } from "@neondatabase/serverless";
+import { sql as db } from "@/app/lib/db";
 import type { Theme } from "@/OS/types/theme";
 import type { SystemSettings } from "@/OS/types/settings";
 import type {
@@ -21,14 +24,13 @@ import type {
 type DbRow = Record<string, unknown>;
 
 export class NeonAdapter implements PersistenceAdapter {
-  private sql: NeonQueryFunction<false, false>;
+  private sql: ReturnType<typeof db>;
 
   constructor() {
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
+    if (!process.env.DATABASE_URL) {
       throw new Error("[NeonAdapter] DATABASE_URL environment variable is not set");
     }
-    this.sql = neon(databaseUrl);
+    this.sql = db();
   }
 
   // Profile management
