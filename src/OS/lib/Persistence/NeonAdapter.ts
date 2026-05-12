@@ -7,7 +7,7 @@
  * the underlying client is now postgres-js (Railway-backed).
  */
 
-import { sql as db } from "@/app/lib/db";
+import { sql as db, asJson } from "@/app/lib/db";
 import type { Theme } from "@/OS/types/theme";
 import type { SystemSettings } from "@/OS/types/settings";
 import type {
@@ -136,9 +136,9 @@ export class NeonAdapter implements PersistenceAdapter {
   async saveTheme(profileId: string, theme: Theme): Promise<void> {
     await this.sql`
       INSERT INTO user_themes (profile_id, theme_data)
-      VALUES (${profileId}, ${JSON.stringify(theme)})
+      VALUES (${profileId}, ${asJson(theme)})
       ON CONFLICT (profile_id)
-      DO UPDATE SET theme_data = ${JSON.stringify(theme)}, updated_at = NOW()
+      DO UPDATE SET theme_data = ${asJson(theme)}, updated_at = NOW()
     `;
   }
 
@@ -154,9 +154,9 @@ export class NeonAdapter implements PersistenceAdapter {
   async saveSettings(profileId: string, settings: SystemSettings): Promise<void> {
     await this.sql`
       INSERT INTO user_settings (profile_id, settings_data)
-      VALUES (${profileId}, ${JSON.stringify(settings)})
+      VALUES (${profileId}, ${asJson(settings)})
       ON CONFLICT (profile_id)
-      DO UPDATE SET settings_data = ${JSON.stringify(settings)}, updated_at = NOW()
+      DO UPDATE SET settings_data = ${asJson(settings)}, updated_at = NOW()
     `;
   }
 
@@ -172,9 +172,9 @@ export class NeonAdapter implements PersistenceAdapter {
   async saveDesktopLayout(profileId: string, layout: DesktopLayout): Promise<void> {
     await this.sql`
       INSERT INTO desktop_layouts (profile_id, layout_data)
-      VALUES (${profileId}, ${JSON.stringify(layout)})
+      VALUES (${profileId}, ${asJson(layout)})
       ON CONFLICT (profile_id)
-      DO UPDATE SET layout_data = ${JSON.stringify(layout)}, updated_at = NOW()
+      DO UPDATE SET layout_data = ${asJson(layout)}, updated_at = NOW()
     `;
   }
 
@@ -198,7 +198,7 @@ export class NeonAdapter implements PersistenceAdapter {
     for (const window of windows) {
       await this.sql`
         INSERT INTO window_states (profile_id, window_id, state_data)
-        VALUES (${profileId}, ${window.id}, ${JSON.stringify(window)})
+        VALUES (${profileId}, ${window.id}, ${asJson(window)})
       `;
     }
   }
@@ -214,9 +214,9 @@ export class NeonAdapter implements PersistenceAdapter {
   async saveDockConfig(profileId: string, config: DockConfig): Promise<void> {
     await this.sql`
       INSERT INTO dock_configs (profile_id, config_data)
-      VALUES (${profileId}, ${JSON.stringify(config)})
+      VALUES (${profileId}, ${asJson(config)})
       ON CONFLICT (profile_id)
-      DO UPDATE SET config_data = ${JSON.stringify(config)}, updated_at = NOW()
+      DO UPDATE SET config_data = ${asJson(config)}, updated_at = NOW()
     `;
   }
 
@@ -236,9 +236,9 @@ export class NeonAdapter implements PersistenceAdapter {
   ): Promise<void> {
     await this.sql`
       INSERT INTO app_states (profile_id, app_id, state_data)
-      VALUES (${profileId}, ${appId}, ${JSON.stringify(state)})
+      VALUES (${profileId}, ${appId}, ${asJson(state)})
       ON CONFLICT (profile_id, app_id)
-      DO UPDATE SET state_data = ${JSON.stringify(state)}, updated_at = NOW()
+      DO UPDATE SET state_data = ${asJson(state)}, updated_at = NOW()
     `;
   }
 

@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { sql as db } from "@/app/lib/db";
+import { sql as db, asJson } from "@/app/lib/db";
 
 const getDatabaseUrl = () => process.env.DATABASE_URL;
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         ${id}, 
         ${fullPath}, 
         ${expiresAt ? new Date(expiresAt).toISOString() : null},
-        ${metadata ? JSON.stringify(metadata) : null},
+        ${metadata ? asJson(metadata) : null},
         0
       )
     `;

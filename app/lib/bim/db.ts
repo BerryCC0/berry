@@ -3,7 +3,7 @@
  * Shares the singleton postgres-js client (same pattern as ponder-db.ts).
  */
 
-import { sql as db } from "@/app/lib/db";
+import { sql as db, asJson } from "@/app/lib/db";
 
 function sql() {
   return db();
@@ -118,7 +118,7 @@ export async function createServer(
 
   const rows = await db`
     INSERT INTO bim_servers (name, description, icon_url, owner_address, invite_code, is_token_gated, token_gate_config)
-    VALUES (${data.name}, ${data.description ?? null}, ${data.icon_url ?? null}, ${ownerAddress.toLowerCase()}, ${inviteCode}, ${data.is_token_gated ?? false}, ${data.token_gate_config ? JSON.stringify(data.token_gate_config) : null})
+    VALUES (${data.name}, ${data.description ?? null}, ${data.icon_url ?? null}, ${ownerAddress.toLowerCase()}, ${inviteCode}, ${data.is_token_gated ?? false}, ${data.token_gate_config ? asJson(data.token_gate_config) : null})
     RETURNING *
   `;
   const server = rows[0] as BimServer;
@@ -143,7 +143,7 @@ export async function updateServer(
       description = COALESCE(${data.description ?? null}, description),
       icon_url = COALESCE(${data.icon_url ?? null}, icon_url),
       is_token_gated = COALESCE(${data.is_token_gated ?? null}, is_token_gated),
-      token_gate_config = COALESCE(${data.token_gate_config ? JSON.stringify(data.token_gate_config) : null}, token_gate_config),
+      token_gate_config = COALESCE(${data.token_gate_config ? asJson(data.token_gate_config) : null}, token_gate_config),
       updated_at = NOW()
     WHERE id = ${serverId}
     RETURNING *

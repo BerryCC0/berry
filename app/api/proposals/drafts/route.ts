@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sql as db } from '@/app/lib/db';
+import { sql as db, asJson } from '@/app/lib/db';
 import { verifyWalletAuth } from '@/app/lib/auth';
 
 const sql = process.env.DATABASE_URL ? db() : null;
@@ -127,20 +127,20 @@ export async function POST(request: NextRequest) {
         ${draft.draft_title || 'Untitled'},
         ${draft.title || ''}, 
         ${draft.description || ''}, 
-        ${JSON.stringify(draft.actions || [])},
-        ${JSON.stringify(draft.action_templates || [])},
-        ${draft.proposal_type || 'standard'}, 
-        ${draft.kyc_verified || false}, 
+        ${asJson(draft.actions || [])},
+        ${asJson(draft.action_templates || [])},
+        ${draft.proposal_type || 'standard'},
+        ${draft.kyc_verified || false},
         ${draft.kyc_inquiry_id || null},
         NOW()
       )
       ON CONFLICT (wallet_address, draft_slug)
-      DO UPDATE SET 
+      DO UPDATE SET
         draft_title = ${draft.draft_title || 'Untitled'},
         title = ${draft.title || ''},
         description = ${draft.description || ''},
-        actions = ${JSON.stringify(draft.actions || [])},
-        action_templates = ${JSON.stringify(draft.action_templates || [])},
+        actions = ${asJson(draft.actions || [])},
+        action_templates = ${asJson(draft.action_templates || [])},
         proposal_type = ${draft.proposal_type || 'standard'},
         kyc_verified = ${draft.kyc_verified || false},
         kyc_inquiry_id = ${draft.kyc_inquiry_id || null},

@@ -9,9 +9,9 @@
 
 import postgres from "postgres";
 
-let cached: ReturnType<typeof postgres> | null = null;
+let cached: postgres.Sql | null = null;
 
-export function sql() {
+export function sql(): postgres.Sql {
   if (cached) return cached;
   const url = process.env.DATABASE_URL;
   if (!url) {
@@ -32,4 +32,17 @@ export function sql() {
     },
   });
   return cached;
+}
+
+/**
+ * Wrap a value so postgres-js sends it as JSON into a jsonb column.
+ *
+ * Necessary because `${JSON.stringify(obj)}` on a jsonb column stores the
+ * value as a JSON *string scalar* (not a parsed object). Passing through
+ * `sql.json()` is the correct route, but its TS signature only accepts
+ * `JSONValue`, which excludes our domain types (Theme, SystemSettings, etc.)
+ * even though they serialize fine at runtime. This helper widens the type.
+ */
+export function asJson(value: unknown) {
+  return sql().json(value as never);
 }
