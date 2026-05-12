@@ -30,19 +30,42 @@ ponder.on("NounV2AuctionHouse:AuctionBid", async ({ event, context }) => {
   });
 });
 
+// Upsert in Extended/Settled too. The very first V2 auction's AuctionCreated
+// fires in the same block as the contract's unpause() call, which may sit
+// just before the indexer's startBlock — so the Settled event arrives with
+// no prior auction row. startTime/endTime get placeholder 0n in that case;
+// every later auction has the proper values from AuctionCreated.
 ponder.on("NounV2AuctionHouse:AuctionExtended", async ({ event, context }) => {
   const { nounId, endTime } = event.args;
   await context.db
-    .update(nounsV2Auctions, { nounId: Number(nounId) })
-    .set({ endTime });
+    .insert(nounsV2Auctions)
+    .values({
+      nounId: Number(nounId),
+      startTime: 0n,
+      endTime,
+      settled: false,
+      blockNumber: event.block.number,
+    })
+    .onConflictDoUpdate({ endTime });
 });
 
 ponder.on("NounV2AuctionHouse:AuctionSettled", async ({ event, context }) => {
   const { nounId, winner, amount } = event.args;
   const settler = event.transaction.from;
   await context.db
-    .update(nounsV2Auctions, { nounId: Number(nounId) })
-    .set({
+    .insert(nounsV2Auctions)
+    .values({
+      nounId: Number(nounId),
+      startTime: 0n,
+      endTime: 0n,
+      settled: true,
+      winner,
+      amount,
+      settlerAddress: settler,
+      settledTimestamp: event.block.timestamp,
+      blockNumber: event.block.number,
+    })
+    .onConflictDoUpdate({
       winner,
       amount,
       settled: true,
