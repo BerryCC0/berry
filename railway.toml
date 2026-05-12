@@ -1,7 +1,7 @@
 [build]
 # Build from repo root so Dockerfile can access ../app/lib/nouns/abis/
 dockerfilePath = "ponder/Dockerfile"
-watchPatterns = ["ponder/**", "app/lib/nouns/abis/**"]
+watchPatterns = ["ponder/**", "app/lib/nouns/abis/**", "app/lib/nouns-v2/abis/**"]
 
 [deploy]
 healthcheckPath = "/ready"
