@@ -180,6 +180,27 @@ export async function generateMetadata({
   const app = osAppConfigs.find((a) => a.id === appId);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://berryos.wtf';
 
+  // Nouns V2 metadata — uses app icon as OG image
+  if (appId === 'nouns-v2') {
+    const ogImageUrl = `${baseUrl}/icons/v2.png`;
+    return {
+      title: "Nouns V2 - Berry OS",
+      description: "Nouns V2 DAO + Small Grants.",
+      openGraph: {
+        title: "Nouns V2",
+        description: "Nouns V2 DAO + Small Grants.",
+        images: [ogImageUrl],
+        type: "website",
+      },
+      twitter: {
+        card: "summary",
+        title: "Nouns V2",
+        description: "Nouns V2 DAO + Small Grants.",
+        images: [ogImageUrl],
+      },
+    };
+  }
+
   // Special metadata for Crystal Ball (Noun O' Clock)
   if (appId === 'crystal-ball') {
     const ogImageUrl = `${baseUrl}/api/og/crystal-ball`;
