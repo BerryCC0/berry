@@ -1,8 +1,6 @@
 import { ponder } from "ponder:registry";
 import { nounsV2, nounsV2Transfers } from "ponder:schema";
 
-const ZERO = "0x0000000000000000000000000000000000000000" as const;
-
 // Slobber rule constants — must match NounV2SlobberSeeder on-chain.
 const SLOBBER_INDEX = 143;
 
@@ -75,26 +73,26 @@ ponder.on("NounV2Token:Transfer", async ({ event, context }) => {
     txHash: event.transaction.hash,
   });
 
-  if (from === ZERO) {
-    await context.db
-      .insert(nounsV2)
-      .values({
-        id: Number(tokenId),
-        background: 0,
-        body: 0,
-        accessory: 0,
-        head: 0,
-        glasses: 0,
-        owner: to,
-        isSlobber: false,
-        burned: false,
-        blockNumber: event.block.number,
-        blockTimestamp: event.block.timestamp,
-      })
-      .onConflictDoUpdate({ owner: to });
-  } else {
-    await context.db
-      .update(nounsV2, { id: Number(tokenId) })
-      .set({ owner: to });
-  }
+  // Upsert in both mint and regular-transfer cases. The V1 handler relies on
+  // "noun row guaranteed to exist" after the mint Transfer, but on V2 that
+  // assumption breaks for the very first token (tokenId 0): the historical
+  // Transfer fires from the auction house before any NounCreated row exists.
+  // Inserting with placeholder traits keeps things consistent; NounCreated
+  // fills the real seed in via its own onConflictDoUpdate when it fires.
+  await context.db
+    .insert(nounsV2)
+    .values({
+      id: Number(tokenId),
+      background: 0,
+      body: 0,
+      accessory: 0,
+      head: 0,
+      glasses: 0,
+      owner: to,
+      isSlobber: false,
+      burned: false,
+      blockNumber: event.block.number,
+      blockTimestamp: event.block.timestamp,
+    })
+    .onConflictDoUpdate({ owner: to });
 });
