@@ -1,12 +1,12 @@
 /**
  * BIM Database Query Helpers
- * Uses Neon serverless client (same pattern as ponder-db.ts)
+ * Shares the singleton postgres-js client (same pattern as ponder-db.ts).
  */
 
-import { neon } from "@neondatabase/serverless";
+import { sql as db, asJson } from "@/app/lib/db";
 
 function sql() {
-  return neon(process.env.DATABASE_URL!);
+  return db();
 }
 
 // ============================================================================
@@ -57,7 +57,7 @@ export async function getProfiles(walletAddresses: string[]): Promise<BimProfile
   const rows = await db`
     SELECT * FROM bim_profiles WHERE LOWER(wallet_address) = ANY(${lower})
   `;
-  return rows as BimProfile[];
+  return rows as unknown as BimProfile[];
 }
 
 // ============================================================================
@@ -85,7 +85,7 @@ export async function getServersForUser(walletAddress: string): Promise<BimServe
     WHERE LOWER(m.wallet_address) = LOWER(${walletAddress})
     ORDER BY s.created_at ASC
   `;
-  return rows as BimServer[];
+  return rows as unknown as BimServer[];
 }
 
 export async function getServerById(serverId: string): Promise<BimServer | null> {
@@ -118,7 +118,7 @@ export async function createServer(
 
   const rows = await db`
     INSERT INTO bim_servers (name, description, icon_url, owner_address, invite_code, is_token_gated, token_gate_config)
-    VALUES (${data.name}, ${data.description ?? null}, ${data.icon_url ?? null}, ${ownerAddress.toLowerCase()}, ${inviteCode}, ${data.is_token_gated ?? false}, ${data.token_gate_config ? JSON.stringify(data.token_gate_config) : null})
+    VALUES (${data.name}, ${data.description ?? null}, ${data.icon_url ?? null}, ${ownerAddress.toLowerCase()}, ${inviteCode}, ${data.is_token_gated ?? false}, ${data.token_gate_config ? asJson(data.token_gate_config) : null})
     RETURNING *
   `;
   const server = rows[0] as BimServer;
@@ -143,7 +143,7 @@ export async function updateServer(
       description = COALESCE(${data.description ?? null}, description),
       icon_url = COALESCE(${data.icon_url ?? null}, icon_url),
       is_token_gated = COALESCE(${data.is_token_gated ?? null}, is_token_gated),
-      token_gate_config = COALESCE(${data.token_gate_config ? JSON.stringify(data.token_gate_config) : null}, token_gate_config),
+      token_gate_config = COALESCE(${data.token_gate_config ? asJson(data.token_gate_config) : null}, token_gate_config),
       updated_at = NOW()
     WHERE id = ${serverId}
     RETURNING *
@@ -184,7 +184,7 @@ export async function getChannelsForServer(serverId: string): Promise<BimChannel
   const rows = await db`
     SELECT * FROM bim_channels WHERE server_id = ${serverId} ORDER BY position ASC, created_at ASC
   `;
-  return rows as BimChannel[];
+  return rows as unknown as BimChannel[];
 }
 
 export async function createChannel(
@@ -232,7 +232,7 @@ export async function getMembersForServer(serverId: string): Promise<BimMember[]
   const rows = await db`
     SELECT * FROM bim_server_members WHERE server_id = ${serverId} ORDER BY joined_at ASC
   `;
-  return rows as BimMember[];
+  return rows as unknown as BimMember[];
 }
 
 export async function addMember(
@@ -334,5 +334,5 @@ export async function getPushSubscriptions(walletAddress: string): Promise<{ end
     SELECT endpoint, p256dh_key, auth_key FROM bim_push_subscriptions
     WHERE LOWER(wallet_address) = LOWER(${walletAddress})
   `;
-  return rows as { endpoint: string; p256dh_key: string; auth_key: string }[];
+  return rows as unknown as { endpoint: string; p256dh_key: string; auth_key: string }[];
 }

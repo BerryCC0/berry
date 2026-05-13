@@ -5,9 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { neon } from "@neondatabase/serverless";
+import { sql as db, asJson } from "@/app/lib/db";
 
-// Get database connection
 const getDatabaseUrl = () => process.env.DATABASE_URL;
 
 /**
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const sql = neon(databaseUrl);
+    const sql = db();
 
     // Fetch the short link
     const result = await sql`
@@ -107,7 +106,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const sql = neon(databaseUrl);
+    const sql = db();
 
     // Insert the short link
     await sql`
@@ -116,7 +115,7 @@ export async function POST(request: NextRequest) {
         ${id}, 
         ${fullPath}, 
         ${expiresAt ? new Date(expiresAt).toISOString() : null},
-        ${metadata ? JSON.stringify(metadata) : null},
+        ${metadata ? asJson(metadata) : null},
         0
       )
     `;
@@ -164,7 +163,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const sql = neon(databaseUrl);
+    const sql = db();
 
     await sql`DELETE FROM short_links WHERE id = ${id}`;
 

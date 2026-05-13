@@ -4,11 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { sql as db } from '@/app/lib/db';
 
-const sql = process.env.DATABASE_URL 
-  ? neon(process.env.DATABASE_URL) 
-  : null;
+const sql = process.env.DATABASE_URL ? db() : null;
 
 // Valid verification statuses that indicate completed KYC
 const VERIFIED_STATUSES = ['completed', 'approved'];
