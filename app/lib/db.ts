@@ -23,10 +23,15 @@ export function sql(): postgres.Sql {
     idle_timeout: 20,
     ssl: "prefer",
     types: {
+      // Return bigint columns as strings (match prior @neondatabase/serverless
+      // behavior; avoids BigInt JSON serialization issues on Ponder rows).
+      // serialize MUST coerce to string — when the tagged template receives a
+      // JS number that routes through this type, returning the bare value
+      // breaks the wire protocol with "string argument must be of type string".
       bigint: {
         to: 20,
         from: [20],
-        serialize: (x: string) => x,
+        serialize: (x: string | number | bigint) => String(x),
         parse: (x: string) => x,
       },
     },
