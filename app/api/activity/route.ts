@@ -42,26 +42,41 @@ export async function GET(request: NextRequest) {
         ORDER BY pf.block_timestamp DESC
         LIMIT ${limit}
       `,
-      // Proposals created
+      // Proposals created. LEFT JOIN to candidates on encoded_proposal_hash —
+      // a non-null `promoted_from_*` indicates this proposal was promoted from
+      // a candidate via proposeBySigs (the contract requires byte-identical
+      // params, so the hash match is robust).
       sql`
         SELECT p.id, p.title, p.proposer, p.created_timestamp, p.start_block, p.end_block,
                p.start_timestamp, p.end_timestamp,
                p.status, p.for_votes, p.against_votes, p.quorum_votes, p.client_id,
                p.cancelled_timestamp, p.queued_timestamp, p.executed_timestamp, p.vetoed_timestamp,
-               e.name as proposer_ens
+               e.name as proposer_ens,
+               c.slug as promoted_from_candidate_slug,
+               c.proposer as promoted_from_candidate_proposer,
+               c.title as promoted_from_candidate_title
         FROM ponder_live.proposals p
         LEFT JOIN ponder_live.ens_names e ON LOWER(p.proposer) = LOWER(e.address)
+        LEFT JOIN ponder_live.candidates c
+          ON p.encoded_proposal_hash IS NOT NULL
+         AND c.encoded_proposal_hash = p.encoded_proposal_hash
         WHERE p.created_timestamp >= ${since}
         ORDER BY p.created_timestamp DESC
         LIMIT ${limit}
       `,
-      // Candidates created
+      // Candidates created. Exclude candidates that have already been promoted
+      // to a proposal — they're surfaced via the proposal_created item instead.
       sql`
         SELECT c.id, c.proposer, c.slug, c.title, c.created_timestamp,
                e.name as proposer_ens
         FROM ponder_live.candidates c
         LEFT JOIN ponder_live.ens_names e ON LOWER(c.proposer) = LOWER(e.address)
         WHERE c.canceled = false AND c.created_timestamp >= ${since}
+          AND NOT EXISTS (
+            SELECT 1 FROM ponder_live.proposals p
+            WHERE p.encoded_proposal_hash IS NOT NULL
+              AND p.encoded_proposal_hash = c.encoded_proposal_hash
+          )
         ORDER BY c.created_timestamp DESC
         LIMIT ${limit}
       `,

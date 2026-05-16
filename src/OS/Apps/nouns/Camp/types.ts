@@ -368,6 +368,14 @@ export interface ActivityItem {
   
   // Candidate update specific
   updateMessage?: string;
+
+  // Set on proposal_created items when the proposal was promoted from a
+  // candidate via proposeBySigs. Detected by matching encodedProposalHash.
+  promotedFromCandidate?: {
+    slug: string;
+    proposer: string;
+    title: string;
+  };
 }
 
 // ============================================================================

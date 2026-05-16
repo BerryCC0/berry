@@ -123,6 +123,22 @@
   color: var(--berry-link);
 }
 
+.ensInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.ensAvatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
+}
+
 .clientBadge {
   font-size: 10px;
   color: var(--berry-text-tertiary);

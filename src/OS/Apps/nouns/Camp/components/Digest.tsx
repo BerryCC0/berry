@@ -9,24 +9,42 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useDigest } from '../hooks/useDigest';
-import { useEnsName } from '@/OS/hooks/useEnsData';
+import { useEnsData } from '@/OS/hooks/useEnsData';
 import { formatSlugToTitle, formatAddress, formatAbsoluteTime, formatShortDate } from '../utils/formatUtils';
 import { getClientName } from '@/OS/lib/clientNames';
 import { getProposalStatusBadge, getVoteBarWidths } from '../utils/proposalStatus';
+import { addressToAvatar } from '../utils/addressAvatar';
 import { BerryLoader } from './BerryLoader';
 import { VoterIdentity } from './VoterIdentity';
 import type { Proposal, Candidate, Voter, DigestTab } from '../types';
 import styles from './Digest.module.css';
 
 /**
- * ENSName - Resolves and displays ENS name for an address
+ * ENSName - Resolves and displays ENS avatar + name for an address.
+ * Falls back to a deterministic blockies-style avatar when no ENS avatar exists.
  */
 function ENSName({ address }: { address: string }) {
-  const ensName = useEnsName(address);
+  const { name: ensName, avatar: ensAvatar } = useEnsData(address);
+  const fallback = useMemo(() => addressToAvatar(address), [address]);
+  const src = ensAvatar || fallback;
 
-  return <>{formatAddress(address, ensName)}</>;
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      if (fallback && e.currentTarget.src !== fallback) {
+        e.currentTarget.src = fallback;
+      }
+    },
+    [fallback],
+  );
+
+  return (
+    <span className={styles.ensInline}>
+      <img src={src} alt="" className={styles.ensAvatar} onError={handleError} />
+      {formatAddress(address, ensName)}
+    </span>
+  );
 }
 
 interface DigestProps {

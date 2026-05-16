@@ -69,6 +69,9 @@ interface ApiProposalRow {
   executed_timestamp: string | null;
   vetoed_timestamp: string | null;
   client_id?: number | null;
+  promoted_from_candidate_slug?: string | null;
+  promoted_from_candidate_proposer?: string | null;
+  promoted_from_candidate_title?: string | null;
 }
 
 interface ApiCandidateRow {
@@ -281,6 +284,14 @@ function processProposals(proposals: ApiProposalRow[], currentBlock: number | un
 
     // Show active or pending proposals as "created"
     if (derivedStatus === 'active' || derivedStatus === 'pending') {
+      const promotedFromCandidate = p.promoted_from_candidate_slug && p.promoted_from_candidate_proposer
+        ? {
+            slug: p.promoted_from_candidate_slug,
+            proposer: p.promoted_from_candidate_proposer,
+            title: p.promoted_from_candidate_title || p.title,
+          }
+        : undefined;
+
       items.push({
         id: `proposal-created-${p.id}`,
         type: 'proposal_created',
@@ -291,6 +302,7 @@ function processProposals(proposals: ApiProposalRow[], currentBlock: number | un
         proposalTitle: p.title,
         proposalStatus: derivedStatus,
         clientId: p.client_id ?? undefined,
+        promotedFromCandidate,
       });
     }
 

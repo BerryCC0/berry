@@ -8,10 +8,50 @@ import {
   cancelledSignatures,
   daoConfigChanges,
 } from "ponder:schema";
+import { encodeAbiParameters, keccak256, toHex, type Hex } from "viem";
 import { extractTitle, resolveAndStoreEns } from "../helpers/ens";
 
 // Post-Merge blocks are exactly 12 seconds apart
 const SECONDS_PER_BLOCK = 12n;
+
+/**
+ * Compute the proposal-params hash that Nouns DAO uses to bind candidate
+ * signatures to a concrete proposal. Mirrors `NounsDAOProposals.encodeCalldataAndDescription`:
+ *
+ *   bytes32 descriptionHash = keccak256(bytes(description));
+ *   bytes encoded = abi.encode(targets, values, signatures, calldatas, descriptionHash);
+ *   bytes32 encodedProposalHash = keccak256(encoded);
+ *
+ * The same value is emitted as `encodedProposalHash` on `ProposalCandidateCreated`,
+ * so joining `proposals.encoded_proposal_hash = candidates.encoded_proposal_hash`
+ * identifies proposals that were promoted from a candidate.
+ */
+function computeEncodedProposalHash(
+  targets: readonly `0x${string}`[],
+  values: readonly bigint[],
+  signatures: readonly string[],
+  calldatas: readonly `0x${string}`[],
+  description: string,
+): Hex {
+  const descriptionHash = keccak256(toHex(description));
+  const encoded = encodeAbiParameters(
+    [
+      { type: "address[]" },
+      { type: "uint256[]" },
+      { type: "string[]" },
+      { type: "bytes[]" },
+      { type: "bytes32" },
+    ],
+    [
+      targets as readonly `0x${string}`[],
+      values as readonly bigint[],
+      signatures as readonly string[],
+      calldatas as readonly `0x${string}`[],
+      descriptionHash,
+    ],
+  );
+  return keccak256(encoded);
+}
 
 /**
  * Compute estimated voting start/end timestamps from block numbers.
@@ -51,11 +91,20 @@ ponder.on("NounsDAO:ProposalCreated", async ({ event, context }) => {
     event.block.timestamp
   );
 
+  const encodedProposalHash = computeEncodedProposalHash(
+    targets as readonly `0x${string}`[],
+    values as readonly bigint[],
+    signatures as readonly string[],
+    calldatas as readonly `0x${string}`[],
+    description,
+  );
+
   await context.db.insert(proposals).values({
     id: Number(id),
     proposer,
     title: extractTitle(description),
     description,
+    encodedProposalHash,
     status: "PENDING",
     targets: targets as string[],
     values: values.map((v) => v.toString()),
@@ -90,6 +139,14 @@ ponder.on("NounsDAO:ProposalCreatedWithRequirements(uint256 id, address proposer
     event.block.timestamp
   );
 
+  const encodedProposalHash = computeEncodedProposalHash(
+    targets as readonly `0x${string}`[],
+    values as readonly bigint[],
+    signatures as readonly string[],
+    calldatas as readonly `0x${string}`[],
+    description,
+  );
+
   await context.db
     .insert(proposals)
     .values({
@@ -97,6 +154,7 @@ ponder.on("NounsDAO:ProposalCreatedWithRequirements(uint256 id, address proposer
       proposer,
       title: extractTitle(description),
       description,
+      encodedProposalHash,
       status: "PENDING",
       targets: targets as string[],
       values: values.map((v) => v.toString()),
@@ -121,6 +179,7 @@ ponder.on("NounsDAO:ProposalCreatedWithRequirements(uint256 id, address proposer
       quorumVotes,
       startTimestamp,
       endTimestamp,
+      encodedProposalHash,
     });
 });
 

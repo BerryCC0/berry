@@ -84,6 +84,12 @@ function ActivityItemInner({
     onClickCandidate: () =>
       item.candidateSlug &&
       onClickCandidate?.(item.candidateProposer || '', item.candidateSlug),
+    onClickPromotedCandidate: item.promotedFromCandidate
+      ? () => onClickCandidate?.(
+          item.promotedFromCandidate!.proposer,
+          item.promotedFromCandidate!.slug,
+        )
+      : undefined,
     onClickAuction,
     onClickVoter,
   };

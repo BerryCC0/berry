@@ -14,25 +14,40 @@ import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
 
 export function ProposalLifecycleContent(props: ActivityContentProps) {
-  const { item, displayName, actorAvatar, onClickActor, onClickProposal } = props;
+  const { item, displayName, actorAvatar, onClickActor, onClickProposal, onClickPromotedCandidate } = props;
 
   switch (item.type) {
-    case 'proposal_created':
+    case 'proposal_created': {
+      const promoted = item.promotedFromCandidate;
       return (
         <div className={styles.header}>
           <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
-          <span className={styles.action}>created</span>
+          <span className={styles.action}>{promoted ? 'promoted candidate to' : 'created'}</span>
           <span className={styles.badge} data-type="proposal">Proposal</span>
           {item.proposalTitle && (
             <span className={styles.titleLink} onClick={onClickProposal} role="button" tabIndex={0}>
               {item.proposalTitle}
             </span>
           )}
+          {promoted && onClickPromotedCandidate && (
+            <>
+              <span className={styles.action}>from</span>
+              <span
+                className={styles.titleLink}
+                onClick={onClickPromotedCandidate}
+                role="button"
+                tabIndex={0}
+              >
+                {promoted.title}
+              </span>
+            </>
+          )}
           {item.clientId != null && item.clientId !== 0 && (
             <span className={styles.clientBadge}>via {getClientName(item.clientId)}</span>
           )}
         </div>
       );
+    }
 
     case 'proposal_voting_started':
       return (

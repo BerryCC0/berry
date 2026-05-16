@@ -207,6 +207,12 @@ export const proposals = onchainTable(
     proposer: t.hex().notNull(),
     title: t.text().notNull().default(""),
     description: t.text(),
+    /**
+     * keccak256(abi.encode(targets, values, signatures, calldatas, keccak256(description))).
+     * Matches the candidate's `encodedProposalHash` when the proposal was promoted
+     * from one via `proposeBySigs` — the contract requires byte-identical params.
+     */
+    encodedProposalHash: t.hex(),
     status: t.text().notNull().default("PENDING"),
     targets: t.json().$type<string[]>(),
     values: t.json().$type<string[]>(),
@@ -245,6 +251,7 @@ export const proposals = onchainTable(
     statusIdx: index().on(table.status),
     proposerIdx: index().on(table.proposer),
     createdIdx: index().on(table.createdTimestamp),
+    encodedHashIdx: index().on(table.encodedProposalHash),
   })
 );
 

@@ -43,6 +43,7 @@ export interface ActivityContentProps {
   onClickToAddress: () => void;
   onClickProposal: () => void;
   onClickCandidate: () => void;
+  onClickPromotedCandidate?: () => void;
   onClickAuction?: (nounId: string) => void;
   onClickVoter?: (address: string) => void;
 }

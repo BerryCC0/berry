@@ -95,11 +95,16 @@ export async function GET(request: NextRequest) {
     if (types.includes('candidates')) {
       try {
         results.candidates = await sql`
-          SELECT id, slug, title, proposer, canceled, signature_count
-          FROM ponder_live.candidates
-          WHERE canceled = false
-            AND (LOWER(title) LIKE ${searchPattern} OR LOWER(slug) LIKE ${searchPattern})
-          ORDER BY created_timestamp DESC
+          SELECT c.id, c.slug, c.title, c.proposer, c.canceled, c.signature_count
+          FROM ponder_live.candidates c
+          WHERE c.canceled = false
+            AND (LOWER(c.title) LIKE ${searchPattern} OR LOWER(c.slug) LIKE ${searchPattern})
+            AND NOT EXISTS (
+              SELECT 1 FROM ponder_live.proposals p
+              WHERE p.encoded_proposal_hash IS NOT NULL
+                AND p.encoded_proposal_hash = c.encoded_proposal_hash
+            )
+          ORDER BY c.created_timestamp DESC
           LIMIT ${limit}
         `;
       } catch (error) {

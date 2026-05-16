@@ -70,7 +70,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // List candidates
+    // List candidates. Exclude any that have already been promoted to a
+    // proposal — the promotion is surfaced on the promoted proposal instead.
     const rows = await sql`
       SELECT c.id, c.slug, c.proposer, c.title, c.description,
              c.created_timestamp, c.last_updated_timestamp, c.canceled,
@@ -79,6 +80,11 @@ export async function GET(request: NextRequest) {
       FROM ponder_live.candidates c
       LEFT JOIN ponder_live.ens_names e ON LOWER(c.proposer) = LOWER(e.address)
       WHERE c.canceled = false
+        AND NOT EXISTS (
+          SELECT 1 FROM ponder_live.proposals p
+          WHERE p.encoded_proposal_hash IS NOT NULL
+            AND p.encoded_proposal_hash = c.encoded_proposal_hash
+        )
       ORDER BY c.created_timestamp DESC NULLS LAST
       LIMIT ${limit} OFFSET ${offset}
     `;
