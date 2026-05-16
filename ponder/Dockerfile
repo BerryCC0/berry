@@ -13,6 +13,7 @@ RUN cd ponder && npm install --production=false
 COPY app/lib/nouns/abis/ ./app/lib/nouns/abis/
 COPY app/lib/nouns/utils/ ./app/lib/nouns/utils/
 COPY app/lib/nouns-v2/abis/ ./app/lib/nouns-v2/abis/
+COPY app/lib/food-nouns/abis/ ./app/lib/food-nouns/abis/
 COPY ponder/ ./ponder/
 
 WORKDIR /app/ponder

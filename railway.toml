@@ -1,10 +1,21 @@
 [build]
 # Build from repo root so Dockerfile can access ../app/lib/nouns/abis/
 dockerfilePath = "ponder/Dockerfile"
-watchPatterns = ["ponder/**", "app/lib/nouns/abis/**", "app/lib/nouns-v2/abis/**"]
+watchPatterns = [
+  "ponder/**",
+  "app/lib/nouns/abis/**",
+  "app/lib/nouns-v2/abis/**",
+  "app/lib/food-nouns/abis/**",
+]
 
 [deploy]
-healthcheckPath = "/ready"
-healthcheckTimeout = 3600
+# Use Ponder's /health endpoint (returns 200 as soon as the process is up,
+# independent of sync progress). The data plane is gated separately by
+# `--views-schema ponder_live`, which only points views at the new deploy
+# once it's fully synced — so a healthy-but-still-syncing instance won't
+# serve stale data. This lets startup crashes (e.g. missing module imports)
+# fail within ~60s instead of waiting the full sync window.
+healthcheckPath = "/health"
+healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
