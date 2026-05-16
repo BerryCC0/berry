@@ -107,3 +107,12 @@ export function formatAbsoluteTime(unixSeconds: number): string {
   );
   return `${date} ${time}`;
 }
+
+/** Render a unix timestamp as MM/DD/YY. */
+export function formatShortDate(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: '2-digit',
+  });
+}

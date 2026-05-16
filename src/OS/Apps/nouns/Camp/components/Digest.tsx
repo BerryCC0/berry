@@ -12,7 +12,7 @@
 import { useEffect, useRef } from 'react';
 import { useDigest } from '../hooks/useDigest';
 import { useEnsName } from '@/OS/hooks/useEnsData';
-import { formatSlugToTitle, formatAddress, formatAbsoluteTime } from '../utils/formatUtils';
+import { formatSlugToTitle, formatAddress, formatAbsoluteTime, formatShortDate } from '../utils/formatUtils';
 import { getClientName } from '@/OS/lib/clientNames';
 import { getProposalStatusBadge, getVoteBarWidths } from '../utils/proposalStatus';
 import { BerryLoader } from './BerryLoader';
@@ -119,6 +119,8 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
     const isActive = statusBadge?.key === 'ongoing';
     const isPending = statusBadge?.key === 'upcoming';
     const isQueued = statusBadge?.key === 'queued';
+    const isCompleted = !!statusBadge && !isActive && !isPending && !isQueued;
+    const submittedTime = Number(proposal.createdTimestamp || 0);
 
     const endTime = getEndTime(proposal);
     const startTime = getStartTime(proposal);
@@ -175,6 +177,11 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
           {/* Show executable countdown for queued */}
           {isQueued && etaTime > 0 && (
             <span className={styles.timeRemaining}>{getRelativeTime(etaTime, 'Executable in')} · {formatAbsoluteTime(etaTime)}</span>
+          )}
+
+          {/* Show submitted date for completed proposals */}
+          {isCompleted && submittedTime > 0 && (
+            <span className={styles.submittedDate}>{formatShortDate(submittedTime)}</span>
           )}
 
           {/* Badge on right for all non-pending proposals */}

@@ -261,6 +261,11 @@
   margin-left: auto;
 }
 
+.submittedDate {
+  color: var(--berry-text-tertiary);
+  font-size: 10px;
+}
+
 /* List content (for tab views) */
 .listContent {
   padding: 0 8px;

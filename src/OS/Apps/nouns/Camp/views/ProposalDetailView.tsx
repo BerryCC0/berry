@@ -114,7 +114,13 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
       
       <div className={styles.proposalMeta}>
         <span className={styles.metaDate}>
-          Proposed {new Date(Number(proposal.createdTimestamp) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          Proposed {(() => {
+            const d = new Date(Number(proposal.createdTimestamp) * 1000);
+            const sameYear = d.getFullYear() === new Date().getFullYear();
+            return d.toLocaleDateString('en-US', sameYear
+              ? { month: 'short', day: 'numeric' }
+              : { month: 'short', day: 'numeric', year: 'numeric' });
+          })()}
         </span>
         <span className={styles.metaSeparator}>by</span>
         <AddressWithAvatar 

@@ -127,6 +127,41 @@ function formatTimeRemaining(blocksRemaining: number): string {
   return `${minutes} min${minutes > 1 ? 's' : ''} left`;
 }
 
+/**
+ * Derive the real proposal status.
+ *
+ * The indexer only writes status on explicit events
+ * (PENDING/CANCELLED/QUEUED/EXECUTED/VETOED). ACTIVE, DEFEATED, SUCCEEDED are
+ * computed states with no events — the contract derives them from
+ * block numbers and vote tallies via `state()`. Mirrors the logic in
+ * src/OS/Apps/nouns/Camp/utils/proposalStatus.ts.
+ */
+function deriveStatus(
+  rawStatus: string,
+  forVotes: number,
+  againstVotes: number,
+  quorumVotes: number,
+  startBlock: number,
+  endBlock: number,
+  currentBlock: number
+): string {
+  if (
+    rawStatus === 'EXECUTED' ||
+    rawStatus === 'CANCELLED' ||
+    rawStatus === 'VETOED' ||
+    rawStatus === 'QUEUED'
+  ) {
+    return rawStatus;
+  }
+
+  if (currentBlock < startBlock) return 'PENDING';
+  if (currentBlock <= endBlock) return 'ACTIVE';
+
+  const quorum = quorumVotes || 1;
+  if (forVotes < quorum || againstVotes >= forVotes) return 'DEFEATED';
+  return 'SUCCEEDED';
+}
+
 function extractFundingRequest(description: string): string | null {
   const patterns = [
     /requesting\s+([\d,\.]+)\s*(eth|usdc|weth|dai)/i,
@@ -148,9 +183,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const [proposal, dynamicQuorum] = await Promise.all([
+  const [proposal, dynamicQuorum, currentBlock] = await Promise.all([
     fetchProposal(id),
     fetchDynamicQuorum(id),
+    getCurrentBlock(),
   ]);
 
   if (!proposal) {
@@ -176,20 +212,29 @@ export async function GET(
     );
   }
 
-  const status = proposal.status || 'PENDING';
-  const statusColors = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
   const forVotes = Number(proposal.for_votes);
   const againstVotes = Number(proposal.against_votes);
   const abstainVotes = Number(proposal.abstain_votes);
   // Use dynamic on-chain quorum when available, fall back to indexed value
   const quorumVotes = dynamicQuorum ?? Number(proposal.quorum_votes);
+  const startBlockNum = Number(proposal.start_block);
+  const endBlockNum = Number(proposal.end_block);
+
+  const status = deriveStatus(
+    proposal.status || 'PENDING',
+    forVotes,
+    againstVotes,
+    quorumVotes,
+    startBlockNum,
+    endBlockNum,
+    currentBlock
+  );
+  const statusColors = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
   const fundingRequest = extractFundingRequest(proposal.description || '');
 
   // Calculate time remaining for active proposals
   let timeRemaining: string | null = null;
   if (status === 'ACTIVE' || status === 'OBJECTION_PERIOD') {
-    const currentBlock = await getCurrentBlock();
-    const endBlockNum = Number(proposal.end_block);
     const blocksRemaining = endBlockNum - currentBlock;
     timeRemaining = formatTimeRemaining(blocksRemaining);
   }
