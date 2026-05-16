@@ -34,6 +34,10 @@ import { nounV2TokenAbi } from "../app/lib/nouns-v2/abis/nounV2Token";
 import { nounV2AuctionHouseAbi } from "../app/lib/nouns-v2/abis/nounV2AuctionHouse";
 import { nounV2TreasuryAbi } from "../app/lib/nouns-v2/abis/nounV2Treasury";
 import { smallGrantsTreasuryAbi } from "../app/lib/nouns-v2/abis/smallGrantsTreasury";
+import { fnTokenAbi } from "../app/lib/food-nouns/abis/fnToken";
+import { fnAuctionHouseAbi } from "../app/lib/food-nouns/abis/fnAuctionHouse";
+import { fnGovernorAbi } from "../app/lib/food-nouns/abis/fnGovernor";
+import { fnTreasuryAbi } from "../app/lib/food-nouns/abis/fnTreasury";
 
 export default createConfig({
   database: {
@@ -181,6 +185,41 @@ export default createConfig({
       address: "0xbac9233725440c595b19d975309cc98cb259253a",
       // Deployed shortly after V2; safe lower bound — Ponder skips empty blocks.
       startBlock: 24951808,
+    },
+
+    // =========================================================================
+    // Subgraph 5: Food Nouns
+    // Independent V1-Nouns fork. All five contracts deployed within minutes of
+    // each other on 2022-08-05; using the earliest creation block as the
+    // shared start block for the whole set.
+    // =========================================================================
+
+    FoodNounsToken: {
+      chain: "mainnet",
+      abi: fnTokenAbi,
+      address: "0xF5331380e1d19757388A6E6198BF3BDc93D8b07a",
+      startBlock: 15280197,
+    },
+
+    FoodNounsAuctionHouse: {
+      chain: "mainnet",
+      abi: fnAuctionHouseAbi,
+      address: "0xfAa4bbe589a39745833e2BecE8d401b6195A07b1",
+      startBlock: 15280197,
+    },
+
+    FoodNounsGovernor: {
+      chain: "mainnet",
+      abi: fnGovernorAbi,
+      address: "0xF72FAf0050a2cBb645362452a12d46EAdCC09177",
+      startBlock: 15280197,
+    },
+
+    FoodNounsTreasury: {
+      chain: "mainnet",
+      abi: fnTreasuryAbi,
+      address: "0xaF1BFd8bF02C5EC169d20faba53BF0fa761bf65f",
+      startBlock: 15280197,
     },
   },
 });

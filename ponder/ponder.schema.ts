@@ -821,6 +821,195 @@ export const smallGrantsVotes = onchainTable(
 );
 
 // =============================================================================
+// SUBGRAPH 5: FOOD NOUNS
+// Independent V1-style Nouns fork. Same shape as V2/SmallGrants — Token,
+// AuctionHouse, Governor, Descriptor (for SVG rendering), Treasury (timelock).
+// No candidates, no client IDs, no signed proposals.
+// =============================================================================
+
+/** All Food Nouns with seed traits + SVG rendered at index time. */
+export const foodNouns = onchainTable("food_nouns", (t) => ({
+  id: t.integer().primaryKey(),
+  background: t.integer().notNull(),
+  body: t.integer().notNull(),
+  accessory: t.integer().notNull(),
+  head: t.integer().notNull(),
+  glasses: t.integer().notNull(),
+  /** SVG rendered by calling `generateSVGImage` on the active descriptor at mint. */
+  svg: t.text().notNull(),
+  owner: t.hex(),
+  blockNumber: t.bigint().notNull(),
+  blockTimestamp: t.bigint().notNull(),
+}));
+
+/** Food Nouns auction lifecycle. */
+export const foodAuctions = onchainTable("food_auctions", (t) => ({
+  nounId: t.integer().primaryKey(),
+  startTime: t.bigint().notNull(),
+  endTime: t.bigint().notNull(),
+  winner: t.hex(),
+  amount: t.bigint(),
+  settled: t.boolean().notNull().default(false),
+  settlerAddress: t.hex(),
+  settledTimestamp: t.bigint(),
+  blockNumber: t.bigint().notNull(),
+}));
+
+/** Every Food Nouns auction bid. */
+export const foodAuctionBids = onchainTable(
+  "food_auction_bids",
+  (t) => ({
+    id: t.text().primaryKey(),
+    nounId: t.integer().notNull(),
+    bidder: t.hex().notNull(),
+    amount: t.bigint().notNull(),
+    extended: t.boolean().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    nounIdx: index().on(table.nounId),
+    bidderIdx: index().on(table.bidder),
+  })
+);
+
+/** Food Nouns token transfers. */
+export const foodTransfers = onchainTable(
+  "food_transfers",
+  (t) => ({
+    id: t.text().primaryKey(),
+    from: t.hex().notNull(),
+    to: t.hex().notNull(),
+    tokenId: t.integer().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    tokenIdx: index().on(table.tokenId),
+    fromIdx: index().on(table.from),
+    toIdx: index().on(table.to),
+  })
+);
+
+/** Food Nouns delegation changes. */
+export const foodDelegations = onchainTable(
+  "food_delegations",
+  (t) => ({
+    id: t.text().primaryKey(),
+    delegator: t.hex().notNull(),
+    fromDelegate: t.hex().notNull(),
+    toDelegate: t.hex().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+  }),
+  (table) => ({
+    delegatorIdx: index().on(table.delegator),
+    toDelegateIdx: index().on(table.toDelegate),
+  })
+);
+
+/** Food Nouns voters / delegates. */
+export const foodVoters = onchainTable(
+  "food_voters",
+  (t) => ({
+    address: t.hex().primaryKey(),
+    delegatedVotes: t.integer().notNull().default(0),
+    totalVotes: t.integer().notNull().default(0),
+    lastVoteAt: t.bigint(),
+    firstSeenAt: t.bigint(),
+  }),
+  (table) => ({
+    votesIdx: index().on(table.delegatedVotes),
+  })
+);
+
+/** Food Nouns governor proposals. */
+export const foodProposals = onchainTable(
+  "food_proposals",
+  (t) => ({
+    id: t.integer().primaryKey(),
+    proposer: t.hex().notNull(),
+    description: t.text(),
+    targets: t.json().$type<string[]>(),
+    values: t.json().$type<string[]>(),
+    signatures: t.json().$type<string[]>(),
+    calldatas: t.json().$type<string[]>(),
+    startBlock: t.bigint().notNull(),
+    endBlock: t.bigint().notNull(),
+    eta: t.bigint(),
+    forVotes: t.bigint().notNull().default(0n),
+    againstVotes: t.bigint().notNull().default(0n),
+    abstainVotes: t.bigint().notNull().default(0n),
+    canceled: t.boolean().notNull().default(false),
+    vetoed: t.boolean().notNull().default(false),
+    queued: t.boolean().notNull().default(false),
+    executed: t.boolean().notNull().default(false),
+    createdTimestamp: t.bigint().notNull(),
+    createdBlock: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    proposerIdx: index().on(table.proposer),
+    createdIdx: index().on(table.createdTimestamp),
+  })
+);
+
+/** Food Nouns votes. */
+export const foodVotes = onchainTable(
+  "food_votes",
+  (t) => ({
+    id: t.text().primaryKey(),
+    voter: t.hex().notNull(),
+    proposalId: t.integer().notNull(),
+    support: t.integer().notNull(),
+    votes: t.bigint().notNull(),
+    reason: t.text(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    voterIdx: index().on(table.voter),
+    proposalIdx: index().on(table.proposalId),
+  })
+);
+
+/**
+ * Food Nouns treasury timelock transactions. One row per (txHash, eta) pair.
+ * `status` advances queued → executed (or → cancelled). Compound-style timelock
+ * may queue the same target+sig+data multiple times under different etas, so
+ * the row key folds in both.
+ */
+export const foodTreasuryTransactions = onchainTable(
+  "food_treasury_transactions",
+  (t) => ({
+    id: t.text().primaryKey(),
+    txHash: t.hex().notNull(),
+    target: t.hex().notNull(),
+    value: t.bigint().notNull(),
+    signature: t.text().notNull(),
+    data: t.hex().notNull(),
+    eta: t.bigint().notNull(),
+    status: t.text().notNull().default("queued"),
+    queuedTimestamp: t.bigint(),
+    queuedBlock: t.bigint(),
+    queuedTxHash: t.hex(),
+    executedTimestamp: t.bigint(),
+    executedBlock: t.bigint(),
+    executedTxHash: t.hex(),
+    cancelledTimestamp: t.bigint(),
+    cancelledBlock: t.bigint(),
+    cancelledTxHash: t.hex(),
+  }),
+  (table) => ({
+    statusIdx: index().on(table.status),
+    targetIdx: index().on(table.target),
+  })
+);
+
+// =============================================================================
 // ENS CACHE
 // =============================================================================
 
