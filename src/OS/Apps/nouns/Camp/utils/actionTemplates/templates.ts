@@ -340,6 +340,23 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  'stream-cancel': {
+    id: 'stream-cancel',
+    category: 'payments',
+    name: 'Cancel Payment Stream',
+    description: 'Cancel an active payment stream — recipient keeps vested funds, remainder returns to the treasury',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'streamAddress',
+        label: 'Stream',
+        type: 'stream-select',
+        required: true,
+        helpText: 'Active treasury streams. Recipient keeps vested funds; remainder returns to the treasury.'
+      }
+    ]
+  },
+
   'payment-once': {
     id: 'payment-once',
     category: 'payments',

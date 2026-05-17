@@ -24,10 +24,13 @@ interface TreasuryNounsData {
 }
 
 async function fetchNounsByOwner(ownerAddress: string): Promise<TreasuryNounsData> {
+  // Slim mode: skip SVG, raise the cap. Treasury renders from seed locally,
+  // so the heavy SVG payload would be wasted bandwidth.
   const params = new URLSearchParams({
     owner: ownerAddress,
-    limit: '100',
+    limit: '2000',
     sort: 'newest',
+    slim: 'true',
   });
 
   const response = await fetch(`/api/nouns?${params}`);

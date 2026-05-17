@@ -19,6 +19,7 @@ import { SmartActionEditor } from './SmartActionEditor';
 import { ActionTemplateDropdown } from './ActionTemplateDropdown';
 import { AddressInput } from './AddressInput';
 import { NounSwapTemplate } from './NounSwapTemplate';
+import { StreamSelect } from './StreamSelect';
 import { Select, type SelectOption } from '@/OS/Primitives/Select/Select';
 import styles from './ActionTemplateEditor.module.css';
 
@@ -210,6 +211,12 @@ function MetaProposeEditor({ fieldValues, updateField, disabled, validationError
                     value={innerFieldValues[field.name] || ''}
                     onChange={(value) => handleInnerFieldChange(field.name, value)}
                     placeholder="Select token..."
+                    disabled={disabled}
+                  />
+                ) : field.type === 'stream-select' ? (
+                  <StreamSelect
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(value) => handleInnerFieldChange(field.name, value)}
                     disabled={disabled}
                   />
                 ) : (
@@ -558,6 +565,12 @@ export function ActionTemplateEditor({
                 placeholder="Select token..."
                 disabled={disabled}
               />
+            ) : field.type === 'stream-select' ? (
+              <StreamSelect
+                value={fieldValues[field.name] || ''}
+                onChange={(value) => updateField(field.name, value)}
+                disabled={disabled}
+              />
             ) : field.type === 'address' ? (
               <AddressInput
                 value={fieldValues[field.name] || ''}
@@ -576,11 +589,11 @@ export function ActionTemplateEditor({
                 disabled={disabled}
               />
             )}
-            
+
             {field.helpText && field.type !== 'address' && (
               <div className={styles.helpText}>{field.helpText}</div>
             )}
-            
+
             {validationErrors.find(err => err.field === field.name) && (
               <div className={styles.error}>
                 {validationErrors.find(err => err.field === field.name)?.message}

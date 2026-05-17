@@ -314,6 +314,14 @@ export function generateActionsFromTemplate(
       return actions;
     }
 
+    case 'stream-cancel':
+      return [{
+        target: fieldValues.streamAddress as Address,
+        value: '0',
+        signature: 'cancel()',
+        calldata: '0x'
+      }];
+
     // One-time Payment via Payer
     case 'payment-once': {
       const PAYER_ADDRESS = '0xd97Bcd9f47cEe35c0a9ec1dc40C1269afc9E8E1D' as Address;

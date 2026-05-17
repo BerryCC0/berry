@@ -9,6 +9,18 @@ export { useBid } from './useBid';
 export { useDelegate } from './useDelegate';
 export { useTreasuryBalances, useTreasuryV1Balances, type TreasuryBalances } from './useTreasuryBalances';
 export { useTreasuryNouns, useTreasuryV1Nouns, type TreasuryNoun } from './useTreasuryNouns';
+export {
+  useTreasuryTransactions,
+  useTreasuryStreams,
+  useTokenBuyerTrades,
+  useTreasuryClientRewards,
+  useTreasuryFullBalances,
+  type TreasuryTxsResponse,
+  type StreamsResponse,
+  type TokenBuyerTradesResponse,
+  type ClientRewardsResponse,
+  type TreasuryBalancesResponse,
+} from './useTreasuryActivity';
 
 export {
   useNoun,

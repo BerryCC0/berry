@@ -82,9 +82,15 @@ type SortOption = typeof VALID_SORTS[number];
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
-  // Pagination
+  // Slim mode returns only id + seed traits + owner — no SVG, no derived
+  // visual stats. Lets callers like the Treasury app fetch hundreds of rows
+  // cheaply without pulling megabytes of inline SVG.
+  const slim = searchParams.get('slim') === 'true';
+
+  // Pagination — slim mode raises the cap since the payload is tiny.
   const limitParam = parseInt(searchParams.get('limit') || '50');
-  const limit = Math.min(Math.max(1, limitParam), 100);
+  const limitCap = slim ? 2000 : 100;
+  const limit = Math.min(Math.max(1, limitParam), limitCap);
   const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
 
   // Sort option (whitelist to prevent injection)
@@ -108,10 +114,15 @@ export async function GET(request: NextRequest) {
   try {
     const sql = ponderSql();
 
-    const nouns = await queryWithSort(
-      sql, sort, limit, offset,
-      settler, winner, owner, background, body, accessory, head, glasses
-    );
+    const nouns = slim
+      ? await slimQuery(
+          sql, sort, limit, offset,
+          settler, winner, owner, background, body, accessory, head, glasses,
+        )
+      : await queryWithSort(
+          sql, sort, limit, offset,
+          settler, winner, owner, background, body, accessory, head, glasses,
+        );
 
     // Get filtered count
     const countResult = await sql`
@@ -140,6 +151,60 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Slim variant — returns only id + seed + owner. Skips SVG and any column
+ * derived from it (area, color_count, brightness), so bulk owner queries
+ * stay cheap. Falls back to id-based sorting since visual-stat sorts need
+ * columns we don't select here.
+ */
+async function slimQuery(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sql: any,
+  sort: SortOption,
+  limit: number,
+  offset: number,
+  settler: string | null,
+  winner: string | null,
+  owner: string | null,
+  background: number | null,
+  body: number | null,
+  accessory: number | null,
+  head: number | null,
+  glasses: number | null,
+) {
+  const ascending = sort === 'oldest';
+  if (ascending) {
+    return sql`
+      SELECT id, background, body, accessory, head, glasses, owner, burned
+      FROM ponder_live.nouns
+      WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+        AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+        AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
+        AND (${background}::int IS NULL OR background = ${background})
+        AND (${body}::int IS NULL OR body = ${body})
+        AND (${accessory}::int IS NULL OR accessory = ${accessory})
+        AND (${head}::int IS NULL OR head = ${head})
+        AND (${glasses}::int IS NULL OR glasses = ${glasses})
+      ORDER BY id ASC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  }
+  return sql`
+    SELECT id, background, body, accessory, head, glasses, owner, burned
+    FROM ponder_live.nouns
+    WHERE (${settler}::text IS NULL OR LOWER(settled_by_address) = ${settler})
+      AND (${winner}::text IS NULL OR LOWER(winner_address) = ${winner})
+      AND (${owner}::text IS NULL OR LOWER(owner) = ${owner})
+      AND (${background}::int IS NULL OR background = ${background})
+      AND (${body}::int IS NULL OR body = ${body})
+      AND (${accessory}::int IS NULL OR accessory = ${accessory})
+      AND (${head}::int IS NULL OR head = ${head})
+      AND (${glasses}::int IS NULL OR glasses = ${glasses})
+    ORDER BY id DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
 }
 
 /**

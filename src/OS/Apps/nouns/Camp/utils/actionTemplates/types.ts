@@ -16,6 +16,7 @@ export type ActionTemplateType =
   | 'noun-delegate'
   | 'auction-bid'
   | 'payment-stream'
+  | 'stream-cancel'
   | 'payment-once'
   | 'admin-voting-delay'
   | 'admin-voting-period'
@@ -61,7 +62,7 @@ export interface ActionTemplate {
 export interface ActionField {
   name: string;
   label: string;
-  type: 'address' | 'amount' | 'number' | 'select' | 'date' | 'text' | 'token-select';
+  type: 'address' | 'amount' | 'number' | 'select' | 'date' | 'text' | 'token-select' | 'stream-select';
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];

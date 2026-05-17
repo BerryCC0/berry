@@ -5,10 +5,207 @@
 
 .treasury {
   height: 100%;
-  overflow-y: auto;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
   background: var(--berry-bg);
   font-family: var(--berry-font-system);
+}
+
+.tabBar {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  padding: 8px 16px 0;
+  background: var(--berry-bg);
+  border-bottom: 1px solid var(--berry-border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.tab {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  padding: 6px 14px;
+  border: 1px solid var(--berry-border);
+  border-bottom: none;
+  background: var(--berry-button-bg);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  margin-left: -1px;
+  border-radius: 4px 4px 0 0;
+}
+
+.tab:first-child {
+  margin-left: 0;
+}
+
+.tab:hover {
+  background: var(--berry-bg-secondary);
+}
+
+.tab.active {
+  background: var(--berry-primary, var(--berry-bg));
+  color: var(--berry-bg);
+  border-color: var(--berry-primary, var(--berry-border));
+  position: relative;
+  z-index: 1;
+}
+
+.tabPanel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Activity tab shared styles */
+.metricRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.metricCard {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.metricLabel {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.metricValue {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+}
+
+.metricSub {
+  font-size: 9px;
+  color: var(--berry-text-muted);
+  margin-top: 4px;
+}
+
+.activityTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.activityTable th {
+  text-align: left;
+  font-weight: bold;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  position: sticky;
+  top: 0;
+}
+
+.activityTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--berry-border);
+  color: var(--berry-text-primary);
+  vertical-align: top;
+}
+
+.activityTable tr:hover td {
+  background: var(--berry-bg-secondary);
+}
+
+.mono {
+  font-family: var(--berry-font-mono);
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+}
+
+.linkOut {
+  color: var(--berry-primary, var(--berry-text-primary));
+  text-decoration: none;
+}
+
+.linkOut:hover {
+  text-decoration: underline;
+}
+
+.statusBadge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusQueued {
+  background: rgba(255, 165, 0, 0.18);
+  color: #b06d00;
+}
+
+.statusExecuted {
+  background: rgba(0, 160, 80, 0.18);
+  color: #006d2c;
+}
+
+.statusCancelled {
+  background: rgba(160, 0, 0, 0.16);
+  color: #8a0000;
+}
+
+.statusActive {
+  background: rgba(0, 120, 200, 0.18);
+  color: #005a99;
+}
+
+.statusComplete {
+  background: rgba(120, 120, 120, 0.2);
+  color: var(--berry-text-secondary);
+}
+
+.statusPending {
+  background: rgba(180, 130, 0, 0.18);
+  color: #8a5e00;
+}
+
+.subHeader {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  margin: 24px 0 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background: var(--berry-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--berry-primary, var(--berry-text-primary));
+  transition: width 0.3s ease;
+}
+
+.tableScroll {
+  width: 100%;
+  overflow-x: auto;
 }
 
 /* Header */
@@ -243,7 +440,7 @@
 /* Address List */
 .addressList {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 8px;
 }
 
@@ -256,6 +453,8 @@
   border: 1px solid var(--berry-border);
   border-radius: 4px;
   gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
 .addressLabel {
@@ -280,27 +479,45 @@
 }
 
 /* Scrollbar styling */
-.treasury::-webkit-scrollbar {
+.tabPanel::-webkit-scrollbar {
   width: 8px;
 }
 
-.treasury::-webkit-scrollbar-track {
+.tabPanel::-webkit-scrollbar-track {
   background: var(--berry-bg-secondary);
 }
 
-.treasury::-webkit-scrollbar-thumb {
+.tabPanel::-webkit-scrollbar-thumb {
   background: var(--berry-border);
   border-radius: 4px;
 }
 
-.treasury::-webkit-scrollbar-thumb:hover {
+.tabPanel::-webkit-scrollbar-thumb:hover {
   background: var(--berry-text-muted);
 }
 
 /* Mobile styles */
 @media (max-width: 768px) {
-  .treasury {
+  .tabPanel {
     padding: 12px;
+  }
+
+  .tabBar {
+    padding: 6px 10px 0;
+  }
+
+  .tab {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  .metricRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .metricValue {
+    font-size: 15px;
   }
 
   .statsGrid {
@@ -350,6 +567,10 @@
     font-size: 10px;
     padding: 5px 8px;
     height: 28px;
+  }
+
+  .addressList {
+    flex-direction: column;
   }
 
   .addressItem {

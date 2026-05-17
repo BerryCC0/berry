@@ -224,6 +224,20 @@ function matchActionToTemplate(
     }
   }
 
+  // Stream cancel: cancel() with no args, no value. Any target.
+  // Matched late so it doesn't shadow more specific templates above.
+  if (
+    signature === 'cancel()' &&
+    (!calldata || calldata === '0x') &&
+    (!value || value === '0')
+  ) {
+    return {
+      templateId: 'stream-cancel',
+      fieldValues: { streamAddress: target },
+      generatedActions: []
+    };
+  }
+
   // Admin functions on DAO Proxy
   if (target === DAO_PROXY_ADDRESS.toLowerCase()) {
     const adminMatch = matchAdminAction(signature, calldata);
