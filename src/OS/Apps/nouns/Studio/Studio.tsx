@@ -33,7 +33,6 @@ import { useDescriptorPalette } from './hooks/useDescriptorPalette';
 import { useStudioKeybindings } from './hooks/useStudioKeybindings';
 import { useLayers } from './model/layers';
 import { useWorkspace } from './model/workspace';
-import { NOUN_PARTS } from './types';
 import { composeThumbnail } from './utils/composeThumbnail';
 import { downloadDataUrl, slugify } from './utils/downloadDataUrl';
 import styles from './Studio.module.css';
@@ -44,8 +43,6 @@ export function Studio({}: AppComponentProps) {
   useDescriptorPalette();  // mount once — hydrates the on-chain palette into store
 
   const { isConnected } = useAccount();
-  const activePart = useWorkspace((s) => s.activePart);
-  const setActivePart = useWorkspace((s) => s.setActivePart);
   const name = useWorkspace((s) => s.name);
   const getCanvases = useLayers((s) => s.getCanvases);
 
@@ -115,19 +112,6 @@ export function Studio({}: AppComponentProps) {
 
         <span className={styles.title}>{name}</span>
 
-        <span className={styles.partTabs}>
-          {NOUN_PARTS.map((part) => (
-            <button
-              key={part}
-              type="button"
-              className={`${styles.partTab} ${activePart === part ? styles.activeTab : ''}`}
-              onClick={() => setActivePart(part)}
-            >
-              {part}
-            </button>
-          ))}
-        </span>
-
         <span className={styles.flex} />
 
         <SaveControls />
@@ -143,12 +127,14 @@ export function Studio({}: AppComponentProps) {
       </div>
 
       <div className={styles.body}>
-        <ToolboxPanel />
+        <div className={styles.leftSidebar}>
+          <ToolboxPanel />
+          <PalettePanel />
+        </div>
         <PixelCanvas />
         <div className={styles.rightColumn}>
-          <LayersPanel />
-          <PalettePanel />
           <CompositePreview />
+          <LayersPanel />
         </div>
       </div>
 

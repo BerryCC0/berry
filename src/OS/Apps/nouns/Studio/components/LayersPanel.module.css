@@ -1,18 +1,17 @@
 .panel {
   display: flex;
   flex-direction: column;
-  width: 220px;
   background: var(--berry-bg-secondary);
-  border-left: 1px solid var(--berry-border);
-  flex-shrink: 0;
+  flex: 1;
   min-height: 0;
+  border-top: 1px solid var(--berry-border);
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--berry-border);
   flex-shrink: 0;
 }
@@ -52,7 +51,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 4px 10px;
   border-bottom: 1px solid var(--berry-border);
   flex-shrink: 0;
 }
@@ -88,14 +87,14 @@
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
+  gap: 6px;
+  padding: 3px 4px;
   border-radius: 4px;
   cursor: pointer;
   border: 1px solid transparent;
 }
 .row + .row {
-  margin-top: 2px;
+  margin-top: 1px;
 }
 .row:hover {
   background: var(--berry-bg-tertiary);
@@ -106,8 +105,8 @@
 }
 
 .thumb {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--berry-border);
   border-radius: 3px;
   image-rendering: pixelated;
@@ -118,7 +117,7 @@
 .meta {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
   flex: 1;
   min-width: 0;
 }
@@ -127,11 +126,12 @@
   font-weight: 500;
   color: var(--berry-text-primary);
   text-transform: capitalize;
+  line-height: 1.2;
 }
 .partSub {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--berry-text-secondary);
-  height: 12px;
+  line-height: 1.1;
 }
 
 .actions {
@@ -145,8 +145,8 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 3px;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -163,13 +163,4 @@
 }
 .iconOn {
   color: var(--berry-primary);
-}
-
-.footer {
-  padding: 6px 10px;
-  border-top: 1px solid var(--berry-border);
-  font-size: 10px;
-  color: var(--berry-text-secondary);
-  text-align: center;
-  flex-shrink: 0;
 }

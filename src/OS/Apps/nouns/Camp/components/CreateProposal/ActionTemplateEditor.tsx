@@ -63,6 +63,11 @@ export function ActionTemplateEditor({
   // First decoded title gives us a one-line human-readable summary.
   const decoded = useDecodedTransactions(templateState.generatedActions);
   const primarySummary = decoded[0]?.title || null;
+  // Recipient address (for sends/transfers) — surfaced on its own line so
+  // we can resolve to ENS via AddressWithENS. We deliberately ignore
+  // `params.contract`, since contract targets are already implied by the
+  // title (e.g. "Set fork period to 14 days").
+  const primaryRecipient = decoded[0]?.params?.to as string | undefined;
   const extraCount = decoded.length > 1 ? decoded.length - 1 : 0;
 
   const handleSave = (newState: ActionTemplateState) => {
@@ -85,6 +90,15 @@ export function ActionTemplateEditor({
             {primarySummary && (
               <div className={styles.summaryDetail}>
                 {primarySummary}
+                {primaryRecipient && (
+                  <>
+                    {' to '}
+                    <AddressWithENS
+                      address={primaryRecipient}
+                      className={styles.summaryRecipientAddr}
+                    />
+                  </>
+                )}
                 {extraCount > 0 && (
                   <span className={styles.summaryExtra}>
                     {' '}

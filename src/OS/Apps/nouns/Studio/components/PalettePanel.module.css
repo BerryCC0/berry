@@ -3,13 +3,15 @@
   flex-direction: column;
   background: var(--berry-bg-secondary);
   border-top: 1px solid var(--berry-border);
-  flex-shrink: 0;
+  flex: 1;
   min-height: 0;
+  overflow-y: auto;
 }
 
 .header {
-  padding: 8px 10px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
 }
 .heading {
   font-size: 11px;
@@ -22,14 +24,15 @@
 .currentRow {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: 4px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
 }
 
 .swatch {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border: 1px solid var(--berry-border);
   border-radius: 3px;
   flex-shrink: 0;
@@ -49,10 +52,11 @@
   color: var(--berry-text-primary);
   border: 1px solid var(--berry-border);
   border-radius: 3px;
-  padding: 3px 6px;
+  padding: 2px 4px;
   font-family: var(--berry-font-mono);
-  font-size: 11px;
+  font-size: 10px;
   min-width: 0;
+  width: 0;
 }
 .hexInput:focus {
   outline: none;
@@ -60,8 +64,8 @@
 }
 
 .colorInput {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 1px solid var(--berry-border);
   border-radius: 3px;
@@ -90,7 +94,7 @@
 }
 
 .section {
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--berry-border);
 }
 .section:last-child {
@@ -118,9 +122,9 @@
 
 .swatchGrid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(10, 1fr);
   gap: 2px;
-  max-height: 140px;
+  max-height: 220px;
   overflow-y: auto;
   padding-right: 2px;
 }

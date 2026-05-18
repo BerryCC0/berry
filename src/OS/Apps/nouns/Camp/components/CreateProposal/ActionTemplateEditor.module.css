@@ -125,6 +125,11 @@
   font-style: italic;
 }
 
+.summaryRecipientAddr {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono);
+}
+
 .editButton {
   flex-shrink: 0;
   padding: 6px 12px;

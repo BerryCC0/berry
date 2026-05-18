@@ -1,8 +1,3 @@
-/**
- * Studio layout — header / (toolbox · canvas) / status bar.
- * Right-side panels (layers, palette, composite preview) land in Phase 2.
- */
-
 .studio {
   display: flex;
   flex-direction: column;
@@ -16,7 +11,7 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   padding: 8px 12px;
   background: var(--berry-bg-secondary);
   border-bottom: 1px solid var(--berry-border);
@@ -27,6 +22,7 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--berry-text-primary);
+  margin-left: 8px;
 }
 
 .newProjectBtn {
@@ -86,40 +82,6 @@
   opacity: 0.85;
 }
 
-.partTabs {
-  display: flex;
-  gap: 4px;
-}
-
-.partTab {
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--berry-border);
-  border-radius: 4px;
-  color: var(--berry-text-secondary);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  text-transform: capitalize;
-  transition: background 0.1s, color 0.1s;
-}
-
-.partTab:hover {
-  background: var(--berry-bg-tertiary);
-  color: var(--berry-text-primary);
-}
-
-.activeTab {
-  background: var(--berry-primary);
-  border-color: var(--berry-primary);
-  color: white;
-}
-
-.activeTab:hover {
-  background: var(--berry-primary);
-  color: white;
-}
-
 .body {
   display: flex;
   flex: 1;
@@ -127,17 +89,24 @@
   overflow: hidden;
 }
 
+.leftSidebar {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  overflow: hidden;
+  min-height: 0;
+}
+
 .rightColumn {
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
   border-left: 1px solid var(--berry-border);
   background: var(--berry-bg-secondary);
   overflow-y: auto;
   min-height: 0;
-}
-
-.rightColumn > * {
-  border-left: none;
 }

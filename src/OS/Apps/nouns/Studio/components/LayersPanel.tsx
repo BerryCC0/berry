@@ -17,10 +17,10 @@
 import { useEffect, useRef } from 'react';
 import { useLayers } from '../model/layers';
 import { useWorkspace } from '../model/workspace';
-import { CANVAS_SIZE, NOUN_PARTS, type NounPart } from '../types';
+import { NOUN_PARTS, type NounPart } from '../types';
 import styles from './LayersPanel.module.css';
 
-const THUMB_SIZE = 40; // displayed thumbnail size in CSS px
+const THUMB_SIZE = 28; // displayed thumbnail size in CSS px
 
 function LayerThumb({ part }: { part: NounPart }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -114,9 +114,9 @@ export function LayersPanel() {
               <LayerThumb part={part} />
               <div className={styles.meta}>
                 <span className={styles.partName}>{part}</span>
-                <span className={styles.partSub}>
-                  {layer.edited ? 'edited' : ''}
-                </span>
+                {layer.edited && (
+                  <span className={styles.partSub}>edited</span>
+                )}
               </div>
               <div className={styles.actions}>
                 <button
@@ -160,9 +160,6 @@ export function LayersPanel() {
           );
         })}
       </ul>
-      <div className={styles.footer}>
-        {CANVAS_SIZE}×{CANVAS_SIZE} · {NOUN_PARTS.length} layers
-      </div>
     </div>
   );
 }
