@@ -26,3 +26,17 @@ export const TREASURY_ADDRESS = NOUNS_ADDRESSES.treasury as Address;
 export const NOUNS_TOKEN_ADDRESS = NOUNS_ADDRESSES.token as Address;
 export const DAO_PROXY_ADDRESS = NOUNS_ADDRESSES.governor as Address;
 export const STREAM_FACTORY_ADDRESS = '0x0fd206FC7A7dBcD5661157eDCb1FFDD0D02A61ff' as Address;
+
+/**
+ * Well-known ERC20Votes tokens, keyed by lowercase address.
+ * Used to (1) round-trip delegate(address) calls back into templates with a
+ * friendly symbol, and (2) filter the treasury-delegate token picker to
+ * tokens we know support delegation. Extend as the treasury picks up new
+ * votes-tokens.
+ */
+export const KNOWN_VOTES_TOKENS: Record<string, { symbol: string; decimals: number }> = {
+  '0xc18360217d8f7ab5e7c516566761ea12ce7f9d72': { symbol: 'ENS', decimals: 18 },
+  '0xc00e94cb662c3520282e6f5717214004a7f26888': { symbol: 'COMP', decimals: 18 },
+  '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984': { symbol: 'UNI', decimals: 18 },
+  '0x912ce59144191c1204e64559fe8253a0e49e6548': { symbol: 'ARB', decimals: 18 },
+};

@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "npm run generate-fs-index && next build --webpack",
+    "dev": "next dev --turbopack",
+    "build": "npm run generate-fs-index && next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "generate-fs-index": "node scripts/generate-filesystem-index.js"
+    "generate-fs-index": "node scripts/generate-filesystem-index.js",
+    "sync-trait-art": "node scripts/sync-trait-art.js"
   },
   "dependencies": {
     "@coinbase/wallet-sdk": "^4.3.7",
@@ -24,12 +25,6 @@
     "@tanstack/react-query": "^5.90.12",
     "@vercel/analytics": "^1.6.1",
     "@walletconnect/ethereum-provider": "^2.21.10",
-    "@xmtp/browser-sdk": "^6.3.0",
-    "@xmtp/content-type-reaction": "^2.0.2",
-    "@xmtp/content-type-read-receipt": "^2.0.2",
-    "@xmtp/content-type-remote-attachment": "^2.0.4",
-    "@xmtp/content-type-reply": "^2.0.3",
-    "@xmtp/node-sdk": "^5.3.0",
     "axios": "^1.13.5",
     "dompurify": "^3.3.1",
     "drizzle-orm": "^0.45.1",

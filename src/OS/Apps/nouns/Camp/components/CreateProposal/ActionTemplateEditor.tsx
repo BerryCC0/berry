@@ -20,6 +20,18 @@ import { ActionTemplateDropdown } from './ActionTemplateDropdown';
 import { AddressInput } from './AddressInput';
 import { NounSwapTemplate } from './NounSwapTemplate';
 import { StreamSelect } from './StreamSelect';
+import { TreasuryTokenSelect } from './TreasuryTokenSelect';
+import { PredictedStreamAddress } from './PredictedStreamAddress';
+import { useDecodedTransactions } from '../../hooks/useDecodedTransactions';
+import { useTreasuryStreams } from '@/app/lib/nouns/hooks';
+import { formatUnits } from 'viem';
+import { COMMON_TOKENS } from '../../utils/actionTemplates/constants';
+import {
+  AddressWithENS,
+  formatGas,
+  getTenderlySimulatorUrl,
+} from '../SimulationStatus/SimulationStatus';
+import type { TransactionResult } from '../../hooks/useSimulation';
 import { Select, type SelectOption } from '@/OS/Primitives/Select/Select';
 import styles from './ActionTemplateEditor.module.css';
 
@@ -45,7 +57,7 @@ interface MetaProposeEditorProps {
 }
 
 // Templates that can be used inside meta-propose (includes meta for recursion!)
-const INNER_TEMPLATE_CATEGORIES = ['treasury', 'swaps', 'nouns', 'payments', 'admin', 'meta'] as const;
+const INNER_TEMPLATE_CATEGORIES = ['payments', 'swaps', 'nouns', 'streams', 'delegation', 'admin', 'meta'] as const;
 
 function MetaProposeEditor({ fieldValues, updateField, disabled, validationErrors }: MetaProposeEditorProps) {
   const [innerTemplateId, setInnerTemplateId] = useState<ActionTemplateType | ''>('');
@@ -53,10 +65,11 @@ function MetaProposeEditor({ fieldValues, updateField, disabled, validationError
   
   // Get available templates for inner action (includes meta for proposalception!)
   const innerTemplateGroups = INNER_TEMPLATE_CATEGORIES.map(category => ({
-    label: category === 'treasury' ? 'Treasury Transfers' :
+    label: category === 'payments' ? 'Payments' :
            category === 'swaps' ? 'Token Buyer' :
            category === 'nouns' ? 'Nouns Token' :
-           category === 'payments' ? 'Streams' :
+           category === 'streams' ? 'Streams' :
+           category === 'delegation' ? 'Delegation' :
            category === 'admin' ? 'DAO Admin' :
            category === 'meta' ? 'Meta (Recursive)' : category,
     options: getTemplatesByCategory(category).map(t => ({
@@ -219,6 +232,25 @@ function MetaProposeEditor({ fieldValues, updateField, disabled, validationError
                     onChange={(value) => handleInnerFieldChange(field.name, value)}
                     disabled={disabled}
                   />
+                ) : field.type === 'treasury-token-select' ? (
+                  <TreasuryTokenSelect
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(value) => handleInnerFieldChange(field.name, value)}
+                    disabled={disabled}
+                  />
+                ) : field.type === 'treasury-votes-token-select' ? (
+                  <TreasuryTokenSelect
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(value) => handleInnerFieldChange(field.name, value)}
+                    disabled={disabled}
+                    votesOnly
+                  />
+                ) : field.type === 'predicted-stream-address' ? (
+                  <PredictedStreamAddress
+                    value={innerFieldValues[field.name] || ''}
+                    onChange={(value) => handleInnerFieldChange(field.name, value)}
+                    fieldValues={innerFieldValues}
+                  />
                 ) : (
                   <input
                     type={field.type === 'number' || field.type === 'amount' ? 'number' : 'text'}
@@ -341,6 +373,17 @@ interface ActionTemplateEditorProps {
   templateState: ActionTemplateState;
   onUpdateTemplateState: (state: ActionTemplateState) => void;
   disabled?: boolean;
+  /**
+   * Per-action simulation results aligned with `generatedActions`. Entries are
+   * `undefined` for actions skipped from simulation (empty target) or when no
+   * simulation has run yet.
+   */
+  simulationResults?: Array<TransactionResult | undefined>;
+  /**
+   * Proposal-wide Tenderly share URL. When present, per-row Tenderly links
+   * are suppressed (the share link in the bottom pill covers everything).
+   */
+  shareUrl?: string;
 }
 
 // Option group for dropdown
@@ -354,6 +397,8 @@ export function ActionTemplateEditor({
   templateState,
   onUpdateTemplateState,
   disabled = false,
+  simulationResults,
+  shareUrl,
 }: ActionTemplateEditorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   
@@ -417,14 +462,14 @@ export function ActionTemplateEditor({
   // Use JSON comparison to prevent infinite loops
   useEffect(() => {
     if (!initializedRef.current) return;
-    
+
     const newState: ActionTemplateState = {
       // Use empty string when no template is selected (not 'custom')
       templateId: selectedTemplate?.id || '',
       fieldValues: fieldValues,
       generatedActions: generatedActions
     };
-    
+
     // Compare with previous state to avoid infinite updates
     const newStateStr = JSON.stringify(newState);
     if (newStateStr !== lastStateRef.current) {
@@ -432,6 +477,68 @@ export function ActionTemplateEditor({
       stableOnUpdate.current(newState);
     }
   }, [fieldValues, generatedActions, selectedTemplate]);
+
+  // Auto-default recipient / amount / tokenAddress for stream-restream when
+  // the user picks a source stream. Only fires when the SOURCE changes — user
+  // edits to recipient/amount made after the auto-fill survive subsequent
+  // re-renders.
+  const lastRestreamSourceRef = useRef<string | undefined>(undefined);
+  const { data: streamsData } = useTreasuryStreams();
+
+  useEffect(() => {
+    if (selectedTemplate?.id !== 'stream-restream') {
+      lastRestreamSourceRef.current = undefined;
+      return;
+    }
+    const sourceAddr = fieldValues.sourceStreamAddress;
+    if (!sourceAddr) {
+      lastRestreamSourceRef.current = undefined;
+      return;
+    }
+    if (lastRestreamSourceRef.current === sourceAddr) return; // already auto-filled for this source
+
+    const source = streamsData?.streams.find(
+      (s) => s.streamAddress.toLowerCase() === sourceAddr.toLowerCase(),
+    );
+    if (!source) return; // source not loaded yet; effect will re-run when data arrives
+
+    const tokenMeta = COMMON_TOKENS.find(
+      (t) => t.address.toLowerCase() === source.tokenAddress.toLowerCase(),
+    );
+    const decimals = tokenMeta?.decimals ?? 18;
+
+    // tokenAddress is an internal field — populated so PredictedStreamAddress
+    // and the generator can read it. Stored as JSON for consistency with the
+    // existing token-select payload shape.
+    updateField(
+      'tokenAddress',
+      JSON.stringify({
+        address: source.tokenAddress,
+        symbol: tokenMeta?.symbol || 'TOKEN',
+        decimals,
+        isNative: false,
+      }),
+    );
+
+    // Default new-stream recipient to the source's recipient.
+    updateField('recipient', source.recipient);
+
+    // Default amount to the predicted unvested remainder at proposal-creation
+    // time: tokenAmount * (1 - vestedRatio), using 4-decimal precision math.
+    const totalRaw = BigInt(source.tokenAmountRaw);
+    const ratio = Math.max(0, Math.min(1, source.vestedRatio));
+    const ratioScaled = BigInt(Math.round(ratio * 10_000));
+    const vestedRaw = (totalRaw * ratioScaled) / BigInt(10_000);
+    const unvestedRaw = totalRaw - vestedRaw;
+    updateField('amount', formatUnits(unvestedRaw, decimals));
+
+    lastRestreamSourceRef.current = sourceAddr;
+  }, [
+    selectedTemplate?.id,
+    fieldValues.sourceStreamAddress,
+    streamsData,
+    updateField,
+  ]);
 
   const handleTemplateSelect = (templateId: string) => {
     // Mark as initialized when user manually selects a template
@@ -458,19 +565,21 @@ export function ActionTemplateEditor({
   };
 
   // Group templates by category for dropdown
-  const treasuryTemplates = getTemplatesByCategory('treasury');
+  const paymentsTemplates = getTemplatesByCategory('payments');
+  const streamTemplates = getTemplatesByCategory('streams');
   const swapTemplates = getTemplatesByCategory('swaps');
   const nounTemplates = getTemplatesByCategory('nouns');
-  const paymentTemplates = getTemplatesByCategory('payments');
+  const delegationTemplates = getTemplatesByCategory('delegation');
   const adminTemplates = getTemplatesByCategory('admin');
   const metaTemplates = getTemplatesByCategory('meta');
 
   // Build option groups with descriptions
   const optionGroups: TemplateGroup[] = [
-    { label: 'Treasury Transfers', options: treasuryTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
-    { label: 'Streams', options: paymentTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
-    { label: 'Token Buyer', options: swapTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Payments', options: paymentsTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Streams', options: streamTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Nouns Token', options: nounTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Delegation', options: delegationTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
+    { label: 'Token Buyer', options: swapTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Meta', options: metaTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) },
     { label: 'Custom', options: [{ value: 'custom', label: 'Custom Transaction', description: 'Build a custom contract call' }] },
     { label: 'DAO Admin Functions', options: adminTemplates.map(t => ({ value: t.id, label: t.name, description: t.description })) }
@@ -531,10 +640,20 @@ export function ActionTemplateEditor({
     // Default: render fields from template
     return (
       <div className={styles.templateForm}>
-        {selectedTemplate.fields.map(field => (
+        {selectedTemplate.fields.map(field => {
+          // For 'amount' fields, surface the picked token's symbol next to the
+          // label so users always see what currency they're typing in. The
+          // symbol is parsed out of a sibling `token` or `tokenAddress` field
+          // that holds the token-select JSON payload.
+          const tokenSymbolHint =
+            field.type === 'amount'
+              ? extractTokenSymbol(fieldValues.token || fieldValues.tokenAddress)
+              : null;
+
+          return (
           <div key={field.name} className={styles.inputGroup}>
             <label className={styles.label}>
-              {field.label}
+              {field.label}{tokenSymbolHint ? ` (${tokenSymbolHint})` : ''}
               {field.required && <span className={styles.required}>*</span>}
             </label>
             
@@ -571,6 +690,25 @@ export function ActionTemplateEditor({
                 onChange={(value) => updateField(field.name, value)}
                 disabled={disabled}
               />
+            ) : field.type === 'treasury-token-select' ? (
+              <TreasuryTokenSelect
+                value={fieldValues[field.name] || ''}
+                onChange={(value) => updateField(field.name, value)}
+                disabled={disabled}
+              />
+            ) : field.type === 'treasury-votes-token-select' ? (
+              <TreasuryTokenSelect
+                value={fieldValues[field.name] || ''}
+                onChange={(value) => updateField(field.name, value)}
+                disabled={disabled}
+                votesOnly
+              />
+            ) : field.type === 'predicted-stream-address' ? (
+              <PredictedStreamAddress
+                value={fieldValues[field.name] || ''}
+                onChange={(value) => updateField(field.name, value)}
+                fieldValues={fieldValues}
+              />
             ) : field.type === 'address' ? (
               <AddressInput
                 value={fieldValues[field.name] || ''}
@@ -600,7 +738,8 @@ export function ActionTemplateEditor({
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
@@ -622,52 +761,189 @@ export function ActionTemplateEditor({
           disabled={disabled}
         />
 
-        {selectedTemplate && selectedTemplate.id !== 'custom' && selectedTemplate.isMultiAction && (
-          <div className={styles.templateDescription}>
-            <span className={styles.multiActionBadge}>
-              Multi-action template{generatedActions.length > 0 ? ` (${generatedActions.length} actions)` : ''}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Template-specific form */}
       {renderTemplateForm()}
 
-      {/* Show generated transaction details for templates */}
+      {/* Decoded summary of what the proposal will do, plus raw fields on demand */}
       {selectedTemplate && selectedTemplate.id !== 'custom' && generatedActions.length > 0 && (
-        <details className={styles.advancedSection}>
-          <summary className={styles.advancedHeader}>
-            Generated Transaction Details ({generatedActions.length} transaction{generatedActions.length > 1 ? 's' : ''})
-          </summary>
-          
-          {generatedActions.map((genAction, idx) => (
-            <div key={idx} className={styles.generatedAction}>
-              {generatedActions.length > 1 && (
-                <div className={styles.actionNumber}>Transaction {idx + 1}</div>
-              )}
-              
-              <div className={styles.generatedField}>
-                <span className={styles.generatedLabel}>Target:</span>
-                <code className={styles.generatedValue}>{genAction.target}</code>
-              </div>
-              <div className={styles.generatedField}>
-                <span className={styles.generatedLabel}>Value:</span>
-                <code className={styles.generatedValue}>{genAction.value}</code>
-              </div>
-              <div className={styles.generatedField}>
-                <span className={styles.generatedLabel}>Signature:</span>
-                <code className={styles.generatedValue}>{genAction.signature}</code>
-              </div>
-              <div className={styles.generatedField}>
-                <span className={styles.generatedLabel}>Calldata:</span>
-                <code className={styles.generatedValueLong}>{genAction.calldata}</code>
-              </div>
-            </div>
-          ))}
-        </details>
+        <DecodedActionsPreview
+          actions={generatedActions}
+          simulationResults={simulationResults}
+          shareUrl={shareUrl}
+        />
       )}
     </div>
   );
+}
+
+// ============================================================================
+// DecodedActionsPreview — human-readable summary + per-action sim results
+// ============================================================================
+
+interface ProposalAction {
+  target: string;
+  value: string;
+  signature: string;
+  calldata: string;
+}
+
+interface DecodedActionsPreviewProps {
+  actions: ProposalAction[];
+  simulationResults?: Array<TransactionResult | undefined>;
+  shareUrl?: string;
+}
+
+function DecodedActionsPreview({
+  actions,
+  simulationResults,
+  shareUrl,
+}: DecodedActionsPreviewProps) {
+  const decoded = useDecodedTransactions(actions);
+
+  // Aggregate sim state for the collapsed summary so users can see overall
+  // pass/fail at a glance without expanding.
+  const resultsWithData = simulationResults?.filter((r) => r !== undefined) ?? [];
+  const hasAnyResult = resultsWithData.length > 0;
+  const allPassed = hasAnyResult && resultsWithData.every((r) => r!.success);
+  const anyFailed = hasAnyResult && resultsWithData.some((r) => !r!.success);
+
+  return (
+    <details className={styles.decodedPreview}>
+      <summary className={styles.decodedHeader}>
+        <span className={styles.decodedHeaderCaret} aria-hidden>▶</span>
+        <span>Transactions</span>
+        {decoded.length > 1 && (
+          <span className={styles.decodedHeaderCount}>· {decoded.length}</span>
+        )}
+        {anyFailed && (
+          <span className={`${styles.decodedHeaderStatus} ${styles.decodedStatusFail}`}>✗</span>
+        )}
+        {!anyFailed && allPassed && (
+          <span className={`${styles.decodedHeaderStatus} ${styles.decodedStatusPass}`}>✓</span>
+        )}
+      </summary>
+      <ol className={styles.decodedList}>
+        {decoded.map((d, idx) => {
+          const dest = d.params?.to || d.params?.contract;
+          const isContract = !!d.params?.contract;
+          const action = actions[idx];
+          const simResult = simulationResults?.[idx];
+          const hasResult = simResult !== undefined;
+          const gas = hasResult ? parseInt(simResult.gasUsed, 10) : 0;
+
+          let statusClass = styles.decodedStatusNeutral;
+          let statusIcon = '–';
+          if (hasResult && simResult.success) {
+            statusClass = styles.decodedStatusPass;
+            statusIcon = '✓';
+          } else if (hasResult && !simResult.success) {
+            statusClass = styles.decodedStatusFail;
+            statusIcon = '✗';
+          }
+
+          const tenderlyLink = !shareUrl && action ? getTenderlySimulatorUrl(action) : null;
+          const showFooter = tenderlyLink !== null || hasResult;
+
+          return (
+            <li key={idx} className={styles.decodedItem}>
+              <div className={styles.decodedTitleRow}>
+                <span className={styles.decodedTitle}>{d.title}</span>
+              </div>
+              {d.description && <div className={styles.decodedDesc}>{d.description}</div>}
+              {dest && (
+                <div className={styles.decodedDest}>
+                  <span className={styles.decodedDestLabel}>
+                    {isContract ? 'Contract' : 'To'}:
+                  </span>{' '}
+                  <AddressWithENS address={dest} className={styles.decodedAddr} />
+                </div>
+              )}
+              {hasResult && !simResult.success && (
+                <div className={styles.decodedError}>
+                  {simResult.errorMessage || simResult.error || 'Transaction failed'}
+                </div>
+              )}
+              {showFooter && (
+                <div className={styles.decodedFooter}>
+                  {tenderlyLink ? (
+                    <a
+                      href={tenderlyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.decodedTenderly}
+                    >
+                      Verify on Tenderly →
+                    </a>
+                  ) : (
+                    <span />
+                  )}
+                  {hasResult && (
+                    <span className={styles.decodedSimStatus}>
+                      {gas > 0 && (
+                        <span className={styles.decodedGas}>{formatGas(simResult.gasUsed)} gas</span>
+                      )}
+                      <span className={`${styles.decodedStatus} ${statusClass}`}>{statusIcon}</span>
+                    </span>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      <details className={styles.rawDetails}>
+        <summary className={styles.rawSummary}>Show raw calldata</summary>
+        {actions.map((action, idx) => (
+          <div key={idx} className={styles.generatedAction}>
+            {actions.length > 1 && (
+              <div className={styles.actionNumber}>Transaction {idx + 1}</div>
+            )}
+            <div className={styles.generatedField}>
+              <span className={styles.generatedLabel}>Target:</span>
+              <code className={styles.generatedValue}>{action.target}</code>
+            </div>
+            <div className={styles.generatedField}>
+              <span className={styles.generatedLabel}>Value:</span>
+              <code className={styles.generatedValue}>{action.value}</code>
+            </div>
+            <div className={styles.generatedField}>
+              <span className={styles.generatedLabel}>Signature:</span>
+              <code className={styles.generatedValue}>{action.signature}</code>
+            </div>
+            <div className={styles.generatedField}>
+              <span className={styles.generatedLabel}>Calldata:</span>
+              <code className={styles.generatedValueLong}>{action.calldata}</code>
+            </div>
+          </div>
+        ))}
+      </details>
+    </details>
+  );
+}
+
+/**
+ * Pull a token symbol out of a token-picker field's stored value. Field may
+ * hold either a raw 0x address (in which case we look it up in known tokens)
+ * or a JSON-stringified {symbol, address, decimals, ...} payload.
+ */
+function extractTokenSymbol(raw: string | undefined): string | null {
+  if (!raw) return null;
+  // JSON payload (treasury-token-select / token-select shape)
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.symbol === 'string') return parsed.symbol;
+  } catch {
+    /* fall through */
+  }
+  // Raw 0x address — match against the curated list
+  if (raw.startsWith('0x') && raw.length === 42) {
+    const match = COMMON_TOKENS.find(
+      (t) => t.address.toLowerCase() === raw.toLowerCase(),
+    );
+    if (match) return match.symbol;
+  }
+  return null;
 }
 

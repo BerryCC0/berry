@@ -5,18 +5,18 @@
 import { Address } from 'viem';
 
 export type ActionTemplateType =
-  | 'treasury-eth'
-  | 'treasury-usdc'
-  | 'treasury-weth'
-  | 'treasury-erc20-custom'
+  | 'treasury-transfer'
   | 'swap-buy-eth'
   | 'swap-sell-eth'
   | 'noun-transfer'
   | 'noun-swap'
   | 'noun-delegate'
+  | 'treasury-delegate'
   | 'auction-bid'
   | 'payment-stream'
   | 'stream-cancel'
+  | 'stream-redirect'
+  | 'stream-restream'
   | 'payment-once'
   | 'admin-voting-delay'
   | 'admin-voting-period'
@@ -52,7 +52,7 @@ export interface ProposalAction {
 
 export interface ActionTemplate {
   id: ActionTemplateType;
-  category: 'treasury' | 'swaps' | 'nouns' | 'payments' | 'admin' | 'meta' | 'custom';
+  category: 'payments' | 'swaps' | 'nouns' | 'streams' | 'delegation' | 'admin' | 'meta' | 'custom';
   name: string;
   description: string;
   isMultiAction: boolean;
@@ -62,7 +62,7 @@ export interface ActionTemplate {
 export interface ActionField {
   name: string;
   label: string;
-  type: 'address' | 'amount' | 'number' | 'select' | 'date' | 'text' | 'token-select' | 'stream-select';
+  type: 'address' | 'amount' | 'number' | 'select' | 'date' | 'text' | 'token-select' | 'stream-select' | 'treasury-token-select' | 'treasury-votes-token-select' | 'predicted-stream-address';
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];

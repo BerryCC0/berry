@@ -6,7 +6,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { decodeTransactions, type DecodedTransaction } from '../utils/transactionDecoder';
+import { type DecodedTransaction } from '../utils/transactionDecoder';
+import { useDecodedTransactions } from '../hooks/useDecodedTransactions';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import styles from './TransactionSummary.module.css';
 
@@ -33,9 +34,7 @@ function formatAggregatedAmount(num: number): string {
 }
 
 export function TransactionSummary({ actions }: TransactionSummaryProps) {
-  const decodedTransactions = useMemo(() => {
-    return decodeTransactions(actions);
-  }, [actions]);
+  const decodedTransactions = useDecodedTransactions(actions);
   
   // Group similar transactions for summary, aggregating transfer amounts
   const summary = useMemo(() => {
@@ -47,9 +46,35 @@ export function TransactionSummary({ actions }: TransactionSummaryProps) {
     const tokenTotals: Record<string, { total: number; count: number; sources: Set<string> }> = {};
     const nounTransfers: DecodedTransaction[] = [];
     
-    for (const tx of decodedTransactions) {
+    for (let i = 0; i < decodedTransactions.length; i++) {
+      const tx = decodedTransactions[i];
+
+      // Re-stream pattern (4-action lookahead): cancel + recover→treasury +
+      // createStream + fund-stream. Collapse into a single "Re-stream" entry
+      // so the summary doesn't double-count cancel and create halves.
+      if (i + 3 < decodedTransactions.length) {
+        const a = decodedTransactions[i];
+        const b = decodedTransactions[i + 1];
+        const c = decodedTransactions[i + 2];
+        const d = decodedTransactions[i + 3];
+        if (
+          a.title === 'Cancel payment stream' &&
+          b.title === 'Return unvested funds to Treasury' &&
+          c.title.startsWith('Stream ') &&
+          (d.title === 'Fund Stream Contract' || d.title.startsWith('Fund stream with '))
+        ) {
+          groups.push({
+            type: 'Re-stream',
+            count: 1,
+            details: `Cancel + ${c.title}${c.description ? ` (${c.description})` : ''}`,
+          });
+          i += 3; // skip the remaining 3 actions of the re-stream sequence
+          continue;
+        }
+      }
+
       const title = tx.title;
-      
+
       // ETH transfers: "Transfer X ETH" (but not WETH, STETH, etc.)
       if (title.startsWith('Transfer') && title.endsWith(' ETH') && !title.includes('Noun')) {
         const amountStr = title.replace(/^Transfer\s+/, '').replace(/\s+ETH$/, '');
@@ -88,9 +113,29 @@ export function TransactionSummary({ actions }: TransactionSummaryProps) {
       }
       
       // Fund Stream Contract (auxiliary to streams)
-      if (title === 'Fund Stream Contract') {
-        // These are Payer funding transactions for streams — skip from summary
+      if (title === 'Fund Stream Contract' || title.startsWith('Fund stream with ')) {
+        // These are funding transactions for streams — skip from summary
         // since the stream entry already describes the payment
+        continue;
+      }
+
+      // Cancel / redirect / recover — aggregate as stream cancellations.
+      // The recoverTokens leg of a cancel pair gets folded into the cancel
+      // entry so a 2-action cancel reads as a single "Cancel" item.
+      if (
+        title === 'Cancel payment stream' ||
+        title === 'Return unvested funds to Treasury' ||
+        title === 'Redirect unvested funds' ||
+        title.startsWith('Recover stream funds') ||
+        title.endsWith(' from stream')
+      ) {
+        const existing = groups.find(g => g.type === 'Stream Cancel');
+        if (existing) {
+          existing.count++;
+          existing.details = `${existing.count} stream actions`;
+        } else {
+          groups.push({ type: 'Stream Cancel', count: 1, details: title });
+        }
         continue;
       }
       

@@ -9,7 +9,6 @@ import {
   ActionTemplateType,
   ProposalAction,
   TemplateFieldValues,
-  TokenInfo
 } from './types';
 import {
   encodeAdminAddress,
@@ -36,6 +35,38 @@ import {
 import { parseEther, parseUnits } from './utils';
 import { getTemplate } from './templates';
 
+/**
+ * Resolve a token field value (which may be either a raw 0x address or a
+ * JSON-stringified {address, decimals} payload from the token-select picker)
+ * into a consistent {address, decimals} pair. Falls back to 18 decimals
+ * when the token isn't in our COMMON_TOKENS list.
+ */
+function resolveTokenField(raw: string | undefined): {
+  address: string;
+  decimals: number;
+} {
+  if (!raw) return { address: '', decimals: 18 };
+  if (raw.startsWith('0x') && raw.length === 42) {
+    const match = COMMON_TOKENS.find(
+      (t) => t.address.toLowerCase() === raw.toLowerCase(),
+    );
+    return { address: raw, decimals: match?.decimals ?? 18 };
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.address === 'string') {
+      return {
+        address: parsed.address,
+        decimals:
+          typeof parsed.decimals === 'number' ? parsed.decimals : 18,
+      };
+    }
+  } catch {
+    /* fall through */
+  }
+  return { address: '', decimals: 18 };
+}
+
 export function generateActionsFromTemplate(
   templateId: ActionTemplateType,
   fieldValues: TemplateFieldValues
@@ -46,57 +77,33 @@ export function generateActionsFromTemplate(
   }
 
   switch (templateId) {
-    // Treasury Transfers
-    // Direct ETH transfer: Treasury executes a call to recipient with value
-    // This is simpler and doesn't require calling Treasury.sendETH() which needs admin
-    case 'treasury-eth':
-      return [{
-        target: fieldValues.recipient as Address,
-        value: parseEther(fieldValues.amount || '0').toString(),
-        signature: '',
-        calldata: '0x'
-      }];
-
-    case 'treasury-usdc':
-      // Call transfer() directly on USDC contract - treasury is the caller
-      return [{
-        target: EXTERNAL_CONTRACTS.USDC.address,
-        value: '0',
-        signature: 'transfer(address,uint256)',
-        calldata: encodeTransfer(
-          fieldValues.recipient as Address,
-          parseUnits(fieldValues.amount || '0', 6)
-        )
-      }];
-
-    case 'treasury-weth':
-      // Call transfer() directly on WETH contract - treasury is the caller
-      return [{
-        target: EXTERNAL_CONTRACTS.WETH.address,
-        value: '0',
-        signature: 'transfer(address,uint256)',
-        calldata: encodeTransfer(
-          fieldValues.recipient as Address,
-          parseEther(fieldValues.amount || '0')
-        )
-      }];
-
-    case 'treasury-erc20-custom': {
+    // Unified treasury transfer: native ETH or any ERC-20.
+    case 'treasury-transfer': {
       const parsed = JSON.parse(fieldValues.token || '{}');
-      const tokenInfo: TokenInfo = {
-        symbol: parsed.symbol,
-        address: parsed.address,
-        decimals: parsed.decimals,
-        balance: parsed.balance ? BigInt(parsed.balance) : undefined
-      };
-      // Call transfer() directly on token contract - treasury is the caller
+      const decimals = typeof parsed.decimals === 'number' ? parsed.decimals : 18;
+      const isNative = parsed.isNative === true
+        || (typeof parsed.address === 'string'
+            && parsed.address.toLowerCase() === '0x0000000000000000000000000000000000000000');
+      const amount = parseUnits(fieldValues.amount || '0', decimals);
+
+      if (isNative) {
+        // Direct ETH value transfer from the treasury.
+        return [{
+          target: fieldValues.recipient as Address,
+          value: amount.toString(),
+          signature: '',
+          calldata: '0x'
+        }];
+      }
+
+      // ERC-20: call transfer() on the token contract — treasury is msg.sender.
       return [{
-        target: tokenInfo.address,
+        target: parsed.address as Address,
         value: '0',
         signature: 'transfer(address,uint256)',
         calldata: encodeTransfer(
           fieldValues.recipient as Address,
-          parseUnits(fieldValues.amount || '0', tokenInfo.decimals)
+          amount,
         )
       }];
     }
@@ -246,6 +253,17 @@ export function generateActionsFromTemplate(
         calldata: encodeDelegate(fieldValues.delegatee as Address)
       }];
 
+    // Generic ERC20Votes delegate — works for any votes-token the treasury holds.
+    case 'treasury-delegate': {
+      const parsed = JSON.parse(fieldValues.token || '{}');
+      return [{
+        target: parsed.address as Address,
+        value: '0',
+        signature: 'delegate(address)',
+        calldata: encodeDelegate(fieldValues.delegatee as Address)
+      }];
+    }
+
     case 'auction-bid': {
       const bidAmountWei = parseUnits(fieldValues.bidAmount || '0', 18);
       return [{
@@ -271,9 +289,11 @@ export function generateActionsFromTemplate(
         ? BigInt(Math.floor(new Date(fieldValues.endDate).getTime() / 1000))
         : BigInt(0);
 
-      const tokenAddress = fieldValues.tokenAddress as Address;
-      const token = COMMON_TOKENS.find(t => t.address.toLowerCase() === tokenAddress.toLowerCase());
-      const decimals = token?.decimals || 18;
+      // The token field stores either a raw 0x address or a JSON-stringified
+      // {address, decimals} from the token-select picker. Resolve both shapes.
+      const tokenInfo = resolveTokenField(fieldValues.tokenAddress);
+      const tokenAddress = tokenInfo.address as Address;
+      const decimals = tokenInfo.decimals;
       const tokenAmount = parseUnits(fieldValues.amount || '0', decimals);
 
       const predictedStreamAddress = fieldValues.streamAddress as Address;
@@ -315,12 +335,114 @@ export function generateActionsFromTemplate(
     }
 
     case 'stream-cancel':
-      return [{
-        target: fieldValues.streamAddress as Address,
-        value: '0',
-        signature: 'cancel()',
-        calldata: '0x'
-      }];
+    case 'stream-redirect': {
+      // cancel() alone only snapshots the recipient's vested share; the unvested
+      // remainder stays in the stream until the payer (treasury) calls
+      // recoverTokens(to). We always bundle the recovery to avoid stranded funds.
+      const streamAddress = fieldValues.streamAddress as Address;
+      const destination =
+        templateId === 'stream-redirect'
+          ? (fieldValues.destination as Address)
+          : TREASURY_ADDRESS;
+      const groupId = `${templateId}-${Date.now()}`;
+      return [
+        {
+          target: streamAddress,
+          value: '0',
+          signature: 'cancel()',
+          calldata: '0x',
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0
+        },
+        {
+          target: streamAddress,
+          value: '0',
+          signature: 'recoverTokens(address)',
+          calldata: encodeAdminAddress(destination),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1
+        }
+      ];
+    }
+
+    case 'stream-restream': {
+      // Four-action atomic re-stream:
+      //   1. cancel() on old stream — snapshots recipient's vested share
+      //   2. recoverTokens(treasury) — pulls unvested back to treasury
+      //   3. createStream(...) — deploys the new stream clone at predicted addr
+      //   4. transfer(predicted, amount) — treasury funds the new stream
+      //
+      // Routing recovery through the treasury (rather than directly to the
+      // predicted address) lets the treasury absorb any small shortfall caused
+      // by extra vesting during the voting window. Without this routing the
+      // new stream would be silently under-funded.
+      const sourceStreamAddress = fieldValues.sourceStreamAddress as Address;
+      const tokenInfo = resolveTokenField(fieldValues.tokenAddress);
+      const tokenAddress = tokenInfo.address as Address;
+      const decimals = tokenInfo.decimals;
+
+      const startTimestamp = fieldValues.startDate
+        ? BigInt(Math.floor(new Date(fieldValues.startDate).getTime() / 1000))
+        : BigInt(0);
+      const endTimestamp = fieldValues.endDate
+        ? BigInt(Math.floor(new Date(fieldValues.endDate).getTime() / 1000))
+        : BigInt(0);
+
+      const tokenAmount = parseUnits(fieldValues.amount || '0', decimals);
+      const recipient = fieldValues.recipient as Address;
+      const predictedStreamAddress = fieldValues.streamAddress as Address;
+
+      const groupId = `stream-restream-${Date.now()}`;
+
+      return [
+        {
+          target: sourceStreamAddress,
+          value: '0',
+          signature: 'cancel()',
+          calldata: '0x',
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0,
+        },
+        {
+          target: sourceStreamAddress,
+          value: '0',
+          signature: 'recoverTokens(address)',
+          calldata: encodeAdminAddress(TREASURY_ADDRESS),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1,
+        },
+        {
+          target: STREAM_FACTORY_ADDRESS,
+          value: '0',
+          signature: 'createStream(address,uint256,address,uint256,uint256,uint8,address)',
+          calldata: encodeCreateStreamWithPredictedAddress(
+            recipient,
+            tokenAmount,
+            tokenAddress,
+            startTimestamp,
+            endTimestamp,
+            0,
+            predictedStreamAddress,
+          ),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 2,
+        },
+        {
+          target: tokenAddress,
+          value: '0',
+          signature: 'transfer(address,uint256)',
+          calldata: encodeTransfer(predictedStreamAddress, tokenAmount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 3,
+        },
+      ];
+    }
 
     // One-time Payment via Payer
     case 'payment-once': {

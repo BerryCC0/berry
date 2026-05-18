@@ -45,7 +45,6 @@ export type AppIconId =
   | "crystal-ball"
   | "probe"
   | "clients"
-  | "bim"
   | "swap"
   | "nouns-v2";
 
@@ -98,7 +97,6 @@ const iconRegistry: Record<IconId, string> = {
   "crystal-ball": `${ICONS_BASE_PATH}/crystal-ball.png`,
   "probe": `${ICONS_BASE_PATH}/probe.png`,
   "clients": `${ICONS_BASE_PATH}/clients.png`,
-  "bim": `${ICONS_BASE_PATH}/BIM.png`,
   "swap": `${ICONS_BASE_PATH}/swap.svg`,
   "nouns-v2": `${ICONS_BASE_PATH}/v2.png`,
 

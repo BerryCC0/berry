@@ -36,6 +36,7 @@ export interface Noun {
   id: string;
   seed: NounSeed;
   owner: NounOwner | null;
+  svg?: string | null;
 }
 
 export interface Auction {
@@ -68,6 +69,7 @@ interface ApiNounRow {
   head: number;
   glasses: number;
   owner?: string | null;
+  svg?: string | null;
 }
 
 interface ApiBidRow {
@@ -121,6 +123,7 @@ function mapAuctionResponse(json: ApiAuctionResponse): Auction | null {
         glasses: n.glasses,
       },
       owner: n.owner ? { id: n.owner } : null,
+      svg: n.svg ?? null,
     } : {
       id: String(a.noun_id),
       seed: { id: String(a.noun_id), background: 0, body: 0, accessory: 0, head: 0, glasses: 0 },
@@ -201,6 +204,7 @@ export function useNounById(nounId: string | null) {
             glasses: n.glasses,
           },
           owner: n.owner ? { id: n.owner } : null,
+          svg: n.svg ?? null,
         } : null,
       };
     },

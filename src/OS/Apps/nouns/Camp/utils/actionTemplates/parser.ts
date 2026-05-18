@@ -8,12 +8,44 @@ import {
   ProposalAction
 } from './types';
 import {
+  COMMON_TOKENS,
   DAO_PROXY_ADDRESS,
   EXTERNAL_CONTRACTS,
+  KNOWN_VOTES_TOKENS,
   NOUNS_TOKEN_ADDRESS,
+  STREAM_FACTORY_ADDRESS,
   TREASURY_ADDRESS
 } from './constants';
 import { formatUnits } from './utils';
+
+/**
+ * Build a 'treasury-transfer' template state from the resolved token info
+ * and on-chain amount. Centralized so the ETH / USDC / WETH parser cases
+ * stay consistent.
+ */
+function treasuryTransferState(input: {
+  symbol: string;
+  address: string;
+  decimals: number;
+  isNative: boolean;
+  recipient: string;
+  amountRaw: string;
+}): ActionTemplateState {
+  return {
+    templateId: 'treasury-transfer',
+    fieldValues: {
+      token: JSON.stringify({
+        symbol: input.symbol,
+        address: input.address,
+        decimals: input.decimals,
+        isNative: input.isNative,
+      }),
+      recipient: input.recipient,
+      amount: formatUnits(BigInt(input.amountRaw), input.decimals),
+    },
+    generatedActions: [],
+  };
+}
 
 /**
  * Parse a proposal action back to its template form
@@ -78,6 +110,24 @@ export function parseActionsToTemplates(actions: ProposalAction[]): ActionTempla
       continue;
     }
 
+    // Check if this is a 4-action stream-restream sequence (must run before
+    // the 2-action cancel+recover matcher below, since the first two actions
+    // of a restream are identical).
+    const restreamResult = tryMatchStreamRestream(actions, i);
+    if (restreamResult) {
+      templateStates.push(restreamResult.state);
+      restreamResult.consumedIndices.forEach(idx => processedIndices.add(idx));
+      continue;
+    }
+
+    // Check if this is a cancel + recoverTokens pair (cancel or redirect)
+    const streamCancelResult = tryMatchStreamCancelRecover(actions, i);
+    if (streamCancelResult) {
+      templateStates.push(streamCancelResult.state);
+      streamCancelResult.consumedIndices.forEach(idx => processedIndices.add(idx));
+      continue;
+    }
+
     // Single action match
     processedIndices.add(i);
     templateStates.push(parseActionToTemplate(action));
@@ -95,18 +145,18 @@ function matchActionToTemplate(
   calldata: string,
   value: string
 ): ActionTemplateState | null {
-  // Treasury ETH transfer (direct value transfer with no function call)
-  // Detected by: empty signature, empty calldata, and non-zero value
+  // Treasury ETH transfer (direct value transfer with no function call).
+  // Detected by: empty signature, empty calldata, and non-zero value.
   if (!signature && (!calldata || calldata === '0x') && value && value !== '0') {
     try {
-      return {
-        templateId: 'treasury-eth',
-        fieldValues: {
-          recipient: target, // Target is the recipient
-          amount: formatUnits(BigInt(value), 18)
-        },
-        generatedActions: []
-      };
+      return treasuryTransferState({
+        symbol: 'ETH',
+        address: '0x0000000000000000000000000000000000000000',
+        decimals: 18,
+        isNative: true,
+        recipient: target,
+        amountRaw: value,
+      });
     } catch {
       // Fall through if parsing fails
     }
@@ -116,14 +166,14 @@ function matchActionToTemplate(
   if (target === TREASURY_ADDRESS.toLowerCase() && signature === 'sendETH(address,uint256)') {
     const decoded = decodeCalldata(calldata, ['address', 'uint256']);
     if (decoded) {
-      return {
-        templateId: 'treasury-eth',
-        fieldValues: {
-          recipient: decoded[0] as string,
-          amount: formatUnits(BigInt(decoded[1] as string), 18)
-        },
-        generatedActions: []
-      };
+      return treasuryTransferState({
+        symbol: 'ETH',
+        address: '0x0000000000000000000000000000000000000000',
+        decimals: 18,
+        isNative: true,
+        recipient: decoded[0] as string,
+        amountRaw: decoded[1] as string,
+      });
     }
   }
 
@@ -131,14 +181,14 @@ function matchActionToTemplate(
   if (target === EXTERNAL_CONTRACTS.USDC.address.toLowerCase() && signature === 'transfer(address,uint256)') {
     const decoded = decodeCalldata(calldata, ['address', 'uint256']);
     if (decoded) {
-      return {
-        templateId: 'treasury-usdc',
-        fieldValues: {
-          recipient: decoded[0] as string,
-          amount: formatUnits(BigInt(decoded[1] as string), 6)
-        },
-        generatedActions: []
-      };
+      return treasuryTransferState({
+        symbol: 'USDC',
+        address: EXTERNAL_CONTRACTS.USDC.address,
+        decimals: 6,
+        isNative: false,
+        recipient: decoded[0] as string,
+        amountRaw: decoded[1] as string,
+      });
     }
   }
 
@@ -146,14 +196,14 @@ function matchActionToTemplate(
   if (target === EXTERNAL_CONTRACTS.WETH.address.toLowerCase() && signature === 'transfer(address,uint256)') {
     const decoded = decodeCalldata(calldata, ['address', 'uint256']);
     if (decoded) {
-      return {
-        templateId: 'treasury-weth',
-        fieldValues: {
-          recipient: decoded[0] as string,
-          amount: formatUnits(BigInt(decoded[1] as string), 18)
-        },
-        generatedActions: []
-      };
+      return treasuryTransferState({
+        symbol: 'WETH',
+        address: EXTERNAL_CONTRACTS.WETH.address,
+        decimals: 18,
+        isNative: false,
+        recipient: decoded[0] as string,
+        amountRaw: decoded[1] as string,
+      });
     }
   }
 
@@ -179,7 +229,7 @@ function matchActionToTemplate(
     }
   }
 
-  // Delegate
+  // Delegate — NOUNS-specific case keeps the existing noun-delegate template.
   if (target === NOUNS_TOKEN_ADDRESS.toLowerCase() && signature === 'delegate(address)') {
     const decoded = decodeCalldata(calldata, ['address']);
     if (decoded) {
@@ -189,6 +239,33 @@ function matchActionToTemplate(
           delegatee: decoded[0] as string
         },
         generatedActions: []
+      };
+    }
+  }
+
+  // Delegate — any other token (ENS, COMP, UNI, ARB, ...) goes to the generic
+  // treasury-delegate template. Token info is filled in from a small known-votes
+  // registry when possible; otherwise we round-trip with the bare address so the
+  // user can re-pick from the treasury holdings dropdown.
+  if (signature === 'delegate(address)') {
+    const decoded = decodeCalldata(calldata, ['address']);
+    if (decoded) {
+      const meta = KNOWN_VOTES_TOKENS[target] ?? {
+        symbol: target.slice(0, 6) + '…' + target.slice(-4),
+        decimals: 18,
+      };
+      return {
+        templateId: 'treasury-delegate',
+        fieldValues: {
+          token: JSON.stringify({
+            symbol: meta.symbol,
+            address: target,
+            decimals: meta.decimals,
+            isNative: false,
+          }),
+          delegatee: decoded[0] as string,
+        },
+        generatedActions: [],
       };
     }
   }
@@ -383,6 +460,152 @@ function tryMatchNounSwap(
   }
 
   return null;
+}
+
+/**
+ * Try to match a stream cancel + recoverTokens pair.
+ * If destination is the treasury → 'stream-cancel'.
+ * Otherwise → 'stream-redirect'.
+ */
+function tryMatchStreamCancelRecover(
+  actions: ProposalAction[],
+  startIndex: number
+): { state: ActionTemplateState; consumedIndices: number[] } | null {
+  const action = actions[startIndex];
+  if (action.signature !== 'cancel()') return null;
+
+  const nextIndex = startIndex + 1;
+  if (nextIndex >= actions.length) return null;
+
+  const next = actions[nextIndex];
+  if (next.signature !== 'recoverTokens(address)') return null;
+  if (next.target.toLowerCase() !== action.target.toLowerCase()) return null;
+
+  const decoded = decodeCalldata(next.calldata || '0x', ['address']);
+  if (!decoded) return null;
+  const destination = decoded[0] as string;
+
+  const isTreasury = destination.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
+
+  return {
+    state: {
+      templateId: isTreasury ? 'stream-cancel' : 'stream-redirect',
+      fieldValues: isTreasury
+        ? { streamAddress: action.target }
+        : { streamAddress: action.target, destination },
+      generatedActions: []
+    },
+    consumedIndices: [startIndex, nextIndex]
+  };
+}
+
+/**
+ * Convert a unix-second timestamp to the YYYY-MM-DDTHH:mm format that
+ * `<input type="datetime-local">` accepts, in the user's local timezone
+ * (matching how the date field was originally entered).
+ */
+function unixToLocalDateTimeInput(unixSeconds: bigint): string {
+  const d = new Date(Number(unixSeconds) * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Try to match a 4-action stream-restream sequence:
+ *   1. cancel() on X
+ *   2. recoverTokens(address) on X with TREASURY destination
+ *   3. createStream(...) on STREAM_FACTORY with predicted address P
+ *   4. transfer(address,uint256) on the token contract to P
+ *
+ * Must run BEFORE tryMatchStreamCancelRecover since the first two actions of
+ * a restream look identical to a stream-cancel — only the trailing createStream
+ * + transfer distinguish them.
+ */
+function tryMatchStreamRestream(
+  actions: ProposalAction[],
+  startIndex: number
+): { state: ActionTemplateState; consumedIndices: number[] } | null {
+  if (startIndex + 3 >= actions.length) return null;
+  const [a, b, c, d] = [
+    actions[startIndex],
+    actions[startIndex + 1],
+    actions[startIndex + 2],
+    actions[startIndex + 3],
+  ];
+
+  // Action 1: cancel() on some target (= the source stream)
+  if (a.signature !== 'cancel()') return null;
+  const sourceStreamAddress = a.target.toLowerCase();
+
+  // Action 2: recoverTokens(address) on the same target, to the treasury.
+  if (b.signature !== 'recoverTokens(address)') return null;
+  if (b.target.toLowerCase() !== sourceStreamAddress) return null;
+  const recoverDecoded = decodeCalldata(b.calldata || '0x', ['address']);
+  if (!recoverDecoded) return null;
+  if ((recoverDecoded[0] as string).toLowerCase() !== TREASURY_ADDRESS.toLowerCase()) return null;
+
+  // Action 3: createStream(...) on the StreamFactory.
+  if (!c.signature || !c.signature.startsWith('createStream(')) return null;
+  if (c.target.toLowerCase() !== STREAM_FACTORY_ADDRESS.toLowerCase()) return null;
+
+  // 7-arg createStream variant — uint8 ABI-encodes the same as uint256 over
+  // the wire, so decoding as uint256 works.
+  const createDecoded = decodeCalldata(c.calldata || '0x', [
+    'address', // recipient
+    'uint256', // tokenAmount
+    'address', // tokenAddress
+    'uint256', // startTime
+    'uint256', // stopTime
+    'uint256', // nonce
+    'address', // predictedStreamAddress
+  ]);
+  if (!createDecoded) return null;
+  const newRecipient = createDecoded[0] as string;
+  const tokenAmountRaw = createDecoded[1] as string;
+  const tokenAddress = (createDecoded[2] as string).toLowerCase();
+  const startTime = BigInt(createDecoded[3] as string);
+  const stopTime = BigInt(createDecoded[4] as string);
+  const predictedAddress = (createDecoded[6] as string).toLowerCase();
+
+  // Action 4: transfer(predictedAddress, tokenAmountRaw) on the token contract.
+  if (d.signature !== 'transfer(address,uint256)') return null;
+  if (d.target.toLowerCase() !== tokenAddress) return null;
+  const transferDecoded = decodeCalldata(d.calldata || '0x', ['address', 'uint256']);
+  if (!transferDecoded) return null;
+  if ((transferDecoded[0] as string).toLowerCase() !== predictedAddress) return null;
+  if (BigInt(transferDecoded[1] as string) !== BigInt(tokenAmountRaw)) return null;
+
+  // Decimals — derive from the known COMMON_TOKENS list. Falls back to 18
+  // for unknown tokens, which means the amount display may be off but the
+  // round-trip is still correct in raw units.
+  const knownToken = COMMON_TOKENS.find(
+    (t) => t.address.toLowerCase() === tokenAddress,
+  );
+  const decimals = knownToken?.decimals ?? 18;
+
+  return {
+    state: {
+      templateId: 'stream-restream',
+      fieldValues: {
+        sourceStreamAddress: a.target,
+        recipient: newRecipient,
+        amount: formatUnits(BigInt(tokenAmountRaw), decimals),
+        startDate: unixToLocalDateTimeInput(startTime),
+        endDate: unixToLocalDateTimeInput(stopTime),
+        streamAddress: createDecoded[6] as string,
+        // tokenAddress is an "internal" field — populated so PredictedStreamAddress
+        // and the generator can read it without it being user-visible.
+        tokenAddress: createDecoded[2] as string,
+      },
+      generatedActions: [],
+    },
+    consumedIndices: [
+      startIndex,
+      startIndex + 1,
+      startIndex + 2,
+      startIndex + 3,
+    ],
+  };
 }
 
 /**

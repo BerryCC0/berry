@@ -1,6 +1,6 @@
 # Berry OS
 
-Browser-based operating system for Nouns DAO. Mac OS 8 aesthetic, 17 apps, Ponder indexer, XMTP messaging, multichain wallet support.
+Browser-based operating system for Nouns DAO. Mac OS 8 aesthetic, Ponder indexer, multichain wallet support.
 
 ## Two Services, One Database
 
@@ -13,7 +13,7 @@ Both auto-deploy on push to main. Both use the same `DATABASE_URL`.
 
 The database contains:
 - **Ponder tables** (`ponder_live.*`) — indexed on-chain data (nouns, auctions, proposals, votes, clients, treasury)
-- **App tables** — user persistence (profiles, settings, themes, window states), BIM messaging metadata, KYC verifications, proposal drafts, short links
+- **App tables** — user persistence (profiles, settings, themes, window states), KYC verifications, proposal drafts, short links
 
 ## Data Flow
 
@@ -80,7 +80,6 @@ berry/
 │   └── lib/
 │       ├── Web3/                 # Reown AppKit + wagmi config
 │       ├── nouns/                # ABIs, hooks, contracts, rendering, utils
-│       ├── bim/                  # BIM database helpers + schema
 │       └── ponder-db.ts          # Neon SQL client → ponder_live.*
 │
 ├── src/OS/                       # Operating system layer
@@ -89,7 +88,7 @@ berry/
 │   ├── lib/                      # WindowManager, AppLauncher, Boot, EventBus, Persistence, i18n
 │   ├── hooks/                    # useBootSequence, useWallet, usePersistence, useENS
 │   ├── types/                    # App, window, theme, event, platform, settings types
-│   └── Apps/                     # 17 built-in apps
+│   └── Apps/                     # Built-in apps
 │       ├── OSAppConfig.ts        # ← App registry (start here to understand app registration)
 │       ├── NounsAuction/         # Auction bidding + history
 │       ├── Camp/                 # Governance (proposals, candidates, voters, activity, creation)
@@ -98,7 +97,6 @@ berry/
 │       ├── Treasury/             # DAO treasury balances
 │       ├── CrystalBall/          # Next-noun predictor + settler
 │       ├── Nounspot/             # Physical locations (Three.js globe)
-│       ├── BIM/                  # XMTP messaging (servers, channels, DMs)
 │       ├── WalletPanel/          # Wallet connection + balances
 │       ├── Finder/               # Virtual filesystem browser
 │       ├── Settings/             # 8 preference panels
@@ -231,4 +229,3 @@ Full architecture docs in `/docs/` (gitignored). Key files:
 - `docs/API.md` — All 40+ API routes
 - `docs/CAMP.md` — Governance app (most complex)
 - `docs/CLIENTS.md` — Client incentives
-- `docs/BIM.md` — Messaging system

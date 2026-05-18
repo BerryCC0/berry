@@ -281,8 +281,17 @@ export function Auction({ windowId, initialState }: AppComponentProps) {
       <div className={styles.content}>
         {/* Left: Noun Image & Traits */}
         <div className={styles.imageSection}>
-          {displayAuction?.noun?.seed ? (
-            <NounImage 
+          {displayAuction?.noun?.svg ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`data:image/svg+xml;base64,${displayAuction.noun.svg}`}
+              alt={`Noun ${displayAuction.noun.id}`}
+              width={280}
+              height={280}
+              className={styles.nounImage}
+            />
+          ) : displayAuction?.noun?.seed ? (
+            <NounImage
               seed={{
                 background: Number(displayAuction.noun.seed.background),
                 body: Number(displayAuction.noun.seed.body),

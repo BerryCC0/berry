@@ -1,6 +1,6 @@
 # Berry OS
 
-A browser-based operating system for the Nouns DAO ecosystem. Berry OS recreates the Mac OS 8 desktop experience — windows, dock, menu bar, filesystem, theming — with 17 built-in applications for governance, auctions, treasury, messaging, and more. All backed by on-chain data indexed from Nouns smart contracts.
+A browser-based operating system for the Nouns DAO ecosystem. Berry OS recreates the Mac OS 8 desktop experience — windows, dock, menu bar, filesystem, theming — with built-in applications for governance, auctions, treasury, and more. All backed by on-chain data indexed from Nouns smart contracts.
 
 **Live at:** [berry.nouns.com](https://berry.nouns.com) (Vercel)
 **Indexer:** [berryos.up.railway.app](https://berryos.up.railway.app) (Railway)
@@ -15,7 +15,6 @@ A browser-based operating system for the Nouns DAO ecosystem. Berry OS recreates
 | Web3 | Reown AppKit, wagmi, viem (EVM + Solana + Bitcoin) |
 | Database | Neon Postgres (serverless) |
 | Indexer | Ponder (Ethereum event indexer) |
-| Messaging | XMTP (end-to-end encrypted) |
 | Deployment | Vercel (frontend), Railway (indexer) |
 
 ## Architecture
@@ -31,7 +30,6 @@ berry/
 │   └── lib/
 │       ├── Web3/                 # AppKit + wagmi config
 │       ├── nouns/                # ABIs, hooks, contracts, rendering
-│       ├── bim/                  # Messaging DB helpers
 │       └── ponder-db.ts          # Ponder SQL client
 │
 ├── src/OS/                       # Operating system layer
@@ -40,7 +38,7 @@ berry/
 │   ├── lib/                      # WindowManager, AppLauncher, Persistence, EventBus, i18n
 │   ├── hooks/                    # Boot, wallet, persistence, settings hooks
 │   ├── types/                    # App, window, theme, event, platform types
-│   └── Apps/                     # 17 built-in applications
+│   └── Apps/                     # Built-in applications
 │       ├── NounsAuction/         # Live auction bidding + history
 │       ├── Camp/                 # Governance (proposals, candidates, voters, activity)
 │       ├── Clients/              # Client incentive rewards dashboard
@@ -48,7 +46,6 @@ berry/
 │       ├── Treasury/             # DAO treasury balances + held Nouns
 │       ├── CrystalBall/          # Next-noun predictor + auction settler
 │       ├── Nounspot/             # Physical locations map (Three.js globe)
-│       ├── BIM/                  # XMTP messaging (servers, channels, DMs)
 │       ├── WalletPanel/          # Wallet connection + token balances
 │       ├── Finder/               # Virtual filesystem browser
 │       ├── Settings/             # OS preferences (8 panels)
@@ -139,7 +136,6 @@ All architecture docs live in [`/docs`](./docs/):
 | [API](docs/API.md) | API route reference (40+ endpoints) |
 | [CAMP](docs/CAMP.md) | Governance app (proposals, candidates, voting) |
 | [CLIENTS](docs/CLIENTS.md) | Client incentive rewards dashboard |
-| [BIM](docs/BIM.md) | XMTP messaging system |
 | [PROBE](docs/PROBE.md) | Noun explorer |
 | [CRYSTAL_BALL](docs/CRYSTAL_BALL.md) | Auction predictor |
 | [NOUNSPOT](docs/NOUNSPOT.md) | Physical locations directory |

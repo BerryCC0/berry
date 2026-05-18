@@ -14,6 +14,14 @@
   color: var(--berry-text-primary);
 }
 
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .actionContainer {
   position: relative;
   margin-bottom: 16px;
@@ -73,4 +81,79 @@
 .addButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Simulation status pill — compact proposal-wide pass/fail chip in the header */
+.simPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-tertiary);
+  white-space: nowrap;
+}
+
+.simIcon {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.simText {
+  font-weight: 500;
+  color: var(--berry-text-primary);
+}
+
+.simGas {
+  color: var(--berry-text-secondary);
+  font-size: 10px;
+}
+
+.simShareLink {
+  color: var(--berry-primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.simShareLink:hover {
+  text-decoration: underline;
+}
+
+.simPillPass {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.simPillPass .simIcon {
+  color: #10b981;
+}
+
+.simPillFail {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.simPillFail .simIcon {
+  color: #ef4444;
+}
+
+.simPillLoading {
+  border-style: dashed;
+}
+
+.simSpinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--berry-border);
+  border-top-color: var(--berry-text-secondary);
+  animation: simSpin 0.8s linear infinite;
+}
+
+@keyframes simSpin {
+  to { transform: rotate(360deg); }
 }

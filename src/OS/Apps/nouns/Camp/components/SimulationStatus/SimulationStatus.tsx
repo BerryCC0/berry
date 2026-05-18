@@ -5,12 +5,13 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { formatAddress } from '@/shared/format';
 import { useEnsName } from '@/OS/hooks/useEnsData';
 import { keccak256, toBytes, slice } from 'viem';
 import type { SimulationResult, TransactionResult, ProposalAction } from '../../hooks/useSimulation';
-import { decodeTransactions, type DecodedTransaction } from '../../utils/transactionDecoder';
+import { type DecodedTransaction } from '../../utils/transactionDecoder';
+import { useDecodedTransactions } from '../../hooks/useDecodedTransactions';
 import { NounImageById } from '@/app/lib/nouns/components';
 import styles from './SimulationStatus.module.css';
 
@@ -32,7 +33,7 @@ function encodeTransactionData(signature: string, calldata: string): string {
 /**
  * Generate Tenderly simulator URL for a transaction
  */
-function getTenderlySimulatorUrl(action: ProposalAction): string {
+export function getTenderlySimulatorUrl(action: ProposalAction): string {
   const data = encodeTransactionData(action.signature, action.calldata);
   const value = action.value === '0' ? '0' : action.value;
   
@@ -60,7 +61,7 @@ interface SimulationStatusProps {
   skipSimulation?: boolean;
 }
 
-function formatGas(gasUsed: string): string {
+export function formatGas(gasUsed: string): string {
   const gas = parseInt(gasUsed, 10);
   if (isNaN(gas)) return '0';
   if (gas > 1000000) {
@@ -73,7 +74,7 @@ function formatGas(gasUsed: string): string {
 }
 
 // Component to display an address with ENS resolution
-function AddressWithENS({ address, className }: { address: string; className?: string }) {
+export function AddressWithENS({ address, className }: { address: string; className?: string }) {
   const ensName = useEnsName(address);
 
   const display = formatAddress(address, ensName);
@@ -278,11 +279,8 @@ export function SimulationStatus({
   // All hooks must be called before any conditional returns
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Decode all transactions with context awareness
-  const decodedTxns = useMemo(() => {
-    if (!actions || actions.length === 0) return [];
-    return decodeTransactions(actions);
-  }, [actions]);
+  // Decode all transactions with context awareness, including stream metadata
+  const decodedTxns = useDecodedTransactions(actions);
   
   const actionCount = actions?.length || 0;
   

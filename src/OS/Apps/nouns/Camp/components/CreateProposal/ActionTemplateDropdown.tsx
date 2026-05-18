@@ -139,10 +139,11 @@ export function ActionTemplateDropdown({
           )}
           
           <div className={styles.optionsList} role="listbox">
-            {/* Clear option */}
+            {/* Clear option — never visually marked "selected"; it represents
+                "no selection" rather than being a real option. */}
             <button
               type="button"
-              className={`${styles.option} ${!value ? styles.selected : ''}`}
+              className={styles.option}
               onClick={() => handleSelect('')}
               role="option"
               aria-selected={!value}

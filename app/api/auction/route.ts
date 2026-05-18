@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
           ORDER BY amount DESC
         `,
         sql`
-          SELECT id, background, body, accessory, head, glasses, owner
+          SELECT id, background, body, accessory, head, glasses, owner, svg
           FROM ponder_live.nouns
           WHERE id = ${parseInt(id)}
         `,
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         ORDER BY amount DESC
       `,
       sql`
-        SELECT id, background, body, accessory, head, glasses, owner
+        SELECT id, background, body, accessory, head, glasses, owner, svg
         FROM ponder_live.nouns
         WHERE id = ${nounId}
       `,

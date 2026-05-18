@@ -1,13 +1,14 @@
 /**
  * TransactionsSection
- * Actions list with ActionTemplateEditor instances, add/remove buttons, and simulation status
+ * Actions list with ActionTemplateEditor instances, add/remove buttons,
+ * and a thin proposal-wide simulation status pill.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActionTemplateEditor } from './ActionTemplateEditor';
-import { SimulationStatus } from '../SimulationStatus';
+import { formatGas } from '../SimulationStatus/SimulationStatus';
 import type { ActionTemplateState } from '../../utils/types';
-import type { SimulationResult } from '../../hooks/useSimulation';
+import type { SimulationResult, TransactionResult } from '../../hooks/useSimulation';
 import styles from './TransactionsSection.module.css';
 
 interface TransactionsSectionProps {
@@ -20,12 +21,6 @@ interface TransactionsSectionProps {
   simulationIsLoading: boolean;
   simulationError: Error | null;
   simulationHasActions: boolean;
-  simulationActions: Array<{
-    target: string;
-    value: string;
-    signature: string;
-    calldata: string;
-  }> | undefined;
 }
 
 export function TransactionsSection({
@@ -38,11 +33,31 @@ export function TransactionsSection({
   simulationIsLoading,
   simulationError,
   simulationHasActions,
-  simulationActions,
 }: TransactionsSectionProps) {
+  // simulationActions filters out empty-target actions, so result.results[i]
+  // lines up with the i-th non-empty action across all templates. Walk both
+  // arrays in lockstep to give each editor its own slice of sim results.
+  const editorSimResults = useMemo(() => {
+    let simIdx = 0;
+    return actionTemplateStates.map((state) =>
+      state.generatedActions.map((action) => {
+        if (!action.target || action.target === '') return undefined;
+        return simulationResult?.results?.[simIdx++];
+      })
+    );
+  }, [actionTemplateStates, simulationResult]);
+
   return (
     <div className={styles.section}>
-      <label className={styles.label}>Transactions</label>
+      <div className={styles.sectionHeader}>
+        <label className={styles.label}>Transactions</label>
+        <SimulationStatusPill
+          isLoading={simulationIsLoading}
+          error={simulationError}
+          result={simulationResult}
+          hasActions={simulationHasActions}
+        />
+      </div>
 
       {actionTemplateStates.map((templateState, index) => (
         <div key={index} className={styles.actionContainer}>
@@ -63,6 +78,8 @@ export function TransactionsSection({
             templateState={templateState}
             onUpdateTemplateState={(newState) => onUpdateTemplateState(index, newState)}
             disabled={isCreating}
+            simulationResults={editorSimResults[index]}
+            shareUrl={simulationResult?.shareUrl}
           />
         </div>
       ))}
@@ -77,15 +94,70 @@ export function TransactionsSection({
           + New Transaction
         </button>
       </div>
-
-      {/* Simulation Status */}
-      <SimulationStatus
-        result={simulationResult}
-        isLoading={simulationIsLoading}
-        error={simulationError}
-        hasActions={simulationHasActions}
-        actions={simulationActions}
-      />
     </div>
   );
 }
+
+// ============================================================================
+// SimulationStatusPill — thin proposal-wide status line
+// ============================================================================
+
+interface SimulationStatusPillProps {
+  isLoading: boolean;
+  error: Error | null;
+  result: SimulationResult | undefined;
+  hasActions: boolean;
+}
+
+function SimulationStatusPill({ isLoading, error, result, hasActions }: SimulationStatusPillProps) {
+  if (!hasActions) return null;
+
+  if (isLoading) {
+    return (
+      <div className={`${styles.simPill} ${styles.simPillLoading}`}>
+        <span className={styles.simSpinner} aria-hidden />
+        <span>Simulating…</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`${styles.simPill} ${styles.simPillFail}`}>
+        <span className={styles.simIcon}>✗</span>
+        <span>Simulation failed: {error.message}</span>
+      </div>
+    );
+  }
+
+  if (!result) return null;
+
+  const success = result.success;
+  const totalGas = parseInt(result.totalGasUsed, 10);
+  const gasLabel = totalGas > 0 ? `${formatGas(result.totalGasUsed)} total gas` : null;
+
+  return (
+    <div
+      className={`${styles.simPill} ${success ? styles.simPillPass : styles.simPillFail}`}
+    >
+      <span className={styles.simIcon}>{success ? '✓' : '✗'}</span>
+      <span className={styles.simText}>
+        {success ? 'Simulation passed' : 'Some transactions failed'}
+      </span>
+      {gasLabel && <span className={styles.simGas}>· {gasLabel}</span>}
+      {result.shareUrl && (
+        <a
+          href={result.shareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.simShareLink}
+        >
+          View on Tenderly →
+        </a>
+      )}
+    </div>
+  );
+}
+
+// re-export TransactionResult type for ActionTemplateEditor consumers
+export type { TransactionResult };

@@ -31,15 +31,19 @@ export function useAuctionIconUpdater() {
     lastNounIdRef.current = nounId;
 
     try {
-      const seed = {
-        background: Number(auction.noun.seed.background),
-        body: Number(auction.noun.seed.body),
-        accessory: Number(auction.noun.seed.accessory),
-        head: Number(auction.noun.seed.head),
-        glasses: Number(auction.noun.seed.glasses),
-      };
-
-      const dataUrl = getNounDataUrl(seed);
+      let dataUrl: string;
+      if (auction.noun.svg) {
+        dataUrl = `data:image/svg+xml;base64,${auction.noun.svg}`;
+      } else {
+        const seed = {
+          background: Number(auction.noun.seed.background),
+          body: Number(auction.noun.seed.body),
+          accessory: Number(auction.noun.seed.accessory),
+          head: Number(auction.noun.seed.head),
+          glasses: Number(auction.noun.seed.glasses),
+        };
+        dataUrl = getNounDataUrl(seed);
+      }
       updateAppIcon('nouns-auction', dataUrl);
 
       if (process.env.NODE_ENV === 'development') {

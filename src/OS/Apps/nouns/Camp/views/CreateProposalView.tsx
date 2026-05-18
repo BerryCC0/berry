@@ -210,7 +210,6 @@ export function CreateProposalView({
               simulationIsLoading={form.simulation.isLoading}
               simulationError={form.simulation.error}
               simulationHasActions={form.simulation.hasActions}
-              simulationActions={form.simulationActions || undefined}
             />
 
             {/* KYC Verification - Show for proposals (not candidates) when a recipient template is selected */}

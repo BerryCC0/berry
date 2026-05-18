@@ -27,7 +27,6 @@ const Nounspot = lazy(() => import("./nouns/Nounspot/Nounspot").then(m => ({ def
 const CrystalBall = lazy(() => import("./nouns/CrystalBall/CrystalBall").then(m => ({ default: m.CrystalBall })));
 const Probe = lazy(() => import("./nouns/Probe/Probe").then(m => ({ default: m.Probe })));
 const Clients = lazy(() => import("./nouns/Clients/Clients").then(m => ({ default: m.Clients })));
-const BIM = lazy(() => import("./social/BIM/BIM").then(m => ({ default: m.BIM })));
 const Swap = lazy(() => import("./nouns/Swap/Swap").then(m => ({ default: m.Swap })));
 const NounsV2 = lazy(() => import("./nouns/NounsV2/NounsV2").then(m => ({ default: m.NounsV2 })));
 
@@ -474,37 +473,6 @@ const clientsConfig: AppConfig = {
 };
 
 /**
- * BIM - Berry Instant Messaging
- * Discord-like encrypted messaging using XMTP
- */
-const bimNavigation: AppNavigationConfig = {
-  toolbarItems: [
-    { id: "compose", icon: "square.and.pencil", label: "New Message", action: "bim:compose", position: "trailing" },
-  ],
-
-  hasSidebar: true,
-};
-
-const bimConfig: AppConfig = {
-  id: "bim",
-  name: "BIM",
-  icon: getIcon("bim"),
-  category: "social",
-  singleton: true,
-  showInDock: true,
-  window: {
-    width: 1200,
-    height: 800,
-    minWidth: 800,
-    minHeight: 500,
-    isResizable: true,
-  },
-  permissions: ["network", "wallet"],
-  navigation: bimNavigation,
-  component: BIM,
-};
-
-/**
  * Swap - $nouns ERC-20 ↔ Noun NFT exchange
  * Buy Nouns with $nouns, sell Nouns for $nouns, or trade Noun-for-Noun
  * via the NFTBackedToken contract.
@@ -571,7 +539,6 @@ export const osAppConfigs: AppConfig[] = [
   crystalBallConfig,
   probeConfig,
   clientsConfig,
-  bimConfig,
   swapConfig,
   nounsV2Config,
   ...localAppConfigs,

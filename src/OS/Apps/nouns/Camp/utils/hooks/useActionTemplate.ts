@@ -56,9 +56,9 @@ export function useActionTemplate(): UseActionTemplateReturn {
     if (template) {
       setSelectedTemplateState(template);
       
-      // Initialize field values, preserving values for fields that exist in both templates
-      // This allows switching between similar templates (e.g., treasury-eth to treasury-usdc)
-      // without requiring users to re-enter the recipient address
+      // Initialize field values, preserving values for fields that exist in both templates,
+      // so switching between similar templates doesn't force users to re-enter shared fields
+      // like the recipient address.
       setFieldValues(prevValues => {
         const newValues: TemplateFieldValues = {};
         template.fields.forEach(field => {

@@ -1,0 +1,154 @@
+/* TreasuryTokenSelect — picker for treasury ETH + ERC-20 holdings */
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: var(--berry-primary);
+}
+
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trigger.open {
+  border-color: var(--berry-primary);
+}
+
+.triggerContent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.triggerSymbol {
+  color: var(--berry-primary);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.triggerBalance {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+}
+
+.triggerValue {
+  color: var(--berry-text-secondary);
+  font-size: 11px;
+}
+
+.placeholder {
+  flex: 1;
+  color: var(--berry-text-secondary);
+  opacity: 0.7;
+}
+
+.arrow {
+  margin-left: 8px;
+  color: var(--berry-text-secondary);
+  font-size: 9px;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  max-height: 360px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--berry-border);
+  list-style: none;
+}
+
+.emptyMsg {
+  padding: 16px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  opacity: 0.7;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.row + .row {
+  margin-top: 2px;
+}
+
+.row:hover {
+  background: var(--berry-bg-tertiary);
+}
+
+.rowSelected {
+  background: rgba(255, 121, 0, 0.08);
+  border-color: var(--berry-primary);
+}
+
+.rowSymbol {
+  color: var(--berry-primary);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.rowBalance {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+  text-align: right;
+}
+
+.rowValue {
+  color: var(--berry-text-secondary);
+  font-size: 11px;
+  text-align: right;
+}

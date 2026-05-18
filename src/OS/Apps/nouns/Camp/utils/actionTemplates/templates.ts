@@ -6,103 +6,26 @@
 import { ActionTemplate, ActionTemplateType } from './types';
 
 export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
-  // Treasury Transfers
-  'treasury-eth': {
-    id: 'treasury-eth',
-    category: 'treasury',
-    name: 'Send ETH from Treasury',
-    description: 'Transfer ETH from the Nouns DAO treasury to a recipient',
-    isMultiAction: false,
-    fields: [
-      {
-        name: 'recipient',
-        label: 'Recipient Address',
-        type: 'address',
-        placeholder: '0x... or ENS name',
-        required: true,
-        helpText: 'Address that will receive the ETH'
-      },
-      {
-        name: 'amount',
-        label: 'Amount (ETH)',
-        type: 'amount',
-        placeholder: '0.0',
-        required: true,
-        validation: { min: 0, decimals: 18 },
-        helpText: 'Amount of ETH to send'
-      }
-    ]
-  },
-
-  'treasury-usdc': {
-    id: 'treasury-usdc',
-    category: 'treasury',
-    name: 'Send USDC from Treasury',
-    description: 'Transfer USDC from the treasury to a recipient',
-    isMultiAction: false,
-    fields: [
-      {
-        name: 'recipient',
-        label: 'Recipient Address',
-        type: 'address',
-        placeholder: '0x... or ENS name',
-        required: true
-      },
-      {
-        name: 'amount',
-        label: 'Amount (USDC)',
-        type: 'amount',
-        placeholder: '0.0',
-        required: true,
-        validation: { min: 0, decimals: 6 }
-      }
-    ]
-  },
-
-  'treasury-weth': {
-    id: 'treasury-weth',
-    category: 'treasury',
-    name: 'Send WETH from Treasury',
-    description: 'Transfer WETH from the treasury to a recipient',
-    isMultiAction: false,
-    fields: [
-      {
-        name: 'recipient',
-        label: 'Recipient Address',
-        type: 'address',
-        placeholder: '0x... or ENS name',
-        required: true
-      },
-      {
-        name: 'amount',
-        label: 'Amount (WETH)',
-        type: 'amount',
-        placeholder: '0.0',
-        required: true,
-        validation: { min: 0, decimals: 18 }
-      }
-    ]
-  },
-
-  'treasury-erc20-custom': {
-    id: 'treasury-erc20-custom',
-    category: 'treasury',
-    name: 'Send ERC20 Token from Treasury',
-    description: 'Transfer any ERC20 token from the treasury to a recipient',
+  // Treasury Transfer — unified ETH + ERC-20 send picker.
+  'treasury-transfer': {
+    id: 'treasury-transfer',
+    category: 'payments',
+    name: 'Pay via Treasury',
+    description: 'Send ETH or any ERC-20 token directly from the treasury to a recipient',
     isMultiAction: false,
     fields: [
       {
         name: 'token',
         label: 'Token',
-        type: 'token-select',
+        type: 'treasury-token-select',
         required: true,
-        helpText: 'Select token or enter custom address'
+        helpText: 'Pick from treasury holdings'
       },
       {
         name: 'recipient',
-        label: 'Recipient Address',
+        label: 'Recipient',
         type: 'address',
-        placeholder: '0x... or ENS name',
+        placeholder: '0x... or name.eth',
         required: true
       },
       {
@@ -112,6 +35,34 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         placeholder: '0.0',
         required: true,
         validation: { min: 0 }
+      }
+    ]
+  },
+
+  // Delegate the voting power of any ERC20Votes token the treasury holds
+  // (ENS, COMP, UNI, ARB, etc). One transaction: target = token contract,
+  // signature = delegate(address). Reversible by a later proposal.
+  'treasury-delegate': {
+    id: 'treasury-delegate',
+    category: 'delegation',
+    name: 'Delegate Voting Power',
+    description: 'Delegate the voting power of an ERC20Votes token held by the treasury (e.g. ENS, COMP, UNI)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'token',
+        label: 'Token',
+        type: 'treasury-votes-token-select',
+        required: true,
+        helpText: 'Only ERC20Votes-compatible holdings (ENS, COMP, UNI, ARB) are shown.'
+      },
+      {
+        name: 'delegatee',
+        label: 'Delegate To',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+        helpText: 'Address that will receive the treasury’s voting power for this token'
       }
     ]
   },
@@ -241,7 +192,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
 
   'noun-delegate': {
     id: 'noun-delegate',
-    category: 'nouns',
+    category: 'delegation',
     name: 'Delegate Treasury Nouns',
     description: 'Delegate voting power of treasury-owned Nouns',
     isMultiAction: false,
@@ -257,38 +208,10 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
-  'auction-bid': {
-    id: 'auction-bid',
-    category: 'nouns',
-    name: 'Bid on Noun Auction',
-    description: 'Place a bid on a Noun auction using Governor contract funds',
-    isMultiAction: false,
-    fields: [
-      {
-        name: 'nounId',
-        label: 'Noun ID',
-        type: 'number',
-        placeholder: '1234',
-        required: true,
-        validation: { min: 0 },
-        helpText: 'The ID of the Noun to bid on'
-      },
-      {
-        name: 'bidAmount',
-        label: 'Bid Amount (ETH)',
-        type: 'amount',
-        placeholder: '100',
-        required: true,
-        validation: { min: 0, decimals: 18 },
-        helpText: 'Amount of ETH to bid from Governor contract'
-      }
-    ]
-  },
-
   // Payment Streams
   'payment-stream': {
     id: 'payment-stream',
-    category: 'payments',
+    category: 'streams',
     name: 'Create Payment Stream',
     description: 'Create a streaming payment via StreamFactory',
     isMultiAction: true,
@@ -332,27 +255,101 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
       {
         name: 'streamAddress',
         label: 'Predicted Stream Address',
-        type: 'address',
-        placeholder: '0x... (computed automatically)',
+        type: 'predicted-stream-address',
         required: true,
-        helpText: 'The deterministic address where the stream contract will be created'
       }
     ]
   },
 
   'stream-cancel': {
     id: 'stream-cancel',
-    category: 'payments',
+    category: 'streams',
     name: 'Cancel Payment Stream',
-    description: 'Cancel an active payment stream — recipient keeps vested funds, remainder returns to the treasury',
-    isMultiAction: false,
+    description: 'Cancel a stream and return the unvested remainder to the treasury (recipient keeps vested funds)',
+    isMultiAction: true,
     fields: [
       {
         name: 'streamAddress',
         label: 'Stream',
         type: 'stream-select',
         required: true,
-        helpText: 'Active treasury streams. Recipient keeps vested funds; remainder returns to the treasury.'
+        helpText: 'Active treasury streams. Recipient keeps what has vested; the unvested remainder is returned to the treasury.'
+      }
+    ]
+  },
+
+  'stream-redirect': {
+    id: 'stream-redirect',
+    category: 'streams',
+    name: 'Redirect Payment Stream',
+    description: 'Cancel a stream and send the unvested remainder as a single lump-sum payment to a different address',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'streamAddress',
+        label: 'Stream',
+        type: 'stream-select',
+        required: true,
+        helpText: 'Recipient keeps what has vested; the unvested remainder is sent to the destination below as a one-time lump sum (not a new stream).'
+      },
+      {
+        name: 'destination',
+        label: 'Send Remainder To',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+        helpText: 'Address that will receive the unvested portion as a single lump-sum payment. To pay this address gradually instead, use Create Payment Stream.'
+      }
+    ]
+  },
+
+  'stream-restream': {
+    id: 'stream-restream',
+    category: 'streams',
+    name: 'Re-stream Payment',
+    description: 'Cancel a stream and create a new one funded by the unvested remainder',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'sourceStreamAddress',
+        label: 'Stream to Re-stream',
+        type: 'stream-select',
+        required: true,
+        helpText: 'Cancel an existing stream, and re-stream the remaining balance to a new recipient.'
+      },
+      {
+        name: 'recipient',
+        label: 'New Stream Recipient',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+        helpText: 'Defaults to the original recipient. Change if you want to send the new stream to a different address.'
+      },
+      {
+        name: 'amount',
+        label: 'New Stream Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0 },
+      },
+      {
+        name: 'startDate',
+        label: 'New Stream Start Date',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'endDate',
+        label: 'New Stream End Date',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'streamAddress',
+        label: 'Predicted New-Stream Address',
+        type: 'predicted-stream-address',
+        required: true,
       }
     ]
   },
@@ -360,8 +357,8 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
   'payment-once': {
     id: 'payment-once',
     category: 'payments',
-    name: 'One-time Payment',
-    description: 'Send USDC payment via Payer contract',
+    name: 'Pay via USDC Payer',
+    description: 'Send USDC through the DAO Payer contract — registers debt if reserves are low instead of reverting',
     isMultiAction: false,
     fields: [
       {
@@ -731,6 +728,35 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  // Meta actions — high-level proposals that trigger other on-chain effects
+  'auction-bid': {
+    id: 'auction-bid',
+    category: 'meta',
+    name: 'Bid on Noun Auction',
+    description: 'Place a bid on a Noun auction using Governor contract funds',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'nounId',
+        label: 'Noun ID',
+        type: 'number',
+        placeholder: '1234',
+        required: true,
+        validation: { min: 0 },
+        helpText: 'The ID of the Noun to bid on'
+      },
+      {
+        name: 'bidAmount',
+        label: 'Bid Amount (ETH)',
+        type: 'amount',
+        placeholder: '100',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Amount of ETH to bid from Governor contract'
+      }
+    ]
+  },
+
   // Meta Proposal - Create a proposal that creates another proposal
   'meta-propose': {
     id: 'meta-propose',
@@ -781,7 +807,9 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
  * Get templates by category
  */
 export function getTemplatesByCategory(category: ActionTemplate['category']): ActionTemplate[] {
-  return Object.values(ACTION_TEMPLATES).filter(template => template.category === category);
+  return Object.values(ACTION_TEMPLATES).filter(
+    (template) => template.category === category,
+  );
 }
 
 /**

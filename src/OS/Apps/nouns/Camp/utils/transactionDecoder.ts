@@ -47,6 +47,11 @@ const TOKEN_SYMBOLS: Record<string, string> = {
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 'stETH',
   '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0': 'wstETH',
   '0xae78736cd615f374d3085123a210448e74fc6393': 'rETH',
+  // ERC20Votes governance tokens (no decimals lookup needed for display)
+  '0xc18360217d8f7ab5e7c516566761ea12ce7f9d72': 'ENS',
+  '0xc00e94cb662c3520282e6f5717214004a7f26888': 'COMP',
+  '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984': 'UNI',
+  '0x912ce59144191c1204e64559fe8253a0e49e6548': 'ARB',
 };
 
 export interface DecodedTransaction {
@@ -601,11 +606,20 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
   }
   
   // Nouns Token: delegate(address)
-  if (signature === 'delegate(address)' && 
+  if (signature === 'delegate(address)' &&
       target === NOUNS_ADDRESSES.token.toLowerCase() && params) {
     const delegatee = params.param0 as string;
-    
-    decoded.title = `Delegate voting power`;
+
+    decoded.title = `Delegate Nouns voting power`;
+    decoded.params = { to: delegatee };
+    return decoded;
+  }
+
+  // Generic ERC20Votes delegate — ENS, COMP, UNI, etc.
+  if (signature === 'delegate(address)' && params) {
+    const delegatee = params.param0 as string;
+    const symbol = TOKEN_SYMBOLS[target] || getContractName(target) || 'token';
+    decoded.title = `Delegate ${symbol} voting power`;
     decoded.params = { to: delegatee };
     return decoded;
   }
@@ -692,21 +706,51 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
 }
 
 /**
+ * Caller-supplied info about a known stream contract. Lets the decoder
+ * describe cancel/recover actions in concrete amounts instead of just
+ * "Recipient keeps vested funds".
+ */
+export interface StreamInfo {
+  /** Stream contract address (lowercase). */
+  streamAddress: string;
+  /** ERC-20 token streamed (lowercase). */
+  tokenAddress: string;
+  /** Total stream amount as raw bigint string. */
+  tokenAmountRaw: string;
+  /** Time-based vested fraction, 0..1. Reflects "as of now", not execution. */
+  vestedRatio: number;
+  /** Optional status — used for "stream hasn't started" / "stream complete" framing. */
+  status?: 'pending' | 'active' | 'complete';
+}
+
+export interface DecodeOptions {
+  /** Map of stream address (lowercase) → StreamInfo. Used to enrich cancel/recover descriptions. */
+  streams?: Map<string, StreamInfo>;
+}
+
+/**
  * Context for decoding transactions with awareness of related transactions
  */
 interface DecodingContext {
   // Stream addresses created by createStream calls (predicted addresses)
   streamAddresses: Set<string>;
+  // Targets that are cancelled by a cancel() call within this proposal —
+  // used to reframe a following recoverTokens(...) as "return unvested funds"
+  cancelledStreams: Set<string>;
+  // Caller-supplied stream metadata (total amount, vested fraction, token).
+  streams: Map<string, StreamInfo>;
 }
 
 /**
  * Build context from all actions to understand relationships
  */
-function buildDecodingContext(actions: ProposalAction[]): DecodingContext {
+function buildDecodingContext(actions: ProposalAction[], opts?: DecodeOptions): DecodingContext {
   const ctx: DecodingContext = {
     streamAddresses: new Set(),
+    cancelledStreams: new Set(),
+    streams: opts?.streams ?? new Map(),
   };
-  
+
   for (const action of actions) {
     // Look for createStream calls and extract predicted stream addresses
     if (action.signature && action.signature.startsWith('createStream(')) {
@@ -719,9 +763,69 @@ function buildDecodingContext(actions: ProposalAction[]): DecodingContext {
         }
       }
     }
+    // cancel() on any target — treat the target as a stream being cancelled
+    if (action.signature === 'cancel()') {
+      ctx.cancelledStreams.add(action.target.toLowerCase());
+    }
   }
-  
+
   return ctx;
+}
+
+/**
+ * Multiply a token amount by a fractional ratio (0..1) with 4-decimal precision.
+ * Avoids floating-point on large bigints.
+ */
+function applyRatio(amount: bigint, ratio: number): bigint {
+  const clamped = Math.max(0, Math.min(1, ratio));
+  const num = BigInt(Math.round(clamped * 10_000));
+  return (amount * num) / BigInt(10_000);
+}
+
+/**
+ * Format the "Vested X of Y SYMBOL (Z%)" half of a stream cancel description.
+ */
+function formatVestedSummary(info: StreamInfo): string {
+  const total = BigInt(info.tokenAmountRaw);
+  const symbol = TOKEN_SYMBOLS[info.tokenAddress] || 'tokens';
+  const decimals = TOKEN_DECIMALS[info.tokenAddress] || 18;
+  const pct = Math.round(info.vestedRatio * 100);
+
+  if (info.status === 'pending' || info.vestedRatio <= 0) {
+    return `Stream hasn't started — nothing vested yet`;
+  }
+  if (info.status === 'complete' || info.vestedRatio >= 1) {
+    return `Stream is complete — fully vested`;
+  }
+  const vested = applyRatio(total, info.vestedRatio);
+  return `Recipient keeps ${formatTokenAmount(vested, decimals)} ${symbol} vested (${pct}% of ${formatTokenAmount(total, decimals)})`;
+}
+
+/**
+ * Format the "X SYMBOL (Z% unvested)" half of a recoverTokens description.
+ * The destination is rendered separately by the consumer (via the `to` param +
+ * ENS resolution), so we keep this string focused on the amounts.
+ *
+ * `verb` matches the action's intent: "Returns" (cancel → treasury),
+ * "Redirects" (cancel → other), "Recovers" (standalone cleanup).
+ */
+function formatRecoverSummary(
+  info: StreamInfo,
+  verb: 'Returns' | 'Redirects' | 'Recovers',
+): string {
+  const total = BigInt(info.tokenAmountRaw);
+  const symbol = TOKEN_SYMBOLS[info.tokenAddress] || 'tokens';
+  const decimals = TOKEN_DECIMALS[info.tokenAddress] || 18;
+  const unvestedPct = Math.max(0, Math.round((1 - info.vestedRatio) * 100));
+
+  if (info.status === 'complete' || info.vestedRatio >= 1) {
+    return `Stream is fully vested — nothing left to recover`;
+  }
+  if (info.status === 'pending' || info.vestedRatio <= 0) {
+    return `${verb} full ${formatTokenAmount(total, decimals)} ${symbol} (stream hasn't started)`;
+  }
+  const unvested = total - applyRatio(total, info.vestedRatio);
+  return `${verb} ${formatTokenAmount(unvested, decimals)} ${symbol} of ${formatTokenAmount(total, decimals)} (${unvestedPct}% unvested)`;
 }
 
 /**
@@ -748,6 +852,98 @@ function decodeTransactionWithContext(action: ProposalAction, ctx: DecodingConte
     value: action.value,
   };
   
+  // Stream: cancel() — payer or recipient ends the stream and snapshots
+  // the recipient's vested share. Funds aren't returned automatically;
+  // recoverTokens() (usually paired in the same proposal) does that.
+  if (signature === 'cancel()') {
+    decoded.title = 'Cancel payment stream';
+    const info = ctx.streams.get(target);
+    decoded.description = info
+      ? formatVestedSummary(info)
+      : 'Recipient keeps vested funds';
+    decoded.params = { contract: action.target };
+    return decoded;
+  }
+
+  // Stream: recoverTokens(address to) — single-arg sweep of the excess
+  // balance. When it follows a cancel() on the same target in the same
+  // proposal, this is the cancel-cleanup; otherwise it's a standalone
+  // recovery (e.g. cleaning up an old cancelled stream, pulling foreign
+  // tokens sent to the stream, or recovering an over-funded stream).
+  if (signature === 'recoverTokens(address)' && params) {
+    const to = params.param0 as string;
+    const isTreasury = to.toLowerCase() === NOUNS_ADDRESSES.treasury.toLowerCase();
+    const isCancelCleanup = ctx.cancelledStreams.has(target);
+    if (isCancelCleanup) {
+      decoded.title = isTreasury
+        ? 'Return unvested funds to Treasury'
+        : 'Redirect unvested funds';
+    } else {
+      decoded.title = isTreasury
+        ? 'Recover stream funds to Treasury'
+        : 'Recover stream funds';
+    }
+    const info = ctx.streams.get(target);
+    if (info) {
+      // Pick the verb to match the action's intent. Standalone recoveries
+      // are always "Recovers"; cancel cleanups split by destination.
+      const verb: 'Returns' | 'Redirects' | 'Recovers' = isCancelCleanup
+        ? (isTreasury ? 'Returns' : 'Redirects')
+        : 'Recovers';
+      decoded.description = formatRecoverSummary(info, verb);
+    } else {
+      decoded.description = isCancelCleanup
+        ? 'From the cancelled stream above'
+        : 'Sweeps any excess balance from the stream';
+    }
+    decoded.params = { to };
+    return decoded;
+  }
+
+  // Stream: recoverTokens(address token, uint256 amount, address to) — explicit
+  // form for recovering a specific token amount (e.g. foreign ERC-20 sent by
+  // mistake, or partial recovery).
+  if (signature === 'recoverTokens(address,uint256,address)' && params) {
+    const tokenAddress = (params.param0 as string).toLowerCase();
+    const amount = params.param1 as bigint;
+    const to = params.param2 as string;
+    const symbol = TOKEN_SYMBOLS[tokenAddress] || 'tokens';
+    const decimals = TOKEN_DECIMALS[tokenAddress] || 18;
+    const formattedAmount = formatTokenAmount(amount, decimals);
+    decoded.title = `Recover ${formattedAmount} ${symbol} from stream`;
+    decoded.description = ctx.cancelledStreams.has(target)
+      ? 'From the cancelled stream above'
+      : 'From the stream contract';
+    decoded.params = { to };
+    return decoded;
+  }
+
+  // Stream: rescueETH(address to, uint256 amount) — pulls ETH that ended up
+  // in a stream contract by mistake. Payer-only.
+  if (signature === 'rescueETH(address,uint256)' && params) {
+    const to = params.param0 as string;
+    const amount = params.param1 as bigint;
+    const eth = parseFloat(formatUnits(amount, 18));
+    decoded.title = `Rescue ${eth} ETH from stream`;
+    decoded.params = { to };
+    return decoded;
+  }
+
+  // ERC-20 transfer whose destination is a stream contract created earlier in
+  // this proposal — that's the funding leg of a Create-Stream multi-action.
+  if (signature === 'transfer(address,uint256)' && params) {
+    const to = (params.param0 as string).toLowerCase();
+    if (ctx.streamAddresses.has(to)) {
+      const amount = params.param1 as bigint;
+      const symbol = TOKEN_SYMBOLS[target] || 'tokens';
+      const decimals = TOKEN_DECIMALS[target] || 18;
+      decoded.title = `Fund stream with ${formatTokenAmount(amount, decimals)} ${symbol}`;
+      decoded.description = 'Transfers tokens to the stream contract above';
+      decoded.params = { to: params.param0 as string };
+      return decoded;
+    }
+  }
+
   // Payer: sendOrRegisterDebt(address,uint256) - needs context to determine if funding stream or transfer
   if (signature === 'sendOrRegisterDebt(address,uint256)' && params) {
     const recipient = params.param0 as string;
@@ -776,9 +972,14 @@ function decodeTransactionWithContext(action: ProposalAction, ctx: DecodingConte
 }
 
 /**
- * Decode multiple transactions with context awareness
+ * Decode multiple transactions with context awareness.
+ * Pass `opts.streams` to enrich stream cancel/recover descriptions with
+ * concrete vested/unvested amounts.
  */
-export function decodeTransactions(actions: ProposalAction[]): DecodedTransaction[] {
-  const ctx = buildDecodingContext(actions);
+export function decodeTransactions(
+  actions: ProposalAction[],
+  opts?: DecodeOptions,
+): DecodedTransaction[] {
+  const ctx = buildDecodingContext(actions, opts);
   return actions.map(action => decodeTransactionWithContext(action, ctx));
 }

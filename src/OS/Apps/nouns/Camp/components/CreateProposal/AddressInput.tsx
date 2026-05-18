@@ -30,6 +30,7 @@ export function AddressInput({
 }: AddressInputProps) {
   const [inputValue, setInputValue] = useState(value);
   const [isResolving, setIsResolving] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   
   // Track what we've already reported to parent to avoid infinite loops
   const lastReportedAddress = useRef<string>('');
@@ -108,20 +109,33 @@ export function AddressInput({
     statusText = 'ENS name not found';
   } else if (isValidAddress && ensName) {
     statusIcon = <span className={styles.statusSuccess}>✓</span>;
-    statusText = ensName;
+    // Input itself now shows the ENS name (when unfocused). Surface the
+    // truncated raw address here so the user can verify what's stored.
+    statusText = `${inputValue.slice(0, 6)}…${inputValue.slice(-4)}`;
   } else if (isValidAddress) {
     statusIcon = <span className={styles.statusSuccess}>✓</span>;
     statusText = 'Valid address';
   }
   
+  // When the field is unfocused and the current address reverse-resolves to
+  // an ENS name, show the ENS name in the input itself (much friendlier than
+  // a long 0x string). On focus, we swap back to the raw address so the user
+  // can edit without first deleting the ENS name they didn't type.
+  const displayValue =
+    !isFocused && isValidAddress && ensName
+      ? ensName
+      : inputValue;
+
   return (
     <div className={styles.container}>
       <div className={styles.inputWrapper}>
         <input
           type="text"
           className={`${styles.input} ${isEnsName && !resolvedAddress && !isResolving && inputValue.length > 3 ? styles.inputError : ''}`}
-          value={inputValue}
+          value={displayValue}
           onChange={handleChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
           disabled={disabled}
         />
