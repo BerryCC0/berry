@@ -9,7 +9,7 @@
 import { useBrush } from '../model/brush';
 import { useToolbox } from '../model/toolbox';
 import { NOUN_PARTS, type Tool } from '../types';
-import { sampleColor } from './helpers';
+import { sampleColor, singlePixelPreview } from './helpers';
 
 export const eyedropperTool: Tool = {
   id: 'eyedropper',
@@ -38,5 +38,8 @@ export const eyedropperTool: Tool = {
   },
   onPointerUp() {
     // no-op
+  },
+  hoverPreview(point, overlayCtx) {
+    singlePixelPreview(overlayCtx, point);
   },
 };

@@ -13,11 +13,13 @@ import { useBrush } from '../model/brush';
 import type { Point, Tool } from '../types';
 import { CANVAS_SIZE } from '../types';
 import {
+  brushFootprintPreview,
   drawEllipseFilled,
   drawEllipseOutline,
   drawLine,
   drawRectFilled,
   drawRectOutline,
+  singlePixelPreview,
 } from './helpers';
 
 interface ShapeDrawer {
@@ -34,9 +36,11 @@ function makeShapeTool(
   name: string,
   shortcut: string,
   drawer: ShapeDrawer,
+  options?: { usesBrushSize?: boolean },
 ): Tool {
   let startPoint: Point | null = null;
   let snapshot: ImageData | null = null;
+  const usesBrushSize = options?.usesBrushSize ?? true;
 
   return {
     id,
@@ -63,6 +67,16 @@ function makeShapeTool(
       snapshot = null;
       ctx.commit();
     },
+    hoverPreview(point, overlayCtx) {
+      // Stroke-style shapes (line, rect outline) honor brush size; filled
+      // shapes and ellipses ignore stroke width — show the cursor pixel only.
+      if (usesBrushSize) {
+        const { color, brushSize } = useBrush.getState();
+        brushFootprintPreview(overlayCtx, point, brushSize, color);
+      } else {
+        singlePixelPreview(overlayCtx, point);
+      }
+    },
   };
 }
 
@@ -87,13 +101,20 @@ export const filledRectangleTool: Tool = makeShapeTool(
       drawRectFilled(ctx, start, end);
     },
   },
+  { usesBrushSize: false },
 );
 
-export const ellipseTool: Tool = makeShapeTool('ellipse', 'Ellipse', 'O', {
-  draw(ctx, start, end) {
-    drawEllipseOutline(ctx, start, end);
+export const ellipseTool: Tool = makeShapeTool(
+  'ellipse',
+  'Ellipse',
+  'O',
+  {
+    draw(ctx, start, end) {
+      drawEllipseOutline(ctx, start, end);
+    },
   },
-});
+  { usesBrushSize: false },
+);
 
 export const filledEllipseTool: Tool = makeShapeTool(
   'filledEllipse',
@@ -104,4 +125,5 @@ export const filledEllipseTool: Tool = makeShapeTool(
       drawEllipseFilled(ctx, start, end);
     },
   },
+  { usesBrushSize: false },
 );

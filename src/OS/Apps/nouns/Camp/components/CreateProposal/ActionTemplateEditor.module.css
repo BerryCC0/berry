@@ -120,11 +120,6 @@
   word-break: break-word;
 }
 
-.summaryExtra {
-  opacity: 0.75;
-  font-style: italic;
-}
-
 .summaryRecipientAddr {
   color: var(--berry-text-primary);
   font-family: var(--berry-font-mono);

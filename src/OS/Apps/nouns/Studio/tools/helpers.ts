@@ -266,6 +266,47 @@ export function sampleColor(
   return `#${hex(r)}${hex(g)}${hex(b)}`;
 }
 
+/**
+ * Hover preview: render a translucent `size`×`size` brush footprint at (x, y).
+ *
+ * The fill uses the brush color when given (so the artist previews what they'll
+ * paint), or neutral white for tools that don't have a color (e.g. eraser).
+ *
+ * The PixelCanvas scales the overlay context by `zoom` before calling this,
+ * so we draw in canvas coords (0..31) — no zoom math needed here.
+ */
+export function brushFootprintPreview(
+  ctx: CanvasRenderingContext2D,
+  point: Point,
+  size: number,
+  fillColor: string | null,
+): void {
+  // Position matches paintPixel exactly.
+  const x = point.x - size + 1;
+  const y = point.y - size + 1;
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = fillColor ?? '#ffffff';
+  ctx.fillRect(x, y, size, size);
+  ctx.restore();
+}
+
+/**
+ * Hover preview for tools that act on a single pixel (line/shape start, bucket,
+ * eyedropper sample). Draws a 1×1 outline at the cursor pixel.
+ */
+export function singlePixelPreview(
+  ctx: CanvasRenderingContext2D,
+  point: Point,
+): void {
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(point.x, point.y, 1, 1);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 /** Parse `#rrggbb` or `#rrggbbaa` into RGBA components. */
 export function parseHex(color: string): {
   r: number;

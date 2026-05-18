@@ -33,6 +33,7 @@ function isTransparent(color: string): boolean {
 
 export function PalettePanel() {
   const color = useBrush((s) => s.color);
+  const previous = useBrush((s) => s.previousColor);
   const setColor = useBrush((s) => s.setColor);
   const setPrevious = useBrush((s) => s.setPreviousColor);
 
@@ -48,6 +49,11 @@ export function PalettePanel() {
     setPrevious(color);
     setColor(next);
     setHexInput(next);
+  }
+
+  function swapPrevious(): void {
+    if (!previous || previous === color) return;
+    pick(previous);
   }
 
   function commitHex(): void {
@@ -66,11 +72,21 @@ export function PalettePanel() {
       </div>
 
       <div className={styles.currentRow}>
-        <span
-          className={styles.swatch}
-          style={{ background: color }}
-          aria-label="current color"
-        />
+        <div className={styles.swatchPair}>
+          <span
+            className={styles.swatch}
+            style={{ background: color }}
+            aria-label="current color"
+          />
+          <button
+            type="button"
+            className={styles.swatchPrev}
+            style={{ background: previous }}
+            onClick={swapPrevious}
+            title="Swap with previous color"
+            aria-label="previous color"
+          />
+        </div>
         <input
           type="text"
           value={hexInput}

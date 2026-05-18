@@ -5,7 +5,7 @@
 
 import { useBrush } from '../model/brush';
 import type { Point, Tool, ToolContext } from '../types';
-import { drawLine, paintPixel } from './helpers';
+import { brushFootprintPreview, drawLine, paintPixel } from './helpers';
 
 let lastPoint: Point | null = null;
 
@@ -31,5 +31,9 @@ export const brushTool: Tool = {
   onPointerUp(_point, ctx: ToolContext) {
     lastPoint = null;
     ctx.commit();
+  },
+  hoverPreview(point, overlayCtx) {
+    const { color, brushSize } = useBrush.getState();
+    brushFootprintPreview(overlayCtx, point, brushSize, color);
   },
 };

@@ -6,7 +6,7 @@
 
 import { useBrush } from '../model/brush';
 import type { Tool } from '../types';
-import { floodFill, parseHex } from './helpers';
+import { floodFill, parseHex, singlePixelPreview } from './helpers';
 
 export const bucketTool: Tool = {
   id: 'bucket',
@@ -24,5 +24,8 @@ export const bucketTool: Tool = {
   },
   onPointerUp() {
     /* one-shot */
+  },
+  hoverPreview(point, overlayCtx) {
+    singlePixelPreview(overlayCtx, point);
   },
 };

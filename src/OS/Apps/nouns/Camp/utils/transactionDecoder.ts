@@ -904,7 +904,6 @@ function formatVestedSummary(info: StreamInfo): string {
   const total = BigInt(info.tokenAmountRaw);
   const symbol = TOKEN_SYMBOLS[info.tokenAddress] || 'tokens';
   const decimals = TOKEN_DECIMALS[info.tokenAddress] || 18;
-  const pct = Math.round(info.vestedRatio * 100);
 
   if (info.status === 'pending' || info.vestedRatio <= 0) {
     return `Stream hasn't started — nothing vested yet`;
@@ -913,7 +912,7 @@ function formatVestedSummary(info: StreamInfo): string {
     return `Stream is complete — fully vested`;
   }
   const vested = applyRatio(total, info.vestedRatio);
-  return `Recipient keeps ${formatTokenAmount(vested, decimals)} ${symbol} vested (${pct}% of ${formatTokenAmount(total, decimals)})`;
+  return `Recipient keeps ${formatTokenAmount(vested, decimals)} ${symbol} vested`;
 }
 
 /**
@@ -931,7 +930,6 @@ function formatRecoverSummary(
   const total = BigInt(info.tokenAmountRaw);
   const symbol = TOKEN_SYMBOLS[info.tokenAddress] || 'tokens';
   const decimals = TOKEN_DECIMALS[info.tokenAddress] || 18;
-  const unvestedPct = Math.max(0, Math.round((1 - info.vestedRatio) * 100));
 
   if (info.status === 'complete' || info.vestedRatio >= 1) {
     return `Stream is fully vested — nothing left to recover`;
@@ -940,7 +938,7 @@ function formatRecoverSummary(
     return `${verb} full ${formatTokenAmount(total, decimals)} ${symbol} (stream hasn't started)`;
   }
   const unvested = total - applyRatio(total, info.vestedRatio);
-  return `${verb} ${formatTokenAmount(unvested, decimals)} ${symbol} of ${formatTokenAmount(total, decimals)} (${unvestedPct}% unvested)`;
+  return `${verb} ${formatTokenAmount(unvested, decimals)} ${symbol}`;
 }
 
 /**

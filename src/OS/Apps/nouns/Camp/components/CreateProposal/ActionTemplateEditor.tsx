@@ -60,15 +60,17 @@ export function ActionTemplateEditor({
   const isCustom = templateState.templateId === 'custom';
   const isConfigured = !!templateState.templateId;
 
-  // First decoded title gives us a one-line human-readable summary.
+  // Each decoded action gets its own summary line. Description (when set)
+  // carries more detail than the title — usually amounts — so we prefer
+  // it. If the action names a recipient (`params.to`), we render it
+  // inline with ENS resolution.
   const decoded = useDecodedTransactions(templateState.generatedActions);
-  const primarySummary = decoded[0]?.title || null;
-  // Recipient address (for sends/transfers) — surfaced on its own line so
-  // we can resolve to ENS via AddressWithENS. We deliberately ignore
-  // `params.contract`, since contract targets are already implied by the
-  // title (e.g. "Set fork period to 14 days").
-  const primaryRecipient = decoded[0]?.params?.to as string | undefined;
-  const extraCount = decoded.length > 1 ? decoded.length - 1 : 0;
+  const summaryLines = decoded
+    .map((d) => ({
+      text: d.description || d.title || '',
+      recipient: d.params?.to as string | undefined,
+    }))
+    .filter((line) => line.text.length > 0);
 
   const handleSave = (newState: ActionTemplateState) => {
     onUpdateTemplateState(newState);
@@ -87,26 +89,20 @@ export function ActionTemplateEditor({
             <div className={styles.summaryTitle}>
               {isCustom ? 'Custom Transaction' : template?.name || 'Action'}
             </div>
-            {primarySummary && (
-              <div className={styles.summaryDetail}>
-                {primarySummary}
-                {primaryRecipient && (
+            {summaryLines.map((line, idx) => (
+              <div key={idx} className={styles.summaryDetail}>
+                {line.text}
+                {line.recipient && (
                   <>
                     {' to '}
                     <AddressWithENS
-                      address={primaryRecipient}
+                      address={line.recipient}
                       className={styles.summaryRecipientAddr}
                     />
                   </>
                 )}
-                {extraCount > 0 && (
-                  <span className={styles.summaryExtra}>
-                    {' '}
-                    + {extraCount} more
-                  </span>
-                )}
               </div>
-            )}
+            ))}
           </div>
           <button
             type="button"

@@ -30,6 +30,30 @@
   flex-shrink: 0;
 }
 
+.swatchPair {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.swatchPrev {
+  position: absolute;
+  right: -8px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--berry-border);
+  border-radius: 3px;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.swatchPrev:hover {
+  outline: 1px solid var(--berry-text-primary);
+  outline-offset: -1px;
+}
+
 .swatch {
   width: 22px;
   height: 22px;
@@ -136,14 +160,22 @@
   cursor: pointer;
   padding: 0;
   background: transparent;
+  position: relative;
+  transition: transform 0.08s ease-out;
 }
 .swatchCell:hover {
-  outline: 1px solid var(--berry-text-primary);
-  outline-offset: -2px;
+  transform: scale(1.25);
+  z-index: 2;
+  border-color: var(--berry-text-primary);
 }
 .swatchSelected {
   outline: 2px solid var(--berry-primary);
-  outline-offset: -2px;
+  outline-offset: -1px;
+  z-index: 1;
+}
+.swatchSelected:hover {
+  transform: scale(1.25);
+  z-index: 3;
 }
 .transparentCell {
   background-image:

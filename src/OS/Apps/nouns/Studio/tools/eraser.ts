@@ -5,7 +5,7 @@
 
 import { useBrush } from '../model/brush';
 import type { Point, Tool } from '../types';
-import { eraseLine, erasePixel } from './helpers';
+import { brushFootprintPreview, eraseLine, erasePixel } from './helpers';
 
 let lastPoint: Point | null = null;
 
@@ -27,5 +27,10 @@ export const eraserTool: Tool = {
   onPointerUp(_point, ctx) {
     lastPoint = null;
     ctx.commit();
+  },
+  hoverPreview(point, overlayCtx) {
+    const { brushSize } = useBrush.getState();
+    // Eraser preview uses a neutral light tone (no current color).
+    brushFootprintPreview(overlayCtx, point, brushSize, null);
   },
 };
