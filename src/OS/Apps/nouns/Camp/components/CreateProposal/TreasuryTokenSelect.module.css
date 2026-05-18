@@ -97,7 +97,7 @@
 .divider {
   height: 1px;
   margin: 4px 8px;
-  background: var(--berry-border);
+  background: var(--berry-primary);
   list-style: none;
 }
 
