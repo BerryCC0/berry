@@ -964,6 +964,10 @@ interface ImageInfo {
             {
                 "filename": "accessory-silly-goose",
                 "data": "0x0018141c0e0400015201270400015201000552020004520300012701510200"
+            },
+            {
+                "filename": "accessory-free",
+                "data": " 0x2d0f2274b911553cd85de198b828dfe7ef8309c67e0b7674c045bcb0e5b5ba2e"
             }
         ],
         "heads": [
