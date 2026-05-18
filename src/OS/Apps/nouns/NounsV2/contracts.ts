@@ -12,6 +12,7 @@
 import { nounV2TokenAbi } from '@/app/lib/nouns-v2/abis/nounV2Token';
 import { nounV2AuctionHouseAbi } from '@/app/lib/nouns-v2/abis/nounV2AuctionHouse';
 import { nounV2TreasuryAbi } from '@/app/lib/nouns-v2/abis/nounV2Treasury';
+import { nounV2DescriptorAbi } from '@/app/lib/nouns-v2/abis/nounV2Descriptor';
 import { smallGrantsTreasuryAbi } from '@/app/lib/nouns-v2/abis/smallGrantsTreasury';
 
 export const V2_CHAIN_ID = 1;
@@ -40,6 +41,7 @@ export const V2_CONTRACTS = {
   token: { address: V2_ADDRESSES.token, abi: nounV2TokenAbi },
   auctionHouse: { address: V2_ADDRESSES.auctionHouse, abi: nounV2AuctionHouseAbi },
   treasury: { address: V2_ADDRESSES.treasury, abi: nounV2TreasuryAbi },
+  descriptor: { address: V2_ADDRESSES.descriptor, abi: nounV2DescriptorAbi },
 } as const;
 
 export const SG_CONTRACTS = {

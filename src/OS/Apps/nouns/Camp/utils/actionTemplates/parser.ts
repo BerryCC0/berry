@@ -13,7 +13,9 @@ import {
   EXTERNAL_CONTRACTS,
   KNOWN_VOTES_TOKENS,
   NOUNS_TOKEN_ADDRESS,
+  PAYER_ADDRESS,
   STREAM_FACTORY_ADDRESS,
+  TOKEN_BUYER_ADDRESS,
   TREASURY_ADDRESS
 } from './constants';
 import { formatUnits } from './utils';
@@ -102,6 +104,14 @@ export function parseActionsToTemplates(actions: ProposalAction[]): ActionTempla
       continue;
     }
 
+    // Check if this is a payer-repay-debt multi-action sequence (approve USDC + payBackDebt)
+    const repayDebtResult = tryMatchPayerRepayDebt(actions, i);
+    if (repayDebtResult) {
+      templateStates.push(repayDebtResult.state);
+      repayDebtResult.consumedIndices.forEach(idx => processedIndices.add(idx));
+      continue;
+    }
+
     // Check if this is part of a noun-swap multi-action sequence
     const nounSwapResult = tryMatchNounSwap(actions, i);
     if (nounSwapResult) {
@@ -145,6 +155,25 @@ function matchActionToTemplate(
   calldata: string,
   value: string
 ): ActionTemplateState | null {
+  // Refill TokenBuyer with ETH — direct ETH transfer specifically to the
+  // TokenBuyer contract. Must run BEFORE the generic ETH-transfer matcher so
+  // it doesn't get classified as a treasury-transfer.
+  if (
+    !signature &&
+    (!calldata || calldata === '0x') &&
+    value &&
+    value !== '0' &&
+    target === TOKEN_BUYER_ADDRESS.toLowerCase()
+  ) {
+    return {
+      templateId: 'tokenbuyer-refill-eth',
+      fieldValues: {
+        ethAmount: formatUnits(BigInt(value), 18),
+      },
+      generatedActions: [],
+    };
+  }
+
   // Treasury ETH transfer (direct value transfer with no function call).
   // Detected by: empty signature, empty calldata, and non-zero value.
   if (!signature && (!calldata || calldata === '0x') && value && value !== '0') {
@@ -287,8 +316,7 @@ function matchActionToTemplate(
   }
 
   // Buy ETH (TokenBuyer) — legacy single-action fallback (no preceding approve)
-  const TOKEN_BUYER_ADDRESS = '0x4f2aCdc74f6941390d9b1804faBc3E780388cfe5'.toLowerCase();
-  if (target === TOKEN_BUYER_ADDRESS && signature === 'buyETH(uint256)') {
+  if (target === TOKEN_BUYER_ADDRESS.toLowerCase() && signature === 'buyETH(uint256)') {
     const decoded = decodeCalldata(calldata, ['uint256']);
     if (decoded) {
       return {
@@ -338,7 +366,7 @@ function tryMatchBuyEth(
   const signature = action.signature;
 
   const USDC_ADDRESS = EXTERNAL_CONTRACTS.USDC.address.toLowerCase();
-  const TOKEN_BUYER_ADDRESS = '0x4f2aCdc74f6941390d9b1804faBc3E780388cfe5'.toLowerCase();
+  const TOKEN_BUYER_ADDR = TOKEN_BUYER_ADDRESS.toLowerCase();
 
   // Sequence starts with approve(address,uint256) on the USDC contract
   if (target !== USDC_ADDRESS || signature !== 'approve(address,uint256)') return null;
@@ -347,7 +375,7 @@ function tryMatchBuyEth(
   if (!approveDecoded) return null;
 
   const spender = (approveDecoded[0] as string).toLowerCase();
-  if (spender !== TOKEN_BUYER_ADDRESS) return null;
+  if (spender !== TOKEN_BUYER_ADDR) return null;
 
   // Next action must be buyETH(uint256) on the TokenBuyer
   const nextIndex = startIndex + 1;
@@ -357,7 +385,7 @@ function tryMatchBuyEth(
   const nextTarget = nextAction.target.toLowerCase();
   const nextSignature = nextAction.signature;
 
-  if (nextTarget !== TOKEN_BUYER_ADDRESS || nextSignature !== 'buyETH(uint256)') return null;
+  if (nextTarget !== TOKEN_BUYER_ADDR || nextSignature !== 'buyETH(uint256)') return null;
 
   const buyDecoded = decodeCalldata(nextAction.calldata || '0x', ['uint256']);
   if (!buyDecoded) return null;
@@ -371,6 +399,48 @@ function tryMatchBuyEth(
       generatedActions: []
     },
     consumedIndices: [startIndex, nextIndex]
+  };
+}
+
+/**
+ * Try to match a payer-repay-debt 2-action sequence:
+ *   1. approve(Payer, X) on USDC
+ *   2. payBackDebt(X) on Payer
+ */
+function tryMatchPayerRepayDebt(
+  actions: ProposalAction[],
+  startIndex: number,
+): { state: ActionTemplateState; consumedIndices: number[] } | null {
+  const action = actions[startIndex];
+  const target = action.target.toLowerCase();
+  const signature = action.signature;
+
+  const USDC_ADDRESS = EXTERNAL_CONTRACTS.USDC.address.toLowerCase();
+  const PAYER_ADDR = PAYER_ADDRESS.toLowerCase();
+
+  if (target !== USDC_ADDRESS || signature !== 'approve(address,uint256)') return null;
+
+  const approveDecoded = decodeCalldata(action.calldata || '0x', ['address', 'uint256']);
+  if (!approveDecoded) return null;
+  if ((approveDecoded[0] as string).toLowerCase() !== PAYER_ADDR) return null;
+
+  const nextIndex = startIndex + 1;
+  if (nextIndex >= actions.length) return null;
+  const next = actions[nextIndex];
+  if (next.target.toLowerCase() !== PAYER_ADDR) return null;
+  if (next.signature !== 'payBackDebt(uint256)') return null;
+
+  const repayDecoded = decodeCalldata(next.calldata || '0x', ['uint256']);
+  if (!repayDecoded) return null;
+  const usdcAmount = formatUnits(BigInt(repayDecoded[0] as string), 6);
+
+  return {
+    state: {
+      templateId: 'payer-repay-debt',
+      fieldValues: { usdcAmount },
+      generatedActions: [],
+    },
+    consumedIndices: [startIndex, nextIndex],
   };
 }
 

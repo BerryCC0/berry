@@ -139,7 +139,7 @@
   width: 100%;
   min-height: 300px;
   padding: 16px;
-  background: var(--berry-bg);
+  background: var(--berry-bg-secondary);
   border: none;
   color: var(--berry-text-primary);
   font-family: var(--berry-font-mono);
@@ -155,7 +155,7 @@
 }
 
 .textarea:focus {
-  background: var(--berry-bg);
+  background: var(--berry-bg-secondary);
 }
 
 .textarea:disabled {
@@ -167,7 +167,7 @@
 /* Preview panel */
 .previewPanel {
   padding: 16px;
-  background: var(--berry-bg);
+  background: var(--berry-bg-secondary);
   overflow-y: auto;
   min-height: 300px;
 }

@@ -374,6 +374,14 @@ function tryDecodeDescriptorFunction(
     return true;
   }
 
+  // Single-color background addition: addBackground(string)
+  if (functionName === 'addBackground' && params) {
+    const color = params.param0 as string;
+    decoded.title = `Add background color${color ? ` #${color}` : ''}`;
+    decoded.description = 'Nouns Artwork';
+    return true;
+  }
+
   // Palette functions
   if (functionName === 'setPalette' || functionName === 'addPalette') {
     decoded.title = functionName === 'setPalette' ? 'Update color palette' : 'Add color palette';
@@ -381,9 +389,15 @@ function tryDecodeDescriptorFunction(
     return true;
   }
 
-  // Descriptor upgrade / toggle
-  if (functionName === 'setArt' || functionName === 'setRenderer' || functionName === 'setArtDescriptor') {
-    decoded.title = 'Update art renderer';
+  // Descriptor component swaps — distinguished by function name
+  const componentSwaps: Record<string, string> = {
+    setArt: 'Set art contract',
+    setRenderer: 'Set renderer',
+    setArtDescriptor: 'Set art descriptor',
+    setArtInflator: 'Set art inflator',
+  };
+  if (componentSwaps[functionName]) {
+    decoded.title = componentSwaps[functionName];
     decoded.description = 'Nouns Artwork';
     return true;
   }
@@ -396,6 +410,18 @@ function tryDecodeDescriptorFunction(
 
   if (functionName === 'setBaseURI') {
     decoded.title = 'Set base URI for off-chain art';
+    decoded.description = 'Nouns Artwork';
+    return true;
+  }
+
+  if (functionName === 'lockParts') {
+    decoded.title = 'Lock Nouns trait parts (irreversible)';
+    decoded.description = 'No further trait additions or updates possible';
+    return true;
+  }
+
+  if (functionName === 'transferOwnership') {
+    decoded.title = 'Transfer Descriptor ownership';
     decoded.description = 'Nouns Artwork';
     return true;
   }
@@ -488,6 +514,61 @@ function tryDecodeAuctionFunction(
 }
 
 /**
+ * Try to decode known TokenBuyer / Payer admin operations.
+ * Returns true if matched.
+ */
+function tryDecodeTokenBuyerPayerAdmin(
+  target: string,
+  functionName: string,
+  params: Record<string, unknown> | null,
+  decoded: DecodedTransaction,
+): boolean {
+  const isTokenBuyer = target === NOUNS_ADDRESSES.tokenBuyer.toLowerCase();
+  const isPayer = target === NOUNS_ADDRESSES.payer.toLowerCase();
+  if (!isTokenBuyer && !isPayer) return false;
+
+  if (isTokenBuyer) {
+    if (functionName === 'setBaselinePaymentTokenAmount' && params) {
+      const amt = formatTokenAmount(params.param0 as bigint, 6);
+      decoded.title = `Set TokenBuyer baseline to ${amt} USDC`;
+      decoded.description = 'Reserve target before TokenBuyer pauses';
+      return true;
+    }
+    if (functionName === 'setBotDiscountBPs' && params) {
+      const bps = Number(params.param0);
+      const pct = bps % 100 === 0 ? `${bps / 100}` : `${(bps / 100).toFixed(2).replace(/0+$/, '')}`;
+      decoded.title = `Set TokenBuyer bot discount to ${pct}%`;
+      decoded.description = 'Discount bots receive when arbing USDC into the Payer';
+      return true;
+    }
+    if (functionName === 'pause') {
+      decoded.title = 'Pause TokenBuyer';
+      decoded.description = 'Blocks new buyETH calls; existing ETH balance unaffected';
+      return true;
+    }
+    if (functionName === 'unpause') {
+      decoded.title = 'Unpause TokenBuyer';
+      return true;
+    }
+    if (functionName === 'withdrawETH') {
+      decoded.title = 'Withdraw ETH from TokenBuyer';
+      decoded.description = 'Drains the TokenBuyer’s ETH back to its owner';
+      return true;
+    }
+  }
+
+  if (isPayer) {
+    if (functionName === 'withdrawPaymentToken') {
+      decoded.title = 'Withdraw USDC from Payer';
+      decoded.description = 'Drains the Payer’s USDC back to its owner';
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Decode a proposal action into a human-readable description
  */
 export function decodeTransaction(action: ProposalAction): DecodedTransaction {
@@ -513,11 +594,35 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
   
   // Try to create a human-readable title based on known patterns
   
+  // Refill TokenBuyer — direct ETH transfer specifically to the TokenBuyer.
+  // Must come before the generic ETH transfer case below.
+  if (
+    !signature &&
+    BigInt(action.value) > BigInt(0) &&
+    target === NOUNS_ADDRESSES.tokenBuyer.toLowerCase()
+  ) {
+    const ethAmount = formatUnits(BigInt(action.value), 18);
+    decoded.title = `Refill TokenBuyer with ${parseFloat(ethAmount)} ETH`;
+    decoded.description = 'Keeps the TokenBuyer funded so bots can keep arbing USDC into the Payer';
+    decoded.params = { contract: action.target };
+    return decoded;
+  }
+
   // ETH Transfer (no signature, just value)
   if (!signature && BigInt(action.value) > BigInt(0)) {
     const ethAmount = formatUnits(BigInt(action.value), 18);
     decoded.title = `Transfer ${parseFloat(ethAmount).toLocaleString()} ETH`;
     decoded.params = { to: action.target };
+    return decoded;
+  }
+
+  // Payer: payBackDebt(uint256) — settles the front of the debt queue.
+  if (signature === 'payBackDebt(uint256)' && params) {
+    const amount = params.param0 as bigint;
+    const formattedAmount = formatTokenAmount(amount, 6);
+    decoded.title = `Repay ${formattedAmount} USDC of Payer debt`;
+    decoded.description = 'Settles the front of the Payer’s debt queue';
+    decoded.params = { contract: action.target };
     return decoded;
   }
   
@@ -656,6 +761,16 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
       }
       return decoded;
     }
+  }
+
+  // TokenBuyer / Payer admin operations
+  if (tryDecodeTokenBuyerPayerAdmin(target, functionName, params, decoded)) {
+    if (signature) {
+      decoded.formattedCall = buildFormattedCall(
+        action.target, functionName, signature, params, action.value
+      );
+    }
+    return decoded;
   }
 
   // Nouns Descriptor: art trait management functions

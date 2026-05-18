@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import { useReadContract } from 'wagmi';
 import { V2_CONTRACTS, V2_CHAIN_ID } from '../contracts';
 
@@ -28,16 +29,20 @@ export function useV2CurrentAuction(pollInterval: number = 12_000) {
     },
   });
 
-  const auction: V2AuctionData | null = query.data
-    ? {
-        nounId: query.data[0],
-        amount: query.data[1],
-        startTime: query.data[2],
-        endTime: query.data[3],
-        bidder: query.data[4],
-        settled: query.data[5],
-      }
-    : null;
+  const auction = useMemo<V2AuctionData | null>(
+    () =>
+      query.data
+        ? {
+            nounId: query.data[0],
+            amount: query.data[1],
+            startTime: query.data[2],
+            endTime: query.data[3],
+            bidder: query.data[4],
+            settled: query.data[5],
+          }
+        : null,
+    [query.data],
+  );
 
   return { auction, ...query };
 }

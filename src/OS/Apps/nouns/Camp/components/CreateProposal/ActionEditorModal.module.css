@@ -1,0 +1,180 @@
+/**
+ * ActionEditorModal Styles
+ * Modal chrome for the two-step wizard. Picker UI styling lives in
+ * TemplatePickerView.module.css; form-field styling reuses
+ * ActionTemplateEditor.module.css via editorStyles imports.
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+}
+
+.modal {
+  width: 720px;
+  max-width: 100%;
+  max-height: 88vh;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ------- Header -------------------------------------------------------- */
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.backButton:hover {
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  border-color: var(--berry-text-secondary);
+}
+
+.closeButton {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--berry-text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.closeButton:hover {
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+}
+
+/* ------- Form scrollable body ----------------------------------------- */
+
+.formScroll {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 200px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--berry-text-muted, #999) transparent;
+}
+
+.formScroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.formScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.formScroll::-webkit-scrollbar-thumb {
+  background: var(--berry-text-muted, #999);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.formScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--berry-text-secondary, #666);
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+
+.formScroll::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* ------- Footer (Cancel / Save) --------------------------------------- */
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.cancelButton {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cancelButton:hover {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-text-secondary);
+}
+
+.saveButton {
+  padding: 8px 16px;
+  background: var(--berry-primary);
+  border: 1px solid var(--berry-primary);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.saveButton:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

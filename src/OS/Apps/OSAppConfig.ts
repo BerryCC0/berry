@@ -29,6 +29,7 @@ const Probe = lazy(() => import("./nouns/Probe/Probe").then(m => ({ default: m.P
 const Clients = lazy(() => import("./nouns/Clients/Clients").then(m => ({ default: m.Clients })));
 const Swap = lazy(() => import("./nouns/Swap/Swap").then(m => ({ default: m.Swap })));
 const NounsV2 = lazy(() => import("./nouns/NounsV2/NounsV2").then(m => ({ default: m.NounsV2 })));
+const Studio = lazy(() => import("./nouns/Studio/Studio").then(m => ({ default: m.Studio })));
 
 /**
  * Finder - File browser
@@ -518,6 +519,29 @@ const nounsV2Config: AppConfig = {
 };
 
 /**
+ * Studio — pixel-art editor for Nouns traits.
+ * Draws 32×32 traits, saves drafts to studio_traits (wallet-scoped),
+ * hands finished traits off to Camp via the AppBus for proposal submission.
+ */
+const studioConfig: AppConfig = {
+  id: "studio",
+  name: "Studio",
+  icon: getIcon("studio"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    isResizable: true,
+  },
+  permissions: ["network", "wallet"],
+  component: Studio,
+};
+
+/**
  * All OS app configurations
  *
  * Note: No Trash app - filesystem is read-only per FILESYSTEM.md
@@ -541,6 +565,7 @@ export const osAppConfigs: AppConfig[] = [
   clientsConfig,
   swapConfig,
   nounsV2Config,
+  studioConfig,
   ...localAppConfigs,
 ];
 

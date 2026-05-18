@@ -168,24 +168,24 @@ export function CreateProposalView({
           />
         )}
 
-        {/* Title */}
-        <div className={styles.section}>
-          <label className={styles.label}>Proposal Title *</label>
-          <input
-            type="text"
-            className={styles.input}
-            value={form.title}
-            onChange={(e) => form.setTitle(e.target.value)}
-            placeholder="Enter a clear, descriptive title for your proposal"
-            disabled={form.isCreating}
-            maxLength={200}
-          />
-        </div>
-
         {/* Two Column Layout */}
         <div className={styles.twoColumnLayout}>
-          {/* Left Column: Description */}
+          {/* Left Column: Title + Description */}
           <div className={styles.leftColumn}>
+            {/* Title */}
+            <div className={styles.section}>
+              <label className={styles.label}>Proposal Title *</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={form.title}
+                onChange={(e) => form.setTitle(e.target.value)}
+                placeholder="Enter a clear, descriptive title for your proposal"
+                disabled={form.isCreating}
+                maxLength={200}
+              />
+            </div>
+
             <div className={styles.section}>
               <label className={styles.label}>Description *</label>
               <MarkdownEditor

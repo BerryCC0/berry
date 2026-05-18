@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "generate-fs-index": "node scripts/generate-filesystem-index.js",
-    "sync-trait-art": "node scripts/sync-trait-art.js"
+    "sync-trait-art": "node scripts/sync-trait-art.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@coinbase/wallet-sdk": "^4.3.7",
@@ -32,6 +33,7 @@
     "nanoid": "^5.1.6",
     "next": "16.1.0",
     "next-intl": "^4.7.0",
+    "pako": "^2.1.0",
     "persona": "^5.5.0",
     "porto": "^0.2.37",
     "postgres": "^3.4.9",
@@ -47,11 +49,14 @@
   "devDependencies": {
     "@types/dompurify": "^3.0.5",
     "@types/node": "^20",
+    "@types/pako": "^2.0.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^3.2.4",
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

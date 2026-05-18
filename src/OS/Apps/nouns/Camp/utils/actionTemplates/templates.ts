@@ -54,7 +54,6 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         label: 'Token',
         type: 'treasury-votes-token-select',
         required: true,
-        helpText: 'Only ERC20Votes-compatible holdings (ENS, COMP, UNI, ARB) are shown.'
       },
       {
         name: 'delegatee',
@@ -67,7 +66,43 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
-  // Treasury Swaps
+  // Token Buyer / USDC Payer system
+  'tokenbuyer-refill-eth': {
+    id: 'tokenbuyer-refill-eth',
+    category: 'swaps',
+    name: 'Refill TokenBuyer (ETH)',
+    description: 'Send ETH to the TokenBuyer so it can keep paying out to bots arbing USDC into the Payer',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'ethAmount',
+        label: 'ETH Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+      }
+    ]
+  },
+
+  'payer-repay-debt': {
+    id: 'payer-repay-debt',
+    category: 'swaps',
+    name: 'Repay Payer Debt',
+    description: 'Send USDC to the Payer and clear queued debt entries — useful when bots haven’t kept up with payouts',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'usdcAmount',
+        label: 'USDC Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 6 },
+      }
+    ]
+  },
+
   'swap-buy-eth': {
     id: 'swap-buy-eth',
     category: 'swaps',
@@ -83,24 +118,6 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         required: true,
         validation: { min: 0, decimals: 6 },
         helpText: 'Amount of USDC to spend — the TokenBuyer converts it to ETH at its current price'
-      }
-    ]
-  },
-
-  'swap-sell-eth': {
-    id: 'swap-sell-eth',
-    category: 'swaps',
-    name: 'Sell ETH for USDC',
-    description: 'Use TokenBuyer to sell treasury ETH for USDC',
-    isMultiAction: false,
-    fields: [
-      {
-        name: 'ethAmount',
-        label: 'ETH Amount to Sell',
-        type: 'amount',
-        placeholder: '0.0',
-        required: true,
-        validation: { min: 0, decimals: 18 }
       }
     ]
   },
@@ -377,6 +394,161 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         validation: { min: 0, decimals: 6 }
       }
     ]
+  },
+
+  // Artwork — Nouns Descriptor configuration
+  'descriptor-lock-parts': {
+    id: 'descriptor-lock-parts',
+    category: 'artwork',
+    name: 'Lock Parts (Irreversible)',
+    description: 'Permanently freezes the Descriptor — no further trait additions or updates can be made. This cannot be undone.',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'descriptor-toggle-data-uri': {
+    id: 'descriptor-toggle-data-uri',
+    category: 'artwork',
+    name: 'Toggle On-Chain Rendering',
+    description: 'Flip between on-chain SVG rendering and off-chain base-URI rendering',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'descriptor-set-base-uri': {
+    id: 'descriptor-set-base-uri',
+    category: 'artwork',
+    name: 'Set Base URI',
+    description: 'HTTP base URL used when on-chain rendering is disabled. Token URIs become `{baseURI}{tokenId}`.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'baseURI',
+        label: 'Base URI',
+        type: 'text',
+        placeholder: 'https://nouns.example.com/metadata/',
+        required: true,
+      },
+    ],
+  },
+
+  'descriptor-set-art': {
+    id: 'descriptor-set-art',
+    category: 'artwork',
+    name: 'Set Art Contract',
+    description: 'Swap the contract that stores Nouns trait images. Critical upgrade — verify the new contract carefully.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Art Contract',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  'descriptor-set-renderer': {
+    id: 'descriptor-set-renderer',
+    category: 'artwork',
+    name: 'Set Renderer',
+    description: 'Swap the contract that renders trait images into SVGs',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Renderer',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  'descriptor-set-art-descriptor': {
+    id: 'descriptor-set-art-descriptor',
+    category: 'artwork',
+    name: 'Set Art Descriptor',
+    description: 'Swap the Art contract’s pointer back to its Descriptor (used when migrating Descriptor contracts)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Art Descriptor',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  'descriptor-set-art-inflator': {
+    id: 'descriptor-set-art-inflator',
+    category: 'artwork',
+    name: 'Set Art Inflator',
+    description: 'Swap the bytecode decompression contract used to expand compressed trait images',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Inflator',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  'descriptor-transfer-ownership': {
+    id: 'descriptor-transfer-ownership',
+    category: 'artwork',
+    name: 'Transfer Descriptor Ownership',
+    description: 'Hand over Descriptor admin control to a new owner. After transfer, only that address can call setArt / setRenderer / addHeads / etc.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Owner',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  'descriptor-add-background': {
+    id: 'descriptor-add-background',
+    category: 'artwork',
+    name: 'Add Background Color',
+    description: 'Append a single hex color to the Descriptor’s background palette',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'color',
+        label: 'Hex Color (no #)',
+        type: 'text',
+        placeholder: 'e1d7d5',
+        required: true,
+      },
+    ],
+  },
+
+  'descriptor-add-many-backgrounds': {
+    id: 'descriptor-add-many-backgrounds',
+    category: 'artwork',
+    name: 'Add Many Background Colors',
+    description: 'Append multiple hex colors to the Descriptor’s background palette in one call',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'colors',
+        label: 'Hex Colors (comma-separated, no #)',
+        type: 'text',
+        placeholder: 'e1d7d5, d5d7e1, e1c2c4',
+        required: true,
+      },
+    ],
   },
 
   // Admin Functions - Voting Parameters
@@ -726,6 +898,833 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         required: true
       }
     ]
+  },
+
+  // Admin Functions — TokenBuyer parameters
+  'admin-tokenbuyer-baseline': {
+    id: 'admin-tokenbuyer-baseline',
+    category: 'admin',
+    name: 'Set TokenBuyer Baseline',
+    description: 'Adjust the USDC reserve target the TokenBuyer aims to drain bots up to before pausing',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'amount',
+        label: 'Baseline (USDC)',
+        type: 'amount',
+        placeholder: '0',
+        required: true,
+        validation: { min: 0, decimals: 6 },
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-discount': {
+    id: 'admin-tokenbuyer-discount',
+    category: 'admin',
+    name: 'Set TokenBuyer Bot Discount',
+    description: 'Adjust the basis-point discount bots receive when arbing USDC into the Payer',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'bps',
+        label: 'Discount (BPS, 100 = 1%)',
+        type: 'number',
+        placeholder: '150',
+        required: true,
+        validation: { min: 0, max: 10000 },
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-pause': {
+    id: 'admin-tokenbuyer-pause',
+    category: 'admin',
+    name: 'Pause TokenBuyer',
+    description: 'Emergency: stop new buyETH calls. Existing ETH balance is unaffected.',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-tokenbuyer-unpause': {
+    id: 'admin-tokenbuyer-unpause',
+    category: 'admin',
+    name: 'Unpause TokenBuyer',
+    description: 'Resume buyETH calls after a pause',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-tokenbuyer-withdraw-eth': {
+    id: 'admin-tokenbuyer-withdraw-eth',
+    category: 'admin',
+    name: 'Withdraw ETH from TokenBuyer',
+    description: 'Pull all ETH out of the TokenBuyer contract back to its owner (the treasury)',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  // Admin Functions — Payer parameters
+  'admin-payer-withdraw-usdc': {
+    id: 'admin-payer-withdraw-usdc',
+    category: 'admin',
+    name: 'Withdraw USDC from Payer',
+    description: 'Pull all USDC out of the Payer contract back to its owner (the treasury)',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  // Admin Functions — TokenBuyer extra setters
+  'admin-tokenbuyer-admin': {
+    id: 'admin-tokenbuyer-admin',
+    category: 'admin',
+    name: 'Set TokenBuyer Admin',
+    description: 'Hand off the TokenBuyer admin role to a new address',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Admin Address',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-price-feed': {
+    id: 'admin-tokenbuyer-price-feed',
+    category: 'admin',
+    name: 'Set TokenBuyer Price Feed',
+    description: 'Update the Chainlink price oracle TokenBuyer uses for ETH/USDC pricing',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Price Feed Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+        helpText: 'Chainlink aggregator contract for ETH/USD',
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-payer': {
+    id: 'admin-tokenbuyer-payer',
+    category: 'admin',
+    name: 'Set TokenBuyer Payer',
+    description: 'Change the downstream Payer contract that TokenBuyer forwards USDC to',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Payer Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  // Admin Functions — Auction House
+  'admin-auction-reserve-price': {
+    id: 'admin-auction-reserve-price',
+    category: 'admin',
+    name: 'Set Auction Reserve Price',
+    description: 'Minimum bid required for an auction to settle',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'amount',
+        label: 'Reserve Price (ETH)',
+        type: 'amount',
+        placeholder: '0.1',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Auctions below this price will not settle and the Noun is burned',
+      },
+    ],
+  },
+
+  'admin-auction-time-buffer': {
+    id: 'admin-auction-time-buffer',
+    category: 'admin',
+    name: 'Set Auction Time Buffer',
+    description: 'Anti-snipe extension: if a bid lands within this many seconds of the end, the auction extends by the same amount',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'seconds',
+        label: 'Time Buffer (seconds)',
+        type: 'number',
+        placeholder: '300',
+        required: true,
+        validation: { min: 0 },
+        helpText: '5 minutes = 300 seconds',
+      },
+    ],
+  },
+
+  'admin-auction-min-bid-increment': {
+    id: 'admin-auction-min-bid-increment',
+    category: 'admin',
+    name: 'Set Min Bid Increment',
+    description: 'Minimum bid increment over the current bid, as a percentage',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'percentage',
+        label: 'Min Bid Increment (%)',
+        type: 'number',
+        placeholder: '2',
+        required: true,
+        validation: { min: 1, max: 100 },
+        helpText: 'Each new bid must exceed the current bid by at least this percentage',
+      },
+    ],
+  },
+
+  'admin-auction-pause': {
+    id: 'admin-auction-pause',
+    category: 'admin',
+    name: 'Pause Auction House',
+    description: 'Emergency: stop new auctions from starting. Existing auctions can still settle.',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-auction-unpause': {
+    id: 'admin-auction-unpause',
+    category: 'admin',
+    name: 'Unpause Auction House',
+    description: 'Resume auction creation after a pause',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-auction-sanctions-oracle': {
+    id: 'admin-auction-sanctions-oracle',
+    category: 'admin',
+    name: 'Set Sanctions Oracle',
+    description: 'Update the Chainalysis sanctions oracle that blocks sanctioned addresses from bidding',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Sanctions Oracle Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  // Admin Functions — Client Rewards
+  'admin-rewards-auction-params': {
+    id: 'admin-rewards-auction-params',
+    category: 'admin',
+    name: 'Set Auction Reward Params',
+    description: 'Configure the auction client reward percentage and minimum auctions between updates',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'auctionRewardBps',
+        label: 'Auction Reward (BPS)',
+        type: 'number',
+        placeholder: '100',
+        required: true,
+        validation: { min: 0, max: 10000 },
+        helpText: '100 BPS = 1% of the winning bid distributed to the bid client',
+      },
+      {
+        name: 'minimumAuctionsBetweenUpdates',
+        label: 'Min Auctions Between Updates',
+        type: 'number',
+        placeholder: '1',
+        required: true,
+        validation: { min: 0, max: 255 },
+        helpText: 'Throttle reward distribution so it batches every N auctions',
+      },
+    ],
+  },
+
+  'admin-rewards-proposal-params': {
+    id: 'admin-rewards-proposal-params',
+    category: 'admin',
+    name: 'Set Proposal Reward Params',
+    description: 'Configure proposal/voting reward percentages and eligibility thresholds',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'minimumRewardPeriod',
+        label: 'Min Reward Period (seconds)',
+        type: 'number',
+        placeholder: '1209600',
+        required: true,
+        validation: { min: 0 },
+        helpText: '14 days = 1209600 seconds. Throttles how often rewards are distributed.',
+      },
+      {
+        name: 'numProposalsEnoughForReward',
+        label: 'Min Proposals For Reward',
+        type: 'number',
+        placeholder: '7',
+        required: true,
+        validation: { min: 0, max: 255 },
+        helpText: 'Minimum proposals settled in the reward period before payout',
+      },
+      {
+        name: 'proposalRewardBps',
+        label: 'Proposal Reward (BPS)',
+        type: 'number',
+        placeholder: '100',
+        required: true,
+        validation: { min: 0, max: 10000 },
+        helpText: 'Share of auction revenue paid to proposers',
+      },
+      {
+        name: 'votingRewardBps',
+        label: 'Voting Reward (BPS)',
+        type: 'number',
+        placeholder: '50',
+        required: true,
+        validation: { min: 0, max: 10000 },
+        helpText: 'Share of auction revenue paid to voters',
+      },
+      {
+        name: 'proposalEligibilityQuorumBps',
+        label: 'Eligibility Quorum (BPS)',
+        type: 'number',
+        placeholder: '1000',
+        required: true,
+        validation: { min: 0, max: 10000 },
+        helpText: 'Quorum threshold a proposal must hit to be eligible for proposer rewards',
+      },
+    ],
+  },
+
+  'admin-rewards-client-approval': {
+    id: 'admin-rewards-client-approval',
+    category: 'admin',
+    name: 'Approve/Suspend Client',
+    description: 'Approve or suspend a registered client from receiving rewards',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'clientId',
+        label: 'Client ID',
+        type: 'number',
+        placeholder: '11',
+        required: true,
+        validation: { min: 0 },
+        helpText: 'On-chain client ID assigned at registration (Berry = 11)',
+      },
+      {
+        name: 'approved',
+        label: 'Status',
+        type: 'select',
+        required: true,
+        options: [
+          { label: 'Approved (can receive rewards)', value: 'true' },
+          { label: 'Suspended (no rewards)', value: 'false' },
+        ],
+      },
+    ],
+  },
+
+  'admin-rewards-enable-auction': {
+    id: 'admin-rewards-enable-auction',
+    category: 'admin',
+    name: 'Enable Auction Rewards',
+    description: 'Turn on auction-client reward tracking and payouts',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-rewards-disable-auction': {
+    id: 'admin-rewards-disable-auction',
+    category: 'admin',
+    name: 'Disable Auction Rewards',
+    description: 'Pause auction-client reward tracking. In-flight rewards still claimable.',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-rewards-enable-proposal': {
+    id: 'admin-rewards-enable-proposal',
+    category: 'admin',
+    name: 'Enable Proposal Rewards',
+    description: 'Turn on proposer/voter reward tracking and payouts',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-rewards-disable-proposal': {
+    id: 'admin-rewards-disable-proposal',
+    category: 'admin',
+    name: 'Disable Proposal Rewards',
+    description: 'Pause proposer/voter reward tracking. In-flight rewards still claimable.',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-rewards-admin': {
+    id: 'admin-rewards-admin',
+    category: 'admin',
+    name: 'Set Rewards Admin',
+    description: 'Hand off the ClientRewards admin role to a new address',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Admin Address',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
+  },
+
+  'admin-rewards-descriptor': {
+    id: 'admin-rewards-descriptor',
+    category: 'admin',
+    name: 'Set Rewards Descriptor',
+    description: 'Update the descriptor contract used for reward-NFT metadata',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Descriptor Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  'admin-rewards-eth-token': {
+    id: 'admin-rewards-eth-token',
+    category: 'admin',
+    name: 'Set Rewards ETH Token',
+    description: 'Update the wrapped-ETH token address used for reward payouts',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'ETH Token Address',
+        type: 'address',
+        placeholder: '0x... (typically WETH)',
+        required: true,
+      },
+    ],
+  },
+
+  // Admin Functions — DAO Data (Proposal Candidates) Proxy
+  'admin-data-create-cost': {
+    id: 'admin-data-create-cost',
+    category: 'admin',
+    name: 'Set Candidate Creation Cost',
+    description: 'Fee charged to non-Nouner addresses to create a proposal candidate',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'amount',
+        label: 'Cost (ETH)',
+        type: 'amount',
+        placeholder: '0.01',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Nouners pay zero. Non-Nouners pay this fee to create a candidate.',
+      },
+    ],
+  },
+
+  'admin-data-update-cost': {
+    id: 'admin-data-update-cost',
+    category: 'admin',
+    name: 'Set Candidate Update Cost',
+    description: 'Fee charged to non-Nouner addresses to update an existing proposal candidate',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'amount',
+        label: 'Cost (ETH)',
+        type: 'amount',
+        placeholder: '0.005',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+      },
+    ],
+  },
+
+  'admin-data-fee-recipient': {
+    id: 'admin-data-fee-recipient',
+    category: 'admin',
+    name: 'Set Candidate Fee Recipient',
+    description: 'Address that receives candidate creation/update fees',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Fee Recipient Address',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
+  },
+
+  'admin-data-withdraw-eth': {
+    id: 'admin-data-withdraw-eth',
+    category: 'admin',
+    name: 'Withdraw Candidate Fees',
+    description: 'Sweep accumulated ETH out of the DAO Data Proxy',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'recipient',
+        label: 'Recipient',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+      {
+        name: 'amount',
+        label: 'Amount (ETH)',
+        type: 'amount',
+        placeholder: '0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+      },
+    ],
+  },
+
+  'admin-data-duna-admin': {
+    id: 'admin-data-duna-admin',
+    category: 'admin',
+    name: 'Set DUNA Admin',
+    description: 'Update the Wyoming DUNA administrator address (compliance/DUNA-Act role)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'DUNA Admin Address',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
+  },
+
+  // Admin Functions — Nouns Token core swaps
+  'admin-token-minter': {
+    id: 'admin-token-minter',
+    category: 'admin',
+    name: 'Set Token Minter',
+    description: 'Change the contract authorised to mint Nouns (typically the Auction House)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Minter Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+        helpText: 'Usually the Auction House. Changing this hands minting authority to another contract.',
+      },
+    ],
+  },
+
+  'admin-token-descriptor': {
+    id: 'admin-token-descriptor',
+    category: 'admin',
+    name: 'Set Token Descriptor',
+    description: 'Swap the Descriptor contract that produces Noun artwork on the token contract',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Descriptor Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+        helpText: 'Major change — affects how every Noun renders. Only valid before parts are locked.',
+      },
+    ],
+  },
+
+  'admin-token-seeder': {
+    id: 'admin-token-seeder',
+    category: 'admin',
+    name: 'Set Token Seeder',
+    description: 'Swap the Seeder contract that generates random trait combinations for new Nouns',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Seeder Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  'admin-token-nounders-dao': {
+    id: 'admin-token-nounders-dao',
+    category: 'admin',
+    name: 'Set Nounders DAO',
+    description: 'Address that receives the founder Noun every 10th mint',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'Nounders DAO Address',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
+  },
+
+  'admin-token-contract-uri-hash': {
+    id: 'admin-token-contract-uri-hash',
+    category: 'admin',
+    name: 'Set Token Contract URI Hash',
+    description: 'Update the collection-level metadata hash used by marketplaces',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'hash',
+        label: 'Contract URI Hash',
+        type: 'text',
+        placeholder: 'Qm... or content hash',
+        required: true,
+      },
+    ],
+  },
+
+  // Admin Functions — Fork Escrow
+  'admin-fork-escrow-close': {
+    id: 'admin-fork-escrow-close',
+    category: 'admin',
+    name: 'Close Fork Escrow',
+    description: 'End the fork escrow window early so escrowed Nouns can be reclaimed by the DAO',
+    isMultiAction: false,
+    fields: [],
+  },
+
+  'admin-fork-escrow-withdraw-tokens': {
+    id: 'admin-fork-escrow-withdraw-tokens',
+    category: 'admin',
+    name: 'Withdraw Escrowed Nouns',
+    description: 'Pull a set of escrowed Nouns out of the fork escrow to a destination',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'tokenIds',
+        label: 'Noun IDs (comma-separated)',
+        type: 'text',
+        placeholder: '12, 34, 56',
+        required: true,
+        helpText: 'Token IDs of the escrowed Nouns to withdraw',
+      },
+      {
+        name: 'recipient',
+        label: 'Recipient',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+        helpText: 'Where the withdrawn Nouns should go (typically the treasury)',
+      },
+    ],
+  },
+
+  'admin-fork-escrow-return-tokens': {
+    id: 'admin-fork-escrow-return-tokens',
+    category: 'admin',
+    name: 'Return Escrowed Nouns to Owner',
+    description: 'Return a set of escrowed Nouns back to the address that originally escrowed them',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'owner',
+        label: 'Original Owner',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+        helpText: 'Address that escrowed these Nouns',
+      },
+      {
+        name: 'tokenIds',
+        label: 'Noun IDs (comma-separated)',
+        type: 'text',
+        placeholder: '12, 34, 56',
+        required: true,
+      },
+    ],
+  },
+
+  // Admin Functions — ClientRewards token sweep + ownership transfer
+  'admin-rewards-withdraw-token': {
+    id: 'admin-rewards-withdraw-token',
+    category: 'admin',
+    name: 'Withdraw Token from Rewards',
+    description: 'Sweep any ERC-20 the ClientRewards contract holds back to a destination (typically the treasury)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'token',
+        label: 'Token',
+        type: 'token-select',
+        required: true,
+        helpText: 'ERC-20 to withdraw from the ClientRewards contract',
+      },
+      {
+        name: 'recipient',
+        label: 'Recipient',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+        helpText: 'Where to send the tokens (typically the treasury)',
+      },
+      {
+        name: 'amount',
+        label: 'Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0 },
+      },
+    ],
+  },
+
+  'admin-rewards-transfer-ownership': {
+    id: 'admin-rewards-transfer-ownership',
+    category: 'admin',
+    name: 'Transfer Rewards Ownership',
+    description: 'Transfer ownership of the ClientRewards contract (OZ Ownable role — distinct from setAdmin)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Owner',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
+  },
+
+  // Admin Functions — TokenBuyer / Payer ownership transfers + admin bounds
+  'admin-tokenbuyer-transfer-ownership': {
+    id: 'admin-tokenbuyer-transfer-ownership',
+    category: 'admin',
+    name: 'Transfer TokenBuyer Ownership',
+    description: 'Transfer ownership of the TokenBuyer contract (OZ Ownable role)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Owner',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-max-baseline': {
+    id: 'admin-tokenbuyer-max-baseline',
+    category: 'admin',
+    name: 'Set Max Admin Baseline',
+    description: 'Upper bound the runtime admin may set the TokenBuyer baseline to',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'amount',
+        label: 'Max Baseline (USDC)',
+        type: 'amount',
+        placeholder: '500000',
+        required: true,
+        validation: { min: 0, decimals: 6 },
+        helpText: 'Guardrail: admin cannot raise the baseline above this',
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-min-baseline': {
+    id: 'admin-tokenbuyer-min-baseline',
+    category: 'admin',
+    name: 'Set Min Admin Baseline',
+    description: 'Lower bound the runtime admin may set the TokenBuyer baseline to',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'amount',
+        label: 'Min Baseline (USDC)',
+        type: 'amount',
+        placeholder: '50000',
+        required: true,
+        validation: { min: 0, decimals: 6 },
+        helpText: 'Guardrail: admin cannot drop the baseline below this',
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-max-discount': {
+    id: 'admin-tokenbuyer-max-discount',
+    category: 'admin',
+    name: 'Set Max Admin Bot Discount',
+    description: 'Upper bound (BPS) on the bot discount the runtime admin may set',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'bps',
+        label: 'Max Discount (BPS)',
+        type: 'number',
+        placeholder: '300',
+        required: true,
+        validation: { min: 0, max: 10000 },
+        helpText: '300 BPS = 3%',
+      },
+    ],
+  },
+
+  'admin-tokenbuyer-min-discount': {
+    id: 'admin-tokenbuyer-min-discount',
+    category: 'admin',
+    name: 'Set Min Admin Bot Discount',
+    description: 'Lower bound (BPS) on the bot discount the runtime admin may set',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'bps',
+        label: 'Min Discount (BPS)',
+        type: 'number',
+        placeholder: '50',
+        required: true,
+        validation: { min: 0, max: 10000 },
+      },
+    ],
+  },
+
+  'admin-payer-transfer-ownership': {
+    id: 'admin-payer-transfer-ownership',
+    category: 'admin',
+    name: 'Transfer Payer Ownership',
+    description: 'Transfer ownership of the Payer contract (OZ Ownable role)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'address',
+        label: 'New Owner',
+        type: 'address',
+        placeholder: '0x... or name.eth',
+        required: true,
+      },
+    ],
   },
 
   // Meta actions — high-level proposals that trigger other on-chain effects

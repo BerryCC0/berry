@@ -15,21 +15,33 @@ import {
   encodeAdminUint16,
   encodeAdminUint256,
   encodeAdminUint32,
+  encodeAuctionRewardParams,
+  encodeClientApproval,
   encodeCreateStreamWithPredictedAddress,
   encodeDelegate,
   encodeDynamicQuorumParams,
   encodeMetaProposeCalldata,
+  encodeProposalRewardParams,
   encodeSafeTransferFrom,
   encodeSendETH,
+  encodeStringArg,
+  encodeStringArrayArg,
   encodeTransfer,
   encodeTransferFrom
 } from './encoders';
 import {
+  AUCTION_HOUSE_ADDRESS,
+  CLIENT_REWARDS_ADDRESS,
   COMMON_TOKENS,
   DAO_PROXY_ADDRESS,
+  DATA_PROXY_ADDRESS,
+  DESCRIPTOR_ADDRESS,
   EXTERNAL_CONTRACTS,
+  FORK_ESCROW_ADDRESS,
   NOUNS_TOKEN_ADDRESS,
+  PAYER_ADDRESS,
   STREAM_FACTORY_ADDRESS,
+  TOKEN_BUYER_ADDRESS,
   TREASURY_ADDRESS
 } from './constants';
 import { parseEther, parseUnits } from './utils';
@@ -108,12 +120,49 @@ export function generateActionsFromTemplate(
       }];
     }
 
+    // Refill TokenBuyer with ETH — single direct-value transfer. The
+    // TokenBuyer contract is payable and accepts plain sends; bots then
+    // arb against it bringing USDC to fund the Payer.
+    case 'tokenbuyer-refill-eth':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: parseEther(fieldValues.ethAmount || '0').toString(),
+        signature: '',
+        calldata: '0x'
+      }];
+
+    // Repay Payer debt — 2-action: approve USDC, then payBackDebt. The Payer
+    // pulls the USDC via transferFrom and pays out the front of the debt queue.
+    case 'payer-repay-debt': {
+      const usdcAmount = parseUnits(fieldValues.usdcAmount || '0', 6);
+      const groupId = `payer-repay-debt-${Date.now()}`;
+      return [
+        {
+          target: EXTERNAL_CONTRACTS.USDC.address,
+          value: '0',
+          signature: 'approve(address,uint256)',
+          calldata: encodeTransfer(PAYER_ADDRESS, usdcAmount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0,
+        },
+        {
+          target: PAYER_ADDRESS,
+          value: '0',
+          signature: 'payBackDebt(uint256)',
+          calldata: encodeAdminUint256(usdcAmount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1,
+        },
+      ];
+    }
+
     // Treasury Swaps via TokenBuyer
     case 'swap-buy-eth': {
       // TokenBuyer requires USDC approval before it can pull tokens via transferFrom.
       // Action 1: approve TokenBuyer to spend USDC
       // Action 2: call buyETH with the USDC amount
-      const TOKEN_BUYER_ADDRESS = '0x4f2aCdc74f6941390d9b1804faBc3E780388cfe5' as Address;
       const usdcAmount = parseUnits(fieldValues.usdcAmount || '0', 6);
       const groupId = `swap-buy-eth-${Date.now()}`;
       return [
@@ -136,18 +185,6 @@ export function generateActionsFromTemplate(
           multiActionIndex: 1
         }
       ];
-    }
-
-    case 'swap-sell-eth': {
-      // Payer contract can sell ETH for USDC
-      const PAYER_ADDRESS = '0xd97Bcd9f47cEe35c0a9ec1dc40C1269afc9E8E1D' as Address;
-      const ethAmount = parseEther(fieldValues.ethAmount || '0');
-      return [{
-        target: PAYER_ADDRESS,
-        value: ethAmount.toString(),
-        signature: 'payBackDebt(uint256)',
-        calldata: encodeAdminUint256(ethAmount)
-      }];
     }
 
     // Nouns Operations
@@ -446,13 +483,99 @@ export function generateActionsFromTemplate(
 
     // One-time Payment via Payer
     case 'payment-once': {
-      const PAYER_ADDRESS = '0xd97Bcd9f47cEe35c0a9ec1dc40C1269afc9E8E1D' as Address;
       const amount = parseUnits(fieldValues.amount || '0', 6); // USDC has 6 decimals
       return [{
         target: PAYER_ADDRESS,
         value: '0',
         signature: 'sendOrRegisterDebt(address,uint256)',
         calldata: encodeSendETH(fieldValues.recipient as Address, amount) // Same encoding format
+      }];
+    }
+
+    // Artwork — Nouns Descriptor operations
+    case 'descriptor-lock-parts':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'lockParts()',
+        calldata: '0x',
+      }];
+
+    case 'descriptor-toggle-data-uri':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'toggleDataURIEnabled()',
+        calldata: '0x',
+      }];
+
+    case 'descriptor-set-base-uri':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'setBaseURI(string)',
+        calldata: encodeStringArg(fieldValues.baseURI || ''),
+      }];
+
+    case 'descriptor-set-art':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'setArt(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'descriptor-set-renderer':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'setRenderer(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'descriptor-set-art-descriptor':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'setArtDescriptor(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'descriptor-set-art-inflator':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'setArtInflator(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'descriptor-transfer-ownership':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'transferOwnership(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'descriptor-add-background':
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'addBackground(string)',
+        calldata: encodeStringArg(fieldValues.color || ''),
+      }];
+
+    case 'descriptor-add-many-backgrounds': {
+      // Parse comma-separated hex colors, strip whitespace and leading '#'
+      const colors = (fieldValues.colors || '')
+        .split(',')
+        .map((c) => c.trim().replace(/^#/, ''))
+        .filter((c) => c.length > 0);
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature: 'addManyBackgrounds(string[])',
+        calldata: encodeStringArrayArg(colors),
       }];
     }
 
@@ -624,6 +747,424 @@ export function generateActionsFromTemplate(
         value: '0',
         signature: '_setPendingAdmin(address)',
         calldata: encodeAdminAddress(fieldValues.address as Address)
+      }];
+
+    // Admin Functions — TokenBuyer parameters
+    case 'admin-tokenbuyer-baseline':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setBaselinePaymentTokenAmount(uint256)',
+        calldata: encodeAdminUint256(parseUnits(fieldValues.amount || '0', 6))
+      }];
+
+    case 'admin-tokenbuyer-discount':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setBotDiscountBPs(uint16)',
+        calldata: encodeAdminUint16(Number(fieldValues.bps || '0'))
+      }];
+
+    case 'admin-tokenbuyer-pause':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'pause()',
+        calldata: '0x'
+      }];
+
+    case 'admin-tokenbuyer-unpause':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'unpause()',
+        calldata: '0x'
+      }];
+
+    case 'admin-tokenbuyer-withdraw-eth':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'withdrawETH()',
+        calldata: '0x'
+      }];
+
+    case 'admin-payer-withdraw-usdc':
+      return [{
+        target: PAYER_ADDRESS,
+        value: '0',
+        signature: 'withdrawPaymentToken()',
+        calldata: '0x'
+      }];
+
+    // Admin Functions — TokenBuyer extra setters
+    case 'admin-tokenbuyer-admin':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setAdmin(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-tokenbuyer-price-feed':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setPriceFeed(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-tokenbuyer-payer':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setPayer(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    // Admin Functions — Auction House
+    case 'admin-auction-reserve-price':
+      return [{
+        target: AUCTION_HOUSE_ADDRESS,
+        value: '0',
+        signature: 'setReservePrice(uint192)',
+        calldata: encodeAdminUint256(parseUnits(fieldValues.amount || '0', 18)),
+      }];
+
+    case 'admin-auction-time-buffer':
+      return [{
+        target: AUCTION_HOUSE_ADDRESS,
+        value: '0',
+        signature: 'setTimeBuffer(uint56)',
+        calldata: encodeAdminUint256(BigInt(fieldValues.seconds || '0')),
+      }];
+
+    case 'admin-auction-min-bid-increment':
+      return [{
+        target: AUCTION_HOUSE_ADDRESS,
+        value: '0',
+        signature: 'setMinBidIncrementPercentage(uint8)',
+        calldata: encodeAdminUint256(BigInt(fieldValues.percentage || '0')),
+      }];
+
+    case 'admin-auction-pause':
+      return [{
+        target: AUCTION_HOUSE_ADDRESS,
+        value: '0',
+        signature: 'pause()',
+        calldata: '0x',
+      }];
+
+    case 'admin-auction-unpause':
+      return [{
+        target: AUCTION_HOUSE_ADDRESS,
+        value: '0',
+        signature: 'unpause()',
+        calldata: '0x',
+      }];
+
+    case 'admin-auction-sanctions-oracle':
+      return [{
+        target: AUCTION_HOUSE_ADDRESS,
+        value: '0',
+        signature: 'setSanctionsOracle(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    // Admin Functions — Client Rewards
+    case 'admin-rewards-auction-params':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'setAuctionRewardParams((uint16,uint8))',
+        calldata: encodeAuctionRewardParams(
+          Number(fieldValues.auctionRewardBps || '0'),
+          Number(fieldValues.minimumAuctionsBetweenUpdates || '0'),
+        ),
+      }];
+
+    case 'admin-rewards-proposal-params':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'setProposalRewardParams((uint32,uint8,uint16,uint16,uint16))',
+        calldata: encodeProposalRewardParams(
+          Number(fieldValues.minimumRewardPeriod || '0'),
+          Number(fieldValues.numProposalsEnoughForReward || '0'),
+          Number(fieldValues.proposalRewardBps || '0'),
+          Number(fieldValues.votingRewardBps || '0'),
+          Number(fieldValues.proposalEligibilityQuorumBps || '0'),
+        ),
+      }];
+
+    case 'admin-rewards-client-approval':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'setClientApproval(uint32,bool)',
+        calldata: encodeClientApproval(
+          Number(fieldValues.clientId || '0'),
+          fieldValues.approved === 'true',
+        ),
+      }];
+
+    case 'admin-rewards-enable-auction':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'enableAuctionRewards()',
+        calldata: '0x',
+      }];
+
+    case 'admin-rewards-disable-auction':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'disableAuctionRewards()',
+        calldata: '0x',
+      }];
+
+    case 'admin-rewards-enable-proposal':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'enableProposalRewards()',
+        calldata: '0x',
+      }];
+
+    case 'admin-rewards-disable-proposal':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'disableProposalRewards()',
+        calldata: '0x',
+      }];
+
+    case 'admin-rewards-admin':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'setAdmin(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-rewards-descriptor':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'setDescriptor(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-rewards-eth-token':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'setETHToken(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    // Admin Functions — DAO Data (Proposal Candidates) Proxy
+    case 'admin-data-create-cost':
+      return [{
+        target: DATA_PROXY_ADDRESS,
+        value: '0',
+        signature: 'setCreateCandidateCost(uint256)',
+        calldata: encodeAdminUint256(parseUnits(fieldValues.amount || '0', 18)),
+      }];
+
+    case 'admin-data-update-cost':
+      return [{
+        target: DATA_PROXY_ADDRESS,
+        value: '0',
+        signature: 'setUpdateCandidateCost(uint256)',
+        calldata: encodeAdminUint256(parseUnits(fieldValues.amount || '0', 18)),
+      }];
+
+    case 'admin-data-fee-recipient':
+      return [{
+        target: DATA_PROXY_ADDRESS,
+        value: '0',
+        signature: 'setFeeRecipient(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-data-withdraw-eth':
+      return [{
+        target: DATA_PROXY_ADDRESS,
+        value: '0',
+        signature: 'withdrawETH(address,uint256)',
+        calldata: encodeSendETH(
+          fieldValues.recipient as Address,
+          parseUnits(fieldValues.amount || '0', 18),
+        ),
+      }];
+
+    case 'admin-data-duna-admin':
+      return [{
+        target: DATA_PROXY_ADDRESS,
+        value: '0',
+        signature: 'setDunaAdmin(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    // Admin Functions — Nouns Token core swaps
+    case 'admin-token-minter':
+      return [{
+        target: NOUNS_TOKEN_ADDRESS,
+        value: '0',
+        signature: 'setMinter(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-token-descriptor':
+      return [{
+        target: NOUNS_TOKEN_ADDRESS,
+        value: '0',
+        signature: 'setDescriptor(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-token-seeder':
+      return [{
+        target: NOUNS_TOKEN_ADDRESS,
+        value: '0',
+        signature: 'setSeeder(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-token-nounders-dao':
+      return [{
+        target: NOUNS_TOKEN_ADDRESS,
+        value: '0',
+        signature: 'setNoundersDAO(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-token-contract-uri-hash':
+      return [{
+        target: NOUNS_TOKEN_ADDRESS,
+        value: '0',
+        signature: 'setContractURIHash(string)',
+        calldata: encodeStringArg(fieldValues.hash || ''),
+      }];
+
+    // Admin Functions — Fork Escrow
+    case 'admin-fork-escrow-close':
+      return [{
+        target: FORK_ESCROW_ADDRESS,
+        value: '0',
+        signature: 'closeEscrow()',
+        calldata: '0x',
+      }];
+
+    case 'admin-fork-escrow-withdraw-tokens': {
+      const tokenIds = (fieldValues.tokenIds || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+        .map((s) => BigInt(s));
+      return [{
+        target: FORK_ESCROW_ADDRESS,
+        value: '0',
+        signature: 'withdrawTokens(uint256[],address)',
+        calldata: encodeAbiParameters(
+          parseAbiParameters('uint256[], address'),
+          [tokenIds, fieldValues.recipient as Address],
+        ),
+      }];
+    }
+
+    case 'admin-fork-escrow-return-tokens': {
+      const tokenIds = (fieldValues.tokenIds || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+        .map((s) => BigInt(s));
+      return [{
+        target: FORK_ESCROW_ADDRESS,
+        value: '0',
+        signature: 'returnTokensToOwner(address,uint256[])',
+        calldata: encodeAbiParameters(
+          parseAbiParameters('address, uint256[]'),
+          [fieldValues.owner as Address, tokenIds],
+        ),
+      }];
+    }
+
+    // Admin Functions — ClientRewards token sweep + ownership transfer
+    case 'admin-rewards-withdraw-token': {
+      const { address: tokenAddr, decimals } = resolveTokenField(
+        fieldValues.token,
+      );
+      const amount = parseUnits(fieldValues.amount || '0', decimals);
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'withdrawToken(address,address,uint256)',
+        calldata: encodeAbiParameters(
+          parseAbiParameters('address, address, uint256'),
+          [tokenAddr as Address, fieldValues.recipient as Address, amount],
+        ),
+      }];
+    }
+
+    case 'admin-rewards-transfer-ownership':
+      return [{
+        target: CLIENT_REWARDS_ADDRESS,
+        value: '0',
+        signature: 'transferOwnership(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    // Admin Functions — TokenBuyer / Payer ownership transfers + admin bounds
+    case 'admin-tokenbuyer-transfer-ownership':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'transferOwnership(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    case 'admin-tokenbuyer-max-baseline':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setMaxAdminBaselinePaymentTokenAmount(uint256)',
+        calldata: encodeAdminUint256(parseUnits(fieldValues.amount || '0', 6)),
+      }];
+
+    case 'admin-tokenbuyer-min-baseline':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setMinAdminBaselinePaymentTokenAmount(uint256)',
+        calldata: encodeAdminUint256(parseUnits(fieldValues.amount || '0', 6)),
+      }];
+
+    case 'admin-tokenbuyer-max-discount':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setMaxAdminBotDiscountBPs(uint16)',
+        calldata: encodeAdminUint16(Number(fieldValues.bps || '0')),
+      }];
+
+    case 'admin-tokenbuyer-min-discount':
+      return [{
+        target: TOKEN_BUYER_ADDRESS,
+        value: '0',
+        signature: 'setMinAdminBotDiscountBPs(uint16)',
+        calldata: encodeAdminUint16(Number(fieldValues.bps || '0')),
+      }];
+
+    case 'admin-payer-transfer-ownership':
+      return [{
+        target: PAYER_ADDRESS,
+        value: '0',
+        signature: 'transferOwnership(address)',
+        calldata: encodeAdminAddress(fieldValues.address as Address),
       }];
 
     case 'meta-propose': {

@@ -133,6 +133,74 @@ export function encodeCreateStreamWithPredictedAddress(
 }
 
 /**
+ * Encode calldata for a single `string` argument (e.g. setBaseURI, addBackground).
+ * Uses viem's full ABI encoder so the dynamic offset + length + padding are right.
+ */
+export function encodeStringArg(value: string): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('string'), [value]);
+}
+
+/**
+ * Encode calldata for a single `string[]` argument (e.g. addManyBackgrounds).
+ */
+export function encodeStringArrayArg(values: string[]): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('string[]'), [values]);
+}
+
+/**
+ * Encode setClientApproval(uint32 clientId, bool approved). Two static slots.
+ */
+export function encodeClientApproval(
+  clientId: number,
+  approved: boolean,
+): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('uint32, bool'), [
+    clientId,
+    approved,
+  ]);
+}
+
+/**
+ * Encode setAuctionRewardParams(AuctionRewardParams). Static struct of
+ * (uint16 auctionRewardBps, uint8 minimumAuctionsBetweenUpdates).
+ */
+export function encodeAuctionRewardParams(
+  auctionRewardBps: number,
+  minimumAuctionsBetweenUpdates: number,
+): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('(uint16, uint8)'), [
+    [auctionRewardBps, minimumAuctionsBetweenUpdates],
+  ]);
+}
+
+/**
+ * Encode setProposalRewardParams(ProposalRewardParams). Static struct of
+ * (uint32 minimumRewardPeriod, uint8 numProposalsEnoughForReward,
+ *  uint16 proposalRewardBps, uint16 votingRewardBps,
+ *  uint16 proposalEligibilityQuorumBps).
+ */
+export function encodeProposalRewardParams(
+  minimumRewardPeriod: number,
+  numProposalsEnoughForReward: number,
+  proposalRewardBps: number,
+  votingRewardBps: number,
+  proposalEligibilityQuorumBps: number,
+): `0x${string}` {
+  return encodeAbiParameters(
+    parseAbiParameters('(uint32, uint8, uint16, uint16, uint16)'),
+    [
+      [
+        minimumRewardPeriod,
+        numProposalsEnoughForReward,
+        proposalRewardBps,
+        votingRewardBps,
+        proposalEligibilityQuorumBps,
+      ],
+    ],
+  );
+}
+
+/**
  * Encode the calldata for a meta-proposal (propose() that creates another proposal)
  * Uses viem's encodeAbiParameters for complex nested array encoding
  */

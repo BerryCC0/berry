@@ -1,0 +1,35 @@
+.viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  background: var(--berry-bg);
+  user-select: none;
+  touch-action: none;
+}
+
+.canvasStack {
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.composite,
+.overlay {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  position: absolute;
+  inset: 0;
+}
+
+.composite {
+  z-index: 1;
+}
+
+.overlay {
+  z-index: 2;
+  pointer-events: auto;
+}

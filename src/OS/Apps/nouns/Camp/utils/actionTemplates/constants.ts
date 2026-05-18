@@ -26,6 +26,13 @@ export const TREASURY_ADDRESS = NOUNS_ADDRESSES.treasury as Address;
 export const NOUNS_TOKEN_ADDRESS = NOUNS_ADDRESSES.token as Address;
 export const DAO_PROXY_ADDRESS = NOUNS_ADDRESSES.governor as Address;
 export const STREAM_FACTORY_ADDRESS = '0x0fd206FC7A7dBcD5661157eDCb1FFDD0D02A61ff' as Address;
+export const TOKEN_BUYER_ADDRESS = NOUNS_ADDRESSES.tokenBuyer as Address;
+export const PAYER_ADDRESS = NOUNS_ADDRESSES.payer as Address;
+export const DESCRIPTOR_ADDRESS = NOUNS_ADDRESSES.descriptor as Address;
+export const AUCTION_HOUSE_ADDRESS = NOUNS_ADDRESSES.auctionHouse as Address;
+export const CLIENT_REWARDS_ADDRESS = NOUNS_ADDRESSES.clientRewards as Address;
+export const DATA_PROXY_ADDRESS = NOUNS_ADDRESSES.data as Address;
+export const FORK_ESCROW_ADDRESS = NOUNS_ADDRESSES.forkEscrow as Address;
 
 /**
  * Well-known ERC20Votes tokens, keyed by lowercase address.

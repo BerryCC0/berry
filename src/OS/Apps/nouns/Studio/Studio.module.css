@@ -1,0 +1,71 @@
+/**
+ * Studio layout — header / (toolbox · canvas) / status bar.
+ * Right-side panels (layers, palette, composite preview) land in Phase 2.
+ */
+
+.studio {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--berry-bg-secondary);
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.partTabs {
+  display: flex;
+  gap: 4px;
+}
+
+.partTab {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  color: var(--berry-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: background 0.1s, color 0.1s;
+}
+
+.partTab:hover {
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-primary);
+}
+
+.activeTab {
+  background: var(--berry-primary);
+  border-color: var(--berry-primary);
+  color: white;
+}
+
+.activeTab:hover {
+  background: var(--berry-primary);
+  color: white;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

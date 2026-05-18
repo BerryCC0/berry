@@ -1,0 +1,164 @@
+/**
+ * ActionTemplatePicker Styles
+ * Trigger button + modal chrome. The picker UI itself (search/tabs/cards)
+ * is styled by TemplatePickerView.module.css.
+ */
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+/* ------- Trigger button ------------------------------------------------ */
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+
+.trigger:hover:not(.disabled) {
+  border-color: var(--berry-text-secondary);
+}
+
+.trigger.open {
+  border-color: var(--berry-primary);
+}
+
+.trigger.hasValue {
+  font-weight: 500;
+}
+
+.trigger.disabled {
+  background: var(--berry-bg-tertiary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.triggerContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.triggerLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerPlaceholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+}
+
+.arrow {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  transition: transform 0.2s;
+  margin-left: 8px;
+}
+
+.trigger.open .arrow {
+  transform: rotate(180deg);
+}
+
+/* ------- Modal overlay & shell ----------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+}
+
+.modal {
+  width: 640px;
+  max-width: 100%;
+  max-height: 80vh;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.closeButton {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--berry-text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.closeButton:hover {
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+}
+
+/* ------- Footer (clear selection) ------------------------------------- */
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-start;
+  padding: 10px 16px;
+  border-top: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.clearButton {
+  background: transparent;
+  border: none;
+  color: var(--berry-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearButton:hover {
+  color: var(--berry-text-primary);
+}
