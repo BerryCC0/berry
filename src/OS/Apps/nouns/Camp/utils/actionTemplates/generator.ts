@@ -11,6 +11,7 @@ import {
   TemplateFieldValues,
 } from './types';
 import {
+  encodeAddTraitCalldata,
   encodeAdminAddress,
   encodeAdminUint16,
   encodeAdminUint256,
@@ -576,6 +577,46 @@ export function generateActionsFromTemplate(
         value: '0',
         signature: 'addManyBackgrounds(string[])',
         calldata: encodeStringArrayArg(colors),
+      }];
+    }
+
+    // Add-trait templates — the wizard stores its finished output as a
+    // JSON-stringified payload in fieldValues.artwork. The payload already
+    // carries the compressed bytes + decompressed length + item count, so the
+    // generator only re-encodes the (bytes, uint80, uint16) tuple.
+    case 'descriptor-add-trait-head':
+    case 'descriptor-add-trait-body':
+    case 'descriptor-add-trait-accessory':
+    case 'descriptor-add-trait-glasses': {
+      const signature = ({
+        'descriptor-add-trait-head': 'addHeads(bytes,uint80,uint16)',
+        'descriptor-add-trait-body': 'addBodies(bytes,uint80,uint16)',
+        'descriptor-add-trait-accessory': 'addAccessories(bytes,uint80,uint16)',
+        'descriptor-add-trait-glasses': 'addGlasses(bytes,uint80,uint16)',
+      } as const)[templateId];
+
+      let payload: {
+        encodedBytes?: string;
+        decompressedLength?: string;
+        itemCount?: number;
+      } = {};
+      try {
+        payload = JSON.parse(fieldValues.artwork || '{}');
+      } catch {
+        payload = {};
+      }
+
+      const encodedBytes = (payload.encodedBytes || '0x') as `0x${string}`;
+      const decompressedLength = payload.decompressedLength
+        ? BigInt(payload.decompressedLength)
+        : BigInt(0);
+      const itemCount = typeof payload.itemCount === 'number' ? payload.itemCount : 1;
+
+      return [{
+        target: DESCRIPTOR_ADDRESS,
+        value: '0',
+        signature,
+        calldata: encodeAddTraitCalldata(encodedBytes, decompressedLength, itemCount),
       }];
     }
 

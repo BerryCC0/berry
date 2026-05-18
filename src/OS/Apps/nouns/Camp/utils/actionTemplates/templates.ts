@@ -551,6 +551,77 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ],
   },
 
+  // Add-trait templates — each opens the ArtworkTraitWizard which produces
+  // the on-chain (bytes, uint80, uint16) tuple. The `artwork` field stores
+  // a JSON payload that survives reloads + reverse engineering.
+  'descriptor-add-trait-head': {
+    id: 'descriptor-add-trait-head',
+    category: 'artwork',
+    name: 'Add Head Trait',
+    description: 'Submit a 32×32 head trait with a signed CC0 contribution agreement',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'artwork',
+        label: 'Head Artwork',
+        type: 'artwork-trait',
+        required: true,
+        helpText: 'Open the artwork wizard to upload, palette-match, sign, and encode the trait',
+      },
+    ],
+  },
+
+  'descriptor-add-trait-body': {
+    id: 'descriptor-add-trait-body',
+    category: 'artwork',
+    name: 'Add Body Trait',
+    description: 'Submit a 32×32 body trait with a signed CC0 contribution agreement',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'artwork',
+        label: 'Body Artwork',
+        type: 'artwork-trait',
+        required: true,
+        helpText: 'Open the artwork wizard to upload, palette-match, sign, and encode the trait',
+      },
+    ],
+  },
+
+  'descriptor-add-trait-accessory': {
+    id: 'descriptor-add-trait-accessory',
+    category: 'artwork',
+    name: 'Add Accessory Trait',
+    description: 'Submit a 32×32 accessory trait with a signed CC0 contribution agreement',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'artwork',
+        label: 'Accessory Artwork',
+        type: 'artwork-trait',
+        required: true,
+        helpText: 'Open the artwork wizard to upload, palette-match, sign, and encode the trait',
+      },
+    ],
+  },
+
+  'descriptor-add-trait-glasses': {
+    id: 'descriptor-add-trait-glasses',
+    category: 'artwork',
+    name: 'Add Glasses Trait',
+    description: 'Submit a 32×32 glasses trait with a signed CC0 contribution agreement',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'artwork',
+        label: 'Glasses Artwork',
+        type: 'artwork-trait',
+        required: true,
+        helpText: 'Open the artwork wizard to upload, palette-match, sign, and encode the trait',
+      },
+    ],
+  },
+
   // Admin Functions - Voting Parameters
   'admin-voting-delay': {
     id: 'admin-voting-delay',

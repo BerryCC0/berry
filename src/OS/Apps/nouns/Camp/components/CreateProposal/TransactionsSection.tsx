@@ -6,7 +6,6 @@
 
 import React, { useMemo } from 'react';
 import { ActionTemplateEditor } from './ActionTemplateEditor';
-import { formatGas } from '../SimulationStatus/SimulationStatus';
 import type { ActionTemplateState } from '../../utils/types';
 import type { SimulationResult, TransactionResult } from '../../hooks/useSimulation';
 import styles from './TransactionsSection.module.css';
@@ -133,8 +132,6 @@ function SimulationStatusPill({ isLoading, error, result, hasActions }: Simulati
   if (!result) return null;
 
   const success = result.success;
-  const totalGas = parseInt(result.totalGasUsed, 10);
-  const gasLabel = totalGas > 0 ? `${formatGas(result.totalGasUsed)} total gas` : null;
 
   return (
     <div
@@ -144,7 +141,6 @@ function SimulationStatusPill({ isLoading, error, result, hasActions }: Simulati
       <span className={styles.simText}>
         {success ? 'Simulation passed' : 'Some transactions failed'}
       </span>
-      {gasLabel && <span className={styles.simGas}>· {gasLabel}</span>}
       {result.shareUrl && (
         <a
           href={result.shareUrl}

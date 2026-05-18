@@ -119,6 +119,11 @@ const ADMIN_SUBGROUPS: Array<{ label: string; ids: string[] }> = [
   {
     label: 'Artwork',
     ids: [
+      // Trait submissions (signed CC0 contributions)
+      'descriptor-add-trait-head',
+      'descriptor-add-trait-body',
+      'descriptor-add-trait-accessory',
+      'descriptor-add-trait-glasses',
       // Visibility / output mode
       'descriptor-toggle-data-uri',
       'descriptor-set-base-uri',
@@ -127,7 +132,7 @@ const ADMIN_SUBGROUPS: Array<{ label: string; ids: string[] }> = [
       'descriptor-set-renderer',
       'descriptor-set-art-descriptor',
       'descriptor-set-art-inflator',
-      // Additions
+      // Background palette additions
       'descriptor-add-background',
       'descriptor-add-many-backgrounds',
       // Irreversible lock + ownership

@@ -1,0 +1,161 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--berry-bg-secondary);
+  border-top: 1px solid var(--berry-border);
+  flex-shrink: 0;
+  min-height: 0;
+}
+
+.header {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--berry-border);
+}
+.heading {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-secondary);
+}
+
+.currentRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.swatch {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--berry-border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  /* Show transparency for #00000000 */
+  background-image:
+    linear-gradient(45deg, #555 25%, transparent 25%),
+    linear-gradient(-45deg, #555 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #555 75%),
+    linear-gradient(-45deg, transparent 75%, #555 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+.hexInput {
+  flex: 1;
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  border: 1px solid var(--berry-border);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+  min-width: 0;
+}
+.hexInput:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.colorInput {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--berry-border);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.miniButton {
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 3px;
+  color: var(--berry-text-secondary);
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.miniButton:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-primary);
+}
+.miniButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.section {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--berry-border);
+}
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sectionTitle {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-secondary);
+}
+.hint {
+  font-size: 9px;
+  color: var(--berry-text-secondary);
+  opacity: 0.7;
+}
+
+.swatchGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.swatchCell {
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+}
+.swatchCell:hover {
+  outline: 1px solid var(--berry-text-primary);
+  outline-offset: -2px;
+}
+.swatchSelected {
+  outline: 2px solid var(--berry-primary);
+  outline-offset: -2px;
+}
+.transparentCell {
+  background-image:
+    linear-gradient(45deg, #888 25%, transparent 25%),
+    linear-gradient(-45deg, #888 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #888 75%),
+    linear-gradient(-45deg, transparent 75%, #888 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 0 2px, 2px -2px, -2px 0;
+}
+
+.emptyHint {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  opacity: 0.7;
+  text-align: center;
+  padding: 8px 0;
+}

@@ -30,6 +30,7 @@ export { formatUnits, parseEther, parseUnits } from './utils';
 
 // Encoding helpers
 export {
+  encodeAddTraitCalldata,
   encodeBurnVetoPower,
   encodeCreateStreamWithPredictedAddress,
   encodeDelegate,

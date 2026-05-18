@@ -76,6 +76,29 @@ export type AppEvents = {
   "app:data-shared": { from: string; dataType: string; data: unknown };
   "app:file-opened": { appId: string; filePath: string };
   "app:file-dropped": { windowId: string; filePath: string };
+
+  // Studio → Camp: artist hands off a finished trait for proposal submission.
+  // Camp's CreateProposalView listens and pre-fills a descriptor-add-trait-*
+  // template with the supplied pixel data.
+  "studio:submit-trait": {
+    traitType: "background" | "body" | "accessory" | "head" | "glasses";
+    pixels: number[];
+    paletteSnapshot: string[];
+    thumbnailDataUrl: string;
+    name: string;
+    sourceProjectId?: string;
+    sourceTraitId?: string;
+  };
+
+  // Camp → Studio: after a trait-bearing proposal is submitted, notify Studio
+  // so it can mark the source draft as "submitted" (proposal/candidate links).
+  "studio:trait-submitted": {
+    sourceTraitId?: string;
+    sourceProjectId?: string;
+    traitType: "background" | "body" | "accessory" | "head" | "glasses";
+    proposalId?: number;
+    candidateSlug?: string;
+  };
 }
 
 /**

@@ -12,8 +12,10 @@ import { NOUN_PARTS, type NounPart, type StudioMode } from '../types';
 export interface WorkspaceState {
   /** Current project ID (uuid) if saved, null if unsaved. */
   projectId: string | null;
+  setProjectId: (projectId: string | null) => void;
   /** Trait ID if editing a standalone trait (mode === 'trait'). */
   traitId: string | null;
+  setTraitId: (traitId: string | null) => void;
   /** Display name in the title bar. */
   name: string;
   setName: (name: string) => void;
@@ -37,6 +39,9 @@ export interface WorkspaceState {
   /** Show only the active layer (hide others). */
   soloActiveLayer: boolean;
   toggleSoloActiveLayer: () => void;
+  /** Onion-skin opacity for non-active layers (0 = off, 1 = full). */
+  onionOpacity: number;
+  setOnionOpacity: (opacity: number) => void;
   /** Mark whether there are unsaved changes. */
   dirty: boolean;
   setDirty: (dirty: boolean) => void;
@@ -46,7 +51,9 @@ const ZOOM_LEVELS = [4, 8, 12, 16, 24, 32, 48, 64];
 
 export const useWorkspace = create<WorkspaceState>()((set, get) => ({
   projectId: null,
+  setProjectId: (projectId) => set({ projectId }),
   traitId: null,
+  setTraitId: (traitId) => set({ traitId }),
   name: 'Untitled',
   setName: (name) => set({ name, dirty: true }),
   mode: 'project',
@@ -72,6 +79,9 @@ export const useWorkspace = create<WorkspaceState>()((set, get) => ({
   soloActiveLayer: false,
   toggleSoloActiveLayer: () =>
     set((state) => ({ soloActiveLayer: !state.soloActiveLayer })),
+  onionOpacity: 0,
+  setOnionOpacity: (opacity) =>
+    set({ onionOpacity: Math.max(0, Math.min(1, opacity)) }),
   dirty: false,
   setDirty: (dirty) => set({ dirty }),
 }));

@@ -10,6 +10,7 @@ import {
 import {
   COMMON_TOKENS,
   DAO_PROXY_ADDRESS,
+  DESCRIPTOR_ADDRESS,
   EXTERNAL_CONTRACTS,
   KNOWN_VOTES_TOKENS,
   NOUNS_TOKEN_ADDRESS,
@@ -19,6 +20,25 @@ import {
   TREASURY_ADDRESS
 } from './constants';
 import { formatUnits } from './utils';
+import type { ActionTemplateType } from './types';
+
+/**
+ * Map descriptor add-trait function signatures to the corresponding template
+ * id. Used during reverse engineering — see add-trait matcher below.
+ */
+const DESCRIPTOR_ADD_TRAIT_SIGS: Record<string, ActionTemplateType> = {
+  'addHeads(bytes,uint80,uint16)': 'descriptor-add-trait-head',
+  'addBodies(bytes,uint80,uint16)': 'descriptor-add-trait-body',
+  'addAccessories(bytes,uint80,uint16)': 'descriptor-add-trait-accessory',
+  'addGlasses(bytes,uint80,uint16)': 'descriptor-add-trait-glasses',
+};
+
+const DESCRIPTOR_TRAIT_TYPES: Record<ActionTemplateType, 'head' | 'body' | 'accessory' | 'glasses' | undefined> = {
+  'descriptor-add-trait-head': 'head',
+  'descriptor-add-trait-body': 'body',
+  'descriptor-add-trait-accessory': 'accessory',
+  'descriptor-add-trait-glasses': 'glasses',
+} as Record<ActionTemplateType, 'head' | 'body' | 'accessory' | 'glasses' | undefined>;
 
 /**
  * Build a 'treasury-transfer' template state from the resolved token info
@@ -340,6 +360,45 @@ function matchActionToTemplate(
       templateId: 'stream-cancel',
       fieldValues: { streamAddress: target },
       generatedActions: []
+    };
+  }
+
+  // Descriptor add-trait calls — reverse engineering can only recover the
+  // raw bytes; the original PNG, palette snapshot, and signed agreement are
+  // not on-chain. We produce a partial template state flagged readOnly:true
+  // so the wizard opens in a read-only display mode.
+  if (
+    target === DESCRIPTOR_ADDRESS.toLowerCase() &&
+    DESCRIPTOR_ADD_TRAIT_SIGS[signature]
+  ) {
+    const tmplId = DESCRIPTOR_ADD_TRAIT_SIGS[signature];
+    const traitType = DESCRIPTOR_TRAIT_TYPES[tmplId];
+    const payload = {
+      readOnly: true,
+      traitType: traitType ?? 'head',
+      // We don't bother decoding bytes/uint80/uint16 — the values would be
+      // unusable without the matching palette snapshot anyway. Re-encoding the
+      // exact same calldata on save would require the original encodedBytes
+      // (lost in round-trip), so we keep the encodedBytes from the original
+      // calldata payload.
+      encodedBytes: '0x',
+      decompressedLength: '0',
+      itemCount: 1,
+      pixels: [],
+      paletteSnapshot: [],
+      paletteIndex: 0,
+      contributionName: '',
+      contributionSpec: '',
+      signer: '0x0000000000000000000000000000000000000000',
+      signature: '0x',
+      agreementText: '',
+      thumbnailDataUrl: '',
+      generatedMarkdown: '',
+    };
+    return {
+      templateId: tmplId,
+      fieldValues: { artwork: JSON.stringify(payload) },
+      generatedActions: [],
     };
   }
 

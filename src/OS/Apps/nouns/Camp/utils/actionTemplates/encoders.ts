@@ -201,6 +201,24 @@ export function encodeProposalRewardParams(
 }
 
 /**
+ * Encode calldata for NounsDescriptorV3.addHeads/Bodies/Accessories/Glasses.
+ *
+ * On-chain signature is `addX(bytes encodedCompressed, uint80 decompressedLength, uint16 imageCount)`.
+ * The three arguments come straight from `compressAndEncodeTrait(...)` in the
+ * artwork encoder library.
+ */
+export function encodeAddTraitCalldata(
+  encodedBytes: `0x${string}`,
+  decompressedLength: bigint,
+  itemCount: number,
+): `0x${string}` {
+  return encodeAbiParameters(
+    parseAbiParameters('bytes, uint80, uint16'),
+    [encodedBytes, decompressedLength, itemCount],
+  );
+}
+
+/**
  * Encode the calldata for a meta-proposal (propose() that creates another proposal)
  * Uses viem's encodeAbiParameters for complex nested array encoding
  */

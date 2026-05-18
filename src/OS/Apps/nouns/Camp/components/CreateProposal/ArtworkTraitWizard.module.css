@@ -1,0 +1,307 @@
+/**
+ * ArtworkTraitWizard styles — 5-step wizard rendered inline inside
+ * ActionEditorModal when a descriptor-add-trait-* template is selected.
+ */
+
+.wizard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  flex-wrap: wrap;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  cursor: default;
+}
+
+.stepActive {
+  background: var(--berry-accent, #5648ed);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.stepDone {
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+}
+
+.stepSeparator {
+  color: var(--berry-text-secondary);
+  opacity: 0.5;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 240px;
+}
+
+.heading {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  margin: 0;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  line-height: 1.45;
+}
+
+.dropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  border: 2px dashed var(--berry-border);
+  border-radius: 8px;
+  text-align: center;
+  background: var(--berry-bg);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.dropZoneActive {
+  border-color: var(--berry-accent, #5648ed);
+  background: rgba(86, 72, 237, 0.05);
+}
+
+.fileInput {
+  display: none;
+}
+
+.previewRow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.previewBox {
+  width: 160px;
+  height: 160px;
+  image-rendering: pixelated;
+  background:
+    linear-gradient(45deg, #ddd 25%, transparent 25%),
+    linear-gradient(-45deg, #ddd 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ddd 75%),
+    linear-gradient(-45deg, transparent 75%, #ddd 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  border: 1px solid var(--berry-border);
+}
+
+.previewMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.input,
+.textarea {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--berry-accent, #5648ed);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonPrimary {
+  background: var(--berry-accent, #5648ed);
+  color: #fff;
+  border-color: transparent;
+}
+
+.buttonGhost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--berry-text-secondary);
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 12px;
+}
+
+.successText {
+  color: #16a34a;
+  font-size: 12px;
+}
+
+.mismatchList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 11px;
+  font-family: var(--berry-font-mono, monospace);
+  padding: 8px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--berry-border);
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.codeBlock {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  padding: 8px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.signatureRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.readOnlyBanner {
+  padding: 8px 12px;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--berry-text-primary);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  font-size: 12px;
+}
+
+.summaryGrid dt {
+  color: var(--berry-text-secondary);
+}
+
+.summaryGrid dd {
+  margin: 0;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+  word-break: break-all;
+}
+
+.openButton {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px dashed var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.openButton:hover {
+  border-style: solid;
+  border-color: var(--berry-accent, #5648ed);
+}
+
+.openButtonTitle {
+  font-weight: 600;
+}
+
+.openButtonSubtitle {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}

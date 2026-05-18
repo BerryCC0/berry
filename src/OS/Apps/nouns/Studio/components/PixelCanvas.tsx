@@ -58,6 +58,7 @@ export function PixelCanvas() {
   const gridOn = useWorkspace((s) => s.gridOn);
   const activePart = useWorkspace((s) => s.activePart);
   const soloActiveLayer = useWorkspace((s) => s.soloActiveLayer);
+  const onionOpacity = useWorkspace((s) => s.onionOpacity);
   const selection = useClipboard((s) => s.selection);
 
   const [drawing, setDrawing] = useState(false);
@@ -93,18 +94,22 @@ export function PixelCanvas() {
     // Checker pattern beneath.
     drawCheckerboard(ctx, dim);
 
-    // Each layer.
+    // Each layer. Non-active layers fade to `onionOpacity` when set.
     for (const part of NOUN_PARTS) {
       const state = layers[part];
       if (!state.canvas) continue;
       if (soloActiveLayer && part !== activePart) continue;
       if (!state.visible) continue;
+      const isActive = part === activePart;
+      ctx.globalAlpha =
+        !isActive && onionOpacity > 0 && onionOpacity < 1 ? onionOpacity : 1;
       ctx.drawImage(state.canvas, 0, 0, dim, dim);
     }
+    ctx.globalAlpha = 1;
 
     // Grid overlay.
     if (gridOn) drawGrid(ctx, dim, zoom);
-  }, [layers, activePart, soloActiveLayer, gridOn, dim, zoom]);
+  }, [layers, activePart, soloActiveLayer, onionOpacity, gridOn, dim, zoom]);
 
   // Render the overlay (hover preview + selection marquee).
   useEffect(() => {

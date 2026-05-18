@@ -93,6 +93,10 @@ export type ActionTemplateType =
   | 'descriptor-transfer-ownership'
   | 'descriptor-add-background'
   | 'descriptor-add-many-backgrounds'
+  | 'descriptor-add-trait-head'
+  | 'descriptor-add-trait-body'
+  | 'descriptor-add-trait-accessory'
+  | 'descriptor-add-trait-glasses'
   | 'meta-propose'
   | 'custom';
 
@@ -119,7 +123,7 @@ export interface ActionTemplate {
 export interface ActionField {
   name: string;
   label: string;
-  type: 'address' | 'amount' | 'number' | 'select' | 'date' | 'text' | 'token-select' | 'stream-select' | 'treasury-token-select' | 'treasury-votes-token-select' | 'predicted-stream-address';
+  type: 'address' | 'amount' | 'number' | 'select' | 'date' | 'text' | 'token-select' | 'stream-select' | 'treasury-token-select' | 'treasury-votes-token-select' | 'predicted-stream-address' | 'artwork-trait';
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];

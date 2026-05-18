@@ -37,8 +37,28 @@ import { TreasuryTokenSelect } from './TreasuryTokenSelect';
 import { PredictedStreamAddress } from './PredictedStreamAddress';
 import { PayerReservesLine, PayerShortfallWarning } from './PayerBalanceHint';
 import { TokenBuyerStatusLine } from './TokenBuyerStatusLine';
+import { ArtworkTraitWizard, type TraitType } from './ArtworkTraitWizard';
 import editorStyles from './ActionTemplateEditor.module.css';
 import styles from './ActionEditorModal.module.css';
+
+/**
+ * Map an action template id to the underlying trait type the wizard renders.
+ * Used both inside the main editor and the meta-propose inner editor.
+ */
+function traitTypeForTemplate(id: ActionTemplateType | undefined): TraitType | null {
+  switch (id) {
+    case 'descriptor-add-trait-head':
+      return 'head';
+    case 'descriptor-add-trait-body':
+      return 'body';
+    case 'descriptor-add-trait-accessory':
+      return 'accessory';
+    case 'descriptor-add-trait-glasses':
+      return 'glasses';
+    default:
+      return null;
+  }
+}
 
 // Token options for ERC20 transfers — kept colocated since this is the only
 // place that renders the form.
@@ -367,6 +387,21 @@ function MetaProposeEditor({
                       }
                       fieldValues={innerFieldValues}
                     />
+                  ) : field.type === 'artwork-trait' ? (
+                    (() => {
+                      const tt = traitTypeForTemplate(innerTemplate?.id);
+                      if (!tt) return null;
+                      return (
+                        <ArtworkTraitWizard
+                          traitType={tt}
+                          value={innerFieldValues[field.name] || ''}
+                          onChange={(v) =>
+                            handleInnerFieldChange(field.name, v)
+                          }
+                          disabled={disabled}
+                        />
+                      );
+                    })()
                   ) : (
                     <input
                       type={
@@ -803,6 +838,19 @@ export function ActionEditorModal({
                     onChange={(value) => updateField(field.name, value)}
                     fieldValues={fieldValues}
                   />
+                ) : field.type === 'artwork-trait' ? (
+                  (() => {
+                    const tt = traitTypeForTemplate(selectedTemplate.id);
+                    if (!tt) return null;
+                    return (
+                      <ArtworkTraitWizard
+                        traitType={tt}
+                        value={fieldValues[field.name] || ''}
+                        onChange={(v) => updateField(field.name, v)}
+                        disabled={disabled}
+                      />
+                    );
+                  })()
                 ) : field.type === 'address' ? (
                   <AddressInput
                     value={fieldValues[field.name] || ''}
