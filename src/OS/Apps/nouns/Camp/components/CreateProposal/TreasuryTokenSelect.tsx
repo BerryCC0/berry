@@ -1,10 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { formatUnits } from 'viem';
 import { useTreasuryFullBalances } from '@/app/lib/nouns/hooks';
 import type { TreasuryTokenBalance } from '@/app/api/nouns/treasury/balances/route';
 import { KNOWN_VOTES_TOKENS } from '../../utils/actionTemplates/constants';
 import styles from './TreasuryTokenSelect.module.css';
+
+/** Format a raw bigint string balance to at most 3 decimals, with commas. */
+function roundBalance(rawBalance: string, decimals: number): string {
+  try {
+    const n = parseFloat(formatUnits(BigInt(rawBalance), decimals));
+    return n.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3,
+    });
+  } catch {
+    return rawBalance;
+  }
+}
 
 /** Sentinel address used to represent native ETH in the token field. */
 export const NATIVE_ETH_SENTINEL = '0x0000000000000000000000000000000000000000';
@@ -111,7 +125,7 @@ export function TreasuryTokenSelect({
       decimals: 18,
       isNative: true,
       rawBalance: v2.nativeEth.rawWei,
-      formattedBalance: v2.nativeEth.formatted,
+      formattedBalance: roundBalance(v2.nativeEth.rawWei, 18),
       valueUsd: v2.nativeEth.valueUsd ?? 0,
     });
 
@@ -273,7 +287,7 @@ function tokenToOption(t: TreasuryTokenBalance): Option {
     decimals: t.decimals,
     isNative: false,
     rawBalance: t.rawBalance,
-    formattedBalance: t.formattedBalance,
+    formattedBalance: roundBalance(t.rawBalance, t.decimals),
     valueUsd: t.valueUsd,
   };
 }
