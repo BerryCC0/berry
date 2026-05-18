@@ -419,10 +419,17 @@ export function useCreateProposalForm({
     }
   }, [address, isEditMode]);
 
-  // Auto-load draft when drafts are loaded (skip in edit mode)
-  // If initialDraftSlug is provided, load that specific draft; otherwise load most recent
+  // Auto-load draft when drafts are loaded (skip in edit mode).
+  // If initialDraftSlug is provided, load that specific draft; otherwise
+  // load the most recent. This runs at most once per session — without the
+  // ref gate, clicking "New Draft" would clear draftSlug and immediately
+  // re-trigger this effect, reloading the most recent draft on top of the
+  // freshly-cleared state.
+  const hasAutoLoadedDraftRef = useRef(false);
   useEffect(() => {
+    if (hasAutoLoadedDraftRef.current) return;
     if (drafts.length > 0 && !draftSlug && address && !isEditMode) {
+      hasAutoLoadedDraftRef.current = true;
       if (initialDraftSlug) {
         // Find and load the specific draft
         const targetDraft = drafts.find(d => d.draft_slug === initialDraftSlug);
