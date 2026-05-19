@@ -5,9 +5,10 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { type DecodedTransaction } from '../utils/transactionDecoder';
 import { useDecodedTransactions } from '../hooks/useDecodedTransactions';
+import { AddressWithENS } from './SimulationStatus/SimulationStatus';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import styles from './TransactionSummary.module.css';
 
@@ -36,9 +37,23 @@ function formatAggregatedAmount(num: number): string {
 export function TransactionSummary({ actions }: TransactionSummaryProps) {
   const decodedTransactions = useDecodedTransactions(actions);
   
-  // Group similar transactions for summary, aggregating transfer amounts
+  // Group similar transactions for summary, aggregating transfer amounts.
+  // `details` is ReactNode so individual entries can render an inline
+  // AddressWithENS for the recipient (e.g. "Delegate ENS voting power to
+  // gramajo.eth"); aggregated entries stay as plain strings.
   const summary = useMemo(() => {
-    const groups: { type: string; count: number; details: string }[] = [];
+    const groups: { type: string; count: number; details: ReactNode }[] = [];
+
+    // Renders "<text> to <ENS-resolved address>" inline.
+    const withRecipient = (text: string, to: string | undefined): ReactNode => {
+      if (!to) return text;
+      return (
+        <>
+          {text} to{' '}
+          <AddressWithENS address={to} className={styles.txSummaryRecipient} />
+        </>
+      );
+    };
     
     // Aggregators for transfers
     let ethTotal = 0;
@@ -144,21 +159,36 @@ export function TransactionSummary({ actions }: TransactionSummaryProps) {
         nounTransfers.push(tx);
         continue;
       }
-      
+
       // Approvals
       if (title.startsWith('Approve')) {
-        groups.push({ type: 'Approval', count: 1, details: title });
+        groups.push({
+          type: 'Approval',
+          count: 1,
+          details: withRecipient(title, tx.params?.to as string | undefined),
+        });
         continue;
       }
-      
+
       // Delegation
       if (title.startsWith('Delegate')) {
-        groups.push({ type: 'Delegation', count: 1, details: title });
+        groups.push({
+          type: 'Delegation',
+          count: 1,
+          details: withRecipient(title, tx.params?.to as string | undefined),
+        });
         continue;
       }
-      
+
       // Everything else: Contract Call
-      groups.push({ type: 'Contract Call', count: 1, details: title + (tx.description ? ` - ${tx.description}` : '') });
+      groups.push({
+        type: 'Contract Call',
+        count: 1,
+        details: withRecipient(
+          title + (tx.description ? ` - ${tx.description}` : ''),
+          tx.params?.to as string | undefined,
+        ),
+      });
     }
     
     // Detect Noun swaps: if two Noun transfers where one sends TO the treasury
@@ -183,12 +213,26 @@ export function TransactionSummary({ actions }: TransactionSummaryProps) {
       } else {
         // Not a swap — show individually
         for (const tx of nounTransfers) {
-          groups.push({ type: 'Noun Transfer', count: 1, details: tx.title });
+          groups.push({
+            type: 'Noun Transfer',
+            count: 1,
+            details: withRecipient(
+              tx.title,
+              tx.params?.to as string | undefined,
+            ),
+          });
         }
       }
     } else {
       for (const tx of nounTransfers) {
-        groups.push({ type: 'Noun Transfer', count: 1, details: tx.title });
+        groups.push({
+          type: 'Noun Transfer',
+          count: 1,
+          details: withRecipient(
+            tx.title,
+            tx.params?.to as string | undefined,
+          ),
+        });
       }
     }
 
