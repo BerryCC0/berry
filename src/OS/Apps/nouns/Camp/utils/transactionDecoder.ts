@@ -3,9 +3,17 @@
  * Decodes proposal transactions into human-readable descriptions
  */
 
-import { decodeAbiParameters, formatUnits, type Hex } from 'viem';
+import {
+  decodeAbiParameters,
+  formatUnits,
+  parseAbiParameters,
+  type Hex,
+} from 'viem';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import { formatAddress, truncateAddress } from '@/shared/format';
+
+// Uniswap V3 SwapRouter02 — used to detect exactInputSingle calls.
+const UNISWAP_V3_ROUTER = '0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45';
 
 // Known contract addresses with human-readable names
 const KNOWN_CONTRACTS: Record<string, string> = {
@@ -26,6 +34,9 @@ const KNOWN_CONTRACTS: Record<string, string> = {
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 'stETH',
   '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0': 'wstETH',
   '0xae78736cd615f374d3085123a210448e74fc6393': 'rETH',
+  '0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa': 'mETH',
+  // DEX routers
+  [UNISWAP_V3_ROUTER]: 'Uniswap V3 Router',
   // Nouns ecosystem
   '0x65294e6b55a9939e326c1b51b03bb4bd3ca5e675': 'delegations.nouns.eth',
 };
@@ -38,6 +49,7 @@ const TOKEN_DECIMALS: Record<string, number> = {
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 18, // stETH
   '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0': 18, // wstETH
   '0xae78736cd615f374d3085123a210448e74fc6393': 18, // rETH
+  '0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa': 18, // mETH
 };
 
 const TOKEN_SYMBOLS: Record<string, string> = {
@@ -47,6 +59,7 @@ const TOKEN_SYMBOLS: Record<string, string> = {
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84': 'stETH',
   '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0': 'wstETH',
   '0xae78736cd615f374d3085123a210448e74fc6393': 'rETH',
+  '0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa': 'mETH',
   // ERC20Votes governance tokens (no decimals lookup needed for display)
   '0xc18360217d8f7ab5e7c516566761ea12ce7f9d72': 'ENS',
   '0xc00e94cb662c3520282e6f5717214004a7f26888': 'COMP',
@@ -78,6 +91,90 @@ interface ProposalAction {
 
 function getContractName(address: string): string | undefined {
   return KNOWN_CONTRACTS[address.toLowerCase()];
+}
+
+/**
+ * Resolve a token's symbol from either the static TOKEN_SYMBOLS map or the
+ * dynamic per-proposal token metadata in the decoding context. Falls back
+ * to the truncated address if neither source has it.
+ */
+function resolveTokenSymbol(
+  address: string,
+  ctx?: { tokens?: Map<string, TokenInfo> },
+): string {
+  const lower = address.toLowerCase();
+  return (
+    TOKEN_SYMBOLS[lower] ||
+    ctx?.tokens?.get(lower)?.symbol ||
+    truncateAddress(lower)
+  );
+}
+
+/**
+ * Resolve a token's decimals from either the static TOKEN_DECIMALS map or
+ * the dynamic per-proposal token metadata. Defaults to 18 when unknown.
+ */
+function resolveTokenDecimals(
+  address: string,
+  ctx?: { tokens?: Map<string, TokenInfo> },
+): number {
+  const lower = address.toLowerCase();
+  return TOKEN_DECIMALS[lower] ?? ctx?.tokens?.get(lower)?.decimals ?? 18;
+}
+
+/**
+ * Walk a list of proposal actions and extract every token address we'd
+ * want metadata for. Used by `useDecodedTransactions` to figure out which
+ * ERC-20s to fetch from chain before decoding.
+ *
+ * Tokens already in TOKEN_SYMBOLS are skipped — the consumer doesn't need
+ * to fetch them. Returns lowercase, deduplicated addresses.
+ */
+export function collectTokenAddressesToResolve(
+  actions: ProposalAction[],
+): string[] {
+  const out = new Set<string>();
+  const add = (addr: unknown) => {
+    if (typeof addr !== 'string') return;
+    const lower = addr.toLowerCase();
+    if (!/^0x[0-9a-f]{40}$/.test(lower)) return;
+    if (TOKEN_SYMBOLS[lower]) return; // already known statically
+    if (lower === '0x0000000000000000000000000000000000000000') return;
+    out.add(lower);
+  };
+
+  for (const action of actions) {
+    const sig = action.signature || '';
+    const target = action.target?.toLowerCase();
+
+    // ERC-20 transfer / approve — the target IS the token contract.
+    if (
+      sig === 'transfer(address,uint256)' ||
+      sig === 'approve(address,uint256)' ||
+      sig === 'transferFrom(address,address,uint256)'
+    ) {
+      if (target) add(target);
+    }
+
+    // Uniswap V3 exactInputSingle — tokenIn and tokenOut live inside the
+    // tuple argument. Decode just enough to extract them.
+    if (sig.startsWith('exactInputSingle(') && action.calldata) {
+      try {
+        const result = decodeAbiParameters(
+          parseAbiParameters(
+            '(address,address,uint24,address,uint256,uint256,uint160)',
+          ),
+          action.calldata as Hex,
+        );
+        const tuple = result[0] as readonly [string, string, ...unknown[]];
+        add(tuple[0]);
+        add(tuple[1]);
+      } catch {
+        /* skip — malformed calldata */
+      }
+    }
+  }
+  return Array.from(out);
 }
 
 
@@ -571,7 +668,10 @@ function tryDecodeTokenBuyerPayerAdmin(
 /**
  * Decode a proposal action into a human-readable description
  */
-export function decodeTransaction(action: ProposalAction): DecodedTransaction {
+export function decodeTransaction(
+  action: ProposalAction,
+  ctx?: { tokens?: Map<string, TokenInfo> },
+): DecodedTransaction {
   const target = action.target.toLowerCase();
   const targetName = getContractName(target);
   const signature = action.signature || '';
@@ -643,10 +743,10 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
   if (signature === 'approve(address,uint256)' && params) {
     const spender = params.param0 as string;
     const amount = params.param1 as bigint;
-    const symbol = TOKEN_SYMBOLS[target] || 'tokens';
-    const decimals = TOKEN_DECIMALS[target] || 18;
+    const symbol = resolveTokenSymbol(target, ctx);
+    const decimals = resolveTokenDecimals(target, ctx);
     const spenderName = getContractName(spender as string);
-    
+
     if (amount === BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')) {
       decoded.title = `Approve unlimited ${symbol}`;
     } else {
@@ -655,6 +755,64 @@ export function decodeTransaction(action: ProposalAction): DecodedTransaction {
     }
     decoded.description = `Spender: ${spenderName || formatAddress(spender)}`;
     return decoded;
+  }
+
+  // Uniswap V3 SwapRouter02: exactInputSingle((address tokenIn, address
+  // tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256
+  // amountOutMinimum, uint160 sqrtPriceLimitX96)).
+  //
+  // The shared `tryDecodeParams` helper can't decode tuple-typed params
+  // (it passes the type string through to viem, which only understands
+  // structured ABI inputs for tuples). So we decode the calldata
+  // directly here via `parseAbiParameters('(...)')` which DOES know how
+  // to construct a tuple ABI input from string syntax.
+  if (target === UNISWAP_V3_ROUTER && signature.startsWith('exactInputSingle(')) {
+    try {
+      const result = decodeAbiParameters(
+        parseAbiParameters(
+          '(address,address,uint24,address,uint256,uint256,uint160)',
+        ),
+        action.calldata as Hex,
+      );
+      const tuple = result[0] as readonly [
+        string,
+        string,
+        number,
+        string,
+        bigint,
+        bigint,
+        bigint,
+      ];
+      const tokenInAddr = tuple[0].toLowerCase();
+      const tokenOutAddr = tuple[1].toLowerCase();
+      const fee = Number(tuple[2]);
+      const amountIn = tuple[4];
+      const amountOutMinimum = tuple[5];
+
+      const tokenInSymbol = resolveTokenSymbol(tokenInAddr, ctx);
+      const tokenOutSymbol = resolveTokenSymbol(tokenOutAddr, ctx);
+      const decimalsIn = resolveTokenDecimals(tokenInAddr, ctx);
+      const decimalsOut = resolveTokenDecimals(tokenOutAddr, ctx);
+      const feePctStr =
+        fee === 100
+          ? '0.01%'
+          : fee === 500
+            ? '0.05%'
+            : fee === 3000
+              ? '0.3%'
+              : fee === 10000
+                ? '1%'
+                : `${fee} bps`;
+
+      const inFmt = formatTokenAmount(amountIn, decimalsIn);
+      const outFmt = formatTokenAmount(amountOutMinimum, decimalsOut);
+
+      decoded.title = `Swap ${inFmt} ${tokenInSymbol} for ${tokenOutSymbol}`;
+      decoded.description = `Receive at least ${outFmt} ${tokenOutSymbol} via the ${feePctStr} pool on Uniswap V3`;
+      return decoded;
+    } catch {
+      // Fall through to the generic call rendering if calldata is malformed.
+    }
   }
   
   // Stream Factory: createStream(recipient, amount, tokenAddress, startTime, endTime, nonce, predictedStreamAddress)
@@ -838,9 +996,25 @@ export interface StreamInfo {
   status?: 'pending' | 'active' | 'complete';
 }
 
+/**
+ * Resolved ERC-20 token metadata. Lets the decoder render unknown tokens
+ * (e.g. memecoins) without baking them into the static TOKEN_SYMBOLS list.
+ */
+export interface TokenInfo {
+  symbol: string;
+  decimals: number;
+  name?: string;
+}
+
 export interface DecodeOptions {
   /** Map of stream address (lowercase) → StreamInfo. Used to enrich cancel/recover descriptions. */
   streams?: Map<string, StreamInfo>;
+  /**
+   * Map of token address (lowercase) → TokenInfo. Used as a fallback when
+   * an address isn't in the static TOKEN_SYMBOLS / TOKEN_DECIMALS maps so
+   * arbitrary ERC-20s (MOG, PEPE, etc.) resolve on-chain.
+   */
+  tokens?: Map<string, TokenInfo>;
 }
 
 /**
@@ -854,6 +1028,9 @@ interface DecodingContext {
   cancelledStreams: Set<string>;
   // Caller-supplied stream metadata (total amount, vested fraction, token).
   streams: Map<string, StreamInfo>;
+  // Caller-supplied dynamic token metadata for addresses not in the static
+  // TOKEN_SYMBOLS list. Fetched on-chain by the consuming hook.
+  tokens: Map<string, TokenInfo>;
 }
 
 /**
@@ -864,6 +1041,7 @@ function buildDecodingContext(actions: ProposalAction[], opts?: DecodeOptions): 
     streamAddresses: new Set(),
     cancelledStreams: new Set(),
     streams: opts?.streams ?? new Map(),
+    tokens: opts?.tokens ?? new Map(),
   };
 
   for (const action of actions) {
@@ -1080,8 +1258,10 @@ function decodeTransactionWithContext(action: ProposalAction, ctx: DecodingConte
     return decoded;
   }
   
-  // For all other transactions, use the regular decoder
-  return decodeTransaction(action);
+  // For all other transactions, use the regular decoder — forward the
+  // ctx so token-symbol/decimals lookups can see dynamically-fetched
+  // metadata.
+  return decodeTransaction(action, ctx);
 }
 
 /**

@@ -34,16 +34,22 @@ import {
   AUCTION_HOUSE_ADDRESS,
   CLIENT_REWARDS_ADDRESS,
   COMMON_TOKENS,
+  COWSWAP_SETTLEMENT_ADDRESS,
   DAO_PROXY_ADDRESS,
   DATA_PROXY_ADDRESS,
   DESCRIPTOR_ADDRESS,
   EXTERNAL_CONTRACTS,
   FORK_ESCROW_ADDRESS,
+  LIDO_WITHDRAWAL_QUEUE_ADDRESS,
+  MANTLE_STAKING_ADDRESS,
+  METH_ADDRESS,
   NOUNS_TOKEN_ADDRESS,
   PAYER_ADDRESS,
   STREAM_FACTORY_ADDRESS,
   TOKEN_BUYER_ADDRESS,
-  TREASURY_ADDRESS
+  TREASURY_ADDRESS,
+  UNISWAP_V3_ROUTER_ADDRESS,
+  WSTETH_ADDRESS,
 } from './constants';
 import { parseEther, parseUnits } from './utils';
 import { getTemplate } from './templates';
@@ -1206,6 +1212,185 @@ export function generateActionsFromTemplate(
         value: '0',
         signature: 'transferOwnership(address)',
         calldata: encodeAdminAddress(fieldValues.address as Address),
+      }];
+
+    // ----- Generic ERC-20 ops --------------------------------------------
+    case 'erc20-approve': {
+      const { address: tokenAddr, decimals } = resolveTokenField(fieldValues.token);
+      const amount = parseUnits(fieldValues.amount || '0', decimals);
+      return [{
+        target: tokenAddr as Address,
+        value: '0',
+        signature: 'approve(address,uint256)',
+        calldata: encodeTransfer(fieldValues.spender as Address, amount),
+      }];
+    }
+
+    case 'erc20-revoke-approval': {
+      const { address: tokenAddr } = resolveTokenField(fieldValues.token);
+      return [{
+        target: tokenAddr as Address,
+        value: '0',
+        signature: 'approve(address,uint256)',
+        calldata: encodeTransfer(fieldValues.spender as Address, BigInt(0)),
+      }];
+    }
+
+    // ----- DEX swaps ------------------------------------------------------
+    case 'swap-uniswap-v3': {
+      // Two-action: approve(router) + exactInputSingle. SwapRouter02
+      // (deployed at UNISWAP_V3_ROUTER_ADDRESS) takes a 7-tuple — note
+      // there's NO `deadline` field in V3 SwapRouter02 (it was removed
+      // when the router moved to Permit2 + Multicall).
+      const { address: tokenInAddr, decimals: decimalsIn } =
+        resolveTokenField(fieldValues.tokenIn);
+      const tokenOut = (fieldValues.tokenOut || '') as Address;
+      const fee = Number(fieldValues.fee || '3000');
+      const amountIn = parseUnits(fieldValues.amountIn || '0', decimalsIn);
+      // amountOutMinimum is in tokenOut units. tokenOutDecimals is set by
+      // UniswapV3SwapEditor from on-chain token metadata so this scales
+      // correctly across 6-decimal (USDC), 8-decimal (WBTC), and
+      // 18-decimal (most) outputs. Falls back to 18 if absent.
+      const decimalsOut = Number(fieldValues.tokenOutDecimals || '18');
+      const amountOutMin = parseUnits(
+        fieldValues.amountOutMinimum || '0',
+        decimalsOut,
+      );
+      const groupId = `swap-uniswap-v3-${Date.now()}`;
+      return [
+        {
+          target: tokenInAddr as Address,
+          value: '0',
+          signature: 'approve(address,uint256)',
+          calldata: encodeTransfer(UNISWAP_V3_ROUTER_ADDRESS, amountIn),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0,
+        },
+        {
+          target: UNISWAP_V3_ROUTER_ADDRESS,
+          value: '0',
+          signature:
+            'exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))',
+          calldata: encodeAbiParameters(
+            parseAbiParameters(
+              '(address, address, uint24, address, uint256, uint256, uint160)',
+            ),
+            [
+              [
+                tokenInAddr as Address,
+                tokenOut,
+                fee,
+                TREASURY_ADDRESS,
+                amountIn,
+                amountOutMin,
+                BigInt(0), // sqrtPriceLimitX96 = 0 → no limit
+              ],
+            ],
+          ),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1,
+        },
+      ];
+    }
+
+    case 'swap-cowswap':
+      return [{
+        target: COWSWAP_SETTLEMENT_ADDRESS,
+        value: '0',
+        signature: 'setPreSignature(bytes,bool)',
+        calldata: encodeAbiParameters(parseAbiParameters('bytes, bool'), [
+          (fieldValues.orderUid || '0x') as `0x${string}`,
+          true,
+        ]),
+      }];
+
+    // ----- Liquid staking — Lido ----------------------------------------
+    case 'lst-wsteth-unwrap':
+      return [{
+        target: WSTETH_ADDRESS,
+        value: '0',
+        signature: 'unwrap(uint256)',
+        calldata: encodeAdminUint256(parseUnits(fieldValues.amount || '0', 18)),
+      }];
+
+    case 'lst-lido-request-withdrawal': {
+      // Two-action: approve wstETH to the queue + requestWithdrawalsWstETH.
+      // Lido's queue accepts up to 100 wstETH per array element — single
+      // request per proposal here keeps the surface simple.
+      const amount = parseUnits(fieldValues.amount || '0', 18);
+      const groupId = `lido-withdraw-${Date.now()}`;
+      return [
+        {
+          target: WSTETH_ADDRESS,
+          value: '0',
+          signature: 'approve(address,uint256)',
+          calldata: encodeTransfer(LIDO_WITHDRAWAL_QUEUE_ADDRESS, amount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0,
+        },
+        {
+          target: LIDO_WITHDRAWAL_QUEUE_ADDRESS,
+          value: '0',
+          signature: 'requestWithdrawalsWstETH(uint256[],address)',
+          calldata: encodeAbiParameters(
+            parseAbiParameters('uint256[], address'),
+            [[amount], TREASURY_ADDRESS],
+          ),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1,
+        },
+      ];
+    }
+
+    case 'lst-lido-claim-withdrawal':
+      return [{
+        target: LIDO_WITHDRAWAL_QUEUE_ADDRESS,
+        value: '0',
+        signature: 'claimWithdrawal(uint256)',
+        calldata: encodeAdminUint256(BigInt(fieldValues.requestId || '0')),
+      }];
+
+    // ----- Liquid staking — Mantle (mETH) -------------------------------
+    case 'lst-meth-unstake-request': {
+      // Two-action: approve mETH to staking contract + unstakeRequest.
+      const amount = parseUnits(fieldValues.amount || '0', 18);
+      const minOut = parseUnits(fieldValues.minETHAmount || '0', 18);
+      const groupId = `meth-unstake-${Date.now()}`;
+      return [
+        {
+          target: METH_ADDRESS,
+          value: '0',
+          signature: 'approve(address,uint256)',
+          calldata: encodeTransfer(MANTLE_STAKING_ADDRESS, amount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0,
+        },
+        {
+          target: MANTLE_STAKING_ADDRESS,
+          value: '0',
+          signature: 'unstakeRequest(uint128,uint128)',
+          calldata: encodeAbiParameters(
+            parseAbiParameters('uint128, uint128'),
+            [amount, minOut],
+          ),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1,
+        },
+      ];
+    }
+
+    case 'lst-meth-unstake-claim':
+      return [{
+        target: MANTLE_STAKING_ADDRESS,
+        value: '0',
+        signature: 'claimUnstakeRequest(uint256)',
+        calldata: encodeAdminUint256(BigInt(fieldValues.requestId || '0')),
       }];
 
     case 'meta-propose': {

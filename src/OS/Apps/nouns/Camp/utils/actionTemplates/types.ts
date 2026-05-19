@@ -97,6 +97,15 @@ export type ActionTemplateType =
   | 'descriptor-add-trait-body'
   | 'descriptor-add-trait-accessory'
   | 'descriptor-add-trait-glasses'
+  | 'erc20-approve'
+  | 'erc20-revoke-approval'
+  | 'swap-uniswap-v3'
+  | 'swap-cowswap'
+  | 'lst-wsteth-unwrap'
+  | 'lst-lido-request-withdrawal'
+  | 'lst-lido-claim-withdrawal'
+  | 'lst-meth-unstake-request'
+  | 'lst-meth-unstake-claim'
   | 'meta-propose'
   | 'custom';
 
@@ -113,7 +122,19 @@ export interface ProposalAction {
 
 export interface ActionTemplate {
   id: ActionTemplateType;
-  category: 'payments' | 'swaps' | 'nouns' | 'streams' | 'delegation' | 'artwork' | 'admin' | 'meta' | 'custom';
+  category:
+    | 'payments'
+    | 'swaps'
+    | 'nouns'
+    | 'streams'
+    | 'delegation'
+    | 'artwork'
+    | 'admin'
+    | 'meta'
+    | 'custom'
+    | 'erc20'
+    | 'dex'
+    | 'staking';
   name: string;
   description: string;
   isMultiAction: boolean;

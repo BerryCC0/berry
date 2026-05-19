@@ -1,0 +1,197 @@
+/**
+ * UniswapV3SwapEditor Styles
+ * Quote panel + slippage controls; form-field structure reuses the shared
+ * ActionTemplateEditor styles.
+ */
+
+/* ------- Token-out resolved info ------------------------------------- */
+
+.tokenOutPreview {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--berry-text-primary);
+  background: var(--berry-bg-secondary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--berry-border);
+}
+
+.tokenOutName {
+  color: var(--berry-text-secondary);
+}
+
+.tokenOutDecimals {
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+}
+
+/* ------- Quote panel ------------------------------------------------- */
+
+.quotePanel {
+  margin-top: 4px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quotePanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-secondary);
+}
+
+.quoteLoading {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--berry-text-secondary);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.feeTierRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.feeTier {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+  position: relative;
+}
+
+.feeTier:hover:not(:disabled) {
+  border-color: var(--berry-text-secondary);
+}
+
+.feeTierSelected {
+  border-color: var(--berry-primary);
+  background: var(--berry-bg);
+  box-shadow: inset 0 0 0 1px var(--berry-primary);
+}
+
+.feeTierSelected:hover {
+  border-color: var(--berry-primary);
+}
+
+.feeTier:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feeTierLabel {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.feeTierAmount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono);
+}
+
+.feeTierBest {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-primary);
+  background: var(--berry-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--berry-primary);
+}
+
+.quoteSummary {
+  font-size: 12px;
+  color: var(--berry-text-primary);
+  line-height: 1.4;
+  padding-top: 6px;
+  border-top: 1px solid var(--berry-border);
+}
+
+.quoteEmpty {
+  color: var(--berry-text-secondary);
+}
+
+/* ------- Slippage row ------------------------------------------------ */
+
+.slippageRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.slippagePreset {
+  padding: 6px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.slippagePreset:hover:not(:disabled) {
+  color: var(--berry-text-primary);
+  border-color: var(--berry-text-secondary);
+}
+
+.slippagePresetSelected {
+  border-color: var(--berry-primary);
+  color: var(--berry-primary);
+  background: var(--berry-bg);
+}
+
+.slippagePresetSelected:hover {
+  color: var(--berry-primary);
+  border-color: var(--berry-primary);
+}
+
+.slippageInput {
+  width: 80px;
+  padding: 6px 10px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  font-family: var(--berry-font-mono);
+}
+
+.slippageInput:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}

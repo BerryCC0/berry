@@ -32,6 +32,7 @@ import { ActionTemplatePicker } from './ActionTemplatePicker';
 import { SmartActionEditor } from './SmartActionEditor';
 import { AddressInput } from './AddressInput';
 import { NounSwapTemplate } from './NounSwapTemplate';
+import { UniswapV3SwapEditor } from './UniswapV3SwapEditor';
 import { StreamSelect } from './StreamSelect';
 import { TreasuryTokenSelect } from './TreasuryTokenSelect';
 import { PredictedStreamAddress } from './PredictedStreamAddress';
@@ -88,6 +89,11 @@ const OPTION_GROUPS: TemplateGroup[] = (() => {
     { label: 'Nouns Token', options: make('nouns') },
     { label: 'Delegation', options: make('delegation') },
     { label: 'Token Buyer', options: make('swaps') },
+    {
+      label: 'Swaps',
+      options: [...make('erc20'), ...make('dex')],
+    },
+    { label: 'Staking', options: make('staking') },
     { label: 'Meta', options: make('meta') },
     {
       label: 'Custom',
@@ -122,6 +128,9 @@ interface ProposalAction {
 const INNER_TEMPLATE_CATEGORIES = [
   'payments',
   'swaps',
+  'erc20',
+  'dex',
+  'staking',
   'nouns',
   'streams',
   'delegation',
@@ -178,17 +187,23 @@ function MetaProposeEditor({
           ? 'Payments'
           : category === 'swaps'
             ? 'Token Buyer'
-            : category === 'nouns'
-              ? 'Nouns Token'
-              : category === 'streams'
-                ? 'Streams'
-                : category === 'delegation'
-                  ? 'Delegation'
-                  : category === 'admin'
-                    ? 'DAO Admin'
-                    : category === 'meta'
-                      ? 'Meta (Recursive)'
-                      : category;
+            : category === 'erc20'
+              ? 'ERC-20 Ops'
+              : category === 'dex'
+                ? 'DEX Swaps'
+                : category === 'staking'
+                  ? 'Staking'
+                  : category === 'nouns'
+                    ? 'Nouns Token'
+                    : category === 'streams'
+                      ? 'Streams'
+                      : category === 'delegation'
+                        ? 'Delegation'
+                        : category === 'admin'
+                          ? 'DAO Admin'
+                          : category === 'meta'
+                            ? 'Meta (Recursive)'
+                            : category;
       return { label, options };
     },
   );
@@ -754,6 +769,18 @@ export function ActionEditorModal({
             fieldValues={fieldValues}
             onUpdateField={updateField}
             validationErrors={validationErrors}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+
+    if (selectedTemplate.id === 'swap-uniswap-v3') {
+      return (
+        <div className={styles.formScroll}>
+          <UniswapV3SwapEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
             disabled={disabled}
           />
         </div>

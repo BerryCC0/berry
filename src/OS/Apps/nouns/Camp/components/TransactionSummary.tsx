@@ -197,6 +197,16 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
         continue;
       }
 
+      // ERC-20 swap (Uniswap V3 etc.) — "Swap X TokenIn for TokenOut"
+      if (title.startsWith('Swap ') && !title.startsWith('Swap Noun')) {
+        groups.push({
+          type: 'Swap',
+          count: 1,
+          details: tx.description ? `${title} — ${tx.description}` : title,
+        });
+        continue;
+      }
+
       // Approvals
       if (title.startsWith('Approve')) {
         groups.push({

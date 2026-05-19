@@ -1827,6 +1827,259 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  // Generic ERC-20 operations
+  'erc20-approve': {
+    id: 'erc20-approve',
+    category: 'erc20',
+    name: 'Approve ERC-20 Spender',
+    description: 'Authorize a contract to spend an ERC-20 token from the treasury (required before swap routers, vaults, bridges, etc. can pull tokens)',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'token',
+        label: 'Token',
+        type: 'treasury-token-select',
+        required: true,
+        helpText: 'Token whose allowance you want to grant',
+      },
+      {
+        name: 'spender',
+        label: 'Spender',
+        type: 'address',
+        placeholder: '0x... (e.g. Uniswap Router, Aave Pool)',
+        required: true,
+        helpText: 'Contract that will be authorized to pull the tokens',
+      },
+      {
+        name: 'amount',
+        label: 'Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0 },
+        helpText: 'Use a large number for unlimited approval, or a specific amount for one-shot allowance',
+      },
+    ],
+  },
+
+  'erc20-revoke-approval': {
+    id: 'erc20-revoke-approval',
+    category: 'erc20',
+    name: 'Revoke ERC-20 Approval',
+    description: 'Set an existing token allowance to zero — security hygiene for retired or compromised spenders',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'token',
+        label: 'Token',
+        type: 'treasury-token-select',
+        required: true,
+      },
+      {
+        name: 'spender',
+        label: 'Spender to revoke',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+    ],
+  },
+
+  // DEX swaps — fields here are present for storage shape, but the custom
+  // UniswapV3SwapEditor in ActionEditorModal manages this template's UI
+  // end-to-end (live quotes, auto-best-pool, slippage → amountOutMinimum).
+  'swap-uniswap-v3': {
+    id: 'swap-uniswap-v3',
+    category: 'dex',
+    name: 'Swap on Uniswap V3',
+    description: 'Swap one ERC-20 for another via Uniswap V3 (single-hop, exact input). Live quotes auto-pick the best pool — works for wstETH ↔ WETH, WETH → MOG, etc.',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'tokenIn',
+        label: 'Token In',
+        type: 'treasury-token-select',
+        required: true,
+      },
+      {
+        name: 'tokenOut',
+        label: 'Token Out (address)',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+      {
+        name: 'amountIn',
+        label: 'Amount In',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0 },
+      },
+      {
+        // Managed by UniswapV3SwapEditor — computed from live quote × slippage.
+        name: 'amountOutMinimum',
+        label: 'Min Amount Out',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0 },
+      },
+      {
+        // Managed by UniswapV3SwapEditor — auto-set from QuoterV2 best output.
+        name: 'fee',
+        label: 'Pool Fee Tier',
+        type: 'select',
+        required: true,
+        options: [
+          { label: '0.01%', value: '100' },
+          { label: '0.05%', value: '500' },
+          { label: '0.3%', value: '3000' },
+          { label: '1%', value: '10000' },
+        ],
+      },
+      {
+        // Managed by UniswapV3SwapEditor — user-facing UX is a slippage %.
+        name: 'slippage',
+        label: 'Slippage %',
+        type: 'amount',
+        placeholder: '1',
+        required: false,
+      },
+      {
+        // Managed by UniswapV3SwapEditor — auto-set from token metadata,
+        // used by the generator to scale amountOutMinimum back to wei.
+        name: 'tokenOutDecimals',
+        label: 'Token Out Decimals',
+        type: 'number',
+        placeholder: '18',
+        required: false,
+      },
+    ],
+  },
+
+  'swap-cowswap': {
+    id: 'swap-cowswap',
+    category: 'dex',
+    name: 'Pre-sign CowSwap Order',
+    description: 'Authorize a CowSwap limit order constructed off-chain. Better execution than Uniswap for large sizes — solvers route to the best venue.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'orderUid',
+        label: 'Order UID',
+        type: 'text',
+        placeholder: '0x... (56 bytes, paste from CowSwap)',
+        required: true,
+        helpText: 'Construct the order via the CowSwap UI/SDK and paste its UID here. This proposal will pre-sign it on-chain so solvers can execute.',
+      },
+    ],
+  },
+
+  // Liquid staking — Lido
+  'lst-wsteth-unwrap': {
+    id: 'lst-wsteth-unwrap',
+    category: 'staking',
+    name: 'Unwrap wstETH → stETH',
+    description: 'Convert wrapped stETH back to rebasing stETH. Prerequisite for a Lido withdrawal request via the non-wstETH method.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'amount',
+        label: 'wstETH Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+      },
+    ],
+  },
+
+  'lst-lido-request-withdrawal': {
+    id: 'lst-lido-request-withdrawal',
+    category: 'staking',
+    name: 'Request Lido Withdrawal',
+    description: 'Queue an exit from Lido. Treasury locks wstETH and receives an NFT-style request ticket; ETH becomes claimable after ~1–5 days.',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'amount',
+        label: 'wstETH Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Lido enforces 100 wstETH max per single request — split larger amounts across multiple proposals or actions',
+      },
+    ],
+  },
+
+  'lst-lido-claim-withdrawal': {
+    id: 'lst-lido-claim-withdrawal',
+    category: 'staking',
+    name: 'Claim Lido Withdrawal',
+    description: 'Settle a queued Lido withdrawal request. ETH lands in the treasury.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'requestId',
+        label: 'Request ID',
+        type: 'number',
+        placeholder: '12345',
+        required: true,
+        validation: { min: 0 },
+        helpText: 'The NFT token ID returned by the withdrawal request transaction',
+      },
+    ],
+  },
+
+  // Liquid staking — Mantle
+  'lst-meth-unstake-request': {
+    id: 'lst-meth-unstake-request',
+    category: 'staking',
+    name: 'Request mETH Unstake',
+    description: 'Queue an exit from Mantle. Treasury locks mETH and receives a request ID; ETH becomes claimable after the unbonding period.',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'amount',
+        label: 'mETH Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+      },
+      {
+        name: 'minETHAmount',
+        label: 'Min ETH Out',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Slippage protection — reverts if Mantle would return less ETH than this',
+      },
+    ],
+  },
+
+  'lst-meth-unstake-claim': {
+    id: 'lst-meth-unstake-claim',
+    category: 'staking',
+    name: 'Claim mETH Unstake',
+    description: 'Settle a queued Mantle unstake request. ETH lands in the treasury.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'requestId',
+        label: 'Request ID',
+        type: 'number',
+        placeholder: '0',
+        required: true,
+        validation: { min: 0 },
+        helpText: 'The ID returned by the unstake request transaction',
+      },
+    ],
+  },
+
   // Meta Proposal - Create a proposal that creates another proposal
   'meta-propose': {
     id: 'meta-propose',
