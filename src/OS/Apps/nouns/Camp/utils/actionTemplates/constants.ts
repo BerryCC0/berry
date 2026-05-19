@@ -114,10 +114,12 @@ export const MANTLE_STAKING_ADDRESS =
   '0xe3cBd06D7dadB3F4e6557bAb7EdD924CD1489E8f' as Address;
 
 /**
- * OpenSea Seaport (1.5 / 1.6) — the protocol contract that fulfills NFT
- * orders. Same address across 1.5 and 1.6 since Seaport uses deterministic
- * deployments. Used by `opensea-listing` and `marketplace-fulfill-seaport`
- * templates.
+ * OpenSea Seaport 1.5 — the protocol contract that fulfills NFT orders.
+ * Seaport 1.6 (0x0000000000000068F116a894984e2DB1123eB395) is a separate
+ * deployment at a DIFFERENT address; this constant is only the default
+ * pre-fill for the manual Seaport editor — users can override it. The
+ * `opensea-listing` template gets `to` from OpenSea's API directly
+ * (currently routes through 1.6).
  */
 export const SEAPORT_ADDRESS =
   '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC' as Address;

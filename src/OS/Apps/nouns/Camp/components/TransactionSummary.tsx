@@ -98,6 +98,18 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
     let ethCount = 0;
     const tokenTotals: Record<string, { total: number; count: number; sources: Set<string> }> = {};
     const nounTransfers: DecodedTransaction[] = [];
+    // NFT purchases (Seaport fulfillments). Collected here so we can render
+    // them as a single "Buy N Nouns for X ETH" grid when there's more than
+    // one — single buys still render as a standalone card.
+    interface NftPurchaseEntry {
+      contract?: string;
+      tokenId?: string;
+      ethPriceStr: string;
+      seller?: string;
+      title: string;
+      description?: string;
+    }
+    const nftPurchases: NftPurchaseEntry[] = [];
     
     for (let i = 0; i < decodedTransactions.length; i++) {
       const tx = decodedTransactions[i];
@@ -208,30 +220,18 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
         continue;
       }
 
-      // NFT marketplace buy — render a rich card with image, name, price,
-      // and seller hover-link. Falls back to text if the decoder couldn't
-      // extract contract/tokenId.
+      // NFT marketplace buy — collect for grouped rendering after the loop.
+      // A single buy renders as one card; multiple collapse into a header +
+      // grid so a 4-Noun sweep doesn't dominate the page vertically.
       if (title.startsWith('Buy NFT')) {
-        const contract = tx.params?.contract;
-        const nftId = tx.params?.nftId;
-        // Recover the ETH amount from the title (formatted by the decoder).
         const priceMatch = title.match(/for ([\d.]+) ETH/);
-        const ethPriceStr = priceMatch ? priceMatch[1] : '?';
-        groups.push({
-          type: 'NFT Purchase',
-          count: 1,
-          details:
-            contract && nftId ? (
-              <NftPurchaseCard
-                contract={contract}
-                tokenId={nftId}
-                ethPriceStr={ethPriceStr}
-                seller={tx.params?.to}
-                onNavigate={onNavigate}
-              />
-            ) : (
-              tx.description ? `${title} — ${tx.description}` : title
-            ),
+        nftPurchases.push({
+          contract: tx.params?.contract,
+          tokenId: tx.params?.nftId,
+          ethPriceStr: priceMatch ? priceMatch[1] : '?',
+          seller: tx.params?.to,
+          title,
+          description: tx.description,
         });
         continue;
       }
@@ -317,6 +317,68 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
       }
     }
 
+    // NFT purchases: single buy renders as a card; multiple collapse into
+    // a header + grid so a sweep proposal doesn't dominate the page.
+    if (nftPurchases.length === 1) {
+      const p = nftPurchases[0];
+      groups.push({
+        type: 'NFT Purchase',
+        count: 1,
+        details:
+          p.contract && p.tokenId ? (
+            <NftPurchaseCard
+              contract={p.contract}
+              tokenId={p.tokenId}
+              ethPriceStr={p.ethPriceStr}
+              seller={p.seller}
+              onNavigate={onNavigate}
+            />
+          ) : (
+            p.description ? `${p.title} — ${p.description}` : p.title
+          ),
+      });
+    } else if (nftPurchases.length > 1) {
+      const nounsTokenAddr = NOUNS_ADDRESSES.token.toLowerCase();
+      const allNouns = nftPurchases.every(
+        (p) => p.contract?.toLowerCase() === nounsTokenAddr,
+      );
+      const totalEth = nftPurchases.reduce(
+        (sum, p) => sum + (parseFloat(p.ethPriceStr) || 0),
+        0,
+      );
+      const totalStr = totalEth.toFixed(2).replace(/\.?0+$/, '') || '0';
+      const noun = allNouns ? 'Nouns' : 'NFTs';
+      groups.push({
+        type: 'NFT Sweep',
+        count: nftPurchases.length,
+        details: (
+          <div className={styles.nftSweep}>
+            <div className={styles.nftSweepHeader}>
+              Buy {nftPurchases.length} {noun} for {totalStr} ETH
+            </div>
+            <div className={styles.nftSweepGrid}>
+              {nftPurchases.map((p, i) =>
+                p.contract && p.tokenId ? (
+                  <NftPurchaseCard
+                    key={i}
+                    contract={p.contract}
+                    tokenId={p.tokenId}
+                    ethPriceStr={p.ethPriceStr}
+                    seller={p.seller}
+                    onNavigate={onNavigate}
+                  />
+                ) : (
+                  <div key={i} className={styles.nftSweepFallback}>
+                    {p.description ? `${p.title} — ${p.description}` : p.title}
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+        ),
+      });
+    }
+
     // Build aggregated transfer groups and prepend them (transfers shown first)
     const transferGroups: typeof groups = [];
     
@@ -351,9 +413,9 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
       <div className={styles.txSummaryContent}>
         {summary.map((item, i) => (
           <div key={i} className={styles.txSummaryItem}>
-            {item.type === 'NFT Purchase' ? (
-              // NFT cards are block-level <div>s; render directly without
-              // the inline-text wrapper.
+            {item.type === 'NFT Purchase' || item.type === 'NFT Sweep' ? (
+              // NFT cards / sweep grids are block-level; render directly
+              // without the inline-text wrapper.
               item.details
             ) : (
               <span className={styles.txSummaryTitle}>

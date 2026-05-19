@@ -25,7 +25,9 @@ interface MarketplaceFulfillSeaportEditorProps {
   disabled?: boolean;
 }
 
-// Seaport 1.5 / 1.6 mainnet — same address on both versions.
+// Default pre-fill is the Seaport 1.5 mainnet address. Seaport 1.6 is a
+// separate deployment at 0x0000000000000068F116a894984e2DB1123eB395 — users
+// can paste that in the input below if they need to target it.
 const SEAPORT_DEFAULT = SEAPORT_ADDRESS;
 
 export function MarketplaceFulfillSeaportEditor({
@@ -54,8 +56,8 @@ export function MarketplaceFulfillSeaportEditor({
           disabled={disabled}
         />
         <div className={editorStyles.helpText}>
-          Defaults to the standard Seaport 1.5 / 1.6 address on mainnet. Only
-          change if you&apos;re fulfilling against an alternate deployment.
+          Defaults to Seaport 1.5 on mainnet. Override with Seaport 1.6
+          (<code>0x0000…eB395</code>) or an alternate deployment if needed.
         </div>
       </div>
 
