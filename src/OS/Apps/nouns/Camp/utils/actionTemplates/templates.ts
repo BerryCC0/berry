@@ -2080,6 +2080,89 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ],
   },
 
+  // NFT marketplace — OpenSea (Seaport)
+  // Custom OpenSeaListingEditor manages this template end-to-end: URL
+  // input → API lookup → calldata. The fields below are storage shape
+  // only.
+  'opensea-listing': {
+    id: 'opensea-listing',
+    category: 'nft',
+    name: 'Buy NFT (OpenSea)',
+    description: 'Paste an OpenSea listing URL — the editor fetches the active listing and builds the Seaport calldata automatically. Best for public listings.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'openseaUrl',
+        label: 'OpenSea Listing URL',
+        type: 'text',
+        placeholder: 'https://opensea.io/assets/ethereum/0x.../12345',
+        required: true,
+      },
+      {
+        // Managed by editor — Seaport contract address.
+        name: 'to',
+        label: 'Seaport Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+      {
+        // Managed by editor — ETH value (wei, decimal string).
+        name: 'value',
+        label: 'Value (wei)',
+        type: 'text',
+        required: true,
+      },
+      {
+        // Managed by editor — encoded fulfillBasicOrder calldata.
+        name: 'calldata',
+        label: 'Calldata',
+        type: 'text',
+        required: true,
+      },
+      {
+        // Managed by editor — order hash, kept for traceability /
+        // simulation context. Not used by the generator.
+        name: 'orderHash',
+        label: 'Order Hash',
+        type: 'text',
+        required: false,
+      },
+    ],
+  },
+
+  'marketplace-fulfill-seaport': {
+    id: 'marketplace-fulfill-seaport',
+    category: 'nft',
+    name: 'Fulfill Seaport Order (advanced)',
+    description: 'Power-user fallback for private OpenSea reserve listings, advanced fulfillments, and bundles. Paste pre-built Seaport calldata directly.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'to',
+        label: 'Seaport Contract Address',
+        type: 'address',
+        placeholder: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
+        required: true,
+      },
+      {
+        name: 'value',
+        label: 'ETH Value (wei)',
+        type: 'text',
+        placeholder: '0',
+        required: true,
+      },
+      {
+        name: 'calldata',
+        label: 'Calldata',
+        type: 'text',
+        placeholder: '0x...',
+        required: true,
+        helpText: 'Pre-built calldata from the Seaport JS SDK or OpenSea fulfillment_data API.',
+      },
+    ],
+  },
+
   // Meta Proposal - Create a proposal that creates another proposal
   'meta-propose': {
     id: 'meta-propose',

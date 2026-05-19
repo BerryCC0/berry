@@ -106,6 +106,8 @@ export type ActionTemplateType =
   | 'lst-lido-claim-withdrawal'
   | 'lst-meth-unstake-request'
   | 'lst-meth-unstake-claim'
+  | 'opensea-listing'
+  | 'marketplace-fulfill-seaport'
   | 'meta-propose'
   | 'custom';
 
@@ -134,7 +136,8 @@ export interface ActionTemplate {
     | 'custom'
     | 'erc20'
     | 'dex'
-    | 'staking';
+    | 'staking'
+    | 'nft';
   name: string;
   description: string;
   isMultiAction: boolean;

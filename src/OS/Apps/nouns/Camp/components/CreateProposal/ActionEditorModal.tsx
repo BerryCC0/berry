@@ -33,6 +33,8 @@ import { SmartActionEditor } from './SmartActionEditor';
 import { AddressInput } from './AddressInput';
 import { NounSwapTemplate } from './NounSwapTemplate';
 import { UniswapV3SwapEditor } from './UniswapV3SwapEditor';
+import { OpenSeaListingEditor } from './OpenSeaListingEditor';
+import { MarketplaceFulfillSeaportEditor } from './MarketplaceFulfillSeaportEditor';
 import { StreamSelect } from './StreamSelect';
 import { TreasuryTokenSelect } from './TreasuryTokenSelect';
 import { PredictedStreamAddress } from './PredictedStreamAddress';
@@ -94,6 +96,7 @@ const OPTION_GROUPS: TemplateGroup[] = (() => {
       options: [...make('erc20'), ...make('dex')],
     },
     { label: 'Staking', options: make('staking') },
+    { label: 'NFTs', options: make('nft') },
     { label: 'Meta', options: make('meta') },
     {
       label: 'Custom',
@@ -131,6 +134,7 @@ const INNER_TEMPLATE_CATEGORIES = [
   'erc20',
   'dex',
   'staking',
+  'nft',
   'nouns',
   'streams',
   'delegation',
@@ -193,7 +197,9 @@ function MetaProposeEditor({
                 ? 'DEX Swaps'
                 : category === 'staking'
                   ? 'Staking'
-                  : category === 'nouns'
+                  : category === 'nft'
+                    ? 'NFTs'
+                    : category === 'nouns'
                     ? 'Nouns Token'
                     : category === 'streams'
                       ? 'Streams'
@@ -779,6 +785,30 @@ export function ActionEditorModal({
       return (
         <div className={styles.formScroll}>
           <UniswapV3SwapEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+
+    if (selectedTemplate.id === 'opensea-listing') {
+      return (
+        <div className={styles.formScroll}>
+          <OpenSeaListingEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+
+    if (selectedTemplate.id === 'marketplace-fulfill-seaport') {
+      return (
+        <div className={styles.formScroll}>
+          <MarketplaceFulfillSeaportEditor
             fieldValues={fieldValues}
             onUpdateField={updateField}
             disabled={disabled}

@@ -10,6 +10,7 @@ import { type DecodedTransaction } from '../utils/transactionDecoder';
 import { useDecodedTransactions } from '../hooks/useDecodedTransactions';
 import { AddressWithENS } from './SimulationStatus/SimulationStatus';
 import { VoterLink } from './VoterLink';
+import { NftPurchaseCard } from './NftPurchaseCard';
 import { NounImageById } from '@/app/lib/nouns/components';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import styles from './TransactionSummary.module.css';
@@ -207,6 +208,34 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
         continue;
       }
 
+      // NFT marketplace buy — render a rich card with image, name, price,
+      // and seller hover-link. Falls back to text if the decoder couldn't
+      // extract contract/tokenId.
+      if (title.startsWith('Buy NFT')) {
+        const contract = tx.params?.contract;
+        const nftId = tx.params?.nftId;
+        // Recover the ETH amount from the title (formatted by the decoder).
+        const priceMatch = title.match(/for ([\d.]+) ETH/);
+        const ethPriceStr = priceMatch ? priceMatch[1] : '?';
+        groups.push({
+          type: 'NFT Purchase',
+          count: 1,
+          details:
+            contract && nftId ? (
+              <NftPurchaseCard
+                contract={contract}
+                tokenId={nftId}
+                ethPriceStr={ethPriceStr}
+                seller={tx.params?.to}
+                onNavigate={onNavigate}
+              />
+            ) : (
+              tx.description ? `${title} — ${tx.description}` : title
+            ),
+        });
+        continue;
+      }
+
       // Approvals
       if (title.startsWith('Approve')) {
         groups.push({
@@ -322,17 +351,17 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
       <div className={styles.txSummaryContent}>
         {summary.map((item, i) => (
           <div key={i} className={styles.txSummaryItem}>
-            <span className={styles.txSummaryTitle}>
-              {item.type === 'Token Transfer' && 'Requesting '}
-              {item.type === 'ETH Transfer' && 'Requesting '}
-              {item.type === 'Stream'}
-              {item.type === 'Noun Transfer'}
-              {item.type === 'Noun Swap'}
-              {item.type === 'Approval'}
-              {item.type === 'Delegation'}
-              {item.type === 'Contract Call'}
-              {item.details}
-            </span>
+            {item.type === 'NFT Purchase' ? (
+              // NFT cards are block-level <div>s; render directly without
+              // the inline-text wrapper.
+              item.details
+            ) : (
+              <span className={styles.txSummaryTitle}>
+                {item.type === 'Token Transfer' && 'Requesting '}
+                {item.type === 'ETH Transfer' && 'Requesting '}
+                {item.details}
+              </span>
+            )}
           </div>
         ))}
       </div>

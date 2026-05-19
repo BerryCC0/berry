@@ -1393,6 +1393,27 @@ export function generateActionsFromTemplate(
         calldata: encodeAdminUint256(BigInt(fieldValues.requestId || '0')),
       }];
 
+    // ----- NFT marketplace — OpenSea Seaport ----------------------------
+    // Both templates store pre-built calldata + ETH value on fieldValues;
+    // the generator just emits them as a single proposal action. Encoding
+    // happens server-side (opensea-listing) or in the SDK/UI the proposer
+    // used (marketplace-fulfill-seaport).
+    case 'opensea-listing':
+    case 'marketplace-fulfill-seaport': {
+      const to = (fieldValues.to || '') as Address;
+      const value = fieldValues.value || '0';
+      const calldata = (fieldValues.calldata || '0x') as `0x${string}`;
+      // Seaport's fulfill* functions don't use the proposal `signature`
+      // field — pass empty so the Governor calls via raw calldata, which
+      // is what the encoded bytes already include.
+      return [{
+        target: to,
+        value,
+        signature: '',
+        calldata,
+      }];
+    }
+
     case 'meta-propose': {
       // Create a proposal that creates another proposal when executed
       // This calls propose() on the DAO Governor with the inner proposal parameters

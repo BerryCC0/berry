@@ -15,6 +15,17 @@ import { formatAddress, truncateAddress } from '@/shared/format';
 // Uniswap V3 SwapRouter02 — used to detect exactInputSingle calls.
 const UNISWAP_V3_ROUTER = '0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45';
 
+// OpenSea Seaport 1.5/1.6 — same deterministic address on both versions.
+const SEAPORT_ADDRESS = '0x00000000000000adc04c56bf30ac9d3c0aaf14dc';
+// Function selectors we recognise for NFT buys on Seaport:
+//   0xfb0f3ee1 → fulfillBasicOrder(BasicOrderParameters)
+//   0x00000000 → fulfillBasicOrder_efficient_6GL6yc(BasicOrderParameters)
+//     (Seaport 1.5's gas-optimised variant — same calldata layout, different selector)
+//   0xe7acab24 → fulfillAdvancedOrder — used for criteria-based offers,
+//     partial fills, reserve/zone-restricted listings.
+const SEAPORT_FULFILL_BASIC_SELECTORS = new Set(['0xfb0f3ee1', '0x00000000']);
+const SEAPORT_FULFILL_ADVANCED_SELECTOR = '0xe7acab24';
+
 // Known contract addresses with human-readable names
 const KNOWN_CONTRACTS: Record<string, string> = {
   [NOUNS_ADDRESSES.token.toLowerCase()]: 'Nouns Token',
@@ -37,6 +48,7 @@ const KNOWN_CONTRACTS: Record<string, string> = {
   '0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa': 'mETH',
   // DEX routers
   [UNISWAP_V3_ROUTER]: 'Uniswap V3 Router',
+  [SEAPORT_ADDRESS]: 'OpenSea Seaport',
   // Nouns ecosystem
   '0x65294e6b55a9939e326c1b51b03bb4bd3ca5e675': 'delegations.nouns.eth',
 };
@@ -691,7 +703,101 @@ export function decodeTransaction(
     functionName,
     value: action.value,
   };
-  
+
+  // OpenSea Seaport NFT fulfillment — calldata-only (proposals from our
+  // `opensea-listing` / `marketplace-fulfill-seaport` templates pass
+  // `signature: ''` and the entire call as raw calldata, so we detect
+  // these by target + 4-byte selector instead of by signature).
+  if (
+    target === SEAPORT_ADDRESS &&
+    action.calldata &&
+    action.calldata.length >= 10
+  ) {
+    const selector = action.calldata.slice(0, 10).toLowerCase();
+    const paramsHex = ('0x' + action.calldata.slice(10)) as Hex;
+    let nftContract: string | undefined;
+    let tokenId: string | undefined;
+    let seller: string | undefined;
+
+    if (SEAPORT_FULFILL_BASIC_SELECTORS.has(selector)) {
+      try {
+        const result = decodeAbiParameters(
+          parseAbiParameters(
+            '(address,uint256,uint256,address,address,address,uint256,uint256,uint8,uint256,uint256,bytes32,uint256,bytes32,bytes32,uint256,(uint256,address)[],bytes)',
+          ),
+          paramsHex,
+        );
+        const tuple = result[0] as readonly [
+          string, bigint, bigint, string, string, string, bigint, bigint,
+          number, bigint, bigint, string, bigint, string, string, bigint,
+          unknown, string,
+        ];
+        nftContract = tuple[5].toLowerCase();
+        tokenId = tuple[6].toString();
+        seller = tuple[3];
+      } catch {
+        /* fall through */
+      }
+    } else if (selector === SEAPORT_FULFILL_ADVANCED_SELECTOR) {
+      try {
+        // fulfillAdvancedOrder(AdvancedOrder, CriteriaResolver[], bytes32, address)
+        // AdvancedOrder = (OrderParameters, uint120, uint120, bytes, bytes)
+        // OrderParameters = (address offerer, address zone, OfferItem[], ConsiderationItem[], uint8, uint256, uint256, bytes32, uint256, bytes32, uint256)
+        // OfferItem      = (uint8 itemType, address token, uint256 idOrCriteria, uint256 startAmount, uint256 endAmount)
+        // ConsiderationItem = OfferItem + address recipient
+        const result = decodeAbiParameters(
+          parseAbiParameters(
+            '((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),(uint256,uint8,uint256,uint256,bytes32[])[],bytes32,address',
+          ),
+          paramsHex,
+        );
+        const advancedOrder = result[0] as readonly [
+          readonly [
+            string, // offerer
+            string, // zone
+            ReadonlyArray<readonly [number, string, bigint, bigint, bigint]>, // offer
+            ReadonlyArray<readonly [number, string, bigint, bigint, bigint, string]>, // consideration
+            number, // orderType
+            bigint, // startTime
+            bigint, // endTime
+            string, // zoneHash
+            bigint, // salt
+            string, // conduitKey
+            bigint, // totalOriginalConsiderationItems
+          ],
+          bigint, // numerator
+          bigint, // denominator
+          string, // signature
+          string, // extraData
+        ];
+        const params = advancedOrder[0];
+        const firstOffer = params[2][0];
+        if (firstOffer) {
+          nftContract = (firstOffer[1] as string).toLowerCase();
+          tokenId = firstOffer[2].toString();
+        }
+        seller = params[0];
+      } catch {
+        /* fall through */
+      }
+    }
+
+    if (nftContract && tokenId !== undefined) {
+      const ethValue = action.value ? Number(BigInt(action.value)) / 1e18 : 0;
+      const ethStr = ethValue.toFixed(4).replace(/\.?0+$/, '');
+      decoded.title = `Buy NFT #${tokenId} for ${ethStr} ETH`;
+      decoded.description = `Fulfill OpenSea listing — collection ${truncateAddress(nftContract)}`;
+      decoded.params = {
+        contract: nftContract,
+        nftId: tokenId,
+        // `to` here is the seller (who receives the ETH). Useful for the
+        // hover-popover treatment and AddressWithENS rendering.
+        ...(seller ? { to: seller } : {}),
+      };
+      return decoded;
+    }
+  }
+
   // Try to create a human-readable title based on known patterns
   
   // Refill TokenBuyer — direct ETH transfer specifically to the TokenBuyer.

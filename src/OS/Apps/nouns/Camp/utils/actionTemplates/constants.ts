@@ -113,6 +113,15 @@ export const LIDO_WITHDRAWAL_QUEUE_ADDRESS =
 export const MANTLE_STAKING_ADDRESS =
   '0xe3cBd06D7dadB3F4e6557bAb7EdD924CD1489E8f' as Address;
 
+/**
+ * OpenSea Seaport (1.5 / 1.6) — the protocol contract that fulfills NFT
+ * orders. Same address across 1.5 and 1.6 since Seaport uses deterministic
+ * deployments. Used by `opensea-listing` and `marketplace-fulfill-seaport`
+ * templates.
+ */
+export const SEAPORT_ADDRESS =
+  '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC' as Address;
+
 export const TREASURY_ADDRESS = NOUNS_ADDRESSES.treasury as Address;
 export const NOUNS_TOKEN_ADDRESS = NOUNS_ADDRESSES.token as Address;
 export const DAO_PROXY_ADDRESS = NOUNS_ADDRESSES.governor as Address;
