@@ -16,6 +16,8 @@ import { SimulationStatus } from '../components/SimulationStatus';
 import { TransactionSummary } from '../components/TransactionSummary';
 import { SponsorsPanel } from '../components/SponsorsPanel';
 import { VoterRow } from '../components/VoterRow';
+import { HoverPopover } from '../components/HoverPopover';
+import { VoterHoverCard } from '../components/VoterHoverCard';
 import { BerryLoader } from '../components/BerryLoader';
 import { DetailTabs, useDetailTabs } from '../components/DetailTabs';
 import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarShare } from '../components/CampToolbar';
@@ -184,7 +186,7 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
   const descriptionContent = (
     <>
       {candidate.actions && candidate.actions.length > 0 && (
-        <TransactionSummary actions={candidate.actions} />
+        <TransactionSummary actions={candidate.actions} onNavigate={onNavigate} />
       )}
       <div className={styles.description}>
         <h2 className={styles.sectionTitle}>Description</h2>
@@ -212,13 +214,19 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
     <div className={styles.meta}>
       <div className={styles.metaItem}>
         <span className={styles.metaLabel}>Proposer</span>
-        <span 
-          className={styles.metaValue}
-          onClick={() => onNavigate(`voter/${actualProposer}`)}
-          style={{ cursor: 'pointer' }}
+        <HoverPopover
+          content={
+            <VoterHoverCard address={actualProposer} onNavigate={onNavigate} />
+          }
         >
-          {proposerDisplay}
-        </span>
+          <span
+            className={styles.metaValue}
+            onClick={() => onNavigate(`voter/${actualProposer}`)}
+            style={{ cursor: 'pointer' }}
+          >
+            {proposerDisplay}
+          </span>
+        </HoverPopover>
       </div>
       <div className={styles.metaItem}>
         <span className={styles.metaLabel}>Created</span>

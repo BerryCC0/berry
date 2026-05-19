@@ -12,7 +12,7 @@ import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
 
 export function VoteContent(props: ActivityContentProps) {
-  const { item, displayName, actorAvatar, repostInfo, onClickActor, onClickProposal } = props;
+  const { item, displayName, actorAvatar, repostInfo, onClickActor, onClickProposal, onNavigate } = props;
   const isVote = item.type === 'vote';
   const actionWord = isVote ? 'voted' : 'signaled';
   const repostNoun = isVote ? 'vote' : 'signal';
@@ -20,7 +20,7 @@ export function VoteContent(props: ActivityContentProps) {
   return (
     <>
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} onNavigate={onNavigate} />
         {isVote && item.votes && item.support !== undefined && (
           <span className={styles.support} style={{ color: getSupportColor(item.support) }}>
             {item.votes} {item.votes === '1' ? 'vote' : 'votes'}

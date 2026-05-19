@@ -14,14 +14,14 @@ import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
 
 export function ProposalLifecycleContent(props: ActivityContentProps) {
-  const { item, displayName, actorAvatar, onClickActor, onClickProposal, onClickPromotedCandidate } = props;
+  const { item, displayName, actorAvatar, onClickActor, onClickProposal, onClickPromotedCandidate, onNavigate } = props;
 
   switch (item.type) {
     case 'proposal_created': {
       const promoted = item.promotedFromCandidate;
       return (
         <div className={styles.header}>
-          <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+          <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} onNavigate={onNavigate} />
           <span className={styles.action}>{promoted ? 'promoted candidate to' : 'created'}</span>
           <span className={styles.badge} data-type="proposal">Proposal</span>
           {item.proposalTitle && (
@@ -132,7 +132,7 @@ export function ProposalLifecycleContent(props: ActivityContentProps) {
       return (
         <>
           <div className={styles.header}>
-            <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+            <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} onNavigate={onNavigate} />
             <span className={styles.action}>updated</span>
             <span className={styles.badge} data-type="proposal">Proposal</span>
             {item.proposalTitle && (

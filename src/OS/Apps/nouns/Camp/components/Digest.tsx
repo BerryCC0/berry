@@ -18,6 +18,8 @@ import { getProposalStatusBadge, getVoteBarWidths } from '../utils/proposalStatu
 import { addressToAvatar } from '../utils/addressAvatar';
 import { BerryLoader } from './BerryLoader';
 import { VoterIdentity } from './VoterIdentity';
+import { HoverPopover } from './HoverPopover';
+import { VoterHoverCard } from './VoterHoverCard';
 import type { Proposal, Candidate, Voter, DigestTab } from '../types';
 import styles from './Digest.module.css';
 
@@ -237,16 +239,20 @@ export function Digest({ onNavigate, activeTab: controlledTab, onTabChange, hide
     const votes = Number(voter.delegatedVotes);
     
     return (
-      <div 
+      <HoverPopover
         key={voter.id}
-        className={styles.voterItem}
-        onClick={() => onNavigate(`voter/${voter.id}`)}
+        content={<VoterHoverCard address={voter.id} onNavigate={onNavigate} />}
       >
-        <div className={styles.voterInfo}>
-          <VoterIdentity address={voter.id} />
-          <span className={styles.voterVotes}>{votes} vote{votes !== 1 ? 's' : ''}</span>
+        <div
+          className={styles.voterItem}
+          onClick={() => onNavigate(`voter/${voter.id}`)}
+        >
+          <div className={styles.voterInfo}>
+            <VoterIdentity address={voter.id} />
+            <span className={styles.voterVotes}>{votes} vote{votes !== 1 ? 's' : ''}</span>
+          </div>
         </div>
-      </div>
+      </HoverPopover>
     );
   };
   

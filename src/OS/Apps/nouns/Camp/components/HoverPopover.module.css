@@ -1,0 +1,35 @@
+/**
+ * HoverPopover Styles
+ * Trigger is display:inline so it doesn't disrupt the line it's wrapping;
+ * the popover renders into the body via portal at an absolute position.
+ */
+
+.trigger {
+  display: inline;
+}
+
+.popover {
+  position: absolute;
+  z-index: 10000;
+  /* Container styling; the inner content (e.g. VoterHoverCard) provides its
+     own padding/typography. */
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  /* Don't let popover swallow accidental clicks on weird edges */
+  pointer-events: auto;
+  /* Fade in */
+  animation: hoverPopoverFadeIn 0.15s ease-out;
+}
+
+@keyframes hoverPopoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

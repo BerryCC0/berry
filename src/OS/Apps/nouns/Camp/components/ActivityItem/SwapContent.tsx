@@ -28,7 +28,7 @@ function NounThumbs({ ids }: { ids: string[] }) {
 }
 
 export function SwapContent(props: ActivityContentProps) {
-  const { item, displayName, actorAvatar, onClickActor } = props;
+  const { item, displayName, actorAvatar, onClickActor, onNavigate } = props;
 
   const tokensIn = item.nounIdsIn ?? [];
   const tokensOut = item.nounIdsOut ?? [];
@@ -38,7 +38,7 @@ export function SwapContent(props: ActivityContentProps) {
     // user swapped [A,B] for [C,D]
     return (
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} onNavigate={onNavigate} />
         <span className={styles.action}>swapped</span>
         <NounThumbs ids={tokensIn} />
         <span className={styles.action}>for</span>
@@ -50,7 +50,7 @@ export function SwapContent(props: ActivityContentProps) {
   if (kind === 'deposit') {
     return (
       <div className={styles.header}>
-        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+        <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} onNavigate={onNavigate} />
         <span className={styles.action}>deposited</span>
         <NounThumbs ids={tokensIn} />
         <span className={styles.action}>into the</span>
@@ -62,7 +62,7 @@ export function SwapContent(props: ActivityContentProps) {
   // kind === 'redeem'
   return (
     <div className={styles.header}>
-      <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} />
+      <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} onNavigate={onNavigate} />
       <span className={styles.action}>redeemed</span>
       <NounThumbs ids={tokensOut} />
       <span className={styles.action}>from the</span>

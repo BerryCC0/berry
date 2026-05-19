@@ -13,6 +13,8 @@ import { getClientName, isBerryOSClient } from '@/OS/lib/clientNames';
 import { getSupportColor } from '../types';
 import { addressToAvatar } from '../utils/addressAvatar';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { HoverPopover } from './HoverPopover';
+import { VoterHoverCard } from './VoterHoverCard';
 import styles from './VoterRow.module.css';
 
 interface VoterRowProps {
@@ -68,20 +70,26 @@ export function VoterRow({
     <div className={`${styles.row} ${isFeedback ? styles.feedback : ''}`}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <button
-            type="button"
-            className={styles.identity}
-            onClick={() => onNavigate(`voter/${address}`)}
-            aria-label={`View ${displayName}'s profile`}
+          <HoverPopover
+            content={
+              <VoterHoverCard address={address} onNavigate={onNavigate} />
+            }
           >
-            <img
-              src={avatarSrc}
-              alt=""
-              className={styles.avatar}
-              onError={handleAvatarError}
-            />
-            <span className={styles.name}>{displayName}</span>
-          </button>
+            <button
+              type="button"
+              className={styles.identity}
+              onClick={() => onNavigate(`voter/${address}`)}
+              aria-label={`View ${displayName}'s profile`}
+            >
+              <img
+                src={avatarSrc}
+                alt=""
+                className={styles.avatar}
+                onError={handleAvatarError}
+              />
+              <span className={styles.name}>{displayName}</span>
+            </button>
+          </HoverPopover>
           <span className={styles.votes}>{votes} {voteLabel}{Number(votes) !== 1 ? 's' : ''}</span>
           <span
             className={styles.support}

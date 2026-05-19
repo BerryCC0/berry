@@ -1,0 +1,143 @@
+/**
+ * VoterHoverCard Styles
+ * Mini-profile rendered inside HoverPopover. Dimensions sized to feel like
+ * a tooltip preview, not a full card.
+ */
+
+.card {
+  width: 320px;
+  max-width: 90vw;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  font-family: var(--berry-font-system);
+  color: var(--berry-text-primary);
+}
+
+/* ------- Header (avatar + identity + chevron) ------------------------- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: cover;
+  background: var(--berry-bg-secondary);
+}
+
+.identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.address {
+  font-size: 11px;
+  font-family: var(--berry-font-mono);
+  color: var(--berry-text-secondary);
+}
+
+.chevron {
+  font-size: 18px;
+  color: var(--berry-text-secondary);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ------- Loading state ----------------------------------------------- */
+
+.loading {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  padding: 2px 0;
+}
+
+/* ------- Nouns row --------------------------------------------------- */
+
+.nounsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--berry-border);
+  flex-wrap: wrap;
+}
+
+.nounCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.nounImage {
+  border-radius: 4px;
+  background: var(--berry-bg);
+}
+
+.nounImagePlaceholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: var(--berry-bg-secondary);
+}
+
+.nounId {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-mono);
+}
+
+.nounCellExtra {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: var(--berry-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nounExtraCount {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+}
+
+/* ------- Delegation lines + stats ------------------------------------ */
+
+.delegationLine {
+  font-size: 12px;
+  color: var(--berry-text-primary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.delegationMuted {
+  color: var(--berry-text-secondary);
+}
+
+.stats {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}

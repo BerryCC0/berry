@@ -121,6 +121,7 @@ export function ActivityView({ onNavigate, digestTab, onDigestTabChange, toolbar
             onClickVoter={(address) => onNavigate(`voter/${address}`)}
             onClickCandidate={(proposer, slug) => onNavigate(`c/${slug}`)}
             onClickAuction={handleClickAuction}
+            onNavigate={onNavigate}
           />
         ))
       )}

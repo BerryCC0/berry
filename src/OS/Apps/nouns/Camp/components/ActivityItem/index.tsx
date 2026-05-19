@@ -26,6 +26,7 @@ import { CandidateContent } from './CandidateContent';
 import { TransferContent } from './TransferContent';
 import { SwapContent } from './SwapContent';
 import { AuctionContent } from './AuctionContent';
+import { VoterText } from './SharedRenderers';
 import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
 
@@ -36,6 +37,11 @@ interface ActivityItemProps {
   onClickVoter?: (address: string) => void;
   onClickCandidate?: (proposer: string, slug: string) => void;
   onClickAuction?: (nounId: string) => void;
+  /**
+   * Generic navigation hook. When provided, voter names get a hover popover
+   * showing a mini voter profile (linked to `voter/<address>`).
+   */
+  onNavigate?: (path: string) => void;
 }
 
 function ActivityItemInner({
@@ -45,6 +51,7 @@ function ActivityItemInner({
   onClickVoter,
   onClickCandidate,
   onClickAuction,
+  onNavigate,
 }: ActivityItemProps) {
   // All ENS resolution, reply/repost detection, and computed values
   const hookData = useActivityItemData(item, allItems);
@@ -92,6 +99,7 @@ function ActivityItemInner({
       : undefined,
     onClickAuction,
     onClickVoter,
+    onNavigate,
   };
 
   const renderContent = () => {
@@ -130,14 +138,16 @@ function ActivityItemInner({
       default:
         return (
           <div className={styles.header}>
-            <span
-              className={styles.actor}
-              onClick={() => onClickVoter?.(item.actor)}
-              role="button"
-              tabIndex={0}
-            >
-              {hookData.displayName}
-            </span>
+            <VoterText address={item.actor} onNavigate={onNavigate}>
+              <span
+                className={styles.actor}
+                onClick={() => onClickVoter?.(item.actor)}
+                role="button"
+                tabIndex={0}
+              >
+                {hookData.displayName}
+              </span>
+            </VoterText>
             <span className={styles.action}>performed action</span>
           </div>
         );

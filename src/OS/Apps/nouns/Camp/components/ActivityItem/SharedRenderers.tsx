@@ -7,6 +7,8 @@
 import { useMemo, useCallback } from 'react';
 import { useTranslation } from '@/OS/lib/i18n';
 import { MarkdownRenderer } from '../MarkdownRenderer';
+import { HoverPopover } from '../HoverPopover';
+import { VoterHoverCard } from '../VoterHoverCard';
 import { addressToAvatar } from '../../utils/addressAvatar';
 import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
@@ -17,12 +19,16 @@ export function ActorName({
   address,
   name,
   onClick,
+  onNavigate,
 }: {
   avatar?: string | null;
   /** Ethereum address — used to generate a deterministic pixel avatar fallback */
   address?: string;
   name?: string;
   onClick?: () => void;
+  /** When set (and `address` is present), wraps the name in a hover popover
+   *  showing a mini voter profile. */
+  onNavigate?: (path: string) => void;
 }) {
   const fallback = useMemo(
     () => (address ? addressToAvatar(address) : null),
@@ -41,13 +47,47 @@ export function ActorName({
     [fallback],
   );
 
-  return (
+  const inner = (
     <span className={styles.actorWrapper}>
       {src && <img src={src} alt="" className={styles.avatar} onError={handleError} />}
       <span className={styles.actor} onClick={onClick} role="button" tabIndex={0}>
         {name}
       </span>
     </span>
+  );
+
+  if (!onNavigate || !address) return inner;
+
+  return (
+    <HoverPopover
+      content={<VoterHoverCard address={address} onNavigate={onNavigate} />}
+    >
+      {inner}
+    </HoverPopover>
+  );
+}
+
+/**
+ * Wrap an inline voter trigger (typically a `<span>` with onClick) so it
+ * shows the voter mini-card on hover. Renders children as-is when no
+ * `onNavigate` or `address` is provided.
+ */
+export function VoterText({
+  address,
+  onNavigate,
+  children,
+}: {
+  address?: string;
+  onNavigate?: (path: string) => void;
+  children: React.ReactNode;
+}) {
+  if (!onNavigate || !address) return <>{children}</>;
+  return (
+    <HoverPopover
+      content={<VoterHoverCard address={address} onNavigate={onNavigate} />}
+    >
+      {children}
+    </HoverPopover>
   );
 }
 

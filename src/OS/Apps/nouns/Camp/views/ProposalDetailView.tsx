@@ -123,9 +123,10 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
           })()}
         </span>
         <span className={styles.metaSeparator}>by</span>
-        <AddressWithAvatar 
-          address={proposal.proposer} 
+        <AddressWithAvatar
+          address={proposal.proposer}
           onClick={() => onNavigate(`voter/${proposal.proposer}`)}
+          onNavigate={onNavigate}
         />
         {proposal.signers && proposal.signers.length > 0 && (
           <>
@@ -133,9 +134,10 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
             {proposal.signers.slice(0, 3).map((signer, i) => (
               <span key={signer}>
                 {i > 0 && <span className={styles.metaSeparator}> </span>}
-                <AddressWithAvatar 
-                  address={signer} 
+                <AddressWithAvatar
+                  address={signer}
                   onClick={() => onNavigate(`voter/${signer}`)}
+                  onNavigate={onNavigate}
                 />
               </span>
             ))}
@@ -284,7 +286,7 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
   const descriptionContent = (
     <>
       {proposal.actions && proposal.actions.length > 0 && (
-        <TransactionSummary actions={proposal.actions} />
+        <TransactionSummary actions={proposal.actions} onNavigate={onNavigate} />
       )}
       
       <div className={styles.description}>
@@ -569,9 +571,10 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
                   <div className={styles.sponsorsTab}>
                     <div className={styles.sponsorItem}>
                       <span className={styles.sponsorLabel}>Proposer</span>
-                      <AddressWithAvatar 
-                        address={proposal.proposer} 
+                      <AddressWithAvatar
+                        address={proposal.proposer}
                         onClick={() => onNavigate(`voter/${proposal.proposer}`)}
+                        onNavigate={onNavigate}
                       />
                     </div>
                     {proposal.signers && proposal.signers.length > 0 && (
@@ -579,10 +582,11 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
                         <span className={styles.sponsorLabel}>Sponsors ({proposal.signers.length})</span>
                         <div className={styles.sponsorList}>
                           {proposal.signers.map((signer) => (
-                            <AddressWithAvatar 
+                            <AddressWithAvatar
                               key={signer}
-                              address={signer} 
+                              address={signer}
                               onClick={() => onNavigate(`voter/${signer}`)}
+                              onNavigate={onNavigate}
                             />
                           ))}
                         </div>

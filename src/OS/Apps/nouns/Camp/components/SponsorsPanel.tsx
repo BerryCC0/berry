@@ -10,6 +10,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useReadContract, useAccount, usePublicClient } from 'wagmi';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import { useEnsName } from '@/OS/hooks/useEnsData';
+import { HoverPopover } from './HoverPopover';
+import { VoterHoverCard } from './VoterHoverCard';
 import { useSponsorCandidate } from '../hooks/useSponsorCandidate';
 import type { CandidateSignature, Candidate } from '../types';
 import styles from './SponsorsPanel.module.css';
@@ -66,12 +68,21 @@ function SponsorItem({ signature, onNavigate, onVotesLoaded }: SponsorItemProps)
   return (
     <div className={styles.sponsorItem}>
       <div className={styles.sponsorHeader}>
-        <span
-          className={styles.sponsorName}
-          onClick={() => onNavigate(`voter/${signature.signer}`)}
+        <HoverPopover
+          content={
+            <VoterHoverCard
+              address={signature.signer}
+              onNavigate={onNavigate}
+            />
+          }
         >
-          {displayName}
-        </span>
+          <span
+            className={styles.sponsorName}
+            onClick={() => onNavigate(`voter/${signature.signer}`)}
+          >
+            {displayName}
+          </span>
+        </HoverPopover>
         <span className={styles.sponsorVotes}>
           ({votes} {votes === 1 ? 'noun' : 'nouns'})
         </span>

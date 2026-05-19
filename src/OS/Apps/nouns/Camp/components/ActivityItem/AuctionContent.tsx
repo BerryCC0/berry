@@ -7,6 +7,7 @@
 
 import { formatEther } from 'viem';
 import { NounImageById } from '@/app/lib/nouns/components';
+import { VoterText } from './SharedRenderers';
 import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
 
@@ -20,6 +21,7 @@ export function AuctionContent(props: ActivityContentProps) {
     onClickActor,
     onClickVoter,
     onClickAuction,
+    onNavigate,
   } = props;
 
   if (item.type === 'auction_settled') {
@@ -38,9 +40,11 @@ export function AuctionContent(props: ActivityContentProps) {
               Noun <strong>{item.nounId}</strong>
             </span>
             <span className={styles.action}>won by</span>
-            <span className={styles.actor} onClick={onClickActor} role="button" tabIndex={0}>
-              {item.winner && formatAddr(item.winner, winnerEns)}
-            </span>
+            <VoterText address={item.winner} onNavigate={onNavigate}>
+              <span className={styles.actor} onClick={onClickActor} role="button" tabIndex={0}>
+                {item.winner && formatAddr(item.winner, winnerEns)}
+              </span>
+            </VoterText>
           </div>
           <div className={styles.auctionDetails}>
             {item.winningBid && (
@@ -51,9 +55,11 @@ export function AuctionContent(props: ActivityContentProps) {
             {item.settler && (
               <span className={styles.settlerInfo}>
                 <span className={styles.action}>Settled by</span>
-                <span className={styles.actor} onClick={handleSettlerClick} role="button" tabIndex={0}>
-                  {formatAddr(item.settler, settlerEns)}
-                </span>
+                <VoterText address={item.settler} onNavigate={onNavigate}>
+                  <span className={styles.actor} onClick={handleSettlerClick} role="button" tabIndex={0}>
+                    {formatAddr(item.settler, settlerEns)}
+                  </span>
+                </VoterText>
               </span>
             )}
           </div>
@@ -91,9 +97,11 @@ export function AuctionContent(props: ActivityContentProps) {
         {item.settler && (
           <div className={styles.header}>
             <span className={styles.action}> Settled by</span>
-            <span className={styles.actor} onClick={handleSettlerClick} role="button" tabIndex={0}>
-              {formatAddr(item.settler, settlerEns)}
-            </span>
+            <VoterText address={item.settler} onNavigate={onNavigate}>
+              <span className={styles.actor} onClick={handleSettlerClick} role="button" tabIndex={0}>
+                {formatAddr(item.settler, settlerEns)}
+              </span>
+            </VoterText>
           </div>
         )}
       </div>

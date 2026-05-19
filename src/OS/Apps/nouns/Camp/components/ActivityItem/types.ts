@@ -46,4 +46,10 @@ export interface ActivityContentProps {
   onClickPromotedCandidate?: () => void;
   onClickAuction?: (nounId: string) => void;
   onClickVoter?: (address: string) => void;
+
+  /**
+   * Navigation hook used by hover popovers on voter addresses. When set,
+   * actor/to-address names get a mini-profile popover on hover.
+   */
+  onNavigate?: (path: string) => void;
 }

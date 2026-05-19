@@ -20,6 +20,8 @@ import { getProposalStatusBadge, estimateCurrentBlock } from '../utils/proposalS
 import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { DelegateModal } from '../components/DelegateModal';
+import { HoverPopover } from '../components/HoverPopover';
+import { VoterHoverCard } from '../components/VoterHoverCard';
 import { BerryLoader } from '../components/BerryLoader';
 import { Toolbar, useToolbar, ToolbarBack, ToolbarTitle, ToolbarShare } from '../components/CampToolbar';
 import type { CampToolbarContext } from '../Camp';
@@ -70,10 +72,13 @@ function AddressLink({
   address,
   onClick,
   showAvatar = false,
+  onNavigate,
 }: {
   address: string;
   onClick?: (e?: React.MouseEvent) => void;
   showAvatar?: boolean;
+  /** If set, the link gets a hover popover with the voter mini-profile. */
+  onNavigate?: (path: string) => void;
 }) {
   const ensName = useEnsName(address);
   const ensAvatar = useEnsAvatar(address);
@@ -97,7 +102,7 @@ function AddressLink({
     [fallback],
   );
 
-  return (
+  const inner = (
     <span
       className={styles.addressLink}
       onClick={handleClick}
@@ -114,6 +119,16 @@ function AddressLink({
       )}
       <span>{displayName}</span>
     </span>
+  );
+
+  if (!onNavigate) return inner;
+
+  return (
+    <HoverPopover
+      content={<VoterHoverCard address={address} onNavigate={onNavigate} />}
+    >
+      {inner}
+    </HoverPopover>
   );
 }
 
@@ -313,9 +328,10 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
           {delegatingTo && !isSelfDelegated && (
             <div className={styles.delegatingTo}>
               <span className={styles.delegatingLabel}>Delegating to </span>
-              <AddressLink 
-                address={delegatingTo} 
+              <AddressLink
+                address={delegatingTo}
                 onClick={() => onNavigate(`voter/${delegatingTo}`)}
+                onNavigate={onNavigate}
               />
             </div>
           )}
@@ -331,6 +347,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
                     address={delegator}
                     showAvatar
                     onClick={() => onNavigate(`voter/${delegator}`)}
+                    onNavigate={onNavigate}
                   />
                 ))}
                 {delegators.length > 8 && (
@@ -493,7 +510,7 @@ export function VoterDetailView({ address: addressInput, onNavigate, onBack, sho
                           <div className={styles.proposalHeader}>
                             <span className={styles.proposalId}>Prop {sp.id}</span>
                             <span className={styles.proposalSponsors}>
-                              proposed by <AddressLink address={sp.proposer} onClick={(e) => { e?.stopPropagation(); onNavigate(`voter/${sp.proposer}`); }} />
+                              proposed by <AddressLink address={sp.proposer} onClick={(e) => { e?.stopPropagation(); onNavigate(`voter/${sp.proposer}`); }} onNavigate={onNavigate} />
                             </span>
                           </div>
                           <div className={styles.proposalTitle}>{sp.title}</div>

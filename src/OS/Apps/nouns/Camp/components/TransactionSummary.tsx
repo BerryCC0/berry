@@ -9,11 +9,17 @@ import { useMemo, type ReactNode } from 'react';
 import { type DecodedTransaction } from '../utils/transactionDecoder';
 import { useDecodedTransactions } from '../hooks/useDecodedTransactions';
 import { AddressWithENS } from './SimulationStatus/SimulationStatus';
+import { VoterLink } from './VoterLink';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import styles from './TransactionSummary.module.css';
 
 interface TransactionSummaryProps {
   actions: { target: string; value: string; signature: string; calldata: string }[];
+  /**
+   * Optional navigation hook. When provided, recipient addresses become
+   * clickable links to that voter's Camp profile.
+   */
+  onNavigate?: (path: string) => void;
 }
 
 /** Parse a formatted number like "21.2K" -> 21200, "1.50M" -> 1500000, "1,500" -> 1500 */
@@ -34,7 +40,7 @@ function formatAggregatedAmount(num: number): string {
   return num.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
-export function TransactionSummary({ actions }: TransactionSummaryProps) {
+export function TransactionSummary({ actions, onNavigate }: TransactionSummaryProps) {
   const decodedTransactions = useDecodedTransactions(actions);
   
   // Group similar transactions for summary, aggregating transfer amounts.
@@ -44,13 +50,24 @@ export function TransactionSummary({ actions }: TransactionSummaryProps) {
   const summary = useMemo(() => {
     const groups: { type: string; count: number; details: ReactNode }[] = [];
 
-    // Renders "<text> to <ENS-resolved address>" inline.
+    // Renders "<text> to <ENS-resolved address>" inline. When onNavigate is
+    // provided the recipient is a VoterLink — hover shows the voter mini
+    // profile, click navigates to their Camp page.
     const withRecipient = (text: string, to: string | undefined): ReactNode => {
       if (!to) return text;
+      const addr = (
+        <AddressWithENS address={to} className={styles.txSummaryRecipient} />
+      );
       return (
         <>
           {text} to{' '}
-          <AddressWithENS address={to} className={styles.txSummaryRecipient} />
+          <VoterLink
+            address={to}
+            onNavigate={onNavigate}
+            className={styles.txSummaryRecipientLink}
+          >
+            {addr}
+          </VoterLink>
         </>
       );
     };
@@ -261,7 +278,7 @@ export function TransactionSummary({ actions }: TransactionSummaryProps) {
     }
     
     return [...transferGroups, ...groups];
-  }, [decodedTransactions]);
+  }, [decodedTransactions, onNavigate]);
   
   if (decodedTransactions.length === 0) return null;
   
