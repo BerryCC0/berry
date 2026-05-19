@@ -27,3 +27,8 @@
   color: var(--berry-text-primary);
   line-height: 1.5;
 }
+
+.txSummaryRecipient {
+  font-family: var(--berry-font-mono);
+  color: var(--berry-text-primary);
+}
