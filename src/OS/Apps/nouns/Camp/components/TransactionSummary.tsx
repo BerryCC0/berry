@@ -10,6 +10,7 @@ import { type DecodedTransaction } from '../utils/transactionDecoder';
 import { useDecodedTransactions } from '../hooks/useDecodedTransactions';
 import { AddressWithENS } from './SimulationStatus/SimulationStatus';
 import { VoterLink } from './VoterLink';
+import { NounImageById } from '@/app/lib/nouns/components';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import styles from './TransactionSummary.module.css';
 
@@ -53,7 +54,7 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
     // Renders "<text> to <ENS-resolved address>" inline. When onNavigate is
     // provided the recipient is a VoterLink — hover shows the voter mini
     // profile, click navigates to their Camp page.
-    const withRecipient = (text: string, to: string | undefined): ReactNode => {
+    const withRecipient = (text: ReactNode, to: string | undefined): ReactNode => {
       if (!to) return text;
       const addr = (
         <AddressWithENS address={to} className={styles.txSummaryRecipient} />
@@ -68,6 +69,25 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
           >
             {addr}
           </VoterLink>
+        </>
+      );
+    };
+
+    // Renders a small Noun image inline after a Noun ID — used in Noun
+    // transfer / swap summary lines so readers see what's actually being
+    // moved without clicking through.
+    const nounIdWithImage = (nounId: string | number | undefined): ReactNode => {
+      if (nounId === undefined || nounId === null) return null;
+      const idNum = typeof nounId === 'string' ? parseInt(nounId, 10) : nounId;
+      if (Number.isNaN(idNum)) return <>{String(nounId)}</>;
+      return (
+        <>
+          {idNum}
+          <NounImageById
+            id={idNum}
+            size={24}
+            className={styles.txSummaryNounImage}
+          />
         </>
       );
     };
@@ -225,7 +245,12 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
         groups.push({
           type: 'Noun Swap',
           count: 1,
-          details: `Swap Noun ${givenId} for Noun ${receivedId}`,
+          details: (
+            <>
+              Swap Noun {nounIdWithImage(givenId)} for Noun{' '}
+              {nounIdWithImage(receivedId)}
+            </>
+          ),
         });
       } else {
         // Not a swap — show individually
@@ -234,7 +259,7 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
             type: 'Noun Transfer',
             count: 1,
             details: withRecipient(
-              tx.title,
+              <>Transfer Noun {nounIdWithImage(tx.params?.nounId as string | undefined)}</>,
               tx.params?.to as string | undefined,
             ),
           });
@@ -246,7 +271,7 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
           type: 'Noun Transfer',
           count: 1,
           details: withRecipient(
-            tx.title,
+            <>Transfer Noun {nounIdWithImage(tx.params?.nounId as string | undefined)}</>,
             tx.params?.to as string | undefined,
           ),
         });

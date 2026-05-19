@@ -366,18 +366,30 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
         const selectedTotal = (proposerVotes || 0) + selectedSponsorVotes;
         const selectedCount = effectiveSelectedIds.length;
         const hasEnough = selectedTotal >= requiredNouns;
+        // Self-propose path: the proposer alone meets the threshold, so no
+        // sponsor signatures are required. The promote button can then
+        // proceed even with selectedCount === 0.
+        const canSelfPropose = (proposerVotes || 0) >= requiredNouns;
         return (
           <div className={styles.confirmDialog}>
             <div className={styles.confirmDialogContent}>
               <h3 className={styles.confirmDialogTitle}>Promote to Proposal?</h3>
               <p className={styles.confirmDialogMessage}>
-                Select which sponsor signatures to include. Once promoted, the proposal enters the voting period.
+                {canSelfPropose
+                  ? 'You have enough voting power to promote this candidate on your own. Sponsor signatures are optional — pick any you want to include below.'
+                  : 'Select which sponsor signatures to include. Once promoted, the proposal enters the voting period.'}
               </p>
 
               {promotableSignatures.length === 0 ? (
-                <div className={styles.errorMessage}>
-                  No valid sponsor signatures available. Sponsors must re-sign.
-                </div>
+                canSelfPropose ? (
+                  <div className={styles.sponsorSelectionHint}>
+                    No sponsor signatures yet — promoting will use your own voting power.
+                  </div>
+                ) : (
+                  <div className={styles.errorMessage}>
+                    No valid sponsor signatures available. Sponsors must re-sign.
+                  </div>
+                )
               ) : (
                 <div className={styles.sponsorSelectionList}>
                   {promotableSignatures.map((sig) => {
@@ -442,8 +454,12 @@ export function CandidateDetailView({ proposer, slug, onNavigate, onBack, toolba
                 <button
                   className={styles.confirmDialogPromote}
                   onClick={handleConfirmPromote}
-                  disabled={isPromoting || !hasEnough || selectedCount === 0}
-                  title={!hasEnough ? 'Not enough voting power in selected sponsors' : undefined}
+                  disabled={
+                    isPromoting ||
+                    !hasEnough ||
+                    (selectedCount === 0 && !canSelfPropose)
+                  }
+                  title={!hasEnough ? 'Not enough voting power' : undefined}
                 >
                   {isPromoting ? 'Promoting...' : 'Promote to Proposal'}
                 </button>

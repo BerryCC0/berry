@@ -33,6 +33,14 @@
   color: var(--berry-text-primary);
 }
 
+/* Small Noun thumbnail inlined after the Noun ID in transfer/swap lines */
+.txSummaryNounImage {
+  display: inline-block;
+  vertical-align: -7px; /* nudge down so it visually sits on the text baseline */
+  margin: 0 8px;
+  border-radius: 4px;
+}
+
 /* Clickable recipient (links to voter profile in Camp) */
 .txSummaryRecipientLink {
   background: transparent;

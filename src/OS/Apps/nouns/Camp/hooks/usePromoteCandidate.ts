@@ -55,15 +55,6 @@ export function usePromoteCandidate() {
       return;
     }
 
-    if (!candidate.signatures || candidate.signatures.length === 0) {
-      setPromoteState({
-        isSuccess: false,
-        isError: true,
-        error: new Error('No valid signatures found'),
-      });
-      return;
-    }
-
     if (!candidate.actions || candidate.actions.length === 0) {
       setPromoteState({
         isSuccess: false,
@@ -80,9 +71,10 @@ export function usePromoteCandidate() {
     // treated as fresh (pre-schema-change sigs) to avoid over-filtering.
     const currentHash = candidate.encodedProposalHash?.toLowerCase() || '';
     const nowSec = Math.floor(Date.now() / 1000);
+    const allSigs = candidate.signatures || [];
     const candidateSigs = selectedSignatureIds
-      ? candidate.signatures.filter((s) => selectedSignatureIds.includes(s.id))
-      : candidate.signatures;
+      ? allSigs.filter((s) => selectedSignatureIds.includes(s.id))
+      : allSigs;
 
     const freshSignatures = candidateSigs.filter((sig) => {
       if (Number(sig.expirationTimestamp) <= nowSec) return false;
@@ -103,17 +95,6 @@ export function usePromoteCandidate() {
     }
     const dedupedSignatures = Array.from(latestBySigner.values());
 
-    if (dedupedSignatures.length === 0) {
-      setPromoteState({
-        isSuccess: false,
-        isError: true,
-        error: new Error(
-          'No valid signatures available — all sponsor signatures were invalidated by an edit or have expired. Sponsors must re-sign.'
-        ),
-      });
-      return;
-    }
-
     try {
       // Reset previous states
       setPromoteState({
@@ -123,14 +104,9 @@ export function usePromoteCandidate() {
       });
       resetWrite();
 
-      // Prepare the proposer signatures array
-      const proposerSignatures = dedupedSignatures.map((sig: CandidateSignature) => ({
-        sig: sig.sig as `0x${string}`,
-        signer: sig.signer as `0x${string}`,
-        expirationTimestamp: BigInt(sig.expirationTimestamp),
-      }));
-
-      // Prepare proposal data from actions
+      // Prepare proposal data from actions (shared between propose() and
+      // proposeBySigs()). Description must be the EXACT one that sponsors
+      // signed — modifying it would invalidate the signatures.
       const targets = candidate.actions.map(a => a.target as `0x${string}`);
       const values = candidate.actions.map(a => BigInt(a.value || '0'));
       const signatures = candidate.actions.map(a => a.signature);
@@ -138,27 +114,51 @@ export function usePromoteCandidate() {
         if (!a.calldata || a.calldata === '') return '0x' as `0x${string}`;
         return (a.calldata.startsWith('0x') ? a.calldata : `0x${a.calldata}`) as `0x${string}`;
       });
-
-      // Use the EXACT description that was signed by sponsors
-      // The description from the subgraph already includes the title
-      // Modifying it would invalidate the signatures
       const description = candidate.description;
 
-      // Call the contract
-      writeContract({
-        address: NOUNS_CONTRACTS.governor.address,
-        abi: NOUNS_CONTRACTS.governor.abi,
-        functionName: 'proposeBySigs',
-        args: [
-          proposerSignatures,
-          targets,
-          values,
-          signatures,
-          calldatas,
-          description,
-          BERRY_CLIENT_ID,
-        ],
-      });
+      if (dedupedSignatures.length > 0) {
+        // Sponsor-backed path: use the signatures collected on this candidate.
+        const proposerSignatures = dedupedSignatures.map(
+          (sig: CandidateSignature) => ({
+            sig: sig.sig as `0x${string}`,
+            signer: sig.signer as `0x${string}`,
+            expirationTimestamp: BigInt(sig.expirationTimestamp),
+          }),
+        );
+        writeContract({
+          address: NOUNS_CONTRACTS.governor.address,
+          abi: NOUNS_CONTRACTS.governor.abi,
+          functionName: 'proposeBySigs',
+          args: [
+            proposerSignatures,
+            targets,
+            values,
+            signatures,
+            calldatas,
+            description,
+            BERRY_CLIENT_ID,
+          ],
+        });
+      } else {
+        // Self-propose path: caller has enough voting power themselves to
+        // clear the proposal threshold. No sponsor signatures required —
+        // we invoke `propose()` directly. The on-chain contract will revert
+        // with VotesBelowProposalThreshold if the caller actually doesn't
+        // have the votes; the UI's `canPromote` gate should prevent that.
+        writeContract({
+          address: NOUNS_CONTRACTS.governor.address,
+          abi: NOUNS_CONTRACTS.governor.abi,
+          functionName: 'propose',
+          args: [
+            targets,
+            values,
+            signatures,
+            calldatas,
+            description,
+            BERRY_CLIENT_ID,
+          ],
+        });
+      }
 
     } catch (error) {
       setPromoteState({
