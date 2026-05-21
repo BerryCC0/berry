@@ -24,8 +24,7 @@ export function mainnetTransport(): FallbackTransport {
 
   transports.push(
     http('https://ethereum-rpc.publicnode.com', { timeout: TIMEOUT_MS }),
-    http('https://eth.llamarpc.com', { timeout: TIMEOUT_MS }),
-    http('https://rpc.ankr.com/eth', { timeout: TIMEOUT_MS })
+    http('https://eth.llamarpc.com', { timeout: TIMEOUT_MS })
   );
 
   return fallback(transports, { retryCount: 1 });

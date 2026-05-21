@@ -13,7 +13,6 @@ function mainnetRpcTransport() {
   transports.push(
     http("https://ethereum-rpc.publicnode.com"),
     http("https://eth.llamarpc.com"),
-    http("https://rpc.ankr.com/eth"),
   );
   return fallback(transports, { retryCount: 1 });
 }
