@@ -35,6 +35,8 @@ import { NounSwapTemplate } from './NounSwapTemplate';
 import { UniswapV3SwapEditor } from './UniswapV3SwapEditor';
 import { OpenSeaListingEditor } from './OpenSeaListingEditor';
 import { MarketplaceFulfillSeaportEditor } from './MarketplaceFulfillSeaportEditor';
+import { OctantCreateVaultEditor } from './OctantCreateVaultEditor';
+import { OctantVaultActionEditor } from './OctantVaultActionEditor';
 import { StreamSelect } from './StreamSelect';
 import { TreasuryTokenSelect } from './TreasuryTokenSelect';
 import { PredictedStreamAddress } from './PredictedStreamAddress';
@@ -96,6 +98,7 @@ const OPTION_GROUPS: TemplateGroup[] = (() => {
       options: [...make('erc20'), ...make('dex')],
     },
     { label: 'Staking', options: make('staking') },
+    { label: 'Octant v2', options: make('octant') },
     { label: 'NFTs', options: make('nft') },
     { label: 'Meta', options: make('meta') },
     {
@@ -134,6 +137,7 @@ const INNER_TEMPLATE_CATEGORIES = [
   'erc20',
   'dex',
   'staking',
+  'octant',
   'nft',
   'nouns',
   'streams',
@@ -197,7 +201,9 @@ function MetaProposeEditor({
                 ? 'DEX Swaps'
                 : category === 'staking'
                   ? 'Staking'
-                  : category === 'nft'
+                  : category === 'octant'
+                    ? 'Octant v2'
+                    : category === 'nft'
                     ? 'NFTs'
                     : category === 'nouns'
                     ? 'Nouns Token'
@@ -809,6 +815,43 @@ export function ActionEditorModal({
       return (
         <div className={styles.formScroll}>
           <MarketplaceFulfillSeaportEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+
+    // Octant v2 Dragon vault factories — one editor parameterised by templateId
+    if (
+      selectedTemplate.id === 'octant-vault-create-lido' ||
+      selectedTemplate.id === 'octant-vault-create-morpho' ||
+      selectedTemplate.id === 'octant-vault-create-sky' ||
+      selectedTemplate.id === 'octant-vault-create-yearn'
+    ) {
+      return (
+        <div className={styles.formScroll}>
+          <OctantCreateVaultEditor
+            templateId={selectedTemplate.id}
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+
+    // Octant v2 ERC-4626 vault operations — shared editor across deposit/redeem/withdraw
+    if (
+      selectedTemplate.id === 'octant-vault-deposit' ||
+      selectedTemplate.id === 'octant-vault-redeem' ||
+      selectedTemplate.id === 'octant-vault-withdraw'
+    ) {
+      return (
+        <div className={styles.formScroll}>
+          <OctantVaultActionEditor
+            templateId={selectedTemplate.id}
             fieldValues={fieldValues}
             onUpdateField={updateField}
             disabled={disabled}

@@ -219,6 +219,143 @@ export function encodeAddTraitCalldata(
 }
 
 /**
+ * Encode ERC-4626 deposit(uint256 assets, address receiver). Two static slots.
+ * Mirrors the standard signature used by every Octant Dragon vault.
+ */
+export function encodeErc4626Deposit(
+  assets: bigint,
+  receiver: Address,
+): `0x${string}` {
+  const assetsPadded = assets.toString(16).padStart(64, '0');
+  const receiverPadded = receiver.slice(2).padStart(64, '0');
+  return `0x${assetsPadded}${receiverPadded}`;
+}
+
+/**
+ * Encode ERC-4626 redeem/withdraw — both share the same 3-slot layout:
+ *   redeem(uint256 shares, address receiver, address owner)
+ *   withdraw(uint256 assets, address receiver, address owner)
+ */
+export function encodeErc4626RedeemOrWithdraw(
+  amount: bigint,
+  receiver: Address,
+  owner: Address,
+): `0x${string}` {
+  const amountPadded = amount.toString(16).padStart(64, '0');
+  const receiverPadded = receiver.slice(2).padStart(64, '0');
+  const ownerPadded = owner.slice(2).padStart(64, '0');
+  return `0x${amountPadded}${receiverPadded}${ownerPadded}`;
+}
+
+/**
+ * Encode Octant createStrategy(...) for Lido / Morpho / Sky factories.
+ * All three share the same 8-arg signature — the asset is hardcoded inside
+ * the factory itself (wstETH / USDC / USDS respectively).
+ *
+ *   createStrategy(
+ *     string name, string symbol,
+ *     address management, address keeper, address emergencyAdmin,
+ *     address donationAddress, bool enableBurning,
+ *     address tokenizedStrategyAddress
+ *   )
+ */
+export function encodeOctantCreateStrategyBase(
+  name: string,
+  symbol: string,
+  management: Address,
+  keeper: Address,
+  emergencyAdmin: Address,
+  donationAddress: Address,
+  enableBurning: boolean,
+  tokenizedStrategyAddress: Address,
+): `0x${string}` {
+  return encodeAbiParameters(
+    parseAbiParameters(
+      'string, string, address, address, address, address, bool, address',
+    ),
+    [
+      name,
+      symbol,
+      management,
+      keeper,
+      emergencyAdmin,
+      donationAddress,
+      enableBurning,
+      tokenizedStrategyAddress,
+    ],
+  );
+}
+
+/**
+ * Encode Octant PaymentSplitterFactory.createPaymentSplitter(...).
+ *
+ *   createPaymentSplitter(
+ *     address[] payees,
+ *     string[]  payeeNames,
+ *     uint256[] shares
+ *   )
+ *
+ * The factory clones a minimal proxy of its `implementation` deterministically
+ * using `salt = keccak256(abi.encode(msg.sender, deployerToSplitters[msg.sender].length))`,
+ * so the deployed address is predictable client-side via
+ * `factory.predictDeterministicAddress(treasury)`.
+ */
+export function encodeOctantCreatePaymentSplitter(
+  payees: Address[],
+  payeeNames: string[],
+  shares: bigint[],
+): `0x${string}` {
+  return encodeAbiParameters(
+    parseAbiParameters('address[], string[], uint256[]'),
+    [payees, payeeNames, shares],
+  );
+}
+
+/**
+ * Encode Octant Yearn V3 factory createStrategy(...). Same 8 base args as the
+ * other factories, but with `yearnVault` and `asset` prepended so the factory
+ * can wrap any Yearn V3 vault.
+ *
+ *   createStrategy(
+ *     address yearnVault, address asset,
+ *     string name, string symbol,
+ *     address management, address keeper, address emergencyAdmin,
+ *     address donationAddress, bool enableBurning,
+ *     address tokenizedStrategyAddress
+ *   )
+ */
+export function encodeOctantCreateStrategyYearn(
+  yearnVault: Address,
+  asset: Address,
+  name: string,
+  symbol: string,
+  management: Address,
+  keeper: Address,
+  emergencyAdmin: Address,
+  donationAddress: Address,
+  enableBurning: boolean,
+  tokenizedStrategyAddress: Address,
+): `0x${string}` {
+  return encodeAbiParameters(
+    parseAbiParameters(
+      'address, address, string, string, address, address, address, address, bool, address',
+    ),
+    [
+      yearnVault,
+      asset,
+      name,
+      symbol,
+      management,
+      keeper,
+      emergencyAdmin,
+      donationAddress,
+      enableBurning,
+      tokenizedStrategyAddress,
+    ],
+  );
+}
+
+/**
  * Encode the calldata for a meta-proposal (propose() that creates another proposal)
  * Uses viem's encodeAbiParameters for complex nested array encoding
  */

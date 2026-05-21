@@ -113,6 +113,126 @@ export const LIDO_WITHDRAWAL_QUEUE_ADDRESS =
 export const MANTLE_STAKING_ADDRESS =
   '0xe3cBd06D7dadB3F4e6557bAb7EdD924CD1489E8f' as Address;
 
+// ============================================================================
+// Octant v2 — Dragon vaults & strategy factories
+// ----------------------------------------------------------------------------
+// Authoritative source: golemfoundation/octant-v2-core mainnet registry +
+// the Octant v2 docs "Contract registry and security review materials" page.
+// Each factory deploys an ERC-4626 strategy via CREATE2; the strategy routes
+// yield to a configured donation address (a PaymentSplitter or Safe).
+// ============================================================================
+
+/** Lido (wstETH) Dragon vault factory — yield-skimming. Asset hardcoded to wstETH. */
+export const OCTANT_LIDO_FACTORY_ADDRESS =
+  '0xc69288F65647DDf8FDBfDc905bdBD21b034b61b8' as Address;
+
+/** Morpho Compounder (USDC) Dragon vault factory — yield-donating. Asset hardcoded to USDC. */
+export const OCTANT_MORPHO_FACTORY_ADDRESS =
+  '0x1eE8Af6604d7e80f155D45a863128Bc79f015275' as Address;
+
+/** Sky Compounder (USDS) Dragon vault factory — yield-donating. Asset hardcoded to USDS. */
+export const OCTANT_SKY_FACTORY_ADDRESS =
+  '0x2a3fd5D3ab48cDE74Cb0b179d3C67155119141cC' as Address;
+
+/** Yearn V3 Dragon vault factory — generic. Takes any Yearn V3 vault + its underlying asset. */
+export const OCTANT_YEARN_FACTORY_ADDRESS =
+  '0x9A6c9aA80D4A0d8Da29EcbA62c40ccBBB321abB6' as Address;
+
+/**
+ * Octant PaymentSplitter factory — deploys minimal-proxy splitters that
+ * receive vault donations and distribute them to a list of payees by share.
+ * Octant docs flag this as the canonical donation-address pattern.
+ */
+export const OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS =
+  '0x5711765E0756B45224fc1FdA1B41ab344682bBcb' as Address;
+
+/** Shared yield-donating tokenized strategy implementation (Morpho, Sky, Yearn). */
+export const OCTANT_YIELD_DONATING_STRATEGY_ADDRESS =
+  '0xE8797A98710518A6973Cc8612f98154EECF2C711' as Address;
+
+/** Shared yield-skimming tokenized strategy implementation (Lido). */
+export const OCTANT_YIELD_SKIMMING_STRATEGY_ADDRESS =
+  '0xFe064acA6acFF4eFbE496271A665F0a9D66d6da1' as Address;
+
+/** USDS token — the asset for the Sky compounder factory. */
+export const USDS_ADDRESS =
+  '0xdC035D45d973E3EC169d2276DDab16f1e407384F' as Address;
+
+/**
+ * The "vault" constant Morpho's factory wants in computeStrategyAddress:
+ * Yearn-styled USDC compounder vault that Morpho's strategy wraps.
+ */
+export const OCTANT_MORPHO_YS_USDC_ADDRESS =
+  '0x074134A2784F4F66b6ceD6f68849382990Ff3215' as Address;
+
+/**
+ * The "vault" constant Sky's factory wants in computeStrategyAddress: the
+ * USDS staking reward distributor that the SkyCompounder strategy claims from.
+ */
+export const OCTANT_SKY_USDS_REWARD_ADDRESS =
+  '0x0650CAF159C5A49f711e8169D4336ECB9b950275' as Address;
+
+/**
+ * Lookup map keyed by lowercase factory address. Used by the decoder and
+ * parser to round-trip Octant createStrategy calls back into their templates
+ * with the right factory metadata (asset symbol, yield mode, default impl).
+ *
+ * `vaultConstant` is the address each factory requires as the `_vault` arg
+ * to `computeStrategyAddress(...)` — typically a fixed internal constant
+ * (or, for Yearn, user-supplied). Used by the predicted-address hook.
+ */
+export const OCTANT_FACTORIES: Record<string, {
+  name: string;
+  source: 'lido' | 'morpho' | 'sky' | 'yearn';
+  assetSymbol: string;
+  assetAddress?: Address;
+  assetDecimals: number;
+  defaultStrategyImpl: Address;
+  yieldMode: 'skimming' | 'donating';
+  /** Factory-internal "vault" address required by computeStrategyAddress. Undefined for Yearn (user-supplied). */
+  vaultConstant?: Address;
+}> = {
+  [OCTANT_LIDO_FACTORY_ADDRESS.toLowerCase()]: {
+    name: 'Octant Lido Factory',
+    source: 'lido',
+    assetSymbol: 'wstETH',
+    assetAddress: WSTETH_ADDRESS,
+    assetDecimals: 18,
+    defaultStrategyImpl: OCTANT_YIELD_SKIMMING_STRATEGY_ADDRESS,
+    yieldMode: 'skimming',
+    vaultConstant: WSTETH_ADDRESS,
+  },
+  [OCTANT_MORPHO_FACTORY_ADDRESS.toLowerCase()]: {
+    name: 'Octant Morpho Factory',
+    source: 'morpho',
+    assetSymbol: 'USDC',
+    assetAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as Address,
+    assetDecimals: 6,
+    defaultStrategyImpl: OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+    yieldMode: 'donating',
+    vaultConstant: OCTANT_MORPHO_YS_USDC_ADDRESS,
+  },
+  [OCTANT_SKY_FACTORY_ADDRESS.toLowerCase()]: {
+    name: 'Octant Sky Factory',
+    source: 'sky',
+    assetSymbol: 'USDS',
+    assetAddress: USDS_ADDRESS,
+    assetDecimals: 18,
+    defaultStrategyImpl: OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+    yieldMode: 'donating',
+    vaultConstant: OCTANT_SKY_USDS_REWARD_ADDRESS,
+  },
+  [OCTANT_YEARN_FACTORY_ADDRESS.toLowerCase()]: {
+    name: 'Octant Yearn V3 Factory',
+    source: 'yearn',
+    assetSymbol: 'Yearn vault asset',
+    assetDecimals: 18,
+    defaultStrategyImpl: OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+    yieldMode: 'donating',
+    // vaultConstant intentionally absent — Yearn needs the user's yearnVault arg
+  },
+};
+
 /**
  * OpenSea Seaport 1.5 — the protocol contract that fulfills NFT orders.
  * Seaport 1.6 (0x0000000000000068F116a894984e2DB1123eB395) is a separate

@@ -57,6 +57,23 @@ const KNOWN_CONTRACTS: Record<string, string> = {
   '0x0000000000000068f116a894984e2db1123eb395': 'OpenSea Seaport',
   // Nouns ecosystem
   '0x65294e6b55a9939e326c1b51b03bb4bd3ca5e675': 'delegations.nouns.eth',
+  // Octant v2 — Dragon vault factories (mainnet)
+  '0xc69288f65647ddf8fdbfdc905bdbd21b034b61b8': 'Octant Lido Factory',
+  '0x1ee8af6604d7e80f155d45a863128bc79f015275': 'Octant Morpho Factory',
+  '0x2a3fd5d3ab48cde74cb0b179d3c67155119141cc': 'Octant Sky Factory',
+  '0x9a6c9aa80d4a0d8da29ecba62c40ccbbb321abb6': 'Octant Yearn V3 Factory',
+  '0x5711765e0756b45224fc1fda1b41ab344682bbcb': 'Octant PaymentSplitter Factory',
+  // Octant v2 — shared tokenized strategy implementations
+  '0xe8797a98710518a6973cc8612f98154eecf2c711': 'Octant Yield-Donating Strategy',
+  '0xfe064aca6acff4efbe496271a665f0a9d66d6da1': 'Octant Yield-Skimming Strategy',
+};
+
+/** Octant factory address → underlying-asset symbol shown in the decoded title. */
+const OCTANT_FACTORY_ASSETS: Record<string, string> = {
+  '0xc69288f65647ddf8fdbfdc905bdbd21b034b61b8': 'wstETH',
+  '0x1ee8af6604d7e80f155d45a863128bc79f015275': 'USDC',
+  '0x2a3fd5d3ab48cde74cb0b179d3c67155119141cc': 'USDS',
+  '0x9a6c9aa80d4a0d8da29ecba62c40ccbbb321abb6': 'Yearn V3',
 };
 
 // Token decimals
@@ -952,6 +969,112 @@ export function decodeTransaction(
     }
   }
   
+  // Octant v2 — createStrategy on a known factory. Decoded directly via viem
+  // since the calldata mixes dynamic strings with addresses, which the
+  // shared `tryDecodeParams` helper can't unpack.
+  if (signature.startsWith('createStrategy(') && OCTANT_FACTORY_ASSETS[target]) {
+    const asset = OCTANT_FACTORY_ASSETS[target];
+    const factoryName = getContractName(target) || 'Octant Factory';
+    try {
+      let vaultName = '';
+      let donationAddress: string | undefined;
+      if (signature.startsWith('createStrategy(address,address,string,string,')) {
+        const decoded = decodeAbiParameters(
+          parseAbiParameters(
+            'address, address, string, string, address, address, address, address, bool, address',
+          ),
+          action.calldata as Hex,
+        ) as readonly [string, string, string, string, string, string, string, string, boolean, string];
+        vaultName = decoded[2];
+        donationAddress = decoded[7];
+      } else {
+        const decoded = decodeAbiParameters(
+          parseAbiParameters(
+            'string, string, address, address, address, address, bool, address',
+          ),
+          action.calldata as Hex,
+        ) as readonly [string, string, string, string, string, string, boolean, string];
+        vaultName = decoded[0];
+        donationAddress = decoded[5];
+      }
+      decoded.title = vaultName
+        ? `Deploy Octant ${asset} Dragon Vault — “${vaultName}”`
+        : `Deploy Octant ${asset} Dragon Vault`;
+      decoded.description = donationAddress
+        ? `${factoryName} — yield routes to ${getContractName(donationAddress) || formatAddress(donationAddress)}`
+        : `${factoryName} — CREATE2-deploys an ERC-4626 strategy that routes yield to a donation address`;
+      decoded.params = { contract: action.target };
+      return decoded;
+    } catch {
+      // Fall through to the generic rendering on malformed calldata
+    }
+  }
+
+  // Octant PaymentSplitterFactory.createPaymentSplitter — friendlier title.
+  if (
+    target === '0x5711765e0756b45224fc1fda1b41ab344682bbcb' &&
+    signature.startsWith('createPaymentSplitter(')
+  ) {
+    try {
+      const [payees] = decodeAbiParameters(
+        parseAbiParameters('address[], string[], uint256[]'),
+        action.calldata as Hex,
+      ) as readonly [readonly string[], readonly string[], readonly bigint[]];
+      decoded.title = `Deploy Octant PaymentSplitter (${payees.length} payee${payees.length === 1 ? '' : 's'})`;
+      decoded.description =
+        'Minimal-proxy splitter that distributes received donations to payees by share';
+      decoded.params = { contract: action.target };
+      return decoded;
+    } catch {
+      // fall through to generic rendering
+    }
+  }
+
+  // ERC-4626 deposit(uint256, address) — Octant Dragon vault deposit. Treat
+  // any deposit() that lands shares at the treasury as an Octant vault op.
+  if (signature === 'deposit(uint256,address)' && params) {
+    const amount = params.param0 as bigint;
+    const receiver = params.param1 as string;
+    const formattedAmount = formatTokenAmount(amount, 18);
+    decoded.title = `Deposit ${formattedAmount} into Octant vault`;
+    decoded.description = `Receiver: ${getContractName(receiver) || formatAddress(receiver)}`;
+    decoded.params = { contract: action.target };
+    return decoded;
+  }
+
+  // ERC-4626 redeem(uint256, address, address) — Octant vault share redemption.
+  if (signature === 'redeem(uint256,address,address)' && params) {
+    const shares = params.param0 as bigint;
+    const formattedShares = formatTokenAmount(shares, 18);
+    decoded.title = `Redeem ${formattedShares} Octant vault shares`;
+    decoded.description = 'Burns shares and returns the underlying asset';
+    decoded.params = { contract: action.target };
+    return decoded;
+  }
+
+  // ERC-4626 withdraw(uint256, address, address) — Octant vault asset pull.
+  if (signature === 'withdraw(uint256,address,address)' && params) {
+    const assets = params.param0 as bigint;
+    const formattedAssets = formatTokenAmount(assets, 18);
+    decoded.title = `Withdraw ${formattedAssets} from Octant vault`;
+    decoded.description = 'Pulls underlying assets out by amount';
+    decoded.params = { contract: action.target };
+    return decoded;
+  }
+
+  // wstETH wrap — stETH → wstETH lossless conversion. Match by target +
+  // signature.
+  if (
+    target === '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0' &&
+    signature === 'wrap(uint256)' &&
+    params
+  ) {
+    const amount = params.param0 as bigint;
+    const formatted = formatTokenAmount(amount, 18);
+    decoded.title = `Wrap ${formatted} stETH → wstETH`;
+    return decoded;
+  }
+
   // Stream Factory: createStream(recipient, amount, tokenAddress, startTime, endTime, nonce, predictedStreamAddress)
   if (signature.startsWith('createStream(') && params) {
     const recipient = params.param0 as string;  // recipient is param0

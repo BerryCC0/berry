@@ -1,0 +1,92 @@
+/**
+ * OctantSimulateButton styles
+ */
+
+.wrapper {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--berry-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simulateBtn {
+  align-self: flex-start;
+  padding: 8px 14px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.simulateBtn:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+}
+
+.simulateBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.resultSuccess,
+.resultFail,
+.resultError {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left-width: 3px;
+  border-left-style: solid;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resultSuccess {
+  background: var(--berry-bg-secondary);
+  border-left-color: #10b981;
+  color: var(--berry-text-primary);
+}
+
+.resultFail {
+  background: var(--berry-bg-secondary);
+  border-left-color: #ef4444;
+  color: var(--berry-text-primary);
+}
+
+.resultError {
+  background: var(--berry-bg-secondary);
+  border-left-color: #f59e0b;
+  color: var(--berry-text-primary);
+}
+
+.resultHeader {
+  font-weight: 600;
+}
+
+.resultDetail {
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+}
+
+.actionError {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+  color: #ef4444;
+  word-break: break-word;
+}
+
+.shareLink {
+  align-self: flex-start;
+  color: var(--berry-primary);
+  text-decoration: underline;
+  font-size: 11px;
+}

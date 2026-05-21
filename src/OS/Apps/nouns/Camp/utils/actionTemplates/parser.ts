@@ -2,6 +2,7 @@
  * Action parsing - reverse engineering actions back to templates
  */
 
+import { decodeAbiParameters, parseAbiParameters, type Hex } from 'viem';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns';
 import {
   ActionTemplateState,
@@ -14,10 +15,16 @@ import {
   EXTERNAL_CONTRACTS,
   KNOWN_VOTES_TOKENS,
   NOUNS_TOKEN_ADDRESS,
+  OCTANT_FACTORIES,
+  OCTANT_LIDO_FACTORY_ADDRESS,
+  OCTANT_MORPHO_FACTORY_ADDRESS,
+  OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS,
+  OCTANT_SKY_FACTORY_ADDRESS,
   PAYER_ADDRESS,
   STREAM_FACTORY_ADDRESS,
   TOKEN_BUYER_ADDRESS,
-  TREASURY_ADDRESS
+  TREASURY_ADDRESS,
+  WSTETH_ADDRESS,
 } from './constants';
 import { formatUnits } from './utils';
 import type { ActionTemplateType } from './types';
@@ -129,6 +136,34 @@ export function parseActionsToTemplates(actions: ProposalAction[]): ActionTempla
     if (repayDebtResult) {
       templateStates.push(repayDebtResult.state);
       repayDebtResult.consumedIndices.forEach(idx => processedIndices.add(idx));
+      continue;
+    }
+
+    // Check if this is an Octant "deploy + seed" 3-action bundle. Must run
+    // BEFORE the single-action createStrategy + the deposit-pair matchers so
+    // the triple isn't broken up.
+    const octantCreateSeedResult = tryMatchOctantCreateAndSeed(actions, i);
+    if (octantCreateSeedResult) {
+      templateStates.push(octantCreateSeedResult.state);
+      octantCreateSeedResult.consumedIndices.forEach((idx) => processedIndices.add(idx));
+      continue;
+    }
+
+    // Check if this is an Octant deposit pair (approve + deposit). Run before
+    // the single-action matchers so the leading approve isn't classified as
+    // a standalone erc20-approve.
+    const octantDepositResult = tryMatchOctantDeposit(actions, i);
+    if (octantDepositResult) {
+      templateStates.push(octantDepositResult.state);
+      octantDepositResult.consumedIndices.forEach(idx => processedIndices.add(idx));
+      continue;
+    }
+
+    // Check if this is a stETH → wstETH wrap pair (approve + wrap).
+    const wstethWrapResult = tryMatchWstethWrap(actions, i);
+    if (wstethWrapResult) {
+      templateStates.push(wstethWrapResult.state);
+      wstethWrapResult.consumedIndices.forEach(idx => processedIndices.add(idx));
       continue;
     }
 
@@ -410,6 +445,150 @@ function matchActionToTemplate(
     }
   }
 
+  // Octant v2 — standalone createPaymentSplitter call. Decoded into the
+  // free-form lines format the standalone template uses.
+  if (
+    target === OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS.toLowerCase() &&
+    signature === 'createPaymentSplitter(address[],string[],uint256[])'
+  ) {
+    const cd = (calldata.startsWith('0x') ? calldata : `0x${calldata}`) as Hex;
+    try {
+      const [payees, names, shares] = decodeAbiParameters(
+        parseAbiParameters('address[], string[], uint256[]'),
+        cd,
+      ) as readonly [readonly string[], readonly string[], readonly bigint[]];
+      const lines = payees
+        .map((addr, i) => {
+          const name = (names[i] || '').trim();
+          const share = shares[i].toString();
+          return name ? `${addr} ${name} ${share}` : `${addr} ${share}`;
+        })
+        .join('\n');
+      return {
+        templateId: 'octant-splitter-create',
+        fieldValues: { payees: lines },
+        generatedActions: [],
+      };
+    } catch {
+      // Fall through if calldata is malformed
+    }
+  }
+
+  // Octant v2 — createStrategy(...) on a known factory. Decoded via viem so
+  // the dynamic name/symbol strings round-trip cleanly back into the editor.
+  const factoryMeta = OCTANT_FACTORIES[target];
+  if (factoryMeta) {
+    const cd = (calldata.startsWith('0x') ? calldata : `0x${calldata}`) as Hex;
+    try {
+      if (factoryMeta.source === 'yearn') {
+        const decoded = decodeAbiParameters(
+          parseAbiParameters(
+            'address, address, string, string, address, address, address, address, bool, address',
+          ),
+          cd,
+        ) as readonly [string, string, string, string, string, string, string, string, boolean, string];
+        return {
+          templateId: 'octant-vault-create-yearn',
+          fieldValues: {
+            yearnVault: decoded[0],
+            asset: decoded[1],
+            vaultName: decoded[2],
+            vaultSymbol: decoded[3],
+            management: decoded[4],
+            keeper: decoded[5],
+            emergencyAdmin: decoded[6],
+            donationAddress: decoded[7],
+            enableBurning: decoded[8] ? 'true' : 'false',
+            tokenizedStrategyAddress: decoded[9],
+          },
+          generatedActions: [],
+        };
+      }
+      const decoded = decodeAbiParameters(
+        parseAbiParameters(
+          'string, string, address, address, address, address, bool, address',
+        ),
+        cd,
+      ) as readonly [string, string, string, string, string, string, boolean, string];
+      const templateId =
+        target === OCTANT_LIDO_FACTORY_ADDRESS.toLowerCase()
+          ? 'octant-vault-create-lido'
+          : target === OCTANT_MORPHO_FACTORY_ADDRESS.toLowerCase()
+            ? 'octant-vault-create-morpho'
+            : target === OCTANT_SKY_FACTORY_ADDRESS.toLowerCase()
+              ? 'octant-vault-create-sky'
+              : null;
+      if (templateId) {
+        return {
+          templateId,
+          fieldValues: {
+            vaultName: decoded[0],
+            vaultSymbol: decoded[1],
+            management: decoded[2],
+            keeper: decoded[3],
+            emergencyAdmin: decoded[4],
+            donationAddress: decoded[5],
+            enableBurning: decoded[6] ? 'true' : 'false',
+            tokenizedStrategyAddress: decoded[7],
+          },
+          generatedActions: [],
+        };
+      }
+    } catch {
+      // Fall through to the generic catch-all if calldata is malformed
+    }
+  }
+
+  // ERC-4626 redeem(uint256,address,address) — Octant Dragon vault withdrawal
+  // by share count. Matches any target since deployed vault addresses are
+  // dynamic; the receiver/owner pair must both be the treasury.
+  if (signature === 'redeem(uint256,address,address)') {
+    const decoded = decodeCalldata(calldata, ['uint256', 'address', 'address']);
+    if (decoded) {
+      const receiver = (decoded[1] as string).toLowerCase();
+      const owner = (decoded[2] as string).toLowerCase();
+      if (
+        receiver === TREASURY_ADDRESS.toLowerCase() &&
+        owner === TREASURY_ADDRESS.toLowerCase()
+      ) {
+        return {
+          templateId: 'octant-vault-redeem',
+          fieldValues: {
+            vault: target,
+            shares: formatUnits(BigInt(decoded[0] as string), 18),
+          },
+          generatedActions: [],
+        };
+      }
+    }
+  }
+
+  // ERC-4626 withdraw(uint256,address,address) — same shape as redeem, but
+  // amount is in underlying asset units.
+  if (signature === 'withdraw(uint256,address,address)') {
+    const decoded = decodeCalldata(calldata, ['uint256', 'address', 'address']);
+    if (decoded) {
+      const receiver = (decoded[1] as string).toLowerCase();
+      const owner = (decoded[2] as string).toLowerCase();
+      if (
+        receiver === TREASURY_ADDRESS.toLowerCase() &&
+        owner === TREASURY_ADDRESS.toLowerCase()
+      ) {
+        // We can't infer the underlying-asset decimals from the vault address
+        // alone — surface the raw amount (18-dec assumption) and let the user
+        // re-pick the token in the editor.
+        return {
+          templateId: 'octant-vault-withdraw',
+          fieldValues: {
+            vault: target,
+            amount: formatUnits(BigInt(decoded[0] as string), 18),
+          },
+          generatedActions: [],
+        };
+      }
+    }
+  }
+
   return null;
 }
 
@@ -497,6 +676,296 @@ function tryMatchPayerRepayDebt(
     state: {
       templateId: 'payer-repay-debt',
       fieldValues: { usdcAmount },
+      generatedActions: [],
+    },
+    consumedIndices: [startIndex, nextIndex],
+  };
+}
+
+/**
+ * Try to match an Octant "deploy + seed (+ splitter)" bundle of 1–4 actions:
+ *   [0] (optional) createPaymentSplitter on PaymentSplitterFactory
+ *   [1]            createStrategy on a known Octant factory
+ *   [2] (optional) approve(predictedAddr, amount) on the underlying asset
+ *   [3] (optional) deposit(amount, treasury) on predictedAddr
+ *
+ * Must run BEFORE the standalone createStrategy and deposit matchers so the
+ * bundle isn't broken apart into separate templates. Single-action createStrategy
+ * is still handled by the catch-all matchActionToTemplate.
+ */
+function tryMatchOctantCreateAndSeed(
+  actions: ProposalAction[],
+  startIndex: number,
+): { state: ActionTemplateState; consumedIndices: number[] } | null {
+  let cursor = startIndex;
+  const consumed: number[] = [];
+
+  // (Optional) leading createPaymentSplitter
+  let splitterPayload:
+    | { payees: string[]; names: string[]; shares: string[]; predicted: string }
+    | undefined;
+  if (
+    actions[cursor]?.target.toLowerCase() ===
+      OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS.toLowerCase() &&
+    actions[cursor]?.signature?.startsWith('createPaymentSplitter(')
+  ) {
+    const cd = (
+      actions[cursor].calldata.startsWith('0x')
+        ? actions[cursor].calldata
+        : `0x${actions[cursor].calldata}`
+    ) as Hex;
+    try {
+      const [payees, names, shares] = decodeAbiParameters(
+        parseAbiParameters('address[], string[], uint256[]'),
+        cd,
+      ) as readonly [readonly string[], readonly string[], readonly bigint[]];
+      splitterPayload = {
+        payees: payees as string[],
+        names: names as string[],
+        shares: (shares as readonly bigint[]).map((s) => s.toString()),
+        predicted: '', // filled in below once we know createStrategy's donation arg
+      };
+      consumed.push(cursor);
+      cursor += 1;
+    } catch {
+      // Malformed splitter calldata — fall through to standalone matchers
+      return null;
+    }
+  }
+
+  // Required: createStrategy on an Octant factory
+  const a = actions[cursor];
+  if (!a) return null;
+  const factoryMeta = OCTANT_FACTORIES[a.target.toLowerCase()];
+  if (!factoryMeta) return null;
+  if (!a.signature || !a.signature.startsWith('createStrategy(')) return null;
+  consumed.push(cursor);
+  cursor += 1;
+
+  // (Optional) trailing approve + deposit
+  let seedAmount: string | undefined;
+  let predictedVault: string | undefined;
+  const maybeApprove = actions[cursor];
+  const maybeDeposit = actions[cursor + 1];
+  if (
+    maybeApprove?.signature === 'approve(address,uint256)' &&
+    maybeDeposit?.signature === 'deposit(uint256,address)'
+  ) {
+    const approveDecoded = decodeCalldata(maybeApprove.calldata || '0x', [
+      'address',
+      'uint256',
+    ]);
+    const depositDecoded = decodeCalldata(maybeDeposit.calldata || '0x', [
+      'uint256',
+      'address',
+    ]);
+    if (
+      approveDecoded &&
+      depositDecoded &&
+      (depositDecoded[1] as string).toLowerCase() ===
+        TREASURY_ADDRESS.toLowerCase() &&
+      (approveDecoded[0] as string).toLowerCase() ===
+        maybeDeposit.target.toLowerCase() &&
+      BigInt(approveDecoded[1] as string) === BigInt(depositDecoded[0] as string) &&
+      (!factoryMeta.assetAddress ||
+        maybeApprove.target.toLowerCase() ===
+          factoryMeta.assetAddress.toLowerCase())
+    ) {
+      seedAmount = formatUnits(
+        BigInt(depositDecoded[0] as string),
+        factoryMeta.assetDecimals,
+      );
+      predictedVault = maybeDeposit.target;
+      consumed.push(cursor, cursor + 1);
+    }
+  }
+
+  // Decode createStrategy
+  const cd = (a.calldata.startsWith('0x') ? a.calldata : `0x${a.calldata}`) as Hex;
+  try {
+    let fieldValues: ActionTemplateState['fieldValues'];
+    let templateId: ActionTemplateType;
+    let donationFromCreate: string;
+
+    if (factoryMeta.source === 'yearn') {
+      const decoded = decodeAbiParameters(
+        parseAbiParameters(
+          'address, address, string, string, address, address, address, address, bool, address',
+        ),
+        cd,
+      ) as readonly [string, string, string, string, string, string, string, string, boolean, string];
+      templateId = 'octant-vault-create-yearn';
+      donationFromCreate = decoded[7];
+      fieldValues = {
+        yearnVault: decoded[0],
+        asset: decoded[1],
+        vaultName: decoded[2],
+        vaultSymbol: decoded[3],
+        management: decoded[4],
+        keeper: decoded[5],
+        emergencyAdmin: decoded[6],
+        donationAddress: decoded[7],
+        enableBurning: decoded[8] ? 'true' : 'false',
+        tokenizedStrategyAddress: decoded[9],
+        ...(seedAmount ? { seedAmount } : {}),
+        ...(predictedVault ? { predictedVault } : {}),
+      };
+    } else {
+      const decoded = decodeAbiParameters(
+        parseAbiParameters(
+          'string, string, address, address, address, address, bool, address',
+        ),
+        cd,
+      ) as readonly [string, string, string, string, string, string, boolean, string];
+      const target = a.target.toLowerCase();
+      templateId =
+        target === OCTANT_LIDO_FACTORY_ADDRESS.toLowerCase()
+          ? 'octant-vault-create-lido'
+          : target === OCTANT_MORPHO_FACTORY_ADDRESS.toLowerCase()
+            ? 'octant-vault-create-morpho'
+            : 'octant-vault-create-sky';
+      donationFromCreate = decoded[5];
+      fieldValues = {
+        vaultName: decoded[0],
+        vaultSymbol: decoded[1],
+        management: decoded[2],
+        keeper: decoded[3],
+        emergencyAdmin: decoded[4],
+        donationAddress: decoded[5],
+        enableBurning: decoded[6] ? 'true' : 'false',
+        tokenizedStrategyAddress: decoded[7],
+        ...(seedAmount ? { seedAmount } : {}),
+        ...(predictedVault ? { predictedVault } : {}),
+      };
+    }
+
+    // If the bundle began with a splitter creation, the splitter's predicted
+    // address should match the donation address in createStrategy. Verify
+    // and stash the payload so the editor can reopen it.
+    if (splitterPayload) {
+      if (
+        donationFromCreate.toLowerCase() !==
+        splitterPayload.predicted.toLowerCase()
+      ) {
+        // Try filling in the predicted address from the donation arg (since
+        // the splitter is the donation target by construction).
+        splitterPayload = { ...splitterPayload, predicted: donationFromCreate };
+      }
+      fieldValues.newSplitterPayload = JSON.stringify(splitterPayload);
+    }
+
+    // Bare standalone create with no extras → don't claim it; let the
+    // single-action matcher handle it (so the templateId still resolves but
+    // we don't allocate a multi-action group for nothing).
+    if (consumed.length === 1) {
+      return null;
+    }
+
+    return {
+      state: { templateId, fieldValues, generatedActions: [] },
+      consumedIndices: consumed,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Try to match an Octant ERC-4626 deposit pair:
+ *   1. approve(vault, X) on the underlying asset
+ *   2. deposit(X, treasury) on the vault
+ *
+ * The vault is whichever address the approve targets — we don't enumerate
+ * known vaults because Octant deploys them via CREATE2 dynamically.
+ */
+function tryMatchOctantDeposit(
+  actions: ProposalAction[],
+  startIndex: number,
+): { state: ActionTemplateState; consumedIndices: number[] } | null {
+  const action = actions[startIndex];
+  if (action.signature !== 'approve(address,uint256)') return null;
+  const approveDecoded = decodeCalldata(action.calldata || '0x', ['address', 'uint256']);
+  if (!approveDecoded) return null;
+  const spender = (approveDecoded[0] as string).toLowerCase();
+  const approveAmount = approveDecoded[1] as string;
+  const tokenAddress = action.target;
+
+  const nextIndex = startIndex + 1;
+  if (nextIndex >= actions.length) return null;
+  const next = actions[nextIndex];
+  if (next.target.toLowerCase() !== spender) return null;
+  if (next.signature !== 'deposit(uint256,address)') return null;
+
+  const depositDecoded = decodeCalldata(next.calldata || '0x', ['uint256', 'address']);
+  if (!depositDecoded) return null;
+  const depositAmount = depositDecoded[0] as string;
+  if (BigInt(depositAmount) !== BigInt(approveAmount)) return null;
+
+  // Receiver must be the treasury — otherwise this isn't a treasury deposit
+  const receiver = (depositDecoded[1] as string).toLowerCase();
+  if (receiver !== TREASURY_ADDRESS.toLowerCase()) return null;
+
+  const known = COMMON_TOKENS.find(
+    (t) => t.address.toLowerCase() === tokenAddress.toLowerCase(),
+  );
+  const decimals = known?.decimals ?? 18;
+
+  return {
+    state: {
+      templateId: 'octant-vault-deposit',
+      fieldValues: {
+        vault: next.target,
+        token: known
+          ? JSON.stringify({
+              symbol: known.symbol,
+              address: known.address,
+              decimals: known.decimals,
+              isNative: false,
+            })
+          : tokenAddress,
+        amount: formatUnits(BigInt(depositAmount), decimals),
+      },
+      generatedActions: [],
+    },
+    consumedIndices: [startIndex, nextIndex],
+  };
+}
+
+/**
+ * Try to match a stETH → wstETH wrap pair:
+ *   1. approve(wstETH, X) on stETH
+ *   2. wrap(X) on wstETH
+ */
+function tryMatchWstethWrap(
+  actions: ProposalAction[],
+  startIndex: number,
+): { state: ActionTemplateState; consumedIndices: number[] } | null {
+  const action = actions[startIndex];
+  const stEthAddress = COMMON_TOKENS.find((t) => t.symbol === 'stETH')?.address;
+  if (!stEthAddress) return null;
+  if (action.target.toLowerCase() !== stEthAddress.toLowerCase()) return null;
+  if (action.signature !== 'approve(address,uint256)') return null;
+
+  const approveDecoded = decodeCalldata(action.calldata || '0x', ['address', 'uint256']);
+  if (!approveDecoded) return null;
+  if ((approveDecoded[0] as string).toLowerCase() !== WSTETH_ADDRESS.toLowerCase()) return null;
+
+  const nextIndex = startIndex + 1;
+  if (nextIndex >= actions.length) return null;
+  const next = actions[nextIndex];
+  if (next.target.toLowerCase() !== WSTETH_ADDRESS.toLowerCase()) return null;
+  if (next.signature !== 'wrap(uint256)') return null;
+
+  const wrapDecoded = decodeCalldata(next.calldata || '0x', ['uint256']);
+  if (!wrapDecoded) return null;
+  if (BigInt(wrapDecoded[0] as string) !== BigInt(approveDecoded[1] as string)) return null;
+
+  return {
+    state: {
+      templateId: 'lst-wsteth-wrap',
+      fieldValues: {
+        amount: formatUnits(BigInt(wrapDecoded[0] as string), 18),
+      },
       generatedActions: [],
     },
     consumedIndices: [startIndex, nextIndex],

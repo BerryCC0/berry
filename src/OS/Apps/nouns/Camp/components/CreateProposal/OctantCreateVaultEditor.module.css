@@ -1,0 +1,327 @@
+/**
+ * OctantCreateVaultEditor styles
+ * Layout-only — input/field structure inherits ActionTemplateEditor styles.
+ */
+
+.factoryBanner {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-left: 3px solid var(--berry-primary);
+  border-radius: 6px;
+}
+
+.factoryBannerLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.factoryBannerDesc {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+
+/* Name + symbol side-by-side */
+.nameSymbolRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+.nameSymbolRow > * {
+  margin-bottom: 16px;
+}
+
+/* Burning toggle pair */
+.toggleRow {
+  display: flex;
+  gap: 8px;
+}
+
+.toggleBtn {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.toggleBtn:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+}
+
+.toggleBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.toggleBtnActive {
+  background: var(--berry-primary);
+  color: var(--berry-text-on-primary, #fff);
+  border-color: var(--berry-primary);
+}
+
+.toggleBtnActive:hover:not(:disabled) {
+  background: var(--berry-primary);
+}
+
+/* Advanced section */
+.advancedToggle {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 6px 0;
+  background: transparent;
+  border: none;
+  color: var(--berry-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+.advancedToggle:hover:not(:disabled) {
+  color: var(--berry-text-primary);
+}
+
+.advancedToggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.advancedPanel {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Role header — label + treasury chip on the same line */
+.roleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.treasuryChipActive {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-primary);
+  background: var(--berry-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--berry-primary);
+}
+
+.resetTreasuryBtn {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+}
+
+.resetTreasuryBtn:hover:not(:disabled) {
+  color: var(--berry-primary);
+}
+
+.resetTreasuryBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Resolved-asset chip (Yearn flow) */
+.resolvedChip {
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--berry-text-primary);
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+/* Predicted-address banner */
+.predictionBanner {
+  margin: 4px 0 16px 0;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-primary);
+  border-left: 3px solid var(--berry-primary);
+  border-radius: 6px;
+}
+
+.predictionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-primary);
+  margin-bottom: 4px;
+}
+
+.predictionAddress {
+  font-size: 12px;
+  font-family: var(--berry-font-mono, monospace);
+  color: var(--berry-text-primary);
+  word-break: break-all;
+  margin-bottom: 4px;
+}
+
+.predictionHelp {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+
+/* Seed panel — same chrome as advanced panel */
+.seedPanel {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+}
+
+.seedExplain {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+/* Amount header — label + max button on one line */
+.amountHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.maxBtn {
+  font-size: 11px;
+  color: var(--berry-primary);
+  background: transparent;
+  border: 1px solid var(--berry-primary);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.maxBtn:hover:not(:disabled) {
+  background: var(--berry-primary);
+  color: var(--berry-text-on-primary, #fff);
+}
+
+.maxBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Splitter sub-flow panel + rows */
+.splitterPanel {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.splitterExplain {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.splitterRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.6fr) 24px;
+  gap: 6px;
+  align-items: start;
+}
+
+.splitterRemoveBtn {
+  align-self: stretch;
+  width: 24px;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: 4px;
+  color: var(--berry-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.splitterRemoveBtn:hover:not(:disabled) {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.splitterRemoveBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.splitterAddBtn {
+  align-self: flex-start;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px dashed var(--berry-border);
+  border-radius: 4px;
+  color: var(--berry-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.splitterAddBtn:hover:not(:disabled) {
+  color: var(--berry-primary);
+  border-color: var(--berry-primary);
+}
+
+.splitterFooter {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  margin-top: 4px;
+}
+
+.splitterFooter strong {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+/* Preview line — "treasury will receive ~X" under the seed amount input */
+.previewLine {
+  margin-top: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--berry-primary);
+  background: var(--berry-bg);
+  border-left: 2px solid var(--berry-primary);
+  border-radius: 4px;
+  font-family: var(--berry-font-mono, monospace);
+}

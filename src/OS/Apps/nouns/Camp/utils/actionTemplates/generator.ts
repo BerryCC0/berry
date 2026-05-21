@@ -21,7 +21,12 @@ import {
   encodeCreateStreamWithPredictedAddress,
   encodeDelegate,
   encodeDynamicQuorumParams,
+  encodeErc4626Deposit,
+  encodeErc4626RedeemOrWithdraw,
   encodeMetaProposeCalldata,
+  encodeOctantCreatePaymentSplitter,
+  encodeOctantCreateStrategyBase,
+  encodeOctantCreateStrategyYearn,
   encodeProposalRewardParams,
   encodeSafeTransferFrom,
   encodeSendETH,
@@ -44,13 +49,186 @@ import {
   MANTLE_STAKING_ADDRESS,
   METH_ADDRESS,
   NOUNS_TOKEN_ADDRESS,
+  OCTANT_LIDO_FACTORY_ADDRESS,
+  OCTANT_MORPHO_FACTORY_ADDRESS,
+  OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS,
+  OCTANT_SKY_FACTORY_ADDRESS,
+  OCTANT_YEARN_FACTORY_ADDRESS,
+  OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+  OCTANT_YIELD_SKIMMING_STRATEGY_ADDRESS,
   PAYER_ADDRESS,
   STREAM_FACTORY_ADDRESS,
   TOKEN_BUYER_ADDRESS,
   TREASURY_ADDRESS,
   UNISWAP_V3_ROUTER_ADDRESS,
+  USDS_ADDRESS,
   WSTETH_ADDRESS,
 } from './constants';
+
+/**
+ * Resolve an address field with a fallback. If the user cleared a role
+ * field that had a defaultValue (treasury, etc.), or if the field was
+ * never populated, fall back to `fallback`. Otherwise pass through the
+ * user's input as a 0x-prefixed Address.
+ */
+function addressOr(value: string | undefined, fallback: Address): Address {
+  if (value && value.startsWith('0x') && value.length === 42) {
+    return value as Address;
+  }
+  return fallback;
+}
+
+/**
+ * Parse the standalone splitter template's free-form text input into the
+ * structured (payees, names, shares) tuple PaymentSplitterFactory expects.
+ * Format per line: "0xAddr [optional name with spaces] <integer shares>"
+ * Returns null when any line is malformed so the template surfaces an error.
+ */
+function parseSplitterPayeesText(
+  raw: string | undefined,
+): { payees: Address[]; names: string[]; shares: bigint[] } | null {
+  if (!raw) return null;
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  if (lines.length === 0) return null;
+
+  const payees: Address[] = [];
+  const names: string[] = [];
+  const shares: bigint[] = [];
+
+  for (const line of lines) {
+    // First token = address, last token = share count, middle tokens = name
+    const parts = line.split(/\s+/);
+    if (parts.length < 2) return null;
+    const addr = parts[0];
+    const sharesStr = parts[parts.length - 1];
+    const name = parts.slice(1, -1).join(' ');
+    if (!addr.startsWith('0x') || addr.length !== 42) return null;
+    if (!/^\d+$/.test(sharesStr)) return null;
+    payees.push(addr as Address);
+    names.push(name);
+    shares.push(BigInt(sharesStr));
+  }
+
+  return { payees, names, shares };
+}
+
+/**
+ * The bundled-splitter payload set by the OctantCreateVaultEditor when the
+ * user opts to deploy a new splitter as the vault's donation address.
+ */
+interface NewSplitterPayload {
+  payees: Address[];
+  names: string[];
+  shares: string[]; // serialised bigints
+  predicted: Address;
+}
+
+function parseNewSplitterPayload(raw: string | undefined): NewSplitterPayload | null {
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw) as NewSplitterPayload;
+    if (!Array.isArray(obj.payees) || obj.payees.length === 0) return null;
+    if (!Array.isArray(obj.names) || obj.names.length !== obj.payees.length) return null;
+    if (!Array.isArray(obj.shares) || obj.shares.length !== obj.payees.length) return null;
+    if (!obj.predicted || !obj.predicted.startsWith('0x') || obj.predicted.length !== 42) {
+      return null;
+    }
+    return obj;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * If the editor populated `newSplitterPayload`, return the prepended
+ * `createPaymentSplitter` action so the proposal deploys the splitter and
+ * routes the vault to it atomically.
+ */
+function octantNewSplitterAction(
+  fieldValues: TemplateFieldValues,
+): ProposalAction | null {
+  const payload = parseNewSplitterPayload(fieldValues.newSplitterPayload);
+  if (!payload) return null;
+  return {
+    target: OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS,
+    value: '0',
+    signature: 'createPaymentSplitter(address[],string[],uint256[])',
+    calldata: encodeOctantCreatePaymentSplitter(
+      payload.payees,
+      payload.names,
+      payload.shares.map((s) => BigInt(s)),
+    ),
+  };
+}
+
+/**
+ * If the user filled in `seedAmount` and the editor predicted the new vault's
+ * CREATE2 address, return the two follow-on actions that fund it:
+ *   1. asset.approve(predictedVault, amount)
+ *   2. predictedVault.deposit(amount, treasury)
+ *
+ * Returns an empty array when seeding is not requested or the predicted
+ * address is missing — the caller falls back to a plain single-action create.
+ */
+function octantSeedActions(
+  templateId: ActionTemplateType,
+  fieldValues: TemplateFieldValues,
+): ProposalAction[] {
+  const seedRaw = (fieldValues.seedAmount || '').trim();
+  if (!seedRaw || seedRaw === '0' || parseFloat(seedRaw) <= 0) return [];
+
+  const predicted = fieldValues.predictedVault;
+  if (!predicted || !predicted.startsWith('0x') || predicted.length !== 42) {
+    return [];
+  }
+
+  // Per-factory asset + decimals. Yearn pulls from the user-supplied asset
+  // field; the editor sets `seedAssetDecimals` so we scale correctly when
+  // it's available, falling back to 18 otherwise.
+  let assetAddress: Address;
+  let assetDecimals: number;
+  switch (templateId) {
+    case 'octant-vault-create-lido':
+      assetAddress = WSTETH_ADDRESS;
+      assetDecimals = 18;
+      break;
+    case 'octant-vault-create-morpho':
+      assetAddress = EXTERNAL_CONTRACTS.USDC.address;
+      assetDecimals = 6;
+      break;
+    case 'octant-vault-create-sky':
+      assetAddress = USDS_ADDRESS;
+      assetDecimals = 18;
+      break;
+    case 'octant-vault-create-yearn':
+      if (!fieldValues.asset || !fieldValues.asset.startsWith('0x')) return [];
+      assetAddress = fieldValues.asset as Address;
+      assetDecimals = Number(fieldValues.seedAssetDecimals || '18');
+      break;
+    default:
+      return [];
+  }
+
+  const amount = parseUnits(seedRaw, assetDecimals);
+  const predictedAddr = predicted as Address;
+  return [
+    {
+      target: assetAddress,
+      value: '0',
+      signature: 'approve(address,uint256)',
+      calldata: encodeTransfer(predictedAddr, amount),
+    },
+    {
+      target: predictedAddr,
+      value: '0',
+      signature: 'deposit(uint256,address)',
+      calldata: encodeErc4626Deposit(amount, TREASURY_ADDRESS),
+    },
+  ];
+}
 import { parseEther, parseUnits } from './utils';
 import { getTemplate } from './templates';
 
@@ -1307,6 +1485,35 @@ export function generateActionsFromTemplate(
       }];
 
     // ----- Liquid staking — Lido ----------------------------------------
+    case 'lst-wsteth-wrap': {
+      // wstETH.wrap pulls stETH via transferFrom, so we need a prior approve.
+      // stETH lives at COMMON_TOKENS[stETH]; the wrapper is at WSTETH_ADDRESS.
+      const stEthAddress = COMMON_TOKENS.find((t) => t.symbol === 'stETH')!
+        .address;
+      const amount = parseUnits(fieldValues.amount || '0', 18);
+      const groupId = `wsteth-wrap-${Date.now()}`;
+      return [
+        {
+          target: stEthAddress,
+          value: '0',
+          signature: 'approve(address,uint256)',
+          calldata: encodeTransfer(WSTETH_ADDRESS, amount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0,
+        },
+        {
+          target: WSTETH_ADDRESS,
+          value: '0',
+          signature: 'wrap(uint256)',
+          calldata: encodeAdminUint256(amount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1,
+        },
+      ];
+    }
+
     case 'lst-wsteth-unwrap':
       return [{
         target: WSTETH_ADDRESS,
@@ -1392,6 +1599,175 @@ export function generateActionsFromTemplate(
         signature: 'claimUnstakeRequest(uint256)',
         calldata: encodeAdminUint256(BigInt(fieldValues.requestId || '0')),
       }];
+
+    // ----- Octant v2 Dragon vaults --------------------------------------
+    case 'octant-vault-create-lido':
+    case 'octant-vault-create-morpho':
+    case 'octant-vault-create-sky': {
+      const factory =
+        templateId === 'octant-vault-create-lido'
+          ? OCTANT_LIDO_FACTORY_ADDRESS
+          : templateId === 'octant-vault-create-morpho'
+            ? OCTANT_MORPHO_FACTORY_ADDRESS
+            : OCTANT_SKY_FACTORY_ADDRESS;
+      // Lido is yield-skimming; Morpho and Sky are yield-donating. Mirrors
+      // the per-factory defaultValue on the template so empty fields still
+      // produce a usable proposal.
+      const implFallback =
+        templateId === 'octant-vault-create-lido'
+          ? OCTANT_YIELD_SKIMMING_STRATEGY_ADDRESS
+          : OCTANT_YIELD_DONATING_STRATEGY_ADDRESS;
+      const createAction: ProposalAction = {
+        target: factory,
+        value: '0',
+        signature: 'createStrategy(string,string,address,address,address,address,bool,address)',
+        calldata: encodeOctantCreateStrategyBase(
+          fieldValues.vaultName || '',
+          fieldValues.vaultSymbol || '',
+          addressOr(fieldValues.management, TREASURY_ADDRESS),
+          fieldValues.keeper as Address,
+          addressOr(fieldValues.emergencyAdmin, TREASURY_ADDRESS),
+          fieldValues.donationAddress as Address,
+          fieldValues.enableBurning !== 'false',
+          addressOr(fieldValues.tokenizedStrategyAddress, implFallback),
+        ),
+      };
+      // Optional bundled seed deposit + optional new-PaymentSplitter creation
+      // (prepended so the splitter exists before createStrategy reads its
+      // predicted address as donation target).
+      const seedActions = octantSeedActions(templateId, fieldValues);
+      const splitterAction = octantNewSplitterAction(fieldValues);
+      const extras = [...(splitterAction ? [splitterAction] : []), ...seedActions];
+      if (extras.length === 0) return [createAction];
+
+      const groupId = `octant-create-seed-${Date.now()}`;
+      const ordered: ProposalAction[] = splitterAction
+        ? [splitterAction, createAction, ...seedActions]
+        : [createAction, ...seedActions];
+      return ordered.map((a, i) => ({
+        ...a,
+        isPartOfMultiAction: true,
+        multiActionGroupId: groupId,
+        multiActionIndex: i,
+      }));
+    }
+
+    case 'octant-vault-create-yearn': {
+      const createAction: ProposalAction = {
+        target: OCTANT_YEARN_FACTORY_ADDRESS,
+        value: '0',
+        signature: 'createStrategy(address,address,string,string,address,address,address,address,bool,address)',
+        calldata: encodeOctantCreateStrategyYearn(
+          fieldValues.yearnVault as Address,
+          fieldValues.asset as Address,
+          fieldValues.vaultName || '',
+          fieldValues.vaultSymbol || '',
+          addressOr(fieldValues.management, TREASURY_ADDRESS),
+          fieldValues.keeper as Address,
+          addressOr(fieldValues.emergencyAdmin, TREASURY_ADDRESS),
+          fieldValues.donationAddress as Address,
+          fieldValues.enableBurning !== 'false',
+          addressOr(
+            fieldValues.tokenizedStrategyAddress,
+            OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+          ),
+        ),
+      };
+      const seedActions = octantSeedActions('octant-vault-create-yearn', fieldValues);
+      const splitterAction = octantNewSplitterAction(fieldValues);
+      const extras = [...(splitterAction ? [splitterAction] : []), ...seedActions];
+      if (extras.length === 0) return [createAction];
+
+      const groupId = `octant-create-seed-${Date.now()}`;
+      const ordered: ProposalAction[] = splitterAction
+        ? [splitterAction, createAction, ...seedActions]
+        : [createAction, ...seedActions];
+      return ordered.map((a, i) => ({
+        ...a,
+        isPartOfMultiAction: true,
+        multiActionGroupId: groupId,
+        multiActionIndex: i,
+      }));
+    }
+
+    case 'octant-splitter-create': {
+      const parsed = parseSplitterPayeesText(fieldValues.payees);
+      if (!parsed) {
+        // Malformed input — emit an empty placeholder action so validation
+        // bubbles up rather than crashing the generator.
+        return [{ target: OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS, value: '0', signature: '', calldata: '0x' }];
+      }
+      return [{
+        target: OCTANT_PAYMENT_SPLITTER_FACTORY_ADDRESS,
+        value: '0',
+        signature: 'createPaymentSplitter(address[],string[],uint256[])',
+        calldata: encodeOctantCreatePaymentSplitter(
+          parsed.payees,
+          parsed.names,
+          parsed.shares,
+        ),
+      }];
+    }
+
+    case 'octant-vault-deposit': {
+      // Approve the vault to pull the underlying, then deposit.
+      // Receiver = treasury so vault shares land in the treasury.
+      const { address: tokenAddr, decimals } = resolveTokenField(fieldValues.token);
+      const vault = fieldValues.vault as Address;
+      const amount = parseUnits(fieldValues.amount || '0', decimals);
+      const groupId = `octant-deposit-${Date.now()}`;
+      return [
+        {
+          target: tokenAddr as Address,
+          value: '0',
+          signature: 'approve(address,uint256)',
+          calldata: encodeTransfer(vault, amount),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 0,
+        },
+        {
+          target: vault,
+          value: '0',
+          signature: 'deposit(uint256,address)',
+          calldata: encodeErc4626Deposit(amount, TREASURY_ADDRESS),
+          isPartOfMultiAction: true,
+          multiActionGroupId: groupId,
+          multiActionIndex: 1,
+        },
+      ];
+    }
+
+    case 'octant-vault-redeem': {
+      // Shares are 18-decimal by ERC-4626 convention; receiver and owner are
+      // both the treasury (the only address that can authorise this proposal).
+      const shares = parseUnits(fieldValues.shares || '0', 18);
+      return [{
+        target: fieldValues.vault as Address,
+        value: '0',
+        signature: 'redeem(uint256,address,address)',
+        calldata: encodeErc4626RedeemOrWithdraw(
+          shares,
+          TREASURY_ADDRESS,
+          TREASURY_ADDRESS,
+        ),
+      }];
+    }
+
+    case 'octant-vault-withdraw': {
+      const { decimals } = resolveTokenField(fieldValues.token);
+      const assets = parseUnits(fieldValues.amount || '0', decimals);
+      return [{
+        target: fieldValues.vault as Address,
+        value: '0',
+        signature: 'withdraw(uint256,address,address)',
+        calldata: encodeErc4626RedeemOrWithdraw(
+          assets,
+          TREASURY_ADDRESS,
+          TREASURY_ADDRESS,
+        ),
+      }];
+    }
 
     // ----- NFT marketplace — OpenSea Seaport ----------------------------
     // Both templates store pre-built calldata + ETH value on fieldValues;

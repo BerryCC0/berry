@@ -3,7 +3,7 @@
  * State management for action template editor
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   ActionTemplateType,
   ActionTemplate,
@@ -39,7 +39,6 @@ interface UseActionTemplateReturn {
 export function useActionTemplate(): UseActionTemplateReturn {
   const [selectedTemplate, setSelectedTemplateState] = useState<ActionTemplate | null>(null);
   const [fieldValues, setFieldValues] = useState<TemplateFieldValues>({});
-  const [generatedActions, setGeneratedActions] = useState<ProposalAction[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
   // Set selected template, preserving field values for fields that exist in both templates
@@ -47,7 +46,6 @@ export function useActionTemplate(): UseActionTemplateReturn {
     if (!templateId) {
       setSelectedTemplateState(null);
       setFieldValues({});
-      setGeneratedActions([]);
       setValidationErrors([]);
       return;
     }
@@ -59,12 +57,14 @@ export function useActionTemplate(): UseActionTemplateReturn {
       // Clear all fields on template change. Carrying values across templates
       // led to subtle bugs (e.g. an ENS token picked for Delegate persisting
       // into Pay via Treasury after switching), so users always start fresh.
+      // Fields with a static defaultValue are seeded with it instead of empty
+      // — used by templates with reliable static pre-fills (Octant roles ↦
+      // treasury, etc.).
       const cleared: TemplateFieldValues = {};
       template.fields.forEach((field) => {
-        cleared[field.name] = '';
+        cleared[field.name] = field.defaultValue ?? '';
       });
       setFieldValues(cleared);
-      setGeneratedActions([]);
       setValidationErrors([]);
     }
   }, []);
@@ -89,7 +89,6 @@ export function useActionTemplate(): UseActionTemplateReturn {
   const resetTemplate = useCallback(() => {
     setSelectedTemplateState(null);
     setFieldValues({});
-    setGeneratedActions([]);
     setValidationErrors([]);
   }, []);
 
@@ -190,38 +189,34 @@ export function useActionTemplate(): UseActionTemplateReturn {
     return errors.length === 0;
   }, [selectedTemplate, fieldValues]);
 
-  // Generate actions whenever template or field values change
-  useEffect(() => {
-    if (!selectedTemplate) {
-      setGeneratedActions([]);
-      return;
-    }
+  // Generate actions as derived state — purely a function of the current
+  // template + field values. Previously this lived in a useEffect that
+  // setState'd into a separate `generatedActions` slot; that pattern is
+  // flagged by `react-hooks/set-state-in-effect` (it causes a cascading
+  // re-render on every field change). `useMemo` computes the same value
+  // during render with no extra commit.
+  //
+  // The custom template is intentionally excluded — the modal manages a
+  // separate `localCustomAction` for the target/value/signature/calldata
+  // fields and never reads `generatedActions` for that case.
+  const generatedActions = useMemo<ProposalAction[]>(() => {
+    if (!selectedTemplate) return [];
 
-    // Check if all required fields are filled
     const allRequiredFilled = selectedTemplate.fields
-      .filter(field => field.required)
-      .every(field => {
+      .filter((field) => field.required)
+      .every((field) => {
         const value = fieldValues[field.name];
         return value && value.trim() !== '';
       });
+    if (!allRequiredFilled) return [];
 
-    if (!allRequiredFilled) {
-      setGeneratedActions([]);
-      return;
-    }
+    if (selectedTemplate.id === 'custom') return [];
 
-    // Skip generation for custom template - actions are managed manually
-    if (selectedTemplate.id === 'custom') {
-      return;
-    }
-
-    // Generate actions
     try {
-      const actions = generateActionsFromTemplate(selectedTemplate.id, fieldValues);
-      setGeneratedActions(actions);
+      return generateActionsFromTemplate(selectedTemplate.id, fieldValues);
     } catch (error) {
       console.error('Failed to generate actions:', error);
-      setGeneratedActions([]);
+      return [];
     }
   }, [selectedTemplate, fieldValues]);
 

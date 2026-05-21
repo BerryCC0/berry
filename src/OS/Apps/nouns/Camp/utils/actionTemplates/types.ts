@@ -101,11 +101,20 @@ export type ActionTemplateType =
   | 'erc20-revoke-approval'
   | 'swap-uniswap-v3'
   | 'swap-cowswap'
+  | 'lst-wsteth-wrap'
   | 'lst-wsteth-unwrap'
   | 'lst-lido-request-withdrawal'
   | 'lst-lido-claim-withdrawal'
   | 'lst-meth-unstake-request'
   | 'lst-meth-unstake-claim'
+  | 'octant-vault-create-lido'
+  | 'octant-vault-create-morpho'
+  | 'octant-vault-create-sky'
+  | 'octant-vault-create-yearn'
+  | 'octant-vault-deposit'
+  | 'octant-vault-redeem'
+  | 'octant-vault-withdraw'
+  | 'octant-splitter-create'
   | 'opensea-listing'
   | 'marketplace-fulfill-seaport'
   | 'meta-propose'
@@ -137,7 +146,8 @@ export interface ActionTemplate {
     | 'erc20'
     | 'dex'
     | 'staking'
-    | 'nft';
+    | 'nft'
+    | 'octant';
   name: string;
   description: string;
   isMultiAction: boolean;
@@ -157,6 +167,12 @@ export interface ActionField {
     decimals?: number;
   };
   helpText?: string;
+  /**
+   * Optional default value pre-filled when the template is first selected.
+   * The user can still edit it. Used by templates with sensible static
+   * defaults (e.g. Octant Dragon vault roles defaulting to the treasury).
+   */
+  defaultValue?: string;
 }
 
 export interface TokenInfo {

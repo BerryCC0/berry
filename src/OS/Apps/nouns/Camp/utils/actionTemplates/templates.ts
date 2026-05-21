@@ -3,7 +3,14 @@
  * Definitions for all action template types and getter functions
  */
 
+import { NOUNS_ADDRESSES } from '@/app/lib/nouns';
 import { ActionTemplate, ActionTemplateType } from './types';
+import {
+  OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+  OCTANT_YIELD_SKIMMING_STRATEGY_ADDRESS,
+} from './constants';
+
+const TREASURY = NOUNS_ADDRESSES.treasury;
 
 export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
   // Treasury Transfer — unified ETH + ERC-20 send picker.
@@ -1977,6 +1984,25 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
   },
 
   // Liquid staking — Lido
+  'lst-wsteth-wrap': {
+    id: 'lst-wsteth-wrap',
+    category: 'staking',
+    name: 'Wrap stETH → wstETH',
+    description: 'Convert rebasing stETH to wrapped, non-rebasing wstETH. Lossless — wstETH is the input asset for the Octant Lido Dragon vault.',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'amount',
+        label: 'stETH Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'wstETH.wrap pulls stETH via transferFrom, so this template bundles an approve + wrap',
+      },
+    ],
+  },
+
   'lst-wsteth-unwrap': {
     id: 'lst-wsteth-unwrap',
     category: 'staking',
@@ -2076,6 +2102,407 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
         required: true,
         validation: { min: 0 },
         helpText: 'The ID returned by the unstake request transaction',
+      },
+    ],
+  },
+
+  // Octant v2 — Dragon vault factories & ERC-4626 operations
+  // ----------------------------------------------------------
+  // Each "create" template calls a specific Octant strategy factory which
+  // CREATE2-deploys an ERC-4626 vault that routes yield to a donation address.
+  // The "deposit / redeem / withdraw" templates work against any deployed
+  // Octant vault by address. See knowledge base / Octant v2 docs for the full
+  // operational flow (donation address selection, keeper cadence, role split).
+  'octant-vault-create-lido': {
+    id: 'octant-vault-create-lido',
+    category: 'octant',
+    name: 'Deploy Octant Lido Vault (wstETH)',
+    description: 'CREATE2-deploys a yield-skimming Dragon vault that accepts wstETH and routes appreciation to a donation address',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'vaultName',
+        label: 'Vault Name',
+        type: 'text',
+        required: true,
+        defaultValue: 'Nouns wstETH Dragon Vault',
+        helpText: 'Display name for the strategy share token',
+      },
+      {
+        name: 'vaultSymbol',
+        label: 'Vault Symbol',
+        type: 'text',
+        required: true,
+        defaultValue: 'nWSTETH-D',
+      },
+      {
+        name: 'donationAddress',
+        label: 'Donation Address',
+        type: 'address',
+        placeholder: '0x... PaymentSplitter or Safe',
+        required: true,
+        helpText: 'Receives strategy share tokens minted from realized yield. Typically a PaymentSplitter or Safe — change after deployment uses a strategy-level cooldown.',
+      },
+      {
+        name: 'keeper',
+        label: 'Keeper',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+        helpText: 'Address authorised to call report() to realize yield. If report() is never called, no yield is donated.',
+      },
+      {
+        name: 'management',
+        label: 'Management',
+        type: 'address',
+        required: true,
+        defaultValue: TREASURY,
+        helpText: 'Can update configuration and role assignments. Defaults to the Nouns treasury.',
+      },
+      {
+        name: 'emergencyAdmin',
+        label: 'Emergency Admin',
+        type: 'address',
+        required: true,
+        defaultValue: TREASURY,
+        helpText: 'Can shut down and unwind the strategy in an emergency. Defaults to the Nouns treasury.',
+      },
+      {
+        name: 'enableBurning',
+        label: 'Loss Protection (Burning)',
+        type: 'select',
+        required: true,
+        defaultValue: 'true',
+        options: [
+          { label: 'Enable burning — donation shares can be burned to offset losses', value: 'true' },
+          { label: 'Disable burning — losses passed straight to depositors', value: 'false' },
+        ],
+        helpText: 'Burn-protection only helps if the donation address still holds shares when losses occur',
+      },
+      {
+        name: 'tokenizedStrategyAddress',
+        label: 'Tokenized Strategy Impl',
+        type: 'address',
+        required: true,
+        defaultValue: OCTANT_YIELD_SKIMMING_STRATEGY_ADDRESS,
+        helpText: 'Octant’s shared Yield-Skimming implementation. Only override if instructed by the Octant team.',
+      },
+      {
+        name: 'seedAmount',
+        label: 'Seed Deposit (optional)',
+        type: 'amount',
+        required: false,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Optionally bundle an initial deposit into the new vault in this same proposal. Leave 0 to deploy without seeding.',
+      },
+      {
+        name: 'predictedVault',
+        label: 'Predicted Vault Address',
+        type: 'address',
+        required: false,
+        helpText: 'Auto-computed from factory CREATE2 — managed by the editor',
+      },
+      {
+        name: 'newSplitterPayload',
+        label: 'New PaymentSplitter Payload',
+        type: 'text',
+        required: false,
+        helpText: 'JSON-encoded { payees, names, shares, predicted } — set by the editor when bundling a new splitter as the donation address',
+      },
+    ],
+  },
+
+  'octant-vault-create-morpho': {
+    id: 'octant-vault-create-morpho',
+    category: 'octant',
+    name: 'Deploy Octant Morpho Vault (USDC)',
+    description: 'CREATE2-deploys a yield-donating Dragon vault that compounds USDC via Morpho and donates yield to a recipient',
+    isMultiAction: true,
+    fields: [
+      { name: 'vaultName', label: 'Vault Name', type: 'text', required: true, defaultValue: 'Nouns USDC Dragon Vault' },
+      { name: 'vaultSymbol', label: 'Vault Symbol', type: 'text', required: true, defaultValue: 'nUSDC-D' },
+      { name: 'donationAddress', label: 'Donation Address', type: 'address', placeholder: '0x... PaymentSplitter or Safe', required: true, helpText: 'Receives yield as newly minted strategy shares' },
+      { name: 'keeper', label: 'Keeper', type: 'address', placeholder: '0x...', required: true, helpText: 'Calls report() to realize yield. Yield is not donated until report() runs.' },
+      { name: 'management', label: 'Management', type: 'address', required: true, defaultValue: TREASURY, helpText: 'Defaults to the Nouns treasury' },
+      { name: 'emergencyAdmin', label: 'Emergency Admin', type: 'address', required: true, defaultValue: TREASURY, helpText: 'Defaults to the Nouns treasury' },
+      {
+        name: 'enableBurning',
+        label: 'Loss Protection (Burning)',
+        type: 'select',
+        required: true,
+        defaultValue: 'true',
+        options: [
+          { label: 'Enable burning — donation shares can be burned to offset losses', value: 'true' },
+          { label: 'Disable burning — losses passed straight to depositors', value: 'false' },
+        ],
+      },
+      {
+        name: 'tokenizedStrategyAddress',
+        label: 'Tokenized Strategy Impl',
+        type: 'address',
+        required: true,
+        defaultValue: OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+        helpText: 'Octant’s shared Yield-Donating implementation',
+      },
+      {
+        name: 'seedAmount',
+        label: 'Seed Deposit (optional)',
+        type: 'amount',
+        required: false,
+        validation: { min: 0, decimals: 6 },
+        helpText: 'Optionally bundle an initial USDC deposit into the new vault in this same proposal',
+      },
+      {
+        name: 'predictedVault',
+        label: 'Predicted Vault Address',
+        type: 'address',
+        required: false,
+        helpText: 'Auto-computed from factory CREATE2 — managed by the editor',
+      },
+      {
+        name: 'newSplitterPayload',
+        label: 'New PaymentSplitter Payload',
+        type: 'text',
+        required: false,
+        helpText: 'JSON-encoded { payees, names, shares, predicted } — set by the editor when bundling a new splitter as the donation address',
+      },
+    ],
+  },
+
+  'octant-vault-create-sky': {
+    id: 'octant-vault-create-sky',
+    category: 'octant',
+    name: 'Deploy Octant Sky Vault (USDS)',
+    description: 'CREATE2-deploys a yield-donating Dragon vault that earns USDS staking rewards and donates yield to a recipient',
+    isMultiAction: true,
+    fields: [
+      { name: 'vaultName', label: 'Vault Name', type: 'text', required: true, defaultValue: 'Nouns USDS Dragon Vault' },
+      { name: 'vaultSymbol', label: 'Vault Symbol', type: 'text', required: true, defaultValue: 'nUSDS-D' },
+      { name: 'donationAddress', label: 'Donation Address', type: 'address', placeholder: '0x... PaymentSplitter or Safe', required: true },
+      { name: 'keeper', label: 'Keeper', type: 'address', placeholder: '0x...', required: true, helpText: 'Calls report() to realize yield' },
+      { name: 'management', label: 'Management', type: 'address', required: true, defaultValue: TREASURY, helpText: 'Defaults to the Nouns treasury' },
+      { name: 'emergencyAdmin', label: 'Emergency Admin', type: 'address', required: true, defaultValue: TREASURY, helpText: 'Defaults to the Nouns treasury' },
+      {
+        name: 'enableBurning',
+        label: 'Loss Protection (Burning)',
+        type: 'select',
+        required: true,
+        defaultValue: 'true',
+        options: [
+          { label: 'Enable burning', value: 'true' },
+          { label: 'Disable burning', value: 'false' },
+        ],
+      },
+      {
+        name: 'tokenizedStrategyAddress',
+        label: 'Tokenized Strategy Impl',
+        type: 'address',
+        required: true,
+        defaultValue: OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+        helpText: 'Octant’s shared Yield-Donating implementation',
+      },
+      {
+        name: 'seedAmount',
+        label: 'Seed Deposit (optional)',
+        type: 'amount',
+        required: false,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Optionally bundle an initial USDS deposit into the new vault in this same proposal',
+      },
+      {
+        name: 'predictedVault',
+        label: 'Predicted Vault Address',
+        type: 'address',
+        required: false,
+        helpText: 'Auto-computed from factory CREATE2 — managed by the editor',
+      },
+      {
+        name: 'newSplitterPayload',
+        label: 'New PaymentSplitter Payload',
+        type: 'text',
+        required: false,
+        helpText: 'JSON-encoded { payees, names, shares, predicted } — set by the editor when bundling a new splitter as the donation address',
+      },
+    ],
+  },
+
+  'octant-vault-create-yearn': {
+    id: 'octant-vault-create-yearn',
+    category: 'octant',
+    name: 'Deploy Octant Yearn Vault (generic)',
+    description: 'CREATE2-deploys a Dragon vault that wraps any Yearn V3 vault. Used for assets outside the Lido / Morpho / Sky factories.',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'yearnVault',
+        label: 'Yearn V3 Vault',
+        type: 'address',
+        placeholder: '0x... an existing Yearn V3 vault',
+        required: true,
+        helpText: 'The underlying yield-bearing Yearn V3 vault address',
+      },
+      {
+        name: 'asset',
+        label: 'Asset',
+        type: 'address',
+        placeholder: '0x... the asset the Yearn vault accepts',
+        required: true,
+        helpText: 'Must match the Yearn vault’s underlying asset',
+      },
+      { name: 'vaultName', label: 'Vault Name', type: 'text', required: true, defaultValue: 'Nouns Yearn Dragon Vault' },
+      { name: 'vaultSymbol', label: 'Vault Symbol', type: 'text', required: true, defaultValue: 'nYV-D' },
+      { name: 'donationAddress', label: 'Donation Address', type: 'address', placeholder: '0x... PaymentSplitter or Safe', required: true },
+      { name: 'keeper', label: 'Keeper', type: 'address', placeholder: '0x...', required: true, helpText: 'Calls report() to realize yield' },
+      { name: 'management', label: 'Management', type: 'address', required: true, defaultValue: TREASURY, helpText: 'Defaults to the Nouns treasury' },
+      { name: 'emergencyAdmin', label: 'Emergency Admin', type: 'address', required: true, defaultValue: TREASURY, helpText: 'Defaults to the Nouns treasury' },
+      {
+        name: 'enableBurning',
+        label: 'Loss Protection (Burning)',
+        type: 'select',
+        required: true,
+        defaultValue: 'true',
+        options: [
+          { label: 'Enable burning', value: 'true' },
+          { label: 'Disable burning', value: 'false' },
+        ],
+      },
+      {
+        name: 'tokenizedStrategyAddress',
+        label: 'Tokenized Strategy Impl',
+        type: 'address',
+        required: true,
+        defaultValue: OCTANT_YIELD_DONATING_STRATEGY_ADDRESS,
+        helpText: 'Octant’s shared Yield-Donating implementation',
+      },
+      {
+        name: 'seedAmount',
+        label: 'Seed Deposit (optional)',
+        type: 'amount',
+        required: false,
+        validation: { min: 0 },
+        helpText: 'Optionally bundle an initial deposit into the new vault in this same proposal',
+      },
+      {
+        name: 'predictedVault',
+        label: 'Predicted Vault Address',
+        type: 'address',
+        required: false,
+        helpText: 'Auto-computed from factory CREATE2 — managed by the editor',
+      },
+      {
+        name: 'newSplitterPayload',
+        label: 'New PaymentSplitter Payload',
+        type: 'text',
+        required: false,
+        helpText: 'JSON-encoded { payees, names, shares, predicted } — set by the editor when bundling a new splitter as the donation address',
+      },
+    ],
+  },
+
+  'octant-splitter-create': {
+    id: 'octant-splitter-create',
+    category: 'octant',
+    name: 'Deploy PaymentSplitter (Octant)',
+    description: 'Deploy a minimal-proxy PaymentSplitter that distributes received vault donations across a list of payees by share. The canonical Octant donation-address pattern.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'payees',
+        label: 'Payees (one address per line, optional "name@shares" suffix)',
+        type: 'text',
+        required: true,
+        helpText: 'Format: 0xRecipient name 100  — addr, optional name, then share count. One per line.',
+      },
+    ],
+  },
+
+  'octant-vault-deposit': {
+    id: 'octant-vault-deposit',
+    category: 'octant',
+    name: 'Deposit into Octant Vault',
+    description: 'ERC-4626 deposit into any deployed Octant Dragon vault. Treasury approves the vault to pull the underlying asset, then calls deposit(amount, treasury).',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'vault',
+        label: 'Vault Address',
+        type: 'address',
+        placeholder: '0x... the deployed Octant strategy',
+        required: true,
+        helpText: 'Address of the deployed Dragon vault (returned from a previous createStrategy call)',
+      },
+      {
+        name: 'token',
+        label: 'Underlying Asset',
+        type: 'treasury-token-select',
+        required: true,
+        helpText: 'Must match the vault’s asset() — wstETH for Lido, USDC for Morpho, USDS for Sky',
+      },
+      {
+        name: 'amount',
+        label: 'Deposit Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0 },
+      },
+    ],
+  },
+
+  'octant-vault-redeem': {
+    id: 'octant-vault-redeem',
+    category: 'octant',
+    name: 'Redeem Octant Vault Shares',
+    description: 'ERC-4626 redeem — burn a specific number of vault shares to pull underlying assets back to the treasury',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'vault',
+        label: 'Vault Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+      {
+        name: 'shares',
+        label: 'Shares to Redeem',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0, decimals: 18 },
+        helpText: 'Vault shares are 18-decimal by convention',
+      },
+    ],
+  },
+
+  'octant-vault-withdraw': {
+    id: 'octant-vault-withdraw',
+    category: 'octant',
+    name: 'Withdraw Octant Vault Assets',
+    description: 'ERC-4626 withdraw — pull a specific amount of underlying assets out of an Octant vault back to the treasury',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'vault',
+        label: 'Vault Address',
+        type: 'address',
+        placeholder: '0x...',
+        required: true,
+      },
+      {
+        name: 'token',
+        label: 'Underlying Asset',
+        type: 'treasury-token-select',
+        required: true,
+        helpText: 'The asset the vault holds — used only for decimal scaling of the amount field',
+      },
+      {
+        name: 'amount',
+        label: 'Asset Amount',
+        type: 'amount',
+        placeholder: '0.0',
+        required: true,
+        validation: { min: 0 },
       },
     ],
   },

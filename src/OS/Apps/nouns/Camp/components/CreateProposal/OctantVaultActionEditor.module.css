@@ -1,0 +1,107 @@
+/**
+ * OctantVaultActionEditor styles
+ */
+
+.vaultCard {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 8px;
+}
+
+.vaultCardTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.vaultCardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.vaultCardLabel {
+  color: var(--berry-text-secondary);
+}
+
+.vaultCardValue {
+  color: var(--berry-text-primary);
+  font-weight: 500;
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.vaultLoading {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  font-style: italic;
+}
+
+/* Amount input row — label + max button on the same line */
+.amountHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.maxBtn {
+  font-size: 11px;
+  color: var(--berry-primary);
+  background: transparent;
+  border: 1px solid var(--berry-primary);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.maxBtn:hover:not(:disabled) {
+  background: var(--berry-primary);
+  color: var(--berry-text-on-primary, #fff);
+}
+
+.maxBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.amountInputRow {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.amountInputRow > input {
+  flex: 1;
+}
+
+.amountUnit {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  min-width: 80px;
+  justify-content: center;
+}
+
+/* Live "you will receive" line, displayed under the amount field */
+.previewLine {
+  margin-top: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--berry-primary);
+  background: var(--berry-bg-secondary);
+  border-left: 2px solid var(--berry-primary);
+  border-radius: 4px;
+  font-family: var(--berry-font-mono, monospace);
+}
