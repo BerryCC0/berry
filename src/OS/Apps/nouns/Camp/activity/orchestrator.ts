@@ -69,13 +69,17 @@ const API_KEY_BY_PRODUCER: Record<ProducerKey, keyof ActivityApiResponseShape> =
 /**
  * Run the registered `processRows` for the given activity types against the
  * fetched API data. Returns concatenated items in arrival order; the caller
- * is responsible for the final timestamp sort (kept there for now so the
- * coexistence with legacy `processX` outputs is a single sort site).
+ * is responsible for the final timestamp sort via `postProcess`.
  *
- * Types not yet migrated (those whose registry entry has no `buildQuery`)
- * are silently skipped — the legacy `processX` path still handles them.
- * Once PR2 promotes a placeholder to a real definition, just add its type
- * to the caller's `types` array.
+ * **Producer dedup:** multiple definitions can share a producerKey (e.g.
+ * the 7 proposal_* defs all read from the `proposals` producer). We track
+ * which producer rows we've already passed to which definitions so each
+ * definition runs exactly once per request.
+ *
+ * **buildQuery is not consulted here** — this function consumes data already
+ * fetched by the API route. Definitions without a buildQuery (like
+ * `proposal_voting_started`, intentionally empty) still get their processRows
+ * called; they're expected to return `[]`.
  */
 export function processViaRegistry(
   data: ActivityApiResponseShape,
@@ -92,9 +96,6 @@ export function processViaRegistry(
       console.warn(`[activity] no registry definition for type "${type}"`);
       continue;
     }
-    // Placeholder definitions: no buildQuery means they haven't been
-    // migrated yet. The legacy processX handles this type; skip here.
-    if (!def.buildQuery) continue;
 
     const apiKey = API_KEY_BY_PRODUCER[def.producerKey];
     const rows = (data[apiKey] ?? []) as unknown[];
@@ -102,6 +103,19 @@ export function processViaRegistry(
   }
 
   return out;
+}
+
+/**
+ * Final ordering step. Currently just timestamp DESC — but kept as a
+ * separate function so the orchestrator's sort site is single and obvious,
+ * and so future cross-type post-processing (dedup, grouping across types,
+ * etc.) has a natural home.
+ *
+ * Mutates the input array for efficiency. Returns the same reference.
+ */
+export function postProcess(items: ActivityItem[]): ActivityItem[] {
+  items.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+  return items;
 }
 
 /**
