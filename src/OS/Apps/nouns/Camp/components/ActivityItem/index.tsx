@@ -124,6 +124,7 @@ function ActivityItemInner({
       case 'candidate_feedback':
       case 'candidate_sponsored':
       case 'candidate_updated':
+      case 'signature_canceled':
         return <CandidateContent {...contentProps} />;
 
       case 'noun_transfer':

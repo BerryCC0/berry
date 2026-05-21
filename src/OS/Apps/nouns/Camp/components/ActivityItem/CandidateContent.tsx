@@ -1,16 +1,39 @@
 /**
  * Candidate activity content.
- * Handles: candidate_created, candidate_feedback, candidate_sponsored, candidate_updated
+ * Handles: candidate_created, candidate_feedback, candidate_sponsored,
+ *          candidate_updated, signature_canceled
+ *
+ * `signature_canceled` is folded in here because cancellations are predominantly
+ * candidate-sponsorship revocations. When the on-chain event can't be matched
+ * back to a candidate row (signatureKind === 'proposal'), we render a generic
+ * "X canceled a proposal signature" line.
  */
 
 'use client';
 
 import { getSupportLabel, getSupportColor } from '../../types';
-import { formatSlugToTitle } from '../../utils/formatUtils';
+import { formatSlugToTitle, formatRelativeTimeCompact } from '../../utils/formatUtils';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { ActorName, ReasonContent } from './SharedRenderers';
 import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
+
+/**
+ * Derive "Expires in 3d" / "Expired" text + a boolean for the [data-expired]
+ * attribute. Returns null when the item has no expirationTimestamp so the
+ * badge can be omitted entirely.
+ */
+function expirationBadge(expirationTimestamp: string | undefined) {
+  if (!expirationTimestamp) return null;
+  const expSec = Number(expirationTimestamp);
+  if (!Number.isFinite(expSec) || expSec <= 0) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const expired = expSec <= now;
+  return {
+    text: expired ? 'Expired' : formatRelativeTimeCompact(expSec, 'Expires in'),
+    expired,
+  };
+}
 
 export function CandidateContent(props: ActivityContentProps) {
   const { item, displayName, actorAvatar, repostInfo, onClickActor, onClickCandidate, onNavigate } = props;
@@ -66,7 +89,8 @@ export function CandidateContent(props: ActivityContentProps) {
         </>
       );
 
-    case 'candidate_sponsored':
+    case 'candidate_sponsored': {
+      const exp = expirationBadge(item.expirationTimestamp);
       return (
         <>
           <div className={styles.header}>
@@ -77,12 +101,37 @@ export function CandidateContent(props: ActivityContentProps) {
                 {candidateTitle}
               </span>
             )}
+            {exp && (
+              <span className={styles.expiresBadge} data-expired={exp.expired ? 'true' : 'false'}>
+                {exp.text}
+              </span>
+            )}
           </div>
           {item.reason && (
             <MarkdownRenderer content={item.reason} className={styles.reason} />
           )}
         </>
       );
+    }
+
+    case 'signature_canceled': {
+      // signatureKind === 'candidate' AND we have title → specific message.
+      // Otherwise fall back to the generic proposal-sig wording.
+      const isCandidate = item.signatureKind === 'candidate' && candidateTitle;
+      return (
+        <div className={styles.header}>
+          <ActorName avatar={actorAvatar} address={item.actor} name={displayName} onClick={onClickActor} onNavigate={onNavigate} />
+          <span className={styles.action}>
+            {isCandidate ? 'canceled their sponsorship of' : 'canceled a proposal signature'}
+          </span>
+          {isCandidate && (
+            <span className={styles.titleLink} onClick={onClickCandidate} role="button" tabIndex={0}>
+              {candidateTitle}
+            </span>
+          )}
+        </div>
+      );
+    }
 
     case 'candidate_updated':
       return (

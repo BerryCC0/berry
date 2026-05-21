@@ -70,6 +70,20 @@
   font-style: italic;
 }
 
+/*
+ * Signature expiration state — appears next to "X sponsored Y" rows.
+ * Neutral by default; switches to error color when [data-expired="true"].
+ */
+.expiresBadge {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  font-style: italic;
+}
+.expiresBadge[data-expired="true"] {
+  color: var(--berry-error);
+  font-style: normal;
+}
+
 .proposal {
   margin-top: 6px;
   font-size: 13px;

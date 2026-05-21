@@ -313,7 +313,11 @@ export type ActivityType =
   | 'noun_swap'
   | 'auction_settled'
   | 'auction_started'
-  | 'propdate_posted';
+  | 'propdate_posted'
+  | 'signature_canceled';
+// NOTE: when adding a variant, also add a definition in
+// `activity/registry.ts` — the `satisfies` check on the registry will fail
+// at compile time otherwise.
 
 export interface ActivityItem {
   id: string;
@@ -365,7 +369,20 @@ export interface ActivityItem {
   
   // Candidate sponsorship specific
   candidateTitle?: string;
-  sponsorCanceled?: boolean;
+  /**
+   * Unix-seconds expiration for the underlying EIP-712 signature. Set on
+   * `candidate_sponsored` items. Read alongside `nowSeconds` from
+   * ProcessContext to decide between "expires in X" and "expired N ago"
+   * display states. Not relevant to other types.
+   */
+  expirationTimestamp?: string;
+  /**
+   * Whether the signature originally backed a CANDIDATE sponsorship or a
+   * proposal-level signature (via proposeBySigs). Set on `signature_canceled`
+   * items only — distinguishes "X canceled their sponsorship of [candidate]"
+   * from "X canceled a proposal signature."
+   */
+  signatureKind?: 'candidate' | 'proposal';
   
   // Candidate update specific
   updateMessage?: string;

@@ -11,7 +11,20 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useBlockNumber } from 'wagmi';
-import type { ActivityItem } from '../types';
+import type { ActivityItem, ActivityType } from '../types';
+import { processViaRegistry } from '../activity/orchestrator';
+
+// Activity types that have been migrated to the registry. Anything in this
+// list is processed by `processViaRegistry`; everything else still goes
+// through the legacy `processX` functions below. As types migrate in PR2,
+// move them from "legacy processX calls in queryFn" to this list.
+const REGISTRY_TYPES: readonly ActivityType[] = [
+  'vote',
+  'proposal_feedback',
+  'candidate_sponsored',
+  'propdate_posted',
+  'signature_canceled',
+];
 
 // ============================================================================
 // CONSTANTS
@@ -26,29 +39,9 @@ const BLOCK_TIME_SECONDS = 12;
 // API RESPONSE TYPES
 // ============================================================================
 
-interface ApiVoteRow {
-  id: string;
-  voter: string;
-  voter_ens: string | null;
-  proposal_id: string;
-  proposal_title: string | null;
-  support: number;
-  votes: string;
-  reason: string | null;
-  client_id: number | null;
-  block_timestamp: string;
-}
-
-interface ApiProposalFeedbackRow {
-  id: string;
-  msg_sender: string;
-  sender_ens: string | null;
-  proposal_id: string;
-  proposal_title: string | null;
-  support: number;
-  reason: string | null;
-  block_timestamp: string;
-}
+// Note: ApiVoteRow, ApiProposalFeedbackRow, ApiCandidateSignatureRow, and
+// ApiPropdateRow moved to their per-type registry definitions in
+// `../activity/definitions/`. PR2 will do the same for the remaining types.
 
 interface ApiProposalRow {
   id: string;
@@ -94,18 +87,6 @@ interface ApiCandidateFeedbackRow {
   candidate_proposer: string;
   candidate_title: string;
   votes: string | null;
-}
-
-interface ApiCandidateSignatureRow {
-  id: string;
-  signer: string;
-  signer_ens: string | null;
-  candidate_id: string;
-  reason: string | null;
-  block_timestamp: string;
-  candidate_slug: string;
-  candidate_proposer: string;
-  candidate_title: string;
 }
 
 interface ApiTransferRow {
@@ -175,67 +156,32 @@ interface ApiSwapRow {
   tx_hash: string;
 }
 
-interface ApiPropdateRow {
-  id: string;
-  proposal_id: number;
-  is_completed: boolean;
-  update: string;
-  admin: string;
-  admin_ens: string | null;
-  proposal_title: string | null;
-  block_timestamp: string;
-  tx_hash: string;
-}
-
+// Migrated-to-registry producers have `unknown[]` rows here — the registry's
+// per-type definitions in `activity/definitions/*` own the precise shapes.
 interface ActivityApiResponse {
-  votes: ApiVoteRow[];
-  proposalFeedback: ApiProposalFeedbackRow[];
+  votes: unknown[];
+  proposalFeedback: unknown[];
   proposals: ApiProposalRow[];
   candidates: ApiCandidateRow[];
   candidateFeedback: ApiCandidateFeedbackRow[];
-  candidateSignatures: ApiCandidateSignatureRow[];
+  candidateSignatures: unknown[];
   transfers: ApiTransferRow[];
   delegations: ApiDelegationRow[];
   auctions: ApiAuctionRow[];
   proposalVersions: ApiProposalVersionRow[];
   candidateVersions: ApiCandidateVersionRow[];
   swaps: ApiSwapRow[];
-  propdates: ApiPropdateRow[];
+  propdates: unknown[];
+  cancelledSignatures: unknown[];
 }
 
 // ============================================================================
 // DATA PROCESSING
 // ============================================================================
-
-function processVotes(votes: ApiVoteRow[]): ActivityItem[] {
-  return votes.map(v => ({
-    id: `vote-${v.id}`,
-    type: 'vote' as const,
-    timestamp: String(v.block_timestamp),
-    actor: v.voter,
-    actorEns: v.voter_ens || undefined,
-    proposalId: String(v.proposal_id),
-    proposalTitle: v.proposal_title || '',
-    support: v.support,
-    votes: String(v.votes),
-    reason: v.reason || undefined,
-    clientId: v.client_id ?? undefined,
-  }));
-}
-
-function processProposalFeedback(feedback: ApiProposalFeedbackRow[]): ActivityItem[] {
-  return feedback.map(f => ({
-    id: `feedback-${f.id}`,
-    type: 'proposal_feedback' as const,
-    timestamp: String(f.block_timestamp),
-    actor: f.msg_sender,
-    actorEns: f.sender_ens || undefined,
-    proposalId: String(f.proposal_id),
-    proposalTitle: f.proposal_title || '',
-    support: f.support,
-    reason: f.reason || undefined,
-  }));
-}
+//
+// Migrated to the registry (PR1): processVotes, processProposalFeedback,
+// processCandidateSignatures, processPropdates. See activity/definitions/.
+// The remaining processors below get the same treatment in PR2.
 
 function processProposals(proposals: ApiProposalRow[], currentBlock: number | undefined): ActivityItem[] {
   const items: ActivityItem[] = [];
@@ -441,21 +387,6 @@ function processCandidateFeedback(feedback: ApiCandidateFeedbackRow[]): Activity
     support: f.support,
     votes: String(f.votes ?? '1'),
     reason: f.reason || undefined,
-  }));
-}
-
-function processCandidateSignatures(signatures: ApiCandidateSignatureRow[]): ActivityItem[] {
-  return signatures.map(s => ({
-    id: `candidate-sponsored-${s.id}`,
-    type: 'candidate_sponsored' as const,
-    timestamp: String(s.block_timestamp),
-    actor: s.signer,
-    actorEns: s.signer_ens || undefined,
-    candidateSlug: s.candidate_slug,
-    candidateTitle: s.candidate_title,
-    candidateProposer: s.candidate_proposer,
-    reason: s.reason || undefined,
-    sponsorCanceled: false,
   }));
 }
 
@@ -722,24 +653,6 @@ function processProposalVersions(versions: ApiProposalVersionRow[]): ActivityIte
   return items;
 }
 
-function processPropdates(propdates: ApiPropdateRow[]): ActivityItem[] {
-  return propdates
-    // Empty-string updates are technically valid on-chain but render as noise.
-    .filter(p => p.update && p.update.trim() !== '')
-    .map(p => ({
-      id: `propdate-${p.id}`,
-      type: 'propdate_posted' as const,
-      timestamp: String(p.block_timestamp),
-      actor: p.admin,
-      actorEns: p.admin_ens || undefined,
-      proposalId: String(p.proposal_id),
-      proposalTitle: p.proposal_title || '',
-      propdateUpdate: p.update,
-      propdateIsCompleted: p.is_completed,
-      txHash: p.tx_hash,
-    }));
-}
-
 function processSwaps(swaps: ApiSwapRow[]): ActivityItem[] {
   return swaps.map(s => {
     const tokensIn = (s.tokens_in ?? []).map(String);
@@ -832,15 +745,20 @@ export function useActivityFeed(first: number = 30) {
 
       const data: ActivityApiResponse = await response.json();
 
-      // Process all activity types
+      // Process all activity types. Two paths during the PR1→PR3 migration:
+      //   1. Registry-driven types (REGISTRY_TYPES at top of file) go through
+      //      `processViaRegistry`. Each type's row shape + transform lives in
+      //      its own file under `activity/definitions/`.
+      //   2. Legacy `processX` calls below handle the rest. As PR2/PR3 land,
+      //      move types out of this block into REGISTRY_TYPES + a definition.
       const allItems: ActivityItem[] = [];
+      const ctx = { currentBlock, nowSeconds: Math.floor(Date.now() / 1000) };
 
-      allItems.push(...processVotes(data.votes || []));
-      allItems.push(...processProposalFeedback(data.proposalFeedback || []));
+      allItems.push(...processViaRegistry(data, REGISTRY_TYPES, ctx));
+
       allItems.push(...processProposals(data.proposals || [], currentBlock));
       allItems.push(...processCandidates(data.candidates || []));
       allItems.push(...processCandidateFeedback(data.candidateFeedback || []));
-      allItems.push(...processCandidateSignatures(data.candidateSignatures || []));
       allItems.push(...processTransfers(data.transfers || []));
       allItems.push(...processDelegations(data.delegations || []));
       allItems.push(...processAuctions(data.auctions || []).items);
@@ -848,7 +766,6 @@ export function useActivityFeed(first: number = 30) {
 
       allItems.push(...processProposalVersions(data.proposalVersions || []));
       allItems.push(...processCandidateVersions(data.candidateVersions || []));
-      allItems.push(...processPropdates(data.propdates || []));
 
       // Sort by timestamp descending
       allItems.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
