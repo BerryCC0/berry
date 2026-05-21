@@ -1,0 +1,43 @@
+.section {
+  margin-bottom: 16px;
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-card);
+  background: var(--berry-bg-tertiary);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--berry-bg-secondary);
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-label);
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.action {
+  display: flex;
+  align-items: center;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty {
+  padding: 12px;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  text-align: center;
+  font-style: italic;
+}

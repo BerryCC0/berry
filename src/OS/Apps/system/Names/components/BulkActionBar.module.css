@@ -1,0 +1,62 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--berry-bg-secondary);
+  border-bottom: 1px solid var(--berry-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.count {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-label);
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.cancel,
+.action {
+  min-height: var(--berry-min-target);
+  padding: 4px 10px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.cancel:hover,
+.action:hover:not(:disabled) {
+  background: var(--berry-bg);
+  border-color: var(--berry-accent);
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.action.primary {
+  background: var(--berry-accent);
+  color: var(--berry-text-inverse);
+  border-color: var(--berry-accent);
+}
+
+.action.primary:hover:not(:disabled) {
+  background: var(--berry-accent-hover);
+  border-color: var(--berry-accent-hover);
+}

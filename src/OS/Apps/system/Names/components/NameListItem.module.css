@@ -1,0 +1,100 @@
+.item {
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--berry-border);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  transition: background var(--berry-transition-speed) var(--berry-easing);
+}
+
+.row:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+}
+
+.row:active:not(:disabled) {
+  transform: scale(0.997);
+}
+
+.row:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-body);
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.primaryBadge {
+  font-size: var(--berry-font-caption);
+  color: var(--berry-accent);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+}
+
+.kind {
+  font-family: var(--berry-font-system);
+}
+
+.chevron {
+  font-size: 20px;
+  color: var(--berry-text-muted);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.checkbox {
+  font-size: 18px;
+  color: var(--berry-text-secondary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.checkbox.checked {
+  color: var(--berry-accent);
+}
+
+.checkboxDisabled {
+  opacity: 0.4;
+}

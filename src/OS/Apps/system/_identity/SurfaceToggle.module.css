@@ -1,0 +1,18 @@
+.toggle {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--berry-divider, #ccc);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+.toggle:hover {
+  background: var(--berry-hover, rgba(0, 0, 0, 0.05));
+}
+
+.toggle:active {
+  background: var(--berry-active, rgba(0, 0, 0, 0.1));
+}

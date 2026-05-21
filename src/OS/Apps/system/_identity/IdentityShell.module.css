@@ -1,0 +1,14 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--berry-window-bg);
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}

@@ -1,0 +1,32 @@
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--berry-radius-card);
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-caption);
+  line-height: 1.4;
+}
+
+.warn {
+  background: color-mix(in srgb, var(--berry-warning) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--berry-warning) 50%, transparent);
+  color: var(--berry-text-primary);
+}
+
+.danger {
+  background: color-mix(in srgb, var(--berry-error) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--berry-error) 45%, transparent);
+  color: var(--berry-text-primary);
+}
+
+.icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}

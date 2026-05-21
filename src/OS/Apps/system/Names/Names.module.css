@@ -1,0 +1,35 @@
+/* Structural styles only — presentation polish lands later. */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--berry-divider, #ccc);
+}
+
+.tabs button {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+.tabs button[data-active="true"] {
+  background: var(--berry-active, rgba(0, 0, 0, 0.08));
+  border-color: var(--berry-divider, #ccc);
+}
+
+.viewport {
+  padding: 12px;
+  font-size: 13px;
+}
+
+.viewport [data-stub] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

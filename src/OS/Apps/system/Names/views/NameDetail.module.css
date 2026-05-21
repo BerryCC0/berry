@@ -1,0 +1,124 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  font-family: var(--berry-font-system);
+}
+
+.back {
+  align-self: flex-start;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-secondary);
+  cursor: pointer;
+}
+
+.back:hover {
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-primary);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  margin: 0;
+  font-size: var(--berry-font-title);
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  word-break: break-all;
+}
+
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--berry-font-caption);
+  flex-wrap: wrap;
+}
+
+.muted {
+  color: var(--berry-text-muted);
+  font-family: var(--berry-font-mono);
+}
+
+.loading {
+  padding: 16px;
+  text-align: center;
+  color: var(--berry-text-muted);
+  font-size: var(--berry-font-caption);
+}
+
+.footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.action {
+  padding: 6px 14px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-label);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.action:hover:not(:disabled) {
+  border-color: var(--berry-accent);
+}
+
+.action:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.action.primary {
+  background: var(--berry-accent);
+  color: var(--berry-text-inverse);
+  border-color: var(--berry-accent);
+}
+
+.action.primary:hover:not(:disabled) {
+  background: var(--berry-accent-hover);
+}
+
+.error {
+  font-size: var(--berry-font-caption);
+  color: var(--berry-error);
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--berry-error) 12%, transparent);
+  border-radius: var(--berry-radius-card);
+}
+
+.miniAction {
+  padding: 2px 8px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+}
+
+.miniAction:hover {
+  border-color: var(--berry-accent);
+}

@@ -1,0 +1,191 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 12px;
+  font-family: var(--berry-font-system);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--berry-font-label);
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.copy {
+  margin: 0;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+}
+
+.hint {
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  font-style: italic;
+}
+
+.inputRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--berry-input-bg);
+  border: 1px solid var(--berry-input-border);
+  border-radius: var(--berry-radius-input);
+  font-family: var(--berry-font-mono);
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-primary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.nextButton,
+.primaryButton {
+  padding: 8px 14px;
+  background: var(--berry-accent);
+  color: var(--berry-text-inverse);
+  border: 1px solid var(--berry-accent);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-label);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.nextButton:hover:not(:disabled),
+.primaryButton:hover:not(:disabled) {
+  background: var(--berry-accent-hover);
+}
+
+.nextButton:active:not(:disabled),
+.primaryButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.nextButton:disabled,
+.primaryButton:disabled {
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-muted);
+  border-color: var(--berry-border);
+  cursor: not-allowed;
+}
+
+.pathChoice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pathCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-card);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.pathCard:hover:not(:disabled) {
+  border-color: var(--berry-accent);
+}
+
+.pathCard:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pathHead {
+  font-size: var(--berry-font-body);
+  font-weight: 700;
+  color: var(--berry-text-primary);
+}
+
+.pathSub {
+  font-size: var(--berry-font-caption);
+  color: var(--berry-accent);
+  font-weight: 600;
+}
+
+.pathBody {
+  margin: 4px 0 0;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  line-height: 1.4;
+}
+
+.txtBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-card);
+}
+
+.txtRecord {
+  flex: 1;
+  font-family: var(--berry-font-mono);
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-primary);
+  word-break: break-all;
+}
+
+.inlineCode {
+  font-family: var(--berry-font-mono);
+  font-size: var(--berry-font-caption);
+  background: var(--berry-bg-secondary);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.smallButton {
+  padding: 4px 10px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.smallButton:hover {
+  border-color: var(--berry-accent);
+}
+
+.linkButton {
+  align-self: center;
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-accent);
+  cursor: pointer;
+  text-decoration: underline;
+}

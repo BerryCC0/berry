@@ -1,35 +1,41 @@
 /**
  * ENS Resolution Service
- * Provides OS-level ENS name resolution with caching.
- * 
- * Usage:
- * - Direct: ensService.resolveName(address) / ensService.resolveAddress(name)
- * - React: useENS(addressOrName) hook
- * 
+ *
+ * OS-level ENS name resolution backed by the on-chain Universal Resolver
+ * (via @ensdomains/ensjs + viem). Replaces the previous ensideas.com
+ * dependency so we get:
+ *   - ENSIP-10 wildcard resolution (required for DNS-imported names)
+ *   - Verified reverse-resolution roundtrip (no spoofing via setName)
+ *   - Multi-chain address records via CCIP-Read
+ *
+ * Public API (unchanged):
+ *   - resolveName(address) → name | null
+ *   - resolveAddress(name) → address | null
+ *   - getAvatar(addressOrName) → url | null
+ *   - formatAddress(address, name?) → string
+ *   - clearCache()
+ *
  * Respects the privacy.ensResolution setting.
  */
 
+import { getAddressRecord, getName } from '@ensdomains/ensjs/public';
+import { ensAvatarUrl } from '@/app/lib/ens/contracts';
+import { ensPublicClient } from '@/app/lib/ens/client';
 import { useSettingsStore } from "@/OS/store/settingsStore";
 import { truncateAddress } from "@/shared/format";
 
-// Cache types
 interface CacheEntry<T> {
   value: T;
   timestamp: number;
 }
 
 interface ENSCache {
-  // address -> name
   addressToName: Map<string, CacheEntry<string | null>>;
-  // name -> address
   nameToAddress: Map<string, CacheEntry<string | null>>;
-  // address -> avatar URL
   addressToAvatar: Map<string, CacheEntry<string | null>>;
 }
 
-// Cache configuration
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
-const MAINNET_RPC = "https://eth.llamarpc.com"; // Free public RPC
+const CACHE_DURATION_MS = 5 * 60 * 1000;
 
 class ENSServiceClass {
   private cache: ENSCache = {
@@ -40,217 +46,117 @@ class ENSServiceClass {
 
   private pendingRequests: Map<string, Promise<string | null>> = new Map();
 
-  /**
-   * Check if ENS resolution is enabled in settings
-   */
   private isEnabled(): boolean {
     try {
       return useSettingsStore.getState().settings.privacy.ensResolution;
     } catch {
-      return true; // Default to enabled if store not ready
+      return true;
     }
   }
 
-  /**
-   * Check if a cache entry is still valid
-   */
   private isCacheValid<T>(entry: CacheEntry<T> | undefined): boolean {
     if (!entry) return false;
     return Date.now() - entry.timestamp < CACHE_DURATION_MS;
   }
 
-  /**
-   * Normalize an Ethereum address to lowercase
-   */
   private normalizeAddress(address: string): string {
     return address.toLowerCase();
   }
 
-  /**
-   * Normalize an ENS name to lowercase
-   */
   private normalizeName(name: string): string {
     return name.toLowerCase();
   }
 
-  /**
-   * Make an ETH JSON-RPC call
-   */
-  private async rpcCall(method: string, params: unknown[]): Promise<unknown> {
-    const response = await fetch(MAINNET_RPC, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method,
-        params,
-      }),
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error.message || "RPC error");
-    }
-    return data.result;
-  }
-
-  /**
-   * Resolve an ENS name to an address
-   * @param name ENS name (e.g., "vitalik.eth")
-   * @returns Ethereum address or null if not found
-   */
   async resolveAddress(name: string): Promise<string | null> {
     if (!this.isEnabled()) return null;
     if (!name || !name.includes(".")) return null;
 
-    const normalizedName = this.normalizeName(name);
+    const key = this.normalizeName(name);
+    const cached = this.cache.nameToAddress.get(key);
+    if (this.isCacheValid(cached)) return cached!.value;
 
-    // Check cache
-    const cached = this.cache.nameToAddress.get(normalizedName);
-    if (this.isCacheValid(cached)) {
-      return cached!.value;
-    }
-
-    // Check for pending request
-    const pendingKey = `name:${normalizedName}`;
+    const pendingKey = `name:${key}`;
     if (this.pendingRequests.has(pendingKey)) {
       return this.pendingRequests.get(pendingKey)!;
     }
 
-    // Make the request
-    const promise = this.fetchAddress(normalizedName);
+    const promise = this.fetchAddress(key);
     this.pendingRequests.set(pendingKey, promise);
 
     try {
       const result = await promise;
-      this.cache.nameToAddress.set(normalizedName, {
-        value: result,
-        timestamp: Date.now(),
-      });
+      this.cache.nameToAddress.set(key, { value: result, timestamp: Date.now() });
       return result;
     } finally {
       this.pendingRequests.delete(pendingKey);
     }
   }
 
-  /**
-   * Resolve an address to an ENS name (reverse lookup)
-   * @param address Ethereum address
-   * @returns ENS name or null if not found
-   */
   async resolveName(address: string): Promise<string | null> {
     if (!this.isEnabled()) return null;
     if (!address || address.length !== 42) return null;
 
-    const normalizedAddress = this.normalizeAddress(address);
+    const key = this.normalizeAddress(address);
+    const cached = this.cache.addressToName.get(key);
+    if (this.isCacheValid(cached)) return cached!.value;
 
-    // Check cache
-    const cached = this.cache.addressToName.get(normalizedAddress);
-    if (this.isCacheValid(cached)) {
-      return cached!.value;
-    }
-
-    // Check for pending request
-    const pendingKey = `address:${normalizedAddress}`;
+    const pendingKey = `address:${key}`;
     if (this.pendingRequests.has(pendingKey)) {
       return this.pendingRequests.get(pendingKey)!;
     }
 
-    // Make the request
-    const promise = this.fetchName(normalizedAddress);
+    const promise = this.fetchName(key);
     this.pendingRequests.set(pendingKey, promise);
 
     try {
       const result = await promise;
-      this.cache.addressToName.set(normalizedAddress, {
-        value: result,
-        timestamp: Date.now(),
-      });
+      this.cache.addressToName.set(key, { value: result, timestamp: Date.now() });
       return result;
     } finally {
       this.pendingRequests.delete(pendingKey);
     }
   }
 
-  /**
-   * Get avatar for an address or ENS name
-   * @param addressOrName Ethereum address or ENS name
-   * @returns Avatar URL or null
-   */
   async getAvatar(addressOrName: string): Promise<string | null> {
     if (!this.isEnabled()) return null;
 
-    // Determine if it's an address or name
     const isAddress = addressOrName.startsWith("0x") && addressOrName.length === 42;
-    const normalizedKey = isAddress
+    const key = isAddress
       ? this.normalizeAddress(addressOrName)
       : this.normalizeName(addressOrName);
 
-    // Check cache
-    const cached = this.cache.addressToAvatar.get(normalizedKey);
-    if (this.isCacheValid(cached)) {
-      return cached!.value;
-    }
+    const cached = this.cache.addressToAvatar.get(key);
+    if (this.isCacheValid(cached)) return cached!.value;
 
-    // For addresses, first resolve to name
-    let ensName = addressOrName;
+    let name = addressOrName;
     if (isAddress) {
-      const name = await this.resolveName(addressOrName);
-      if (!name) {
-        this.cache.addressToAvatar.set(normalizedKey, {
-          value: null,
-          timestamp: Date.now(),
-        });
+      const resolved = await this.resolveName(addressOrName);
+      if (!resolved) {
+        this.cache.addressToAvatar.set(key, { value: null, timestamp: Date.now() });
         return null;
       }
-      ensName = name;
+      name = resolved;
     }
 
-    // Fetch avatar from ENS metadata service
+    // ENS metadata service handles NFT-typed avatars (eip155:1/erc721:...) for us.
     try {
-      const avatarUrl = `https://metadata.ens.domains/mainnet/avatar/${ensName}`;
-      const response = await fetch(avatarUrl, { method: "HEAD" });
-      
-      if (response.ok) {
-        this.cache.addressToAvatar.set(normalizedKey, {
-          value: avatarUrl,
-          timestamp: Date.now(),
-        });
-        return avatarUrl;
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[ENS] Failed to fetch avatar:", error);
-      }
+      const url = ensAvatarUrl(name);
+      const res = await fetch(url, { method: "HEAD" });
+      const value = res.ok ? url : null;
+      this.cache.addressToAvatar.set(key, { value, timestamp: Date.now() });
+      return value;
+    } catch {
+      this.cache.addressToAvatar.set(key, { value: null, timestamp: Date.now() });
+      return null;
     }
-
-    this.cache.addressToAvatar.set(normalizedKey, {
-      value: null,
-      timestamp: Date.now(),
-    });
-    return null;
   }
 
-  /**
-   * Format an address for display - shows ENS name if available, otherwise truncated address
-   * @param address Ethereum address
-   * @param ensName Optional pre-resolved ENS name
-   * @returns Formatted string
-   */
   formatAddress(address: string, ensName?: string | null): string {
-    if (ensName) {
-      return ensName;
-    }
-    if (!address || address.length !== 42) {
-      return address || "";
-    }
+    if (ensName) return ensName;
+    if (!address || address.length !== 42) return address || "";
     return truncateAddress(address);
   }
 
-  /**
-   * Clear the cache (useful for testing or when settings change)
-   */
   clearCache(): void {
     this.cache.addressToName.clear();
     this.cache.nameToAddress.clear();
@@ -258,25 +164,17 @@ class ENSServiceClass {
     this.pendingRequests.clear();
   }
 
-  // ============================================================================
-  // Private fetch methods using ENS Universal Resolver
-  // ============================================================================
+  // ==========================================================================
+  // On-chain fetchers (Universal Resolver via @ensdomains/ensjs)
+  // ==========================================================================
 
   private async fetchAddress(name: string): Promise<string | null> {
     try {
-      // Use ENS public resolver approach via eth_call
-      // This is a simplified approach using the ENS metadata API
-      const response = await fetch(
-        `https://api.ensideas.com/ens/resolve/${encodeURIComponent(name)}`
-      );
-      
-      if (!response.ok) return null;
-      
-      const data = await response.json();
-      return data.address || null;
+      const record = await getAddressRecord(ensPublicClient(), { name });
+      return record?.value ?? null;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
-        console.warn("[ENS] Failed to resolve address for", name, error);
+        console.warn("[ENS] resolveAddress failed for", name, error);
       }
       return null;
     }
@@ -284,24 +182,21 @@ class ENSServiceClass {
 
   private async fetchName(address: string): Promise<string | null> {
     try {
-      // Use ENS ideas API for reverse lookup
-      const response = await fetch(
-        `https://api.ensideas.com/ens/resolve/${encodeURIComponent(address)}`
-      );
-      
-      if (!response.ok) return null;
-      
-      const data = await response.json();
-      return data.name || null;
+      // getName validates the forward-resolution roundtrip and only returns
+      // a name when match: true. Without that check, anyone could set their
+      // reverse record to claim to be vitalik.eth.
+      const result = await getName(ensPublicClient(), {
+        address: address as `0x${string}`,
+      });
+      if (!result || !result.match) return null;
+      return result.name ?? null;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
-        console.warn("[ENS] Failed to resolve name for", address, error);
+        console.warn("[ENS] resolveName failed for", address, error);
       }
       return null;
     }
   }
 }
 
-// Export singleton instance
 export const ensService = new ENSServiceClass();
-

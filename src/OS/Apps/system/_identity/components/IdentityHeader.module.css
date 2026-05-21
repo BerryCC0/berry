@@ -1,0 +1,39 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px var(--berry-padding-content);
+  background: var(--berry-bg-secondary);
+  border-bottom: 1px solid var(--berry-border);
+  min-height: 64px;
+  box-sizing: border-box;
+}
+
+.left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.connectButton {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-label);
+  padding: 6px 12px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.connectButton:hover {
+  background: var(--berry-bg);
+  border-color: var(--berry-accent);
+}
+
+.connectButton:active {
+  transform: scale(0.98);
+}

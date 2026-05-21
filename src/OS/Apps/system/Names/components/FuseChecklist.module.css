@@ -1,0 +1,107 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item {
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-card);
+  background: var(--berry-bg);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background var(--berry-transition-speed) var(--berry-easing);
+}
+
+.row:hover:not(.burned):not(.parentRow) {
+  background: var(--berry-bg-tertiary);
+}
+
+.row.burned,
+.row.parentRow {
+  cursor: not-allowed;
+  background: var(--berry-bg-secondary);
+}
+
+.text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-label);
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.description {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  line-height: 1.4;
+}
+
+.burnedTag {
+  flex-shrink: 0;
+  align-self: flex-start;
+  font-size: var(--berry-font-caption);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--berry-radius-input);
+  background: var(--berry-error);
+  color: var(--berry-text-inverse);
+}
+
+.burnButton {
+  padding: 8px 14px;
+  background: var(--berry-error);
+  color: var(--berry-text-inverse);
+  border: 1px solid var(--berry-error);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-label);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.burnButton:hover:not(:disabled) {
+  background: #b71c2c;
+}
+
+.burnButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.burnButton:disabled {
+  cursor: not-allowed;
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-muted);
+  border-color: var(--berry-border);
+}
+
+.error {
+  color: var(--berry-error);
+  font-size: var(--berry-font-caption);
+}

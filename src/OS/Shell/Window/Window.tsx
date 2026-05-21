@@ -175,6 +175,7 @@ function WindowRenderer({
       className={windowClassName}
       style={windowStyle}
       onMouseDown={onWindowClick}
+      data-window-id={window.id}
     >
       <TitleBar
         title={window.title}

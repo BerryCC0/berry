@@ -2,19 +2,19 @@
 
 /**
  * WalletPanel - OS App for Wallet Management
- * 
- * Control Center-style wallet interface with:
- * - Wallet info & ENS display
- * - Token balances (native + ERC-20)
- * - Quick actions (Send, Receive, Buy, Swap)
- * - Disconnect option
+ *
+ * Control Center-style wallet interface, twin surface to Names.
+ * Both surfaces share IdentityShell + IdentityHeader so the avatar,
+ * ENS, address, and chain row don't visibly change during a swap.
+ * The body below the shared header is what differs between surfaces.
  */
 
+import { useAppKit } from "@reown/appkit/react";
 import { useWallet } from "@/OS/hooks/useWallet";
-import { useENS } from "@/OS/hooks/useENS";
 import { useTokenBalances } from "@/OS/hooks/useTokenBalances";
 import { useTranslation } from "@/OS/lib/i18n";
-import { WalletInfo, QuickActions, TokenList } from "./components";
+import { IdentityShell } from "@/OS/Apps/system/_identity";
+import { QuickActions, TokenList } from "./components";
 import type { AppComponentProps } from "@/OS/types/app";
 import styles from "./WalletPanel.module.css";
 
@@ -30,27 +30,25 @@ function getNumericChainId(chainId: number | string | undefined): number | undef
 
 export function WalletPanel({ windowId }: AppComponentProps) {
   const { t } = useTranslation();
-  const { isConnected, address, chainName, chainId, connect, disconnect, forgetWallet } = useWallet();
-  const { displayName, avatar, name: ensName } = useENS(address);
-  
-  // Extract numeric chain ID for API calls
+  const { isConnected, address, chainId, connect, disconnect, forgetWallet } = useWallet();
+  const { open: openAppKit } = useAppKit();
+
   const numericChainId = getNumericChainId(chainId);
-  
-  // Fetch all token balances via Moralis
+
   const { native, tokens, isLoading, error } = useTokenBalances(
     address,
     numericChainId
   );
 
-  // Disconnected state
+  // Disconnected state — IdentityShell still renders so the SurfaceToggle is reachable.
   if (!isConnected || !address) {
     return (
-      <div className={styles.container}>
+      <IdentityShell windowId={windowId} surface="wallet">
         <div className={styles.disconnected}>
           <img src="/icons/wallet.svg" alt={t('common.wallet')} className={styles.iconLarge} />
           <h2 className={styles.title}>{t('wallet.connectWallet')}</h2>
           <p className={styles.description}>
-            Connect your wallet to save your Berry OS customizations 
+            Connect your wallet to save your Berry OS customizations
             across sessions and devices.
           </p>
           <button onClick={connect} className={styles.connectButton}>
@@ -62,41 +60,35 @@ export function WalletPanel({ windowId }: AppComponentProps) {
             Berry OS never requests signatures or access to your funds.
           </p>
         </div>
-      </div>
+      </IdentityShell>
     );
   }
 
-  // Connected state - Control Center style
   return (
-    <div className={styles.container}>
-      {/* Wallet Info Section */}
-      <WalletInfo
-        address={address}
-        ensName={ensName || undefined}
-        ensAvatar={avatar || undefined}
-        chainName={chainName}
-      />
-
-      {/* Token Balances */}
-      <TokenList
-        native={native}
-        tokens={tokens}
-        isLoading={isLoading}
-        error={error}
-      />
-
-      {/* Quick Actions */}
-      <QuickActions address={address} />
-
-      {/* Footer Actions */}
-      <div className={styles.footer}>
-        <button onClick={forgetWallet} className={styles.secondaryButton}>
-          Forget Session
-        </button>
-        <button onClick={disconnect} className={styles.disconnectButton}>
-          {t('wallet.disconnectWallet')}
-        </button>
+    <IdentityShell windowId={windowId} surface="wallet">
+      <div className={styles.container}>
+        <TokenList
+          native={native}
+          tokens={tokens}
+          isLoading={isLoading}
+          error={error}
+        />
+        <QuickActions address={address} />
+        <div className={styles.footer}>
+          <button
+            onClick={() => openAppKit({ view: "Account" })}
+            className={styles.secondaryButton}
+          >
+            Manage Wallets
+          </button>
+          <button onClick={forgetWallet} className={styles.secondaryButton}>
+            Forget Session
+          </button>
+          <button onClick={disconnect} className={styles.disconnectButton}>
+            {t('wallet.disconnectWallet')}
+          </button>
+        </div>
       </div>
-    </div>
+    </IdentityShell>
   );
 }

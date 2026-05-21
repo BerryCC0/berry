@@ -120,6 +120,10 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
     return null;
   }
 
+  // Resolve size: LaunchOptions overrides config (used by surface swaps).
+  const width = options.width ?? config.window.width;
+  const height = options.height ?? config.window.height;
+
   // Calculate position
   // Priority: LaunchOptions x/y > config.window.x/y > config.window.position preset > cascade
   let x = options.x ?? config.window.x;
@@ -127,14 +131,14 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
 
   if (x === undefined || y === undefined) {
     const resolved = config.window.position
-      ? resolveWindowPosition(config.window.position, config.window.width, config.window.height)
-      : getCascadePosition(config.window.width, config.window.height);
+      ? resolveWindowPosition(config.window.position, width, height)
+      : getCascadePosition(width, height);
     x = x ?? resolved.x;
     y = y ?? resolved.y;
   }
 
   // Clamp to viewport: top edge stays below menu bar, bottom edge above dock
-  const clamped = clampToViewport(x, y, config.window.width, config.window.height);
+  const clamped = clampToViewport(x, y, width, height);
   x = clamped.x;
   y = clamped.y;
 
@@ -142,8 +146,8 @@ export function launchApp(appId: string, options: LaunchOptions = {}): string | 
   const windowConfig: WindowConfig = {
     title: config.name,
     icon: config.icon,
-    width: config.window.width,
-    height: config.window.height,
+    width,
+    height,
     minWidth: config.window.minWidth,
     minHeight: config.window.minHeight,
     maxWidth: config.window.maxWidth,

@@ -1,0 +1,109 @@
+.row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--berry-border);
+  padding: 4px 12px;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.main:hover:not(:disabled) .name {
+  color: var(--berry-accent);
+}
+
+.main:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.name {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-label);
+  color: var(--berry-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.tag {
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  background: var(--berry-bg-secondary);
+  padding: 1px 5px;
+  border-radius: var(--berry-radius-input);
+  flex-shrink: 0;
+}
+
+.chevron {
+  font-size: 16px;
+  color: var(--berry-text-muted);
+  flex-shrink: 0;
+}
+
+.overflow {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--berry-radius-button);
+  cursor: pointer;
+  color: var(--berry-text-muted);
+  font-size: 14px;
+  margin-left: 6px;
+}
+
+.overflow:hover {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-border);
+  color: var(--berry-text-primary);
+}
+
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+}
+
+.confirmText {
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-secondary);
+}
+
+.smallBtn {
+  padding: 3px 8px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+}
+
+.smallBtn.danger {
+  background: var(--berry-error);
+  color: var(--berry-text-inverse);
+  border-color: var(--berry-error);
+}
+
+.smallBtn:hover {
+  border-color: var(--berry-accent);
+}

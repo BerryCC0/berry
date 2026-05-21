@@ -1,0 +1,67 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  background: var(--berry-bg);
+  border: 2px solid var(--berry-border);
+  border-radius: var(--berry-radius-card);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.tile:hover:not(.selected) {
+  border-color: var(--berry-text-secondary);
+}
+
+.tile.selected {
+  border-color: var(--berry-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--berry-accent) 30%, transparent);
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  background: var(--berry-bg-tertiary);
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px;
+  gap: 1px;
+  background: var(--berry-bg-secondary);
+  font-size: var(--berry-font-caption);
+  border-top: 1px solid var(--berry-border);
+  min-width: 0;
+}
+
+.collection {
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tokenId {
+  color: var(--berry-text-muted);
+  font-family: var(--berry-font-mono);
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+}

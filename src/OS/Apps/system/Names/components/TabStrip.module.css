@@ -1,0 +1,44 @@
+.strip {
+  border-bottom: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  overflow-x: auto;
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: none;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.inner {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  min-width: max-content;
+}
+
+.tab {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-caption);
+  padding: 4px 10px;
+  min-height: 26px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--berry-radius-button);
+  color: var(--berry-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.tab:hover {
+  color: var(--berry-text-primary);
+  background: var(--berry-bg-tertiary);
+}
+
+.tab.active {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-border);
+  color: var(--berry-text-primary);
+  font-weight: 600;
+}

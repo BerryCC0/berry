@@ -15,6 +15,7 @@ const Finder = lazy(() => import("./system/Finder/Finder").then(m => ({ default:
 const Calculator = lazy(() => import("./utilities/Calculator/Calculator").then(m => ({ default: m.Calculator })));
 const Settings = lazy(() => import("./system/Settings/Settings").then(m => ({ default: m.Settings })));
 const WalletPanel = lazy(() => import("./system/WalletPanel/WalletPanel").then(m => ({ default: m.WalletPanel })));
+const Names = lazy(() => import("./system/Names").then(m => ({ default: m.Names })));
 const TextEditor = lazy(() => import("./utilities/TextEditor/TextEditor").then(m => ({ default: m.TextEditor })));
 const ImageViewer = lazy(() => import("./utilities/ImageViewer/ImageViewer").then(m => ({ default: m.ImageViewer })));
 const SoundJam = lazy(() => import("./utilities/SoundJam/SoundJam").then(m => ({ default: m.SoundJam })));
@@ -139,24 +140,47 @@ const settingsConfig: AppConfig = {
 };
 
 /**
- * Wallet Panel - Wallet connection and management
+ * Wallet Panel - Wallet connection and management.
+ * Twin surface with Names; both share IdentityShell and swap in place.
  */
 const walletPanelConfig: AppConfig = {
   id: "wallet-panel",
   name: "Wallet",
   icon: getIcon("wallet"),
   category: "system",
-  singleton: true, // Only one Wallet Panel
-  showInDock: false, // Accessed via MenuBar
+  singleton: true,
+  showInDock: false,
   window: {
-    width: 360,
-    height: 600,
-    minWidth: 320,
-    minHeight: 400,
+    width: 420,
+    height: 640,
+    minWidth: 360,
+    minHeight: 480,
     isResizable: true,
   },
   permissions: [],
   component: WalletPanel,
+};
+
+/**
+ * Names - ENS management surface (lookup, my names, DNS import, .eth registration).
+ * Twin surface with WalletPanel.
+ */
+const namesConfig: AppConfig = {
+  id: "names",
+  name: "Names",
+  icon: getIcon("wallet"),
+  category: "system",
+  singleton: true,
+  showInDock: false,
+  window: {
+    width: 420,
+    height: 640,
+    minWidth: 360,
+    minHeight: 480,
+    isResizable: true,
+  },
+  permissions: [],
+  component: Names,
 };
 
 /**
@@ -551,6 +575,7 @@ export const osAppConfigs: AppConfig[] = [
   calculatorConfig,
   settingsConfig,
   walletPanelConfig,
+  namesConfig,
   textEditorConfig,
   imageViewerConfig,
   soundJamConfig,

@@ -1,0 +1,86 @@
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-title);
+  font-weight: bold;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.address {
+  font-family: var(--berry-font-mono);
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary .address {
+  /* When no ENS, the address is the primary line — bump up the weight. */
+  font-size: var(--berry-font-body);
+  color: var(--berry-text-primary);
+}
+
+.subtitle {
+  font-family: var(--berry-font-system);
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  white-space: nowrap;
+}
+
+.copyButton {
+  min-width: var(--berry-min-target);
+  min-height: var(--berry-min-target);
+  padding: 0 6px;
+  background: transparent;
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  font-family: inherit;
+  color: var(--berry-text-secondary);
+  transition: all var(--berry-transition-speed) var(--berry-easing);
+}
+
+.copyButton:hover {
+  background: var(--berry-bg-tertiary);
+  border-color: var(--berry-accent);
+  color: var(--berry-accent);
+}
+
+.copyButton:active {
+  transform: scale(0.95);
+}

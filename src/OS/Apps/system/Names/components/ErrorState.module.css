@@ -1,0 +1,48 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 16px;
+  gap: 8px;
+  font-family: var(--berry-font-system);
+}
+
+.icon {
+  font-size: 24px;
+  color: var(--berry-error);
+}
+
+.title {
+  font-size: var(--berry-font-body);
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.message {
+  font-size: var(--berry-font-caption);
+  color: var(--berry-text-muted);
+  max-width: 280px;
+  line-height: 1.4;
+}
+
+.retry {
+  margin-top: 8px;
+  padding: 6px 14px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button);
+  font-family: inherit;
+  font-size: var(--berry-font-label);
+  color: var(--berry-text-primary);
+  cursor: pointer;
+}
+
+.retry:hover {
+  border-color: var(--berry-accent);
+}
+
+.retry:active {
+  transform: scale(0.98);
+}

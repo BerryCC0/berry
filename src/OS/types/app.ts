@@ -180,6 +180,10 @@ export interface LaunchOptions {
   initialState?: unknown;
   x?: number;
   y?: number;
+  /** Override the configured window width — used by surface swaps to preserve size. */
+  width?: number;
+  /** Override the configured window height — used by surface swaps to preserve size. */
+  height?: number;
   focus?: boolean;
 }
 
