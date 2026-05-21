@@ -477,6 +477,55 @@ export const dataConfigChanges = onchainTable(
   })
 );
 
+/** Propdates: on-chain status updates posted against a proposal */
+export const propdates = onchainTable(
+  "propdates",
+  (t) => ({
+    id: t.text().primaryKey(),
+    proposalId: t.integer().notNull(),
+    isCompleted: t.boolean().notNull(),
+    update: t.text().notNull(),
+    admin: t.hex().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    proposalIdx: index().on(table.proposalId),
+  })
+);
+
+/** Propdates admin assignments per proposal — current admin + history */
+export const propdateAdmins = onchainTable(
+  "propdate_admins",
+  (t) => ({
+    proposalId: t.integer().primaryKey(),
+    admin: t.hex().notNull(),
+    isCompleted: t.boolean().notNull().default(false),
+    lastUpdated: t.bigint(),
+    updatedBlock: t.bigint().notNull(),
+    updatedTimestamp: t.bigint().notNull(),
+  })
+);
+
+/** Propdates admin transfer/migrate/recover history */
+export const propdateAdminChanges = onchainTable(
+  "propdate_admin_changes",
+  (t) => ({
+    id: t.text().primaryKey(),
+    proposalId: t.integer().notNull(),
+    changeType: t.text().notNull(),
+    oldAdmin: t.hex().notNull(),
+    newAdmin: t.hex().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+  }),
+  (table) => ({
+    proposalIdx: index().on(table.proposalId),
+  })
+);
+
 // =============================================================================
 // SUBGRAPH 3: TREASURY & FINANCE
 // =============================================================================

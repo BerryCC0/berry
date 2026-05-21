@@ -19,6 +19,7 @@ export { NounsDAOLogicV3ABI } from './NounsDAOLogicV3';
 export { NounsDAOAdminABI } from './NounsDAOAdmin';
 export { DataProxyABI } from './DataProxy';
 export { ClientRewardsABI } from './ClientRewards';
+export { PropdatesV2ABI } from './PropdatesV2';
 
 // ============================================================================
 // TREASURY

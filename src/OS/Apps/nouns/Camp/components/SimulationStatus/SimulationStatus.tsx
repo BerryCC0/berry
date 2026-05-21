@@ -10,7 +10,10 @@ import { formatAddress } from '@/shared/format';
 import { useEnsName } from '@/OS/hooks/useEnsData';
 import { keccak256, toBytes, slice } from 'viem';
 import type { SimulationResult, TransactionResult, ProposalAction } from '../../hooks/useSimulation';
-import { type DecodedTransaction } from '../../utils/transactionDecoder';
+import {
+  type DecodedTransaction,
+  getDisplayNounId,
+} from '../../utils/transactionDecoder';
 import { useDecodedTransactions } from '../../hooks/useDecodedTransactions';
 import { NounImageById } from '@/app/lib/nouns/components';
 import styles from './SimulationStatus.module.css';
@@ -108,8 +111,9 @@ function TransactionRow({
   const recipientAddress = decoded.params?.to;
   const contractAddress = decoded.params?.contract;
   
-  // Check if this is a Noun transfer
-  const nounId = decoded.params?.nounId;
+  // Resolve a Noun ID for inline image rendering — covers both direct
+  // Noun transfers and Seaport buys of Nouns NFTs.
+  const nounId = getDisplayNounId(decoded);
   
   // Check if we have detailed call info to show
   const hasDetails = decoded.formattedCall && decoded.formattedCall.length > 0;
@@ -123,8 +127,8 @@ function TransactionRow({
         <span className={styles.transactionIndex}>#{index + 1}</span>
         <div className={styles.transactionTitleContainer}>
           <span className={styles.transactionTitle}>{decoded.title}</span>
-          {nounId && (
-            <NounImageById id={parseInt(nounId, 10)} size={20} className={styles.nounImage} />
+          {nounId !== null && (
+            <NounImageById id={nounId} size={20} className={styles.nounImage} />
           )}
         </div>
         {result && parseInt(result.gasUsed, 10) > 0 && (
@@ -208,8 +212,9 @@ function TransactionRowStatic({
   const recipientAddress = decoded.params?.to;
   const contractAddress = decoded.params?.contract;
   
-  // Check if this is a Noun transfer
-  const nounId = decoded.params?.nounId;
+  // Resolve a Noun ID for inline image rendering — covers both direct
+  // Noun transfers and Seaport buys of Nouns NFTs.
+  const nounId = getDisplayNounId(decoded);
   
   // Check if we have detailed call info to show
   const hasDetails = decoded.formattedCall && decoded.formattedCall.length > 0;
@@ -220,8 +225,8 @@ function TransactionRowStatic({
         <span className={styles.transactionIndex}>#{index + 1}</span>
         <div className={styles.transactionTitleContainer}>
           <span className={styles.transactionTitle}>{decoded.title}</span>
-          {nounId && (
-            <NounImageById id={parseInt(nounId, 10)} size={20} className={styles.nounImage} />
+          {nounId !== null && (
+            <NounImageById id={nounId} size={20} className={styles.nounImage} />
           )}
         </div>
       </div>

@@ -26,6 +26,7 @@ import { DataProxyABI } from "../app/lib/nouns/abis/DataProxy";
 import { TreasuryTimelockABI } from "../app/lib/nouns/abis/TreasuryTimelock";
 import { NounsTreasuryV1ABI } from "../app/lib/nouns/abis/NounsTreasuryV1";
 import { ClientRewardsABI } from "../app/lib/nouns/abis/ClientRewards";
+import { PropdatesV2ABI } from "../app/lib/nouns/abis/PropdatesV2";
 import { TokenBuyerABI } from "../app/lib/nouns/abis/TokenBuyer";
 import { PayerABI } from "../app/lib/nouns/abis/Payer";
 import { StreamFactoryABI } from "../app/lib/nouns/abis/StreamFactory";
@@ -95,6 +96,16 @@ export default createConfig({
       abi: DataProxyABI,
       address: "0xf790A5f59678dd733fb3De93493A91f472ca1365",
       startBlock: 17812145,
+    },
+
+    // Propdates: proposal authors / designated admins post on-chain updates
+    // on the status of an executed proposal. The address is the UUPS proxy;
+    // implementation is upgradable to PropdatesV2 (and beyond).
+    Propdates: {
+      chain: "mainnet",
+      abi: PropdatesV2ABI,
+      address: "0xa5Bf9A9b8f60CFD98b1cCB592f2F9F37Bb0033a4",
+      startBlock: 18689732,
     },
 
     // =========================================================================

@@ -312,7 +312,8 @@ export type ActivityType =
   | 'noun_delegation'
   | 'noun_swap'
   | 'auction_settled'
-  | 'auction_started';
+  | 'auction_started'
+  | 'propdate_posted';
 
 export interface ActivityItem {
   id: string;
@@ -368,6 +369,11 @@ export interface ActivityItem {
   
   // Candidate update specific
   updateMessage?: string;
+
+  // Propdate specific. `propdateUpdate` is the markdown body; the flag marks
+  // proposals the admin considers fully delivered.
+  propdateUpdate?: string;
+  propdateIsCompleted?: boolean;
 
   // Set on proposal_created items when the proposal was promoted from a
   // candidate via proposeBySigs. Detected by matching encodedProposalHash.

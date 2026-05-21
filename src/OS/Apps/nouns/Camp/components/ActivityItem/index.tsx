@@ -12,6 +12,7 @@
  *   - CandidateContent: candidate_created/feedback/sponsored/updated
  *   - TransferContent: noun_transfer, noun_delegation
  *   - AuctionContent: auction_settled, auction_started
+ *   - PropdateContent: propdate_posted
  */
 
 'use client';
@@ -26,6 +27,7 @@ import { CandidateContent } from './CandidateContent';
 import { TransferContent } from './TransferContent';
 import { SwapContent } from './SwapContent';
 import { AuctionContent } from './AuctionContent';
+import { PropdateContent } from './PropdateContent';
 import { VoterText } from './SharedRenderers';
 import type { ActivityContentProps } from './types';
 import styles from './ActivityItem.module.css';
@@ -134,6 +136,9 @@ function ActivityItemInner({
       case 'auction_settled':
       case 'auction_started':
         return <AuctionContent {...contentProps} />;
+
+      case 'propdate_posted':
+        return <PropdateContent {...contentProps} />;
 
       default:
         return (

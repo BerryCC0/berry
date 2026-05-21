@@ -112,6 +112,32 @@ function getContractName(address: string): string | undefined {
 }
 
 /**
+ * Pull a Noun ID out of a decoded action when one is implied — either a
+ * direct Noun transfer (`params.nounId`) or a Seaport NFT buy whose
+ * contract is the Nouns token (`params.nftId` + `params.contract`).
+ * Returns the numeric ID for inline image rendering, or null when the
+ * action isn't about a Noun.
+ */
+export function getDisplayNounId(decoded: DecodedTransaction): number | null {
+  const nounId = decoded.params?.nounId;
+  if (nounId) {
+    const n = parseInt(nounId, 10);
+    return Number.isNaN(n) ? null : n;
+  }
+  const nftId = decoded.params?.nftId;
+  const contract = decoded.params?.contract;
+  if (
+    nftId &&
+    contract &&
+    contract.toLowerCase() === NOUNS_ADDRESSES.token.toLowerCase()
+  ) {
+    const n = parseInt(nftId, 10);
+    return Number.isNaN(n) ? null : n;
+  }
+  return null;
+}
+
+/**
  * Resolve a token's symbol from either the static TOKEN_SYMBOLS map or the
  * dynamic per-proposal token metadata in the decoding context. Falls back
  * to the truncated address if neither source has it.

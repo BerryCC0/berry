@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Fetch all activity types in parallel
     const [voteRows, feedbackRows, proposalRows, candidateRows, candidateFbRows,
            signatureRows, transferRows, delegationRows, auctionRows, proposalVersionRows,
-           candidateVersionRows, swapRows] = await Promise.all([
+           candidateVersionRows, swapRows, propdateRows] = await Promise.all([
       // Votes
       sql`
         SELECT v.id, v.voter, v.proposal_id, v.support, v.votes, v.reason,
@@ -198,6 +198,20 @@ export async function GET(request: NextRequest) {
         ORDER BY s.block_timestamp DESC
         LIMIT ${limit}
       `,
+      // Propdates: on-chain status updates posted by a proposal's designated
+      // update admin. Join the proposal title for display context.
+      sql`
+        SELECT pu.id, pu.proposal_id, pu.is_completed, pu.update, pu.admin,
+               pu.block_timestamp, pu.tx_hash,
+               p.title as proposal_title,
+               e.name as admin_ens
+        FROM ponder_live.propdates pu
+        LEFT JOIN ponder_live.proposals p ON pu.proposal_id = p.id
+        LEFT JOIN ponder_live.ens_names e ON LOWER(pu.admin) = LOWER(e.address)
+        WHERE pu.block_timestamp >= ${since}
+        ORDER BY pu.block_timestamp DESC
+        LIMIT ${limit}
+      `,
     ]);
 
     return NextResponse.json({
@@ -213,6 +227,7 @@ export async function GET(request: NextRequest) {
       proposalVersions: proposalVersionRows,
       candidateVersions: candidateVersionRows,
       swaps: swapRows,
+      propdates: propdateRows,
     });
   } catch (error) {
     console.error('Failed to fetch activity:', error);

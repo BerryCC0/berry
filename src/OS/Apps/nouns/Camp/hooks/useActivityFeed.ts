@@ -175,6 +175,18 @@ interface ApiSwapRow {
   tx_hash: string;
 }
 
+interface ApiPropdateRow {
+  id: string;
+  proposal_id: number;
+  is_completed: boolean;
+  update: string;
+  admin: string;
+  admin_ens: string | null;
+  proposal_title: string | null;
+  block_timestamp: string;
+  tx_hash: string;
+}
+
 interface ActivityApiResponse {
   votes: ApiVoteRow[];
   proposalFeedback: ApiProposalFeedbackRow[];
@@ -188,6 +200,7 @@ interface ActivityApiResponse {
   proposalVersions: ApiProposalVersionRow[];
   candidateVersions: ApiCandidateVersionRow[];
   swaps: ApiSwapRow[];
+  propdates: ApiPropdateRow[];
 }
 
 // ============================================================================
@@ -709,6 +722,24 @@ function processProposalVersions(versions: ApiProposalVersionRow[]): ActivityIte
   return items;
 }
 
+function processPropdates(propdates: ApiPropdateRow[]): ActivityItem[] {
+  return propdates
+    // Empty-string updates are technically valid on-chain but render as noise.
+    .filter(p => p.update && p.update.trim() !== '')
+    .map(p => ({
+      id: `propdate-${p.id}`,
+      type: 'propdate_posted' as const,
+      timestamp: String(p.block_timestamp),
+      actor: p.admin,
+      actorEns: p.admin_ens || undefined,
+      proposalId: String(p.proposal_id),
+      proposalTitle: p.proposal_title || '',
+      propdateUpdate: p.update,
+      propdateIsCompleted: p.is_completed,
+      txHash: p.tx_hash,
+    }));
+}
+
 function processSwaps(swaps: ApiSwapRow[]): ActivityItem[] {
   return swaps.map(s => {
     const tokensIn = (s.tokens_in ?? []).map(String);
@@ -817,6 +848,7 @@ export function useActivityFeed(first: number = 30) {
 
       allItems.push(...processProposalVersions(data.proposalVersions || []));
       allItems.push(...processCandidateVersions(data.candidateVersions || []));
+      allItems.push(...processPropdates(data.propdates || []));
 
       // Sort by timestamp descending
       allItems.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));

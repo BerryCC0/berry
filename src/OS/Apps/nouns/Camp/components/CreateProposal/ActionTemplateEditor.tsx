@@ -15,12 +15,14 @@ import { ACTION_TEMPLATES } from '../../utils/actionTemplates';
 import type { ActionTemplateType } from '../../utils/actionTemplates';
 import type { ActionTemplateState } from '../../utils/types';
 import { useDecodedTransactions } from '../../hooks/useDecodedTransactions';
+import { getDisplayNounId } from '../../utils/transactionDecoder';
 import { ActionEditorModal } from './ActionEditorModal';
 import {
   AddressWithENS,
   formatGas,
   getTenderlySimulatorUrl,
 } from '../SimulationStatus/SimulationStatus';
+import { NounImageById } from '@/app/lib/nouns/components';
 import type { TransactionResult } from '../../hooks/useSimulation';
 import styles from './ActionTemplateEditor.module.css';
 
@@ -63,13 +65,20 @@ export function ActionTemplateEditor({
   // Each decoded action gets its own summary line. Description (when set)
   // carries more detail than the title — usually amounts — so we prefer
   // it. If the action names a recipient (`params.to`), we render it
-  // inline with ENS resolution.
+  // inline with ENS resolution. For Noun-flavoured actions we prefer the
+  // title (it carries the Noun ID) so the inline thumbnail has context.
   const decoded = useDecodedTransactions(templateState.generatedActions);
   const summaryLines = decoded
-    .map((d) => ({
-      text: d.description || d.title || '',
-      recipient: d.params?.to as string | undefined,
-    }))
+    .map((d) => {
+      const nounId = getDisplayNounId(d);
+      const text =
+        nounId !== null ? d.title || '' : d.description || d.title || '';
+      return {
+        text,
+        nounId,
+        recipient: d.params?.to as string | undefined,
+      };
+    })
     .filter((line) => line.text.length > 0);
 
   const handleSave = (newState: ActionTemplateState) => {
@@ -92,6 +101,13 @@ export function ActionTemplateEditor({
             {summaryLines.map((line, idx) => (
               <div key={idx} className={styles.summaryDetail}>
                 {line.text}
+                {line.nounId !== null && (
+                  <NounImageById
+                    id={line.nounId}
+                    size={20}
+                    className={styles.summaryNounImage}
+                  />
+                )}
                 {line.recipient && (
                   <>
                     {' to '}
@@ -216,10 +232,19 @@ function DecodedActionsPreview({
           const tenderlyLink = !shareUrl && action ? getTenderlySimulatorUrl(action) : null;
           const showFooter = tenderlyLink !== null || hasResult;
 
+          const nounId = getDisplayNounId(d);
+
           return (
             <li key={idx} className={styles.decodedItem}>
               <div className={styles.decodedTitleRow}>
                 <span className={styles.decodedTitle}>{d.title}</span>
+                {nounId !== null && (
+                  <NounImageById
+                    id={nounId}
+                    size={20}
+                    className={styles.decodedNounImage}
+                  />
+                )}
               </div>
               {d.description && <div className={styles.decodedDesc}>{d.description}</div>}
               {dest && (
