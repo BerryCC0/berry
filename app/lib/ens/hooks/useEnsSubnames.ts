@@ -1,39 +1,26 @@
 /**
  * List subnames of a parent ENS name.
  *
- * Backed by the ENS subgraph via @ensdomains/ensjs/subgraph. Requires
- * NEXT_PUBLIC_ENS_SUBGRAPH_API_KEY to be set.
- *
- * Used by NameDetail's Subnames section.
+ * Hits /api/ens/subnames/[parent] — a server-side proxy to the ENS
+ * subgraph. Keeps the subgraph API key off the client.
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { getSubnames } from "@ensdomains/ensjs/subgraph";
-import { ensPublicClient } from "@/app/lib/ens/client";
 import type { EnsDomain } from "./useEnsDomain";
+
+interface SubnamesResponse {
+  parent: string;
+  subnames: EnsDomain[];
+}
 
 export function useEnsSubnames(parentName: string | undefined) {
   return useQuery<EnsDomain[]>({
     queryKey: ["ens", "subnames", parentName],
     queryFn: async () => {
-      const result = await getSubnames(ensPublicClient(), {
-        name: parentName!,
-        pageSize: 100,
-      });
-
-      return result.map((s) => ({
-        node: s.id,
-        name: s.name ?? null,
-        label: s.labelName ?? null,
-        parent: parentName ?? null,
-        owner: s.owner ?? null,
-        registrant: null,
-        wrappedOwner: s.wrappedOwner ?? null,
-        resolver: null,
-        expiry: s.expiryDate?.value ? String(s.expiryDate.value) : null,
-        isWrapped: Boolean(s.wrappedOwner),
-        fuses: typeof s.fuses === "number" ? s.fuses : null,
-      }));
+      const res = await fetch(`/api/ens/subnames/${encodeURIComponent(parentName!)}`);
+      if (!res.ok) throw new Error(`Failed to fetch subnames: ${res.status}`);
+      const data = (await res.json()) as SubnamesResponse;
+      return data.subnames;
     },
     enabled: !!parentName && parentName.includes("."),
     staleTime: 60_000,

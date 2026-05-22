@@ -13,12 +13,14 @@ import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { addEnsContracts, ensPublicActions } from '@ensdomains/ensjs';
 
-// `getNamesForAddress` is the only ensjs function that touches The Graph —
-// and we replaced it with our own Ponder-indexed /api/ens/names-for-address
-// route. So no subgraph API key is required for normal operation. If we
-// later need other ensjs subgraph reads, set NEXT_PUBLIC_ENS_SUBGRAPH_API_KEY
-// and they'll start working.
-const subgraphApiKey = process.env.NEXT_PUBLIC_ENS_SUBGRAPH_API_KEY;
+// ENS subgraph API key — server-side only. Used by /api/ens/names-for-address
+// and /api/ens/subnames routes, which proxy subgraph queries so the key
+// never reaches the browser. Free tier (~100k queries/mo) covers Berry's
+// traffic easily.
+//
+// NOT prefixed with NEXT_PUBLIC_ — bundling this into client JS would let
+// anyone extract it and burn through quota.
+const subgraphApiKey = typeof process !== "undefined" ? process.env.ENS_SUBGRAPH_API_KEY : undefined;
 
 export const ensMainnet = addEnsContracts(mainnet, subgraphApiKey ? { subgraphApiKey } : undefined);
 
