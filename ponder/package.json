@@ -7,7 +7,9 @@
     "dev": "ponder dev",
     "start": "ponder start",
     "serve": "ponder serve",
-    "codegen": "ponder codegen"
+    "codegen": "ponder codegen",
+    "cleanup-schemas": "node scripts/cleanup-stale-schemas.mjs",
+    "cleanup-schemas:execute": "node scripts/cleanup-stale-schemas.mjs --execute"
   },
   "dependencies": {
     "ponder": "^0.16.3",
