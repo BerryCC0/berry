@@ -52,7 +52,11 @@ export default createConfig({
     mainnet: {
       id: 1,
       rpc: rateLimit(mainnetRpcTransport(), {
-        requestsPerSecond: 50,
+        // Paid Alchemy tiers can handle far more than 50 req/s. Bumped during
+        // ENS backfill to keep ponder from spuriously rotating to slower public
+        // RPCs when Alchemy can actually serve the call. If you see 429s in
+        // the Alchemy dashboard, dial back to ~100-150.
+        requestsPerSecond: 200,
         browser: false,
       }),
     },
