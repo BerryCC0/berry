@@ -11,6 +11,11 @@ import {
 } from 'viem';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
 import { formatAddress, truncateAddress } from '@/shared/format';
+import { describeAtCursor } from './actions/registry';
+import type {
+  ActionDescription,
+  DecodeContext as RegistryDecodeContext,
+} from './actions/types';
 
 // Uniswap V3 SwapRouter02 — used to detect exactInputSingle calls.
 const UNISWAP_V3_ROUTER = '0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45';
@@ -1827,5 +1832,47 @@ export function decodeTransactions(
   opts?: DecodeOptions,
 ): DecodedTransaction[] {
   const ctx = buildDecodingContext(actions, opts);
-  return actions.map(action => decodeTransactionWithContext(action, ctx));
+  // The registry DecodeContext is structurally compatible with the legacy
+  // DecodingContext (same field names/types). Cast rather than copy to avoid
+  // re-allocating the maps & sets on every render.
+  const registryCtx = ctx as unknown as RegistryDecodeContext;
+
+  // Cursor-based loop instead of .map() — a registry action def can consume
+  // multiple actions per match (e.g., stream-restream consumes 4). For each
+  // unmatched action, fall back to the legacy per-action decoder.
+  const out: DecodedTransaction[] = [];
+  for (let i = 0; i < actions.length; i++) {
+    const match = describeAtCursor(actions, i, registryCtx);
+    if (match) {
+      const slice = actions.slice(i, i + match.consumed);
+      for (let k = 0; k < match.consumed; k++) {
+        out.push(adaptDescription(slice[k], match.descriptions[k] ?? match.descriptions[0]));
+      }
+      i += match.consumed - 1;
+      continue;
+    }
+    out.push(decodeTransactionWithContext(actions[i], ctx));
+  }
+  return out;
+}
+
+/**
+ * Glue between the registry's `ActionDescription` shape and the legacy
+ * `DecodedTransaction` shape used by `TransactionSummary.tsx`. Carries over
+ * target / value / contract-name lookup so existing rendering stays intact.
+ */
+function adaptDescription(
+  action: ProposalAction,
+  desc: ActionDescription,
+): DecodedTransaction {
+  const target = action.target;
+  return {
+    title: desc.title,
+    description: desc.description,
+    target,
+    targetName: getContractName(target.toLowerCase()),
+    functionName: desc.functionName,
+    value: action.value,
+    params: desc.params,
+  };
 }

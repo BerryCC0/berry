@@ -5,6 +5,7 @@
 
 import { Address, encodeAbiParameters, parseAbiParameters } from 'viem';
 import { NOUNS_ADDRESSES, BERRY_CLIENT_ID } from '@/app/lib/nouns';
+import { findActionById } from '../actions/registry';
 import {
   ActionTemplateType,
   ProposalAction,
@@ -271,6 +272,14 @@ export function generateActionsFromTemplate(
   const template = getTemplate(templateId);
   if (!template) {
     throw new Error(`Template not found: ${templateId}`);
+  }
+
+  // Registry-first dispatch — if a TransactionActionDef has been migrated for
+  // this template id, use it instead of the switch below. Migrated cases are
+  // removed from the switch as they move into actions/<category>/.
+  const def = findActionById(templateId);
+  if (def) {
+    return def.encode(fieldValues as never, {}) as ProposalAction[];
   }
 
   switch (templateId) {
@@ -928,24 +937,16 @@ export function generateActionsFromTemplate(
       const tokenAddresses = (fieldValues.tokens || '')
         .split(',')
         .map(addr => addr.trim())
-        .filter(addr => addr.length === 42 && addr.startsWith('0x'));
-
-      // Encode array of addresses for _setErc20TokensToIncludeInFork(address[])
-      // ABI encoding for dynamic array:
-      // - offset to array data (32 bytes)
-      // - array length (32 bytes)
-      // - array elements (32 bytes each, left-padded)
-      const offsetHex = (32).toString(16).padStart(64, '0'); // offset is 32 (0x20)
-      const lengthHex = tokenAddresses.length.toString(16).padStart(64, '0');
-      const elementsHex = tokenAddresses
-        .map(addr => addr.slice(2).padStart(64, '0'))
-        .join('');
+        .filter((addr): addr is Address => addr.length === 42 && addr.startsWith('0x'));
 
       return [{
         target: DAO_PROXY_ADDRESS,
         value: '0',
         signature: '_setErc20TokensToIncludeInFork(address[])',
-        calldata: `0x${offsetHex}${lengthHex}${elementsHex}` as `0x${string}`
+        calldata: encodeAbiParameters(
+          parseAbiParameters('address[]'),
+          [tokenAddresses],
+        ),
       }];
     }
 

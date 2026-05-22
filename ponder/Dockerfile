@@ -25,4 +25,8 @@ EXPOSE 42069
 # --schema uses RAILWAY_DEPLOYMENT_ID so each deploy writes to its own schema
 # --views-schema "ponder_live" keeps views pointing to the latest fully-synced deployment
 # Next.js always queries ponder_live for zero downtime
-CMD ["sh", "-c", "npx ponder start --schema \"${RAILWAY_DEPLOYMENT_ID:-ponder}\" --views-schema ponder_live"]
+#
+# scripts/progress-pinger.mjs runs alongside in the background — polls
+# Ponder's /metrics endpoint and logs at 5% backfill milestones, replacing
+# the firehose of INFO-level per-batch progress logs that flooded Railway.
+CMD ["sh", "-c", "node scripts/progress-pinger.mjs & npx ponder start --schema \"${RAILWAY_DEPLOYMENT_ID:-ponder}\" --views-schema ponder_live"]

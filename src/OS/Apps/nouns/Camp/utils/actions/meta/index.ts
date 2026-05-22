@@ -1,0 +1,1 @@
+export { metaPropose } from './propose';

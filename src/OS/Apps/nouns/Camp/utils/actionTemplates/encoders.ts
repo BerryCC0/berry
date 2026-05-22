@@ -1,116 +1,131 @@
 /**
- * Calldata encoding helpers for proposal actions
+ * Calldata encoding helpers for proposal actions.
+ *
+ * Every helper here returns ABI-encoded calldata for a known function shape.
+ * All hand-rolled hex-padding has been replaced with viem's
+ * `encodeAbiParameters` — that's the canonical, tested implementation and
+ * removes a class of subtle bugs around padding widths and signed integers.
+ *
+ * New encoders for migrated actions live in `../actions/<category>/<action>.ts`
+ * and call `encodeAbiParameters` directly. This file exists for the legacy
+ * generator's still-unmigrated cases.
  */
 
 import { Address, encodeAbiParameters, parseAbiParameters } from 'viem';
 
 /**
- * Encode a simple address + amount for ETH send
+ * Encode a simple `(address, uint256)` tuple — the calldata layout used by
+ * `sendETH(address,uint256)`, `withdrawETH(address,uint256)`, and any other
+ * "send to recipient, this much" pattern.
  */
 export function encodeSendETH(recipient: Address, amount: bigint): `0x${string}` {
-  const recipientPadded = recipient.slice(2).padStart(64, '0');
-  const amountHex = amount.toString(16).padStart(64, '0');
-  return `0x${recipientPadded}${amountHex}`;
+  return encodeAbiParameters(parseAbiParameters('address, uint256'), [
+    recipient,
+    amount,
+  ]);
 }
 
 /**
- * Encode recipient + token + amount for ERC20 operations
+ * Encode `(recipient, token, amount)` — the calldata layout used by a few
+ * legacy treasury-side helpers. Not part of any standard ERC.
  */
-export function encodeSendERC20(recipient: Address, token: Address, amount: bigint): `0x${string}` {
-  const recipientPadded = recipient.slice(2).padStart(64, '0');
-  const tokenPadded = token.slice(2).padStart(64, '0');
-  const amountHex = amount.toString(16).padStart(64, '0');
-  return `0x${recipientPadded}${tokenPadded}${amountHex}`;
+export function encodeSendERC20(
+  recipient: Address,
+  token: Address,
+  amount: bigint,
+): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('address, address, uint256'), [
+    recipient,
+    token,
+    amount,
+  ]);
 }
 
-/**
- * Encode transferFrom(from, to, amount/id)
- */
-export function encodeTransferFrom(from: Address, to: Address, tokenIdOrAmount: bigint): `0x${string}` {
-  const fromPadded = from.slice(2).padStart(64, '0');
-  const toPadded = to.slice(2).padStart(64, '0');
-  const valuePadded = tokenIdOrAmount.toString(16).padStart(64, '0');
-  return `0x${fromPadded}${toPadded}${valuePadded}`;
+/** Encode `transferFrom(from, to, amount-or-tokenId)`. */
+export function encodeTransferFrom(
+  from: Address,
+  to: Address,
+  tokenIdOrAmount: bigint,
+): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('address, address, uint256'), [
+    from,
+    to,
+    tokenIdOrAmount,
+  ]);
 }
 
-/**
- * Encode safeTransferFrom(from, to, tokenId)
- */
-export function encodeSafeTransferFrom(from: Address, to: Address, tokenId: bigint): `0x${string}` {
-  const fromPadded = from.slice(2).padStart(64, '0');
-  const toPadded = to.slice(2).padStart(64, '0');
-  const tokenIdPadded = tokenId.toString(16).padStart(64, '0');
-  return `0x${fromPadded}${toPadded}${tokenIdPadded}`;
+/** Encode `safeTransferFrom(from, to, tokenId)`. */
+export function encodeSafeTransferFrom(
+  from: Address,
+  to: Address,
+  tokenId: bigint,
+): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('address, address, uint256'), [
+    from,
+    to,
+    tokenId,
+  ]);
 }
 
-/**
- * Encode delegate(delegatee)
- */
+/** Encode `delegate(delegatee)`. */
 export function encodeDelegate(delegatee: Address): `0x${string}` {
-  const delegateePadded = delegatee.slice(2).padStart(64, '0');
-  return `0x${delegateePadded}`;
+  return encodeAbiParameters(parseAbiParameters('address'), [delegatee]);
 }
 
-/**
- * Encode transfer(to, amount)
- */
+/** Encode `transfer(to, amount)` (and `approve(spender, amount)` — same shape). */
 export function encodeTransfer(to: Address, amount: bigint): `0x${string}` {
-  const toPadded = to.slice(2).padStart(64, '0');
-  const amountPadded = amount.toString(16).padStart(64, '0');
-  return `0x${toPadded}${amountPadded}`;
+  return encodeAbiParameters(parseAbiParameters('address, uint256'), [
+    to,
+    amount,
+  ]);
 }
 
-/**
- * Encode a single uint256 value
- */
+/** Encode a single uint256 value. */
 export function encodeAdminUint256(value: bigint): `0x${string}` {
-  const valuePadded = value.toString(16).padStart(64, '0');
-  return `0x${valuePadded}`;
+  return encodeAbiParameters(parseAbiParameters('uint256'), [value]);
 }
 
-/**
- * Encode a single uint32 value
- */
+/** Encode a single uint32 value. */
 export function encodeAdminUint32(value: number): `0x${string}` {
-  const valuePadded = value.toString(16).padStart(64, '0');
-  return `0x${valuePadded}`;
+  return encodeAbiParameters(parseAbiParameters('uint32'), [value]);
 }
 
-/**
- * Encode a single uint16 value
- */
+/** Encode a single uint16 value. */
 export function encodeAdminUint16(value: number): `0x${string}` {
-  const valuePadded = value.toString(16).padStart(64, '0');
-  return `0x${valuePadded}`;
+  return encodeAbiParameters(parseAbiParameters('uint16'), [value]);
 }
 
-/**
- * Encode a single address value
- */
+/** Encode a single address value. */
 export function encodeAdminAddress(address: Address): `0x${string}` {
-  const addressPadded = address.slice(2).padStart(64, '0');
-  return `0x${addressPadded}`;
+  return encodeAbiParameters(parseAbiParameters('address'), [address]);
 }
 
-/**
- * Encode dynamic quorum params: (minBps, maxBps, coefficient)
- */
-export function encodeDynamicQuorumParams(minBps: number, maxBps: number, coefficient: number): `0x${string}` {
-  const minBpsPadded = minBps.toString(16).padStart(64, '0');
-  const maxBpsPadded = maxBps.toString(16).padStart(64, '0');
-  const coefficientPadded = coefficient.toString(16).padStart(64, '0');
-  return `0x${minBpsPadded}${maxBpsPadded}${coefficientPadded}`;
+/** Encode `_setDynamicQuorumParams(minBps, maxBps, coefficient)`. */
+export function encodeDynamicQuorumParams(
+  minBps: number,
+  maxBps: number,
+  coefficient: number,
+): `0x${string}` {
+  return encodeAbiParameters(parseAbiParameters('uint16, uint16, uint32'), [
+    minBps,
+    maxBps,
+    coefficient,
+  ]);
 }
 
-/**
- * Encode burnVetoPower (empty calldata)
- */
+/** Encode an empty calldata (for no-arg functions). */
 export function encodeBurnVetoPower(): `0x${string}` {
   return '0x';
 }
 
 /**
- * Encode createStreamWithPredictedAddress parameters
+ * Encode `createStream(recipient, tokenAmount, tokenAddress, startTime,
+ * stopTime, nonce, predictedStreamAddress)`. The 7-arg createStream variant
+ * the Sablier-style stream factory uses — see ../actions/streams/* for the
+ * full action def (once migrated).
+ *
+ * `nonce` is encoded as uint256 over the wire even though the contract takes
+ * a uint8 (smaller types are right-padded the same way in ABI encoding).
  */
 export function encodeCreateStreamWithPredictedAddress(
   recipient: Address,
@@ -119,37 +134,37 @@ export function encodeCreateStreamWithPredictedAddress(
   startTime: bigint,
   stopTime: bigint,
   nonce: number,
-  predictedStreamAddress: Address
+  predictedStreamAddress: Address,
 ): `0x${string}` {
-  const recipientPadded = recipient.slice(2).padStart(64, '0');
-  const tokenAmountHex = tokenAmount.toString(16).padStart(64, '0');
-  const tokenAddressPadded = tokenAddress.slice(2).padStart(64, '0');
-  const startTimeHex = startTime.toString(16).padStart(64, '0');
-  const stopTimeHex = stopTime.toString(16).padStart(64, '0');
-  const noncePadded = nonce.toString(16).padStart(64, '0');
-  const predictedAddressPadded = predictedStreamAddress.slice(2).padStart(64, '0');
-
-  return `0x${recipientPadded}${tokenAmountHex}${tokenAddressPadded}${startTimeHex}${stopTimeHex}${noncePadded}${predictedAddressPadded}`;
+  return encodeAbiParameters(
+    parseAbiParameters(
+      'address, uint256, address, uint256, uint256, uint256, address',
+    ),
+    [
+      recipient,
+      tokenAmount,
+      tokenAddress,
+      startTime,
+      stopTime,
+      BigInt(nonce),
+      predictedStreamAddress,
+    ],
+  );
 }
 
 /**
  * Encode calldata for a single `string` argument (e.g. setBaseURI, addBackground).
- * Uses viem's full ABI encoder so the dynamic offset + length + padding are right.
  */
 export function encodeStringArg(value: string): `0x${string}` {
   return encodeAbiParameters(parseAbiParameters('string'), [value]);
 }
 
-/**
- * Encode calldata for a single `string[]` argument (e.g. addManyBackgrounds).
- */
+/** Encode calldata for a single `string[]` argument (e.g. addManyBackgrounds). */
 export function encodeStringArrayArg(values: string[]): `0x${string}` {
   return encodeAbiParameters(parseAbiParameters('string[]'), [values]);
 }
 
-/**
- * Encode setClientApproval(uint32 clientId, bool approved). Two static slots.
- */
+/** Encode `setClientApproval(uint32 clientId, bool approved)`. */
 export function encodeClientApproval(
   clientId: number,
   approved: boolean,
@@ -161,7 +176,7 @@ export function encodeClientApproval(
 }
 
 /**
- * Encode setAuctionRewardParams(AuctionRewardParams). Static struct of
+ * Encode `setAuctionRewardParams(AuctionRewardParams)` — a static struct of
  * (uint16 auctionRewardBps, uint8 minimumAuctionsBetweenUpdates).
  */
 export function encodeAuctionRewardParams(
@@ -174,7 +189,7 @@ export function encodeAuctionRewardParams(
 }
 
 /**
- * Encode setProposalRewardParams(ProposalRewardParams). Static struct of
+ * Encode `setProposalRewardParams(ProposalRewardParams)` — static struct of
  * (uint32 minimumRewardPeriod, uint8 numProposalsEnoughForReward,
  *  uint16 proposalRewardBps, uint16 votingRewardBps,
  *  uint16 proposalEligibilityQuorumBps).
@@ -212,52 +227,45 @@ export function encodeAddTraitCalldata(
   decompressedLength: bigint,
   itemCount: number,
 ): `0x${string}` {
-  return encodeAbiParameters(
-    parseAbiParameters('bytes, uint80, uint16'),
-    [encodedBytes, decompressedLength, itemCount],
-  );
+  return encodeAbiParameters(parseAbiParameters('bytes, uint80, uint16'), [
+    encodedBytes,
+    decompressedLength,
+    itemCount,
+  ]);
 }
 
-/**
- * Encode ERC-4626 deposit(uint256 assets, address receiver). Two static slots.
- * Mirrors the standard signature used by every Octant Dragon vault.
- */
+/** Encode ERC-4626 `deposit(uint256 assets, address receiver)`. */
 export function encodeErc4626Deposit(
   assets: bigint,
   receiver: Address,
 ): `0x${string}` {
-  const assetsPadded = assets.toString(16).padStart(64, '0');
-  const receiverPadded = receiver.slice(2).padStart(64, '0');
-  return `0x${assetsPadded}${receiverPadded}`;
+  return encodeAbiParameters(parseAbiParameters('uint256, address'), [
+    assets,
+    receiver,
+  ]);
 }
 
 /**
- * Encode ERC-4626 redeem/withdraw — both share the same 3-slot layout:
- *   redeem(uint256 shares, address receiver, address owner)
- *   withdraw(uint256 assets, address receiver, address owner)
+ * Encode ERC-4626 `redeem(uint256 shares, address receiver, address owner)`
+ * or `withdraw(uint256 assets, address receiver, address owner)` — same
+ * 3-slot layout.
  */
 export function encodeErc4626RedeemOrWithdraw(
   amount: bigint,
   receiver: Address,
   owner: Address,
 ): `0x${string}` {
-  const amountPadded = amount.toString(16).padStart(64, '0');
-  const receiverPadded = receiver.slice(2).padStart(64, '0');
-  const ownerPadded = owner.slice(2).padStart(64, '0');
-  return `0x${amountPadded}${receiverPadded}${ownerPadded}`;
+  return encodeAbiParameters(parseAbiParameters('uint256, address, address'), [
+    amount,
+    receiver,
+    owner,
+  ]);
 }
 
 /**
- * Encode Octant createStrategy(...) for Lido / Morpho / Sky factories.
- * All three share the same 8-arg signature — the asset is hardcoded inside
+ * Encode Octant `createStrategy(...)` for the Lido / Morpho / Sky factories.
+ * All three share the same 8-arg signature; the asset is hardcoded inside
  * the factory itself (wstETH / USDC / USDS respectively).
- *
- *   createStrategy(
- *     string name, string symbol,
- *     address management, address keeper, address emergencyAdmin,
- *     address donationAddress, bool enableBurning,
- *     address tokenizedStrategyAddress
- *   )
  */
 export function encodeOctantCreateStrategyBase(
   name: string,
@@ -287,18 +295,10 @@ export function encodeOctantCreateStrategyBase(
 }
 
 /**
- * Encode Octant PaymentSplitterFactory.createPaymentSplitter(...).
- *
- *   createPaymentSplitter(
- *     address[] payees,
- *     string[]  payeeNames,
- *     uint256[] shares
- *   )
- *
- * The factory clones a minimal proxy of its `implementation` deterministically
- * using `salt = keccak256(abi.encode(msg.sender, deployerToSplitters[msg.sender].length))`,
- * so the deployed address is predictable client-side via
- * `factory.predictDeterministicAddress(treasury)`.
+ * Encode Octant PaymentSplitterFactory `createPaymentSplitter(payees, names, shares)`.
+ * The factory clones a minimal proxy deterministically using
+ * `salt = keccak256(abi.encode(msg.sender, deployerToSplitters[msg.sender].length))`,
+ * so the deployed address is predictable client-side.
  */
 export function encodeOctantCreatePaymentSplitter(
   payees: Address[],
@@ -312,17 +312,9 @@ export function encodeOctantCreatePaymentSplitter(
 }
 
 /**
- * Encode Octant Yearn V3 factory createStrategy(...). Same 8 base args as the
- * other factories, but with `yearnVault` and `asset` prepended so the factory
- * can wrap any Yearn V3 vault.
- *
- *   createStrategy(
- *     address yearnVault, address asset,
- *     string name, string symbol,
- *     address management, address keeper, address emergencyAdmin,
- *     address donationAddress, bool enableBurning,
- *     address tokenizedStrategyAddress
- *   )
+ * Encode Octant Yearn V3 factory `createStrategy(...)`. Same 8 base args as
+ * the other factories, but with `yearnVault` and `asset` prepended so the
+ * factory can wrap any Yearn V3 vault.
  */
 export function encodeOctantCreateStrategyYearn(
   yearnVault: Address,
@@ -356,8 +348,9 @@ export function encodeOctantCreateStrategyYearn(
 }
 
 /**
- * Encode the calldata for a meta-proposal (propose() that creates another proposal)
- * Uses viem's encodeAbiParameters for complex nested array encoding
+ * Encode the calldata for a meta-proposal — `propose()` called recursively to
+ * create another proposal. Uses viem's `encodeAbiParameters` for the nested
+ * dynamic-array structure.
  */
 export function encodeMetaProposeCalldata(
   targets: Address[],
@@ -365,12 +358,12 @@ export function encodeMetaProposeCalldata(
   signatures: string[],
   calldatas: `0x${string}`[],
   description: string,
-  clientId: number
+  clientId: number,
 ): `0x${string}` {
-  // Use viem to properly encode the complex nested structure
-  const encoded = encodeAbiParameters(
-    parseAbiParameters('address[], uint256[], string[], bytes[], string, uint32'),
-    [targets, values, signatures, calldatas, description, clientId]
+  return encodeAbiParameters(
+    parseAbiParameters(
+      'address[], uint256[], string[], bytes[], string, uint32',
+    ),
+    [targets, values, signatures, calldatas, description, clientId],
   );
-  return encoded;
 }

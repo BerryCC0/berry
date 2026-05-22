@@ -4,6 +4,8 @@
 
 import { decodeAbiParameters, parseAbiParameters, type Hex } from 'viem';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns';
+import { findMatchingAction } from '../actions/registry';
+import type { DecodeContext } from '../actions/types';
 import {
   ActionTemplateState,
   ProposalAction
@@ -107,6 +109,20 @@ export function parseActionToTemplate(action: ProposalAction): ActionTemplateSta
 }
 
 /**
+ * Build a decode context for parsing. The parser doesn't have access to the
+ * dynamic stream/token metadata the decoder gets — it runs before any of that
+ * is fetched. Action defs that depend on context must handle empty maps.
+ */
+function emptyParserContext(): DecodeContext {
+  return {
+    streamAddresses: new Set(),
+    cancelledStreams: new Set(),
+    streams: new Map(),
+    tokens: new Map(),
+  };
+}
+
+/**
  * Parse multiple actions to template states
  * Handles multi-action templates by grouping related actions
  */
@@ -117,11 +133,30 @@ export function parseActionsToTemplates(actions: ProposalAction[]): ActionTempla
 
   const templateStates: ActionTemplateState[] = [];
   const processedIndices = new Set<number>();
+  const ctx = emptyParserContext();
 
   for (let i = 0; i < actions.length; i++) {
     if (processedIndices.has(i)) continue;
 
     const action = actions[i];
+
+    // Registry-first dispatch — if a migrated TransactionActionDef matches at
+    // this cursor, it owns the action(s) and the legacy matchers below are
+    // skipped. Migrated actions are removed from the legacy switch as they
+    // move into actions/<category>/.
+    const registryMatch = findMatchingAction(actions, i, ctx);
+    if (registryMatch) {
+      const { def, match } = registryMatch;
+      templateStates.push({
+        templateId: def.id as ActionTemplateState['templateId'],
+        fieldValues: match.values as ActionTemplateState['fieldValues'],
+        generatedActions: [],
+      });
+      for (let k = 0; k < match.consumed; k++) {
+        processedIndices.add(i + k);
+      }
+      continue;
+    }
 
     // Check if this is part of a buy-eth multi-action sequence (approve + buyETH)
     const buyEthResult = tryMatchBuyEth(actions, i);
