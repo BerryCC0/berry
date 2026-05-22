@@ -30,7 +30,7 @@ import {
   parseTokenSelectValue,
   stringifyTokenSelectValue,
 } from '../shared';
-import type { TransactionActionDef } from '../types';
+import type { ActionDescription, TransactionActionDef } from '../types';
 import {
   CANCEL_SIG,
   CREATE_STREAM_SIG,
@@ -195,7 +195,7 @@ export const streamRestream: TransactionActionDef<Fields> = {
   describe(values) {
     const token = parseTokenSelectValue(values.tokenAddress);
     const symbol = token?.symbol ?? 'tokens';
-    return [
+    const descriptions: ActionDescription[] = [
       {
         title: 'Cancel old stream',
         functionName: 'cancel',
@@ -218,5 +218,6 @@ export const streamRestream: TransactionActionDef<Fields> = {
         params: { amount: values.amount, token: symbol },
       },
     ];
+    return descriptions;
   },
 };

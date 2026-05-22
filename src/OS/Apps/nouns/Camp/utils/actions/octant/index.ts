@@ -1,11 +1,17 @@
 /**
  * Octant Dragon vault actions.
  *
- * Currently migrated: the simpler 4 of 8 octant templates. The 4
- * `octant-vault-create-*` variants stay in the legacy generator until a
- * focused PR migrates their splitter-prepend + seed-deposit bundle logic.
+ * Order in the registry: vault-create-* variants come BEFORE octantSplitterCreate
+ * (so a bundled splitter-prepend is claimed by vault-create, not by the
+ * standalone splitter matcher). vault-create-* also come before octantVaultDeposit
+ * — irrelevant at cursor=0 (createStrategy isn't an approve) but safer for any
+ * future seed-only variants.
  */
 
+export { octantVaultCreateLido } from './vault-create-lido';
+export { octantVaultCreateMorpho } from './vault-create-morpho';
+export { octantVaultCreateSky } from './vault-create-sky';
+export { octantVaultCreateYearn } from './vault-create-yearn';
 export { octantVaultDeposit } from './vault-deposit';
 export { octantVaultRedeem } from './vault-redeem';
 export { octantVaultWithdraw } from './vault-withdraw';

@@ -22,7 +22,7 @@ import {
   matchSignature,
   multiActionId,
 } from '../shared';
-import type { TransactionActionDef } from '../types';
+import type { ActionDescription, TransactionActionDef } from '../types';
 import {
   CANCEL_SIG,
   RECOVER_SIG,
@@ -88,7 +88,7 @@ export const streamCancel: TransactionActionDef<Fields> = {
   },
 
   describe(values) {
-    return [
+    const descriptions: ActionDescription[] = [
       {
         title: 'Cancel stream',
         description: `at ${values.streamAddress}`,
@@ -104,5 +104,6 @@ export const streamCancel: TransactionActionDef<Fields> = {
     ];
     // matchSignature is unused here; the matcher in _shared.ts does the work.
     void matchSignature;
+    return descriptions;
   },
 };

@@ -13,7 +13,7 @@ import {
   decodeArgs,
   multiActionId,
 } from '../shared';
-import type { TransactionActionDef } from '../types';
+import type { ActionDescription, TransactionActionDef } from '../types';
 import {
   CANCEL_SIG,
   RECOVER_SIG,
@@ -90,7 +90,7 @@ export const streamRedirect: TransactionActionDef<Fields> = {
   },
 
   describe(values) {
-    return [
+    const descriptions: ActionDescription[] = [
       {
         title: 'Cancel stream',
         description: `at ${values.streamAddress}`,
@@ -104,5 +104,6 @@ export const streamRedirect: TransactionActionDef<Fields> = {
         params: { destination: values.destination },
       },
     ];
+    return descriptions;
   },
 };

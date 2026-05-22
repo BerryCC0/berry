@@ -1406,41 +1406,29 @@ function matchAdminAction(signature: string, calldata: string): ActionTemplateSt
 }
 
 /**
- * Decode calldata based on expected types
- * Returns array of decoded values or null if decoding fails
+ * Decode calldata based on expected ABI types.
+ *
+ * Thin wrapper around viem's `decodeAbiParameters` that preserves the
+ * historical return contract: addresses come back as 0x-prefixed strings,
+ * uints come back stringified (so call sites doing `BigInt(decoded[i])`
+ * continue to work without changes).
+ *
+ * Replaces a 35-line hand-rolled byte parser that only understood
+ * `address` and `uint*` — the viem path handles every ABI type correctly
+ * and fails cleanly on malformed bytes.
  */
 function decodeCalldata(calldata: string, types: string[]): (string | bigint)[] | null {
+  if (types.length === 0) return [];
+  if (!calldata || calldata === '0x') return null;
   try {
-    // Remove 0x prefix if present
-    const data = calldata.startsWith('0x') ? calldata.slice(2) : calldata;
-
-    if (!data || data === '') return null;
-
-    const results: (string | bigint)[] = [];
-    let offset = 0;
-
-    for (const type of types) {
-      if (offset >= data.length) return null;
-
-      if (type === 'address') {
-        // Address is 32 bytes (64 hex chars), padded to left
-        const chunk = data.slice(offset, offset + 64);
-        if (chunk.length < 64) return null;
-        // Extract address from the last 40 characters
-        const address = '0x' + chunk.slice(-40);
-        results.push(address);
-        offset += 64;
-      } else if (type === 'uint256' || type === 'uint96' || type === 'uint32' || type === 'uint16') {
-        // uint is 32 bytes (64 hex chars)
-        const chunk = data.slice(offset, offset + 64);
-        if (chunk.length < 64) return null;
-        const value = BigInt('0x' + chunk);
-        results.push(value.toString());
-        offset += 64;
-      }
-    }
-
-    return results;
+    const data = (calldata.startsWith('0x') ? calldata : `0x${calldata}`) as Hex;
+    const decoded = decodeAbiParameters(parseAbiParameters(types.join(', ')), data);
+    // Preserve the legacy shape: bigints/numbers → stringified, addresses
+    // pass through. The receiver code already calls `BigInt(decoded[i] as string)`
+    // or treats them as strings; both work after this conversion.
+    return decoded.map((v) =>
+      typeof v === 'bigint' || typeof v === 'number' ? v.toString() : (v as string),
+    );
   } catch {
     return null;
   }

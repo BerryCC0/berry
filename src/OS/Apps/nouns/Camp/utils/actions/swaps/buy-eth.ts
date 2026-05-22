@@ -19,7 +19,7 @@ import {
   matchTarget,
   multiActionId,
 } from '../shared';
-import type { TransactionActionDef } from '../types';
+import type { ActionDescription, TransactionActionDef } from '../types';
 
 interface Fields {
   usdcAmount: string;
@@ -102,7 +102,7 @@ export const swapBuyEth: TransactionActionDef<Fields> = {
   },
 
   describe(values) {
-    return [
+    const descriptions: ActionDescription[] = [
       {
         title: `Approve ${values.usdcAmount} USDC`,
         description: 'for the TokenBuyer to swap to ETH',
@@ -115,5 +115,6 @@ export const swapBuyEth: TransactionActionDef<Fields> = {
         params: { usdcAmount: values.usdcAmount },
       },
     ];
+    return descriptions;
   },
 };

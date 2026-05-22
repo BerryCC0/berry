@@ -45,6 +45,10 @@ import {
 } from './staking';
 import {
   octantSplitterCreate,
+  octantVaultCreateLido,
+  octantVaultCreateMorpho,
+  octantVaultCreateSky,
+  octantVaultCreateYearn,
   octantVaultDeposit,
   octantVaultRedeem,
   octantVaultWithdraw,
@@ -155,6 +159,17 @@ import type {
 
 /** The registry. Add new actions by importing them above and listing here. */
 export const transactionActions: TransactionActionDef<any>[] = [
+  // ----- Multi-action aggregates (1-4 actions, longest possible) ----------
+  // vault-create-* variants are variable-length (1, 2, 3, or 4 actions
+  // depending on optional splitter-prepend + seed-deposit). They MUST come
+  // before octantSplitterCreate (otherwise the standalone splitter matcher
+  // claims the prefix of a bundled vault-create) and before octantVaultDeposit
+  // (the seed pair would otherwise be claimed in isolation).
+  octantVaultCreateLido,
+  octantVaultCreateMorpho,
+  octantVaultCreateSky,
+  octantVaultCreateYearn,
+
   // ----- Multi-action aggregates (4-action) -------------------------------
   streamRestream,
 

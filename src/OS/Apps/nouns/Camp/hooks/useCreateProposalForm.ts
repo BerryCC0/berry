@@ -187,10 +187,14 @@ export function useCreateProposalForm({
   ]);
   const [proposalType, setProposalType] = useState<'standard' | 'timelock_v1' | 'candidate'>('candidate');
 
-  // UI state
-  const [proposalState, setProposalState] = useState<ProposalState>('idle');
-  const [timelockV1State, setTimelockV1State] = useState<ProposalState>('idle');
-  const [candidateState, setCandidateState] = useState<ProposalState>('idle');
+  // Submission state — one source of truth + which kind of submission it
+  // belongs to. The three legacy `proposalState`/`timelockV1State`/
+  // `candidateState` fields in the return value are derived projections, so
+  // consumers of the hook don't change.
+  const [submissionState, setSubmissionState] = useState<ProposalState>('idle');
+  const [submissionTarget, setSubmissionTarget] = useState<
+    'proposal' | 'timelock_v1' | 'candidate' | null
+  >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [kycVerified, setKycVerified] = useState(false);
   const [kycInquiryId, setKycInquiryId] = useState<string | undefined>();
@@ -614,9 +618,8 @@ export function useCreateProposalForm({
     setKycVerified(false);
     setKycInquiryId(undefined);
     setErrorMessage(null);
-    setProposalState('idle');
-    setTimelockV1State('idle');
-    setCandidateState('idle');
+    setSubmissionState('idle');
+    setSubmissionTarget(null);
     setLastSaved(null);
     setSaveStatus('unsaved');
   };
@@ -768,7 +771,8 @@ export function useCreateProposalForm({
     }
 
     setErrorMessage(null);
-    setCandidateState('confirming');
+    setSubmissionTarget('candidate');
+    setSubmissionState('confirming');
 
     try {
       const allActions = flattenActionTemplates(actionTemplateStates);
@@ -781,7 +785,7 @@ export function useCreateProposalForm({
       });
       const fullDescription = `# ${title}\n\n${description}`;
 
-      setCandidateState('pending');
+      setSubmissionState('pending');
 
       // CREATE new candidate - only add unique suffix if slug already exists
       const uniqueSlug = await generateSlugWithConflictCheck(title, address);
@@ -797,14 +801,14 @@ export function useCreateProposalForm({
         value: feeAmount,
       });
 
-      setCandidateState('success');
+      setSubmissionState('success');
       setErrorMessage(null);
 
       setTimeout(() => {
         handleNewDraft();
       }, 3000);
     } catch (err: unknown) {
-      setCandidateState('error');
+      setSubmissionState('error');
 
       if (err instanceof Error) {
         if (err.message.includes('user rejected')) {
@@ -824,8 +828,8 @@ export function useCreateProposalForm({
     if (!validateForm()) return;
 
     setErrorMessage(null);
-    const setState = isTimelockV1 ? setTimelockV1State : setProposalState;
-    setState('confirming');
+    setSubmissionTarget(isTimelockV1 ? 'timelock_v1' : 'proposal');
+    setSubmissionState('confirming');
 
     try {
       const allActions = flattenActionTemplates(actionTemplateStates);
@@ -838,7 +842,7 @@ export function useCreateProposalForm({
       });
       const fullDescription = `# ${title}\n\n${description}`;
 
-      setState('pending');
+      setSubmissionState('pending');
 
       // Use proposeOnTimelockV1 for TimelockV1 proposals, standard propose otherwise
       // Both include BERRY_CLIENT_ID (11) for client rewards
@@ -849,14 +853,14 @@ export function useCreateProposalForm({
         args: [targets, values, signatures, calldatas, fullDescription, BERRY_CLIENT_ID],
       });
 
-      setState('success');
+      setSubmissionState('success');
       setErrorMessage(null);
 
       setTimeout(() => {
         handleNewDraft();
       }, 3000);
     } catch (err: unknown) {
-      setState('error');
+      setSubmissionState('error');
 
       if (err instanceof Error) {
         if (err.message.includes('user rejected')) {
@@ -878,7 +882,8 @@ export function useCreateProposalForm({
     if (!editProposalId) return;
 
     setErrorMessage(null);
-    setProposalState('confirming');
+    setSubmissionTarget('proposal');
+    setSubmissionState('confirming');
 
     try {
       const allActions = flattenActionTemplates(actionTemplateStates);
@@ -891,7 +896,7 @@ export function useCreateProposalForm({
       });
       const fullDescription = `# ${title}\n\n${description}`;
 
-      setProposalState('pending');
+      setSubmissionState('pending');
 
       // Use the full NounsDAOLogicV3 ABI for updateProposal
       await writeContractAsync({
@@ -909,7 +914,7 @@ export function useCreateProposalForm({
         ],
       });
 
-      setProposalState('success');
+      setSubmissionState('success');
       setErrorMessage('Proposal updated successfully!');
 
       // Navigate back to proposal detail after success
@@ -917,7 +922,7 @@ export function useCreateProposalForm({
         onNavigate(`proposal/${editProposalId}`);
       }, 2000);
     } catch (err: unknown) {
-      setProposalState('error');
+      setSubmissionState('error');
 
       if (err instanceof Error) {
         if (err.message.includes('user rejected')) {
@@ -935,7 +940,18 @@ export function useCreateProposalForm({
     }
   };
 
-  const isCreating = isPending || proposalState === 'pending' || timelockV1State === 'pending' || candidateState === 'pending';
+  // Backward-compatible projections of the unified submission state so
+  // existing consumers (SubmitSection, CreateProposalView) keep working.
+  // Each derived state is only non-idle when its corresponding submission
+  // target is the active one; impossible for two to be non-idle at once.
+  const proposalState: ProposalState =
+    submissionTarget === 'proposal' ? submissionState : 'idle';
+  const timelockV1State: ProposalState =
+    submissionTarget === 'timelock_v1' ? submissionState : 'idle';
+  const candidateState: ProposalState =
+    submissionTarget === 'candidate' ? submissionState : 'idle';
+
+  const isCreating = isPending || submissionState === 'pending';
   const currentDraft = drafts.find(d => d.draft_slug === draftSlug) || null;
 
   return {
