@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
     const sql = ponderSql();
 
     const rows = await sql`
-      SELECT name, avatar, "resolvedAt"
+      SELECT name, avatar, resolved_at AS "resolvedAt"
       FROM ponder_live.ens_names
       WHERE address = ${address}
       LIMIT 1
