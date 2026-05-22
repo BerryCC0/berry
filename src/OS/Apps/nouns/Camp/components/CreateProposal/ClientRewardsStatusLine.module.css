@@ -1,0 +1,64 @@
+/**
+ * ClientRewardsStatusLine styles
+ */
+
+.statusBanner {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-left: 3px solid var(--berry-primary);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statusHeader {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.statusBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  align-items: baseline;
+}
+
+.rowLabel {
+  color: var(--berry-text-secondary);
+}
+
+.rowValue {
+  color: var(--berry-text-primary);
+  font-weight: 500;
+}
+
+.rowValueMono {
+  color: var(--berry-text-primary);
+  font-weight: 500;
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+}
+
+.warning {
+  margin-top: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #f59e0b;
+  background: var(--berry-bg);
+  border-radius: 4px;
+  border-left: 2px solid #f59e0b;
+}

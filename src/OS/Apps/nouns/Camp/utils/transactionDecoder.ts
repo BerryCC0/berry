@@ -43,6 +43,13 @@ const KNOWN_CONTRACTS: Record<string, string> = {
   [NOUNS_ADDRESSES.payer.toLowerCase()]: 'Nouns DAO Payer',
   [NOUNS_ADDRESSES.streamFactory.toLowerCase()]: 'Stream Factory',
   [NOUNS_ADDRESSES.descriptor.toLowerCase()]: 'Nouns Descriptor',
+  [NOUNS_ADDRESSES.clientRewards.toLowerCase()]: 'Client Rewards',
+  [NOUNS_ADDRESSES.forkEscrow.toLowerCase()]: 'Fork Escrow',
+  // Liquid-staking endpoints used by Camp templates
+  '0x889edc2edab5f40e902b864ad4d7ade8e412f9b1': 'Lido Withdrawal Queue',
+  '0xe3cbd06d7dadb3f4e6557bab7edd924cd1489e8f': 'Mantle Staking',
+  // CoW Protocol settlement contract used by `swap-cowswap`
+  '0x9008d19f58aabd9ed0d60971565aa8510560ab41': 'CoW Settlement',
   // Common tokens
   '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'USDC',
   '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': 'WETH',
@@ -672,6 +679,144 @@ function tryDecodeAuctionFunction(
 }
 
 /**
+ * Try to decode known ClientRewards admin operations on the rewards NFT
+ * contract. Returns true if matched. Every call here is by definition on
+ * `NOUNS_ADDRESSES.clientRewards`, so the dispatch site filters by target.
+ */
+function tryDecodeClientRewardsAdmin(
+  signature: string,
+  functionName: string,
+  params: Record<string, unknown> | null,
+  calldata: string,
+  decoded: DecodedTransaction,
+): boolean {
+  // withdrawToken(address token, address recipient, uint256 amount)
+  if (signature === 'withdrawToken(address,address,uint256)' && params) {
+    const token = (params.param0 as string).toLowerCase();
+    const recipient = params.param1 as string;
+    const amount = params.param2 as bigint;
+    const symbol = TOKEN_SYMBOLS[token] || 'tokens';
+    const decimals = TOKEN_DECIMALS[token] ?? 18;
+    const fmt = formatTokenAmount(amount, decimals);
+    decoded.title = `Withdraw ${fmt} ${symbol} from Client Rewards`;
+    decoded.description = `Sends to ${getContractName(recipient) || truncateAddress(recipient)}`;
+    decoded.params = { to: recipient };
+    return true;
+  }
+
+  // setClientApproval(uint32 clientId, bool approved)
+  if (signature === 'setClientApproval(uint32,bool)' && params) {
+    const clientId = Number(params.param0);
+    const approved = params.param1 as boolean;
+    decoded.title = approved
+      ? `Approve Client #${clientId} for rewards`
+      : `Suspend Client #${clientId} from rewards`;
+    decoded.description = 'Client Rewards';
+    return true;
+  }
+
+  // setAuctionRewardParams((uint16 bps, uint8 minAuctions))
+  if (signature === 'setAuctionRewardParams((uint16,uint8))') {
+    try {
+      const [tuple] = decodeAbiParameters(
+        parseAbiParameters('(uint16,uint8)'),
+        calldata as Hex,
+      ) as readonly [readonly [number, number]];
+      const bps = Number(tuple[0]);
+      const minAuctions = Number(tuple[1]);
+      decoded.title = `Set auction reward to ${bps} BPS · every ${minAuctions} auctions`;
+      decoded.description = 'Client Rewards';
+      return true;
+    } catch {
+      decoded.title = 'Update auction reward params';
+      decoded.description = 'Client Rewards';
+      return true;
+    }
+  }
+
+  // setProposalRewardParams((uint32, uint8, uint16, uint16, uint16))
+  if (
+    signature ===
+    'setProposalRewardParams((uint32,uint8,uint16,uint16,uint16))'
+  ) {
+    try {
+      const [tuple] = decodeAbiParameters(
+        parseAbiParameters('(uint32,uint8,uint16,uint16,uint16)'),
+        calldata as Hex,
+      ) as readonly [readonly [number, number, number, number, number]];
+      const periodSec = Number(tuple[0]);
+      const propRewardBps = Number(tuple[2]);
+      const voteRewardBps = Number(tuple[3]);
+      const days = Math.round(periodSec / 86400);
+      decoded.title = `Set proposal rewards: ${propRewardBps} BPS prop / ${voteRewardBps} BPS vote · ${days}d period`;
+      decoded.description = 'Client Rewards';
+      return true;
+    } catch {
+      decoded.title = 'Update proposal reward params';
+      decoded.description = 'Client Rewards';
+      return true;
+    }
+  }
+
+  // Toggles — no params, just announce the action
+  if (functionName === 'enableAuctionRewards') {
+    decoded.title = 'Enable auction client rewards';
+    decoded.description = 'Client Rewards';
+    return true;
+  }
+  if (functionName === 'disableAuctionRewards') {
+    decoded.title = 'Disable auction client rewards';
+    decoded.description = 'Client Rewards';
+    return true;
+  }
+  if (functionName === 'enableProposalRewards') {
+    decoded.title = 'Enable proposal & voting rewards';
+    decoded.description = 'Client Rewards';
+    return true;
+  }
+  if (functionName === 'disableProposalRewards') {
+    decoded.title = 'Disable proposal & voting rewards';
+    decoded.description = 'Client Rewards';
+    return true;
+  }
+
+  // Address setters — setAdmin / setDescriptor / setETHToken
+  if (signature === 'setAdmin(address)' && params) {
+    const next = params.param0 as string;
+    decoded.title = `Set Client Rewards admin to ${getContractName(next) || truncateAddress(next)}`;
+    decoded.description = 'Client Rewards';
+    decoded.params = { to: next };
+    return true;
+  }
+  if (signature === 'setDescriptor(address)' && params) {
+    const next = params.param0 as string;
+    decoded.title = `Set Client Rewards descriptor to ${getContractName(next) || truncateAddress(next)}`;
+    decoded.description = 'Client Rewards';
+    decoded.params = { to: next };
+    return true;
+  }
+  if (signature === 'setETHToken(address)' && params) {
+    const next = (params.param0 as string).toLowerCase();
+    const symbol = TOKEN_SYMBOLS[next] || 'token';
+    decoded.title = `Set Client Rewards payout token to ${symbol}`;
+    decoded.description = `New token: ${truncateAddress(next)}`;
+    decoded.params = { contract: next };
+    return true;
+  }
+
+  // transferOwnership(address) — OZ Ownable role (separate from setAdmin)
+  if (signature === 'transferOwnership(address)' && params) {
+    const next = params.param0 as string;
+    decoded.title = `Transfer Client Rewards ownership to ${getContractName(next) || truncateAddress(next)}`;
+    decoded.description = 'OZ Ownable role — separate from setAdmin';
+    decoded.params = { to: next };
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Try to decode known TokenBuyer / Payer admin operations.
  * Returns true if matched.
  */
@@ -1075,6 +1220,135 @@ export function decodeTransaction(
     return decoded;
   }
 
+  // wstETH unwrap — wstETH → stETH
+  if (
+    target === '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0' &&
+    signature === 'unwrap(uint256)' &&
+    params
+  ) {
+    const amount = params.param0 as bigint;
+    const formatted = formatTokenAmount(amount, 18);
+    decoded.title = `Unwrap ${formatted} wstETH → stETH`;
+    return decoded;
+  }
+
+  // Lido withdrawal queue — request a withdrawal of wstETH for ETH
+  if (
+    target === '0x889edc2edab5f40e902b864ad4d7ade8e412f9b1' &&
+    signature === 'requestWithdrawalsWstETH(uint256[],address)'
+  ) {
+    try {
+      const [amounts] = decodeAbiParameters(
+        parseAbiParameters('uint256[], address'),
+        action.calldata as Hex,
+      ) as readonly [readonly bigint[], string];
+      const total = amounts.reduce((a, b) => a + b, BigInt(0));
+      const formatted = formatTokenAmount(total, 18);
+      const count = amounts.length;
+      decoded.title =
+        count === 1
+          ? `Request Lido withdrawal of ${formatted} wstETH`
+          : `Request Lido withdrawal of ${formatted} wstETH (${count} tickets)`;
+      decoded.description = 'Queues an exit from Lido; ETH claimable after ~1–5 days';
+      return decoded;
+    } catch {
+      decoded.title = 'Request Lido withdrawal';
+      return decoded;
+    }
+  }
+
+  // Lido withdrawal queue — claim a settled withdrawal
+  if (
+    target === '0x889edc2edab5f40e902b864ad4d7ade8e412f9b1' &&
+    signature === 'claimWithdrawal(uint256)' &&
+    params
+  ) {
+    const requestId = params.param0 as bigint;
+    decoded.title = `Claim Lido withdrawal #${requestId.toString()}`;
+    decoded.description = 'Settles the queued exit; ETH lands in the caller';
+    return decoded;
+  }
+
+  // Mantle staking — request mETH unstake
+  if (
+    target === '0xe3cbd06d7dadb3f4e6557bab7edd924cd1489e8f' &&
+    signature === 'unstakeRequest(uint128,uint128)' &&
+    params
+  ) {
+    const amount = params.param0 as bigint;
+    const minOut = params.param1 as bigint;
+    decoded.title = `Request mETH unstake of ${formatTokenAmount(amount, 18)} mETH`;
+    decoded.description = `Min ETH out: ${formatTokenAmount(minOut, 18)} — slippage guard`;
+    return decoded;
+  }
+
+  // Mantle staking — claim a queued unstake
+  if (
+    target === '0xe3cbd06d7dadb3f4e6557bab7edd924cd1489e8f' &&
+    signature === 'claimUnstakeRequest(uint256)' &&
+    params
+  ) {
+    const requestId = params.param0 as bigint;
+    decoded.title = `Claim mETH unstake #${requestId.toString()}`;
+    decoded.description = 'Settles the queued unstake; ETH lands in the caller';
+    return decoded;
+  }
+
+  // CowSwap pre-signature — authorise an off-chain limit order built via
+  // the CoW UI/SDK. The order UID is the only meaningful parameter.
+  if (
+    target === '0x9008d19f58aabd9ed0d60971565aa8510560ab41' &&
+    signature === 'setPreSignature(bytes,bool)'
+  ) {
+    try {
+      const [orderUid, signed] = decodeAbiParameters(
+        parseAbiParameters('bytes, bool'),
+        action.calldata as Hex,
+      ) as readonly [string, boolean];
+      const uidTrunc = `${orderUid.slice(0, 10)}…${orderUid.slice(-8)}`;
+      decoded.title = signed
+        ? `Pre-sign CoW order ${uidTrunc}`
+        : `Cancel CoW pre-signed order ${uidTrunc}`;
+      decoded.description = signed
+        ? 'Authorises CoW solvers to execute this off-chain order on behalf of the treasury'
+        : 'Revokes a prior CoW pre-signature';
+      return decoded;
+    } catch {
+      decoded.title = 'CoW pre-signature';
+      return decoded;
+    }
+  }
+
+  // Meta-propose: propose(...) on the Governor creates a NEW proposal when
+  // executed. Surface the inner proposal's title for the summary card.
+  if (
+    target === NOUNS_ADDRESSES.governor.toLowerCase() &&
+    signature.startsWith('propose(address[],uint256[],string[],bytes[],string')
+  ) {
+    try {
+      const decodedArgs = decodeAbiParameters(
+        parseAbiParameters('address[], uint256[], string[], bytes[], string, uint32'),
+        action.calldata as Hex,
+      ) as readonly [readonly string[], readonly bigint[], readonly string[], readonly string[], string, number];
+      const description = decodedArgs[4];
+      // Pull the first heading line as the proposal title
+      const firstLine =
+        description
+          .split('\n')
+          .map((l) => l.trim())
+          .find((l) => l.length > 0) || '';
+      const title = firstLine.replace(/^#+\s*/, '').slice(0, 80);
+      decoded.title = title
+        ? `Create proposal: “${title}”`
+        : 'Create nested proposal';
+      decoded.description = `Meta-proposal that submits ${decodedArgs[0].length} action${decodedArgs[0].length === 1 ? '' : 's'} when executed`;
+      return decoded;
+    } catch {
+      decoded.title = 'Create nested proposal';
+      return decoded;
+    }
+  }
+
   // Stream Factory: createStream(recipient, amount, tokenAddress, startTime, endTime, nonce, predictedStreamAddress)
   if (signature.startsWith('createStream(') && params) {
     const recipient = params.param0 as string;  // recipient is param0
@@ -1183,6 +1457,25 @@ export function decodeTransaction(
 
   // TokenBuyer / Payer admin operations
   if (tryDecodeTokenBuyerPayerAdmin(target, functionName, params, decoded)) {
+    if (signature) {
+      decoded.formattedCall = buildFormattedCall(
+        action.target, functionName, signature, params, action.value
+      );
+    }
+    return decoded;
+  }
+
+  // Client Rewards admin operations
+  if (
+    target === NOUNS_ADDRESSES.clientRewards.toLowerCase() &&
+    tryDecodeClientRewardsAdmin(
+      signature,
+      functionName,
+      params,
+      action.calldata || '0x',
+      decoded,
+    )
+  ) {
     if (signature) {
       decoded.formattedCall = buildFormattedCall(
         action.target, functionName, signature, params, action.value

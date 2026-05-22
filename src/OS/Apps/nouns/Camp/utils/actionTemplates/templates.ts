@@ -1649,7 +1649,7 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     id: 'admin-rewards-withdraw-token',
     category: 'admin',
     name: 'Withdraw Token from Rewards',
-    description: 'Sweep any ERC-20 the ClientRewards contract holds back to a destination (typically the treasury)',
+    description: 'Withdraw any ERC-20 the ClientRewards contract holds back to a destination (typically the treasury)',
     isMultiAction: false,
     fields: [
       {

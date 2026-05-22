@@ -37,6 +37,8 @@ import { OpenSeaListingEditor } from './OpenSeaListingEditor';
 import { MarketplaceFulfillSeaportEditor } from './MarketplaceFulfillSeaportEditor';
 import { OctantCreateVaultEditor } from './OctantCreateVaultEditor';
 import { OctantVaultActionEditor } from './OctantVaultActionEditor';
+import { WithdrawTokenFromRewardsEditor } from './WithdrawTokenFromRewardsEditor';
+import { ClientRewardsStatusLine } from './ClientRewardsStatusLine';
 import { StreamSelect } from './StreamSelect';
 import { TreasuryTokenSelect } from './TreasuryTokenSelect';
 import { PredictedStreamAddress } from './PredictedStreamAddress';
@@ -860,6 +862,19 @@ export function ActionEditorModal({
       );
     }
 
+    // ClientRewards token sweep — custom editor with on-chain balance awareness
+    if (selectedTemplate.id === 'admin-rewards-withdraw-token') {
+      return (
+        <div className={styles.formScroll}>
+          <WithdrawTokenFromRewardsEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className={styles.formScroll}>
         <div className={editorStyles.templateForm}>
@@ -867,6 +882,16 @@ export function ActionEditorModal({
           {selectedTemplate.id === 'payment-once' && <PayerReservesLine />}
           {/* TokenBuyer status for the swap-buy-eth template */}
           {selectedTemplate.id === 'swap-buy-eth' && <TokenBuyerStatusLine />}
+          {/* ClientRewards current-state context for every admin-rewards-*
+              template that uses the generic form. (withdraw-token has its
+              own custom editor and is handled above renderConfigure's
+              fallthrough, so we won't reach this branch for it.) */}
+          {selectedTemplate.id.startsWith('admin-rewards-') && (
+            <ClientRewardsStatusLine
+              templateId={selectedTemplate.id}
+              fieldValues={fieldValues}
+            />
+          )}
           {selectedTemplate.fields.map((field) => {
             const tokenSymbolHint =
               field.type === 'amount'
