@@ -1,17 +1,22 @@
 /**
- * Read the full indexed state for an ENS name.
+ * Read the full state for an ENS name via on-chain calls.
  *
- * Backed by /api/ens/domain/[name] which queries our Ponder-indexed
- * ens_domains table. Returns null if the name hasn't been observed by
- * the indexer yet — in that case callers should fall back to the
- * on-chain hooks (useEnsOwner, useEnsExpiry, etc.).
+ * Was previously backed by our Ponder-indexed ens_domains table; reverted
+ * to live on-chain reads in favor of removing 15+ GB of indexer overhead.
  *
- * This is the preferred read path for views that need multiple fields
- * at once (NameDetail's header, MyNames list rows) — one round-trip
- * instead of several.
+ * Composes:
+ *   - getOwner (Registry)
+ *   - getResolver (Registry)
+ *   - getExpiry (BaseRegistrar / NameWrapper)
+ *   - getWrapperData (NameWrapper — gives fuses + wrapped owner if wrapped)
+ *
+ * Returns null while loading or if the name doesn't exist on-chain.
  */
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { getOwner, getResolver, getExpiry, getWrapperData } from "@ensdomains/ensjs/public";
+import { ensPublicClient } from "@/app/lib/ens/client";
 
 export interface EnsDomain {
   node: string;
@@ -22,29 +27,72 @@ export interface EnsDomain {
   registrant: string | null;
   wrappedOwner: string | null;
   resolver: string | null;
-  /** bigint as string. */
+  /** bigint as string (seconds since epoch). */
   expiry: string | null;
   isWrapped: boolean;
-  /** NameWrapper fuse bitfield. Decode with decodeFuses from @ensdomains/ensjs/utils. */
+  /** NameWrapper fuse bitfield. */
   fuses: number | null;
 }
 
-interface DomainResponse {
-  name: string;
-  node: string;
-  domain: EnsDomain | null;
-}
-
 export function useEnsDomain(name: string | undefined) {
-  return useQuery<EnsDomain | null>({
-    queryKey: ["ens", "domain", name],
-    queryFn: async () => {
-      const res = await fetch(`/api/ens/domain/${encodeURIComponent(name!)}`);
-      if (!res.ok) throw new Error(`Failed to fetch domain: ${res.status}`);
-      const data = (await res.json()) as DomainResponse;
-      return data.domain;
-    },
-    enabled: !!name && name.includes("."),
+  const enabled = !!name && name.includes(".");
+
+  const ownerQ = useQuery({
+    queryKey: ["ens", "domain", "owner", name],
+    queryFn: () => getOwner(ensPublicClient(), { name: name! }),
+    enabled,
     staleTime: 30_000,
   });
+
+  const resolverQ = useQuery({
+    queryKey: ["ens", "domain", "resolver", name],
+    queryFn: () => getResolver(ensPublicClient(), { name: name! }),
+    enabled,
+    staleTime: 30_000,
+  });
+
+  const expiryQ = useQuery({
+    queryKey: ["ens", "domain", "expiry", name],
+    queryFn: () => getExpiry(ensPublicClient(), { name: name! }),
+    enabled: enabled && (name?.endsWith(".eth") ?? false),
+    staleTime: 30_000,
+  });
+
+  const wrapperQ = useQuery({
+    queryKey: ["ens", "domain", "wrapper", name],
+    queryFn: () => getWrapperData(ensPublicClient(), { name: name! }),
+    enabled,
+    staleTime: 30_000,
+  });
+
+  const data = useMemo<EnsDomain | null>(() => {
+    if (!name || (!ownerQ.data && !wrapperQ.data && !expiryQ.data)) return null;
+
+    const isWrapped = !!wrapperQ.data;
+    const wrappedOwner = wrapperQ.data?.owner ?? null;
+    const fuses = wrapperQ.data?.fuses?.value ?? null;
+    const expiryFromWrapper = wrapperQ.data?.expiry?.value;
+    const expiryFromRegistrar = expiryQ.data?.expiry?.value;
+    const expiry = expiryFromRegistrar ?? expiryFromWrapper ?? null;
+
+    return {
+      node: "",
+      name,
+      label: null,
+      parent: null,
+      owner: (ownerQ.data?.owner as string | null) ?? null,
+      registrant: (ownerQ.data?.registrant as string | null) ?? null,
+      wrappedOwner,
+      resolver: (resolverQ.data as string | null) ?? null,
+      expiry: expiry !== null && expiry !== undefined ? String(expiry) : null,
+      isWrapped,
+      fuses: typeof fuses === "number" ? fuses : null,
+    };
+  }, [name, ownerQ.data, resolverQ.data, expiryQ.data, wrapperQ.data]);
+
+  return {
+    data,
+    isLoading: ownerQ.isLoading || resolverQ.isLoading || expiryQ.isLoading || wrapperQ.isLoading,
+    error: ownerQ.error || resolverQ.error || expiryQ.error || wrapperQ.error,
+  };
 }

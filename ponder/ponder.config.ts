@@ -38,10 +38,6 @@ import { fnTokenAbi } from "../app/lib/food-nouns/abis/fnToken";
 import { fnAuctionHouseAbi } from "../app/lib/food-nouns/abis/fnAuctionHouse";
 import { fnGovernorAbi } from "../app/lib/food-nouns/abis/fnGovernor";
 import { fnTreasuryAbi } from "../app/lib/food-nouns/abis/fnTreasury";
-import { ENSRegistryABI } from "../app/lib/ens/abis/ENSRegistry";
-import { BaseRegistrarABI } from "../app/lib/ens/abis/BaseRegistrar";
-import { ETHRegistrarControllerABI } from "../app/lib/ens/abis/ETHRegistrarController";
-import { NameWrapperABI } from "../app/lib/ens/abis/NameWrapper";
 
 export default createConfig({
   database: {
@@ -238,45 +234,6 @@ export default createConfig({
       abi: fnTreasuryAbi,
       address: "0xaF1BFd8bF02C5EC169d20faba53BF0fa761bf65f",
       startBlock: 15280197,
-    },
-
-    // =========================================================================
-    // Subgraph 6: ENS
-    // Indexes name ownership, registrations, and wrapping. Powers the Names
-    // app's "My Names" view + lets us show ENS data anywhere addresses appear
-    // without third-party subgraph dependencies. Records (text/addr) are still
-    // fetched on-demand via UniversalResolver — too many resolver contracts.
-    // =========================================================================
-
-    ENSRegistry: {
-      chain: "mainnet",
-      abi: ENSRegistryABI,
-      address: "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
-      startBlock: 9380410,
-    },
-
-    ENSBaseRegistrar: {
-      chain: "mainnet",
-      abi: BaseRegistrarABI,
-      address: "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85",
-      startBlock: 9380471,
-    },
-
-    // Only the current (v3) controller. Old controllers' NameRegistered events
-    // had different signatures; their registrations still show up via
-    // ENSBaseRegistrar.Transfer/NameRegistered (just without string label data).
-    ENSEthController: {
-      chain: "mainnet",
-      abi: ETHRegistrarControllerABI,
-      address: "0x59E16fcCd424Cc24e280Be16E11Bcd56fb0CE547",
-      startBlock: 19000000,
-    },
-
-    ENSNameWrapper: {
-      chain: "mainnet",
-      abi: NameWrapperABI,
-      address: "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
-      startBlock: 16925618,
     },
   },
 });
