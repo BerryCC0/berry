@@ -1,0 +1,562 @@
+.view {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  height: 100%;
+  min-height: 0;
+}
+
+/* -- Hero ----------------------------------------------------------------- */
+.heroCard {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.heroLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+}
+
+.heroValue {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--berry-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroSub {
+  font-size: 13px;
+  color: var(--berry-text-secondary);
+}
+
+/* -- Stat row ------------------------------------------------------------- */
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.statCard {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.statSub {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
+/* -- Auction proceeds split card ----------------------------------------- */
+.splitCard {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.splitHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.splitTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.splitSubtitle {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
+.splitBar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--berry-bg-tertiary);
+}
+
+.splitBarSeg {
+  height: 100%;
+}
+
+/* Color hierarchy: ourselves → parent DAO → sub-DAO → founders */
+.splitSeg0 {
+  background: var(--berry-accent);
+}
+.splitSeg1 {
+  background: var(--berry-success);
+}
+.splitSeg2 {
+  background: #c084fc;
+}
+.splitSeg3 {
+  background: var(--berry-warning, #fbbf24);
+}
+
+.splitList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.splitRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.splitSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.splitRowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.splitRowTitle {
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.splitPercent {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+  display: inline-block;
+}
+
+.splitRowSub {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
+.splitRowAmount {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--berry-text-primary);
+  white-space: nowrap;
+}
+
+/* -- Window card (30d) ---------------------------------------------------- */
+.windowCard {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.windowLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+}
+
+.windowFlow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+}
+
+.flowIn {
+  color: var(--berry-success);
+  font-weight: 600;
+}
+
+.flowOut {
+  color: var(--berry-error);
+  font-weight: 600;
+}
+
+.flowNet {
+  color: var(--berry-text-primary);
+  font-weight: 600;
+}
+
+.flowSep {
+  color: var(--berry-text-tertiary);
+}
+
+/* -- Sections ------------------------------------------------------------- */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* -- Pending queue -------------------------------------------------------- */
+.pendingList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pendingRow {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-left: 3px solid var(--berry-warning, #fbbf24);
+  border-radius: 6px;
+}
+
+.pendingMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pendingCountdown {
+  font-size: 11px;
+  color: var(--berry-warning, #fbbf24);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* -- Activity feed -------------------------------------------------------- */
+.feedList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feedEmpty {
+  padding: 16px;
+  text-align: center;
+  color: var(--berry-text-tertiary);
+  font-size: 13px;
+  border: 1px dashed var(--berry-border);
+  border-radius: 6px;
+}
+
+.feedRow {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+.feedRowInflow {
+  border-left: 3px solid var(--berry-success);
+}
+
+.feedRowExecute {
+  border-left: 3px solid var(--berry-error);
+}
+
+.feedRowCancel {
+  border-left: 3px solid var(--berry-text-tertiary);
+  opacity: 0.7;
+}
+
+.feedKindBadge {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badgeInflow {
+  background: color-mix(in srgb, var(--berry-success) 20%, transparent);
+  color: var(--berry-success);
+}
+
+.badgeExecute {
+  background: color-mix(in srgb, var(--berry-error) 20%, transparent);
+  color: var(--berry-error);
+}
+
+.badgeCancel {
+  background: var(--berry-bg);
+  color: var(--berry-text-tertiary);
+}
+
+.feedRowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feedRowHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.feedHeadline {
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.feedAccent {
+  color: var(--berry-accent);
+  font-weight: 600;
+}
+
+.feedAmount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.feedFnName {
+  font-family: var(--berry-font-mono);
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.feedRowSub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.feedMuted {
+  color: var(--berry-text-tertiary);
+  font-style: italic;
+}
+
+.feedDot {
+  color: var(--berry-text-tertiary);
+}
+
+.feedDate {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.feedLink {
+  color: var(--berry-accent);
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.feedLink:hover {
+  text-decoration: underline;
+}
+
+.muted {
+  text-decoration: line-through;
+}
+
+/* -- Argument chips ------------------------------------------------------- */
+.feedArgs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0;
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.argChip {
+  display: inline;
+}
+
+.argSep {
+  color: var(--berry-text-tertiary);
+  margin-right: 2px;
+}
+
+.argName {
+  color: var(--berry-text-tertiary);
+}
+
+.argValue {
+  color: var(--berry-text-primary);
+}
+
+.argValueNum {
+  color: var(--berry-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.argValueBytes {
+  color: var(--berry-text-secondary);
+}
+
+.argValueArray {
+  color: var(--berry-text-tertiary);
+}
+
+/* -- Address link --------------------------------------------------------- */
+.addressLink {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-family: var(--berry-font-mono);
+  font-size: inherit;
+  color: var(--berry-accent);
+  cursor: pointer;
+}
+
+.addressLink:hover {
+  text-decoration: underline;
+}
+
+/* -- Meta grid (info card) ------------------------------------------------ */
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.metaCard {
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metaLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+}
+
+.metaValue {
+  font-family: var(--berry-font-mono);
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.metaValue:hover {
+  text-decoration: underline;
+}
+
+.metaSub {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
+/* -- Treasury Nouns grid -------------------------------------------------- */
+.nounsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 10px;
+}
+
+.nounCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nounImage {
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+  background: var(--berry-bg-tertiary);
+  display: block;
+  object-fit: cover;
+}
+
+.nounImagePlaceholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+  background: var(--berry-bg-tertiary);
+}
+
+.nounId {
+  font-size: 11px;
+  font-family: var(--berry-font-mono);
+  color: var(--berry-text-tertiary);
+}

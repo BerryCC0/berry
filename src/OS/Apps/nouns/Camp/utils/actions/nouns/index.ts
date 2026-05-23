@@ -9,4 +9,5 @@
 export { nounSwap } from './swap';
 export { nounTransfer } from './transfer';
 export { nounDelegate } from './delegate';
+export { lilNounDelegate } from './lil-noun-delegate';
 export { auctionBid } from './auction-bid';

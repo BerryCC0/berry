@@ -27,7 +27,13 @@ import {
   treasuryDelegate,
   treasuryTransfer,
 } from './treasury';
-import { auctionBid, nounDelegate, nounSwap, nounTransfer } from './nouns';
+import {
+  auctionBid,
+  lilNounDelegate,
+  nounDelegate,
+  nounSwap,
+  nounTransfer,
+} from './nouns';
 import {
   paymentStream,
   streamCancel,
@@ -209,6 +215,7 @@ export const transactionActions: TransactionActionDef<any>[] = [
   // Run before generic matchers (treasury-transfer, treasury-delegate).
   tokenbuyerRefillEth, // ETH transfer specifically to TokenBuyer
   nounDelegate,        // delegate() on the Nouns token
+  lilNounDelegate,     // delegate() on the Lil Nouns token — before treasury-delegate
   nounTransfer,        // safeTransferFrom from treasury on the Nouns token
   auctionBid,          // createBid on AuctionHouse
   paymentOnce,         // sendOrRegisterDebt on Payer

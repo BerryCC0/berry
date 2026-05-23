@@ -24,6 +24,32 @@ interface TransactionSummaryProps {
   onNavigate?: (path: string) => void;
 }
 
+/**
+ * Strip a trailing recipient address from a description string.
+ *
+ * Many action `describe()` methods embed `to ${recipient}` in their
+ * description so the raw text reads naturally on its own. When the renderer
+ * also appends an ENS-resolved chip the result reads "... to 0xabc… to
+ * ian.eth" with the doubled "to". Pulling the trailing address off here lets
+ * actions stay clean (no special-casing per-action) and the chip becomes
+ * the single rendering of the destination.
+ *
+ * Matches the most common shapes our actions produce:
+ *   "Foo - to 0x{40 hex}"
+ *   "Foo to 0x{40 hex}"
+ *   "to 0x{40 hex}"
+ */
+function stripTrailingAddress(text: string): string {
+  // ` - to 0x...` (the contract-call branch concats title + " - " + description)
+  let cleaned = text.replace(/\s*[-–]\s*to\s+0x[a-fA-F0-9]{40}\s*$/i, '');
+  if (cleaned !== text) return cleaned;
+  // ` to 0x...` at the end without the dash
+  cleaned = text.replace(/\s+to\s+0x[a-fA-F0-9]{40}\s*$/i, '');
+  if (cleaned !== text) return cleaned;
+  // Standalone "to 0x..." (e.g. description was JUST that)
+  return text.replace(/^to\s+0x[a-fA-F0-9]{40}\s*$/i, '').trim();
+}
+
 /** Parse a formatted number like "21.2K" -> 21200, "1.50M" -> 1500000, "1,500" -> 1500 */
 function parseFormattedNumber(str: string): number {
   const cleaned = str.replace(/,/g, '');
@@ -55,14 +81,24 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
     // Renders "<text> to <ENS-resolved address>" inline. When onNavigate is
     // provided the recipient is a VoterLink — hover shows the voter mini
     // profile, click navigates to their Camp page.
+    //
+    // Strips a trailing "to 0x..." (with or without a preceding " - ")
+    // from the `text` before appending the chip — many action `describe()`
+    // methods stuff `to ${recipient}` into their description so the legacy
+    // raw rendering still reads naturally, but here that becomes a
+    // duplicate alongside the ENS chip ("... to 0xabc… to ian.eth"). Stripping
+    // it at the seam keeps every existing action def clean and the rendered
+    // output single-source-of-truth.
     const withRecipient = (text: ReactNode, to: string | undefined): ReactNode => {
       if (!to) return text;
+      const cleaned =
+        typeof text === 'string' ? stripTrailingAddress(text) : text;
       const addr = (
         <AddressWithENS address={to} className={styles.txSummaryRecipient} />
       );
       return (
         <>
-          {text} to{' '}
+          {cleaned} to{' '}
           <VoterLink
             address={to}
             onNavigate={onNavigate}

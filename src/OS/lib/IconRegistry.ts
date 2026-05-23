@@ -47,7 +47,8 @@ export type AppIconId =
   | "clients"
   | "swap"
   | "nouns-v2"
-  | "studio";
+  | "studio"
+  | "food-nouns";
 
 /**
  * File type icon IDs
@@ -102,6 +103,7 @@ const iconRegistry: Record<IconId, string> = {
   "nouns-v2": `${ICONS_BASE_PATH}/v2.png`,
   // No studio.png yet — falls back to default.svg via getIcon()
   "studio": `${ICONS_BASE_PATH}/studio.svg`,
+  "food-nouns": `${ICONS_BASE_PATH}/food-nouns.svg`,
 
   // File type icons
   "file-text": `${ICONS_BASE_PATH}/file-text.svg`,

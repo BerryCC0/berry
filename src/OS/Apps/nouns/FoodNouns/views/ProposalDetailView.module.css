@@ -1,0 +1,648 @@
+.view {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  container-type: inline-size;
+}
+
+/* Two-column body. Single column at narrow widths so it never gets cramped
+   when the parent governance pane is narrow. */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+@container (min-width: 640px) {
+  .columns {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.backBtn {
+  align-self: flex-start;
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--berry-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.backBtn:hover {
+  text-decoration: underline;
+}
+
+/* Header: "Proposal #N" + status pill (right) */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.id {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.status {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.status.active,
+.status.pending {
+  background: color-mix(in srgb, var(--berry-accent) 20%, transparent);
+  color: var(--berry-accent);
+}
+
+.status.succeeded,
+.status.queued {
+  background: color-mix(in srgb, var(--berry-success) 20%, transparent);
+  color: var(--berry-success);
+}
+
+.status.executed {
+  background: var(--berry-success);
+  color: white;
+}
+
+.status.defeated,
+.status.canceled,
+.status.vetoed,
+.status.expired {
+  background: color-mix(in srgb, var(--berry-error) 20%, transparent);
+  color: var(--berry-error);
+}
+
+.title {
+  font-family: var(--berry-font-system);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--berry-text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Meta row: "Proposed [date] by [avatar+name]" */
+.proposalMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.metaDate {
+  color: var(--berry-text-tertiary);
+}
+
+.metaSeparator {
+  color: var(--berry-text-tertiary);
+}
+
+/* Vote tally — labels above, bar with quorum marker, quorum/threshold row */
+.tally {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.tallyLabels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tallyRight {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.labelSep {
+  color: var(--berry-text-tertiary);
+}
+
+.tallyBar {
+  position: relative;
+  display: flex;
+  height: 10px;
+  background: var(--berry-bg);
+  border-radius: 999px;
+  overflow: visible;
+}
+
+/* Each segment is a flex container that holds discrete voter blocks. */
+.segFor,
+.segAbstain,
+.segAgainst {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.segFor {
+  background: var(--berry-success);
+  border-radius: 999px 0 0 999px;
+}
+
+.segAgainst {
+  background: var(--berry-error);
+  border-radius: 0 999px 999px 0;
+}
+
+.segAbstain {
+  background: var(--berry-text-tertiary);
+}
+
+/* Per-voter sub-blocks within a section. The flex value carries each
+   voter's vote weight, so the relative widths visualize concentration. */
+.voteBlock {
+  height: 100%;
+  border-right: 1px solid color-mix(in srgb, var(--berry-bg-secondary) 30%, transparent);
+}
+
+.voteBlock:last-child {
+  border-right: none;
+}
+
+/* Transparent gap rendered between forVotes and the quorum marker when
+   forVotes < quorum — instantly conveys "how much more do we need". */
+.quorumGap {
+  height: 100%;
+  background: transparent;
+}
+
+.quorumMarker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 16px;
+  background: var(--berry-text-secondary);
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+.quorumRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
+.quorumLabel,
+.thresholdLabel {
+  font-variant-numeric: tabular-nums;
+}
+
+.countFor {
+  color: var(--berry-success);
+  font-weight: 600;
+}
+
+.countAgainst {
+  color: var(--berry-error);
+  font-weight: 600;
+}
+
+.countAbstain {
+  color: var(--berry-text-tertiary);
+  font-weight: 600;
+}
+
+/* Vote / action sections */
+.voteSection,
+.actionSection,
+.descriptionSection,
+.actionsListSection,
+.feedSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reasonInput {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font: 13px var(--berry-font-system);
+  resize: vertical;
+}
+
+.voteButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.voteBtn {
+  appearance: none;
+  flex: 1;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  padding: 9px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.voteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voteBtn.voteFor {
+  border-color: var(--berry-success);
+  color: var(--berry-success);
+}
+
+.voteBtn.voteAgainst {
+  border-color: var(--berry-error);
+  color: var(--berry-error);
+}
+
+.voteBtn.voteAbstain {
+  color: var(--berry-text-tertiary);
+}
+
+.userVoteStatus {
+  padding: 10px 12px;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  background: var(--berry-bg-secondary);
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.userVoteText {
+  color: var(--berry-text-secondary);
+}
+
+.timeRemaining {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  background: var(--berry-bg-secondary);
+  font-size: 13px;
+}
+
+.timeIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.timeText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--berry-text-primary);
+  font-weight: 500;
+  /* Keep each line on one row so the counter is exactly 2 lines: the
+   * "Executable in Xh Ym" headline and the absolute timestamp below it.
+   * Without this, narrow flex space in .actionRow would wrap the headline
+   * across two lines, making the counter awkwardly 3 lines tall. */
+  white-space: nowrap;
+}
+
+.timeAbsolute {
+  color: var(--berry-text-tertiary);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--berry-text-tertiary);
+}
+
+/* The action section now stacks vertically: a row containing the
+ * queue/execute button + the time counter on top, then optional
+ * connect-wallet hint and the TxStatusBanner below. The inner row owns
+ * the horizontal layout. */
+.actionRow {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Time counter sits on the left. It claims at least its content width
+ * (icon + nowrap text) so the headline never wraps mid-line; if combined
+ * with the button it exceeds the row width, the flex container's wrap
+ * behavior moves the button to the next line rather than squishing the
+ * counter into a 3-line layout. */
+.actionRow > .timeRemaining {
+  flex: 1 1 auto;
+  min-width: max-content;
+  margin: 0;
+}
+
+/* Button keeps its intrinsic width on the right so the counter on the
+ * left can claim the slack space. */
+.actionRow > .actionButton {
+  flex-shrink: 0;
+}
+
+.actionButton {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-accent);
+  color: white;
+  padding: 9px 14px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Proposer-only actions box */
+.proposerActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--berry-border);
+  border-radius: 6px;
+  background: var(--berry-bg-secondary);
+}
+
+.proposerActionsLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--berry-text-tertiary);
+}
+
+.cancelProposalButton {
+  appearance: none;
+  border: 1px solid var(--berry-error);
+  background: transparent;
+  color: var(--berry-error);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancelProposalButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmCancel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.confirmText {
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  flex: 1;
+}
+
+.confirmYes {
+  appearance: none;
+  border: 1px solid var(--berry-error);
+  background: var(--berry-error);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmYes:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmNo {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: transparent;
+  color: var(--berry-text-primary);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.description {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  background: var(--berry-bg-secondary);
+  word-break: break-word;
+}
+
+.actionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actionItem {
+  padding: 10px 12px;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  background: var(--berry-bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Aggregated "requesting X" summary at the top of the left column */
+.txSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--berry-accent) 8%, var(--berry-bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--berry-accent) 30%, var(--berry-border));
+  border-radius: 6px;
+}
+
+.txSummaryItem {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.actionHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.actionVerb {
+  color: var(--berry-text-secondary);
+}
+
+.actionIndex {
+  font-family: var(--berry-font-mono);
+  color: var(--berry-text-tertiary);
+}
+
+.actionTarget {
+  font-family: var(--berry-font-mono);
+  color: var(--berry-accent);
+  text-decoration: none;
+}
+
+.actionValue {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--berry-text-primary);
+}
+
+.actionSig,
+.actionCalldata {
+  font-family: var(--berry-font-mono);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.actionCalldata {
+  color: var(--berry-text-tertiary);
+}
+
+/* Activity feed — Camp-style voter rows */
+.feedList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedItem {
+  padding: 10px 12px;
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  background: var(--berry-bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.feedHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.feedHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+}
+
+.feedVotes {
+  font-size: 12px;
+  color: var(--berry-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.feedSupport {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.feedDate {
+  font-variant-numeric: tabular-nums;
+}
+
+.feedLink {
+  color: var(--berry-accent);
+  text-decoration: none;
+}
+
+.feedReason {
+  padding-left: 0;
+  font-size: 13px;
+  color: var(--berry-text-primary);
+}
+
+.empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--berry-text-tertiary);
+  border: 1px dashed var(--berry-border);
+  border-radius: 6px;
+}

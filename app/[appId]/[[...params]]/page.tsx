@@ -272,6 +272,15 @@ function buildInitialState(
       }
       break;
 
+    case "food-nouns":
+      // /food-nouns/auction · /food-nouns/treasury · /food-nouns/governance
+      //   · /food-nouns/voters → open the named tab
+      // FoodNouns reads `initialState.tab` to select the active tab on mount.
+      if (safeParams.length > 0) {
+        state.tab = safeParams[0];
+      }
+      break;
+
     default:
       // Generic: pass sanitized search params as state
       Object.entries(safeSearchParams).forEach(([key, value]) => {

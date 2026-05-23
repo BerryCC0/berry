@@ -12,6 +12,7 @@ export type ActionTemplateType =
   | 'noun-transfer'
   | 'noun-swap'
   | 'noun-delegate'
+  | 'lil-noun-delegate'
   | 'treasury-delegate'
   | 'auction-bid'
   | 'payment-stream'

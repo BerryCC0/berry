@@ -31,6 +31,7 @@ const Clients = lazy(() => import("./nouns/Clients/Clients").then(m => ({ defaul
 const Swap = lazy(() => import("./nouns/Swap/Swap").then(m => ({ default: m.Swap })));
 const NounsV2 = lazy(() => import("./nouns/NounsV2/NounsV2").then(m => ({ default: m.NounsV2 })));
 const Studio = lazy(() => import("./nouns/Studio/Studio").then(m => ({ default: m.Studio })));
+const FoodNouns = lazy(() => import("./nouns/FoodNouns/FoodNouns").then(m => ({ default: m.FoodNouns })));
 
 /**
  * Finder - File browser
@@ -543,6 +544,30 @@ const nounsV2Config: AppConfig = {
 };
 
 /**
+ * Food Nouns — standalone V1-style Nouns fork (FoodNounsDAO).
+ * Auction · Treasury · Governance · Voters tabs in one window.
+ * Independent contracts, no client IDs, no candidates, no signed proposals.
+ */
+const foodNounsConfig: AppConfig = {
+  id: "food-nouns",
+  name: "Food Nouns",
+  icon: getIcon("food-nouns"),
+  category: "nouns",
+  singleton: true,
+  showInDock: true,
+  window: {
+    position: "top-left",
+    width: 1100,
+    height: 750,
+    minWidth: 600,
+    minHeight: 450,
+    isResizable: true,
+  },
+  permissions: ["network", "wallet"],
+  component: FoodNouns,
+};
+
+/**
  * Studio — pixel-art editor for Nouns traits.
  * Draws 32×32 traits, saves drafts to studio_traits (wallet-scoped),
  * hands finished traits off to Camp via the AppBus for proposal submission.
@@ -591,6 +616,7 @@ export const osAppConfigs: AppConfig[] = [
   swapConfig,
   nounsV2Config,
   studioConfig,
+  foodNounsConfig,
   ...localAppConfigs,
 ];
 

@@ -232,6 +232,25 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  'lil-noun-delegate': {
+    id: 'lil-noun-delegate',
+    category: 'delegation',
+    name: 'Delegate Treasury Lil Nouns',
+    description:
+      'Delegate voting power of treasury-owned Lil Nouns on LilNounsDAO. The V1 treasury holds the bulk of the collection — for those, set Proposal Type to Timelock V1.',
+    isMultiAction: false,
+    fields: [
+      {
+        name: 'delegatee',
+        label: 'Delegate To',
+        type: 'address',
+        placeholder: '0x... or ENS name',
+        required: true,
+        helpText: 'Address that will receive voting power on LilNounsDAO',
+      },
+    ],
+  },
+
   // Payment Streams
   'payment-stream': {
     id: 'payment-stream',

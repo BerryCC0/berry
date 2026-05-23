@@ -1,0 +1,573 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+}
+
+@media (max-width: 720px) {
+  .body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(180px, 240px) 1fr;
+  }
+}
+
+/* Left — voter list */
+.list {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  min-height: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.voterList {
+  list-style: none;
+  margin: 0;
+  padding: 4px 8px;
+}
+
+.voterRow {
+  appearance: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 2px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  border-left: 2px solid transparent;
+  color: var(--berry-text-primary);
+  transition: background 0.15s ease;
+}
+
+.voterRow:hover {
+  background: var(--berry-bg);
+}
+
+.voterActive {
+  background: var(--berry-bg);
+  border-left-color: var(--berry-accent);
+}
+
+.rowAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rowName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.listEmpty {
+  padding: 24px 14px;
+  text-align: center;
+  color: var(--berry-text-tertiary);
+  font-size: 13px;
+}
+
+.linkBtn {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--berry-accent);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+/* Right — Camp-style two-column voter detail */
+.detail {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.detailEmpty {
+  padding: 32px;
+  text-align: center;
+  color: var(--berry-text-tertiary);
+  font-size: 13px;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: 65fr 35fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 820px) {
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left column — scrolls as a whole */
+.leftColumn {
+  padding: 16px;
+  overflow-y: auto;
+  border-right: 1px solid var(--berry-border);
+}
+
+@media (max-width: 820px) {
+  .leftColumn {
+    border-right: none;
+    border-bottom: 1px solid var(--berry-border);
+    max-height: 50%;
+  }
+}
+
+/* Profile header */
+.profileHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.profileAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
+}
+
+.profileMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.profileName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--berry-text-primary);
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.profileAddress {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.profileAddress:hover {
+  color: var(--berry-accent);
+}
+
+/* Delegation: "Delegating to X" sentence */
+.delegatingTo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 12px;
+}
+
+.delegatingLabel {
+  color: var(--berry-text-secondary);
+}
+
+/* Delegation: "Delegators (N)" grid */
+.delegatorsSection {
+  margin-bottom: 16px;
+}
+
+.delegatorsLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 6px;
+}
+
+.delegatorsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+/* Address chip — used in "Delegating to X" + Delegators grid */
+.addressChip {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+  color: var(--berry-accent);
+  cursor: pointer;
+}
+
+.addressChip:hover {
+  text-decoration: underline;
+}
+
+.addressChipAvatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--berry-bg-tertiary);
+  flex-shrink: 0;
+}
+
+.moreCount {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+/* Nouns represented grid */
+.nounsSection {
+  margin-bottom: 16px;
+}
+
+.nounsLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 6px;
+}
+
+.nounsSub {
+  color: var(--berry-text-tertiary);
+}
+
+.nounsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nounCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.nounImage {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-tertiary);
+  display: block;
+  object-fit: cover;
+}
+
+.nounImagePlaceholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  background: var(--berry-bg-tertiary);
+  border: 1px solid var(--berry-border);
+}
+
+.nounId {
+  font-size: 9px;
+  color: var(--berry-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Proposed (proposals authored) — Camp-style list */
+.proposedSection {
+  margin-top: 16px;
+  border-top: 1px solid var(--berry-border);
+  padding-top: 12px;
+}
+
+.proposedLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 6px;
+}
+
+.proposalsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.proposalItem {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.proposalItem:last-child {
+  border-bottom: none;
+}
+
+.proposalHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.proposalId {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.proposalTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.proposalMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.metaSep {
+  margin: 0 4px;
+}
+
+.proposalStatus {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: var(--berry-bg-tertiary);
+  color: var(--berry-text-secondary);
+}
+
+.statusExecuted {
+  background: var(--berry-success);
+  color: white;
+}
+
+.statusActive {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.statusPending {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.statusSucceeded {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+
+.statusDefeated {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+/* Right column — fixed stats card + scrolling activity feed */
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.statsCard {
+  padding: 16px;
+  border-bottom: 1px solid var(--berry-border);
+  flex-shrink: 0;
+}
+
+.statsHeader {
+  font-size: 13px;
+  color: var(--berry-text-primary);
+  margin-bottom: 12px;
+}
+
+.voteBar {
+  margin-bottom: 12px;
+}
+
+.voteBarLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.againstSide {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.forLabel {
+  color: var(--berry-success);
+}
+
+.againstLabel {
+  color: var(--berry-error);
+}
+
+.abstainLabel {
+  color: var(--berry-text-secondary);
+}
+
+.voteBarTrack {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--berry-bg-tertiary);
+}
+
+.voteBarFor {
+  background: var(--berry-success);
+}
+
+.voteBarAbstain {
+  background: var(--berry-text-tertiary);
+}
+
+.voteBarAgainst {
+  background: var(--berry-error);
+}
+
+.voteCount {
+  font-size: 10px;
+  color: var(--berry-text-secondary);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterLabel {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.filterSelect {
+  appearance: none;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Activity feed — independently scrolling list */
+.activityFeed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+  min-height: 0;
+}
+
+.activityItem {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.activityHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--berry-text-primary);
+}
+
+.activityVoter {
+  font-weight: 600;
+  color: var(--berry-accent);
+}
+
+.activitySupport {
+  font-weight: 600;
+}
+
+.activityProposal {
+  color: var(--berry-text-secondary);
+}
+
+.activityReason {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+
+.emptyActivity {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}

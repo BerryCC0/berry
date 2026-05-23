@@ -1,0 +1,248 @@
+/**
+ * ProposeView — mirrors Camp's CreateProposal layout patterns.
+ */
+
+.container {
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--berry-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.backBtn {
+  align-self: flex-start;
+  appearance: none;
+  background: var(--berry-button-bg);
+  border: 1px solid var(--berry-border);
+  color: var(--berry-button-text);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.backBtn:hover {
+  background: var(--berry-accent);
+  color: white;
+  border-color: var(--berry-accent);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-system);
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .statRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+.statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+  font-weight: 600;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.warning {
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--berry-error);
+  font-size: 13px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  color: var(--berry-text-primary);
+  font-size: 14px;
+  font-family: var(--berry-font-system);
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.input:disabled,
+.textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 200px;
+  font-family: var(--berry-font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.helpText,
+.amountWarn {
+  font-size: 12px;
+  color: var(--berry-text-tertiary);
+  font-family: var(--berry-font-system);
+}
+
+.amountWarn {
+  color: var(--berry-error);
+}
+
+.summary {
+  padding: 14px 16px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summaryTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+}
+
+.summaryText {
+  margin: 0;
+  font-size: 14px;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-system);
+  line-height: 1.5;
+}
+
+.summaryEmpty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--berry-text-tertiary);
+  font-family: var(--berry-font-system);
+}
+
+.summaryAddr {
+  font-family: var(--berry-font-mono);
+  background: var(--berry-bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.error {
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--berry-error);
+  font-size: 13px;
+}
+
+.submitRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submitBtn {
+  appearance: none;
+  border: 1px solid var(--berry-accent);
+  background: var(--berry-accent);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: var(--berry-font-system);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.submitBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

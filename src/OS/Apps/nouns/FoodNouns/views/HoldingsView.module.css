@@ -1,0 +1,134 @@
+.view {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  padding: 14px 16px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+.statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--berry-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.help {
+  margin: 0;
+  font-size: 13px;
+  color: var(--berry-text-tertiary);
+}
+
+.delegateRow {
+  display: flex;
+  gap: 8px;
+}
+
+.delegateInput {
+  flex: 1;
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font: 13px var(--berry-font-mono);
+}
+
+.delegateButton {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-accent);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delegateButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardId {
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.cardLink {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--berry-text-tertiary);
+  font-size: 13px;
+  border: 1px dashed var(--berry-border);
+  border-radius: 6px;
+}
