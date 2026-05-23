@@ -281,7 +281,16 @@ export function useCreateProposalForm({
     return validActions.length > 0 ? validActions : null;
   }, [actionTemplateStates]);
 
-  const simulation = useSimulation(simulationActions);
+  // Simulate from the timelock that will actually execute this proposal.
+  // For `timelock_v1` proposals the executor is the legacy V1 timelock, not
+  // the V2 treasury — passing the wrong sender makes any action that checks
+  // `msg.sender` (e.g., Seaport.validate against a V1-treasury offerer) revert
+  // in simulation even though the on-chain proposal would succeed.
+  const simulationFrom =
+    proposalType === 'timelock_v1'
+      ? (NOUNS_ADDRESSES.treasuryV1 as `0x${string}`)
+      : (NOUNS_ADDRESSES.treasury as `0x${string}`);
+  const simulation = useSimulation(simulationActions, simulationFrom);
 
   // Populate form with candidate data when editing a candidate
   useEffect(() => {

@@ -46,9 +46,18 @@ interface Fields {
   criteriaResolvers: string;
 }
 
+/**
+ * Canonical Solidity signature for Seaport's `fulfillAdvancedOrder(...)`.
+ *
+ * The Nouns Timelock computes `bytes4(keccak256(bytes(signature)))` to
+ * produce the 4-byte selector, so the string MUST be fully tuple-expanded.
+ * The human-readable form (`fulfillAdvancedOrder(AdvancedOrder, ...)`) hashes
+ * to a different selector and Seaport would revert.
+ */
 const SIG = 'fulfillAdvancedOrder(((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),(uint256,uint8,uint256,uint256,bytes32[])[],bytes32,address)';
-const HUMAN_SIG = 'fulfillAdvancedOrder(AdvancedOrder,CriteriaResolver[],bytes32,address)';
-void SIG;
+
+/** Legacy form kept only for backward-compatible decode of stale drafts. */
+const LEGACY_HUMAN_SIG = 'fulfillAdvancedOrder(AdvancedOrder,CriteriaResolver[],bytes32,address)';
 
 const TARGET = SEAPORT_1_6 as Address;
 const APPROVE_SIG = 'setApprovalForAll(address,bool)';
@@ -165,7 +174,7 @@ export const openseaFulfillOffer: TransactionActionDef<Fields> = {
       {
         target: TARGET,
         value: '0',
-        signature: HUMAN_SIG,
+        signature: SIG,
         calldata: fulfillCalldata,
         isPartOfMultiAction: true,
         multiActionGroupId: groupId,
@@ -183,7 +192,8 @@ export const openseaFulfillOffer: TransactionActionDef<Fields> = {
       approve &&
       fulfill &&
       matchTarget(fulfill, TARGET) &&
-      matchSignature(fulfill, HUMAN_SIG) &&
+      (matchSignature(fulfill, SIG) ||
+        matchSignature(fulfill, LEGACY_HUMAN_SIG)) &&
       matchSignature(approve, APPROVE_SIG)
     ) {
       const approveArgs = decodeArgs<readonly [Address, boolean]>(
@@ -207,7 +217,11 @@ export const openseaFulfillOffer: TransactionActionDef<Fields> = {
 
     // Legacy / lone fulfill (no approve — already-approved conduit).
     const lone = actions[cursor];
-    if (lone && matchTarget(lone, TARGET) && matchSignature(lone, HUMAN_SIG)) {
+    if (
+      lone &&
+      matchTarget(lone, TARGET) &&
+      (matchSignature(lone, SIG) || matchSignature(lone, LEGACY_HUMAN_SIG))
+    ) {
       const decoded = decodeFulfillAdvancedOrderCalldata(lone.calldata);
       if (decoded) {
         return {

@@ -1,0 +1,255 @@
+/**
+ * SwapToUsdcEditor styles — Berry house tokens.
+ */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+
+/* ----- Chip rows ----------------------------------------------------- */
+
+.chipRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 6px 14px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button, 6px);
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  font-family: var(--berry-font-mono, monospace);
+  cursor: pointer;
+  transition:
+    background var(--berry-duration-fast, 150ms),
+    border-color var(--berry-duration-fast, 150ms);
+}
+
+.chip:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+}
+
+.chipActive {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+  color: var(--berry-primary);
+  box-shadow: inset 0 0 0 1px var(--berry-primary);
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----- Amount input -------------------------------------------------- */
+
+.amountInputWrap {
+  display: flex;
+  align-items: center;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-input, 6px);
+  transition: border-color var(--berry-duration-fast, 150ms);
+}
+
+.amountInputWrap:focus-within {
+  border-color: var(--berry-primary);
+}
+
+.amountInput {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--berry-text-primary);
+  font-size: 14px;
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.amountSuffix {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+  border-left: 1px solid var(--berry-border);
+}
+
+/* ----- Quote panel --------------------------------------------------- */
+
+.quotePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-card, 6px);
+}
+
+.quotePanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--berry-text-secondary);
+}
+
+.quoteLoading {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--berry-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.feeRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.feeChip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button, 6px);
+  cursor: pointer;
+  transition:
+    background var(--berry-duration-fast, 150ms),
+    border-color var(--berry-duration-fast, 150ms);
+}
+
+.feeChip:hover:not(:disabled) {
+  border-color: var(--berry-primary);
+  background: var(--berry-bg-secondary);
+}
+
+.feeChipActive {
+  border-color: var(--berry-primary);
+  background: var(--berry-bg-secondary);
+  box-shadow: inset 0 0 0 1px var(--berry-primary);
+}
+
+.feeChip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.feeChipLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.feeChipValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.bestBadge {
+  position: absolute;
+  top: -6px;
+  right: 6px;
+  padding: 1px 5px;
+  background: var(--berry-primary);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--berry-font-mono, monospace);
+  text-transform: uppercase;
+  border-radius: 3px;
+}
+
+.quoteSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 8px;
+  border-top: 1px solid var(--berry-border);
+  font-size: 13px;
+  color: var(--berry-text-primary);
+}
+
+.quoteEmpty {
+  padding: 8px 10px;
+  background: var(--berry-bg);
+  border-left: 3px solid #d97706;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+}
+
+/* ----- Summary card -------------------------------------------------- */
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-left: 3px solid var(--berry-primary);
+  border-radius: var(--berry-radius-card, 6px);
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.summaryLabel {
+  color: var(--berry-text-secondary);
+}
+
+.summaryValue {
+  color: var(--berry-text-primary);
+  font-weight: 600;
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.summaryNote {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--berry-border);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.5;
+}

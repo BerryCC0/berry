@@ -37,6 +37,7 @@ import {
 import {
   swapBuyEth,
   swapCowswap,
+  swapToUsdc,
   swapUniswapV3,
   wethUnwrap,
   wethWrap,
@@ -197,6 +198,7 @@ export const transactionActions: TransactionActionDef<any>[] = [
   streamRedirect,     // cancel + recoverTokens (non-treasury)
   payerRepayDebt,     // approve(USDC, Payer) + payBackDebt
   swapBuyEth,         // approve(USDC, TokenBuyer) + buyETH
+  swapToUsdc,         // [wrap +] approve + exactInputSingle (tokenOut=USDC) — MUST precede swapUniswapV3
   swapUniswapV3,      // approve(router) + exactInputSingle
   wstethWrap,         // approve(stETH→wstETH) + wrap
   lidoRequestWithdrawal,  // approve(wstETH→queue) + requestWithdrawalsWstETH

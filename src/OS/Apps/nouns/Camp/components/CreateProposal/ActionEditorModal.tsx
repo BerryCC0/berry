@@ -41,6 +41,7 @@ import { WithdrawTokenFromRewardsEditor } from './WithdrawTokenFromRewardsEditor
 import { WithdrawTokensEditor as ForkEscrowWithdrawTokensEditor } from '../../utils/actions/fork-escrow-admin/WithdrawTokensEditor';
 import { ReturnTokensEditor as ForkEscrowReturnTokensEditor } from '../../utils/actions/fork-escrow-admin/ReturnTokensEditor';
 import { OpenSeaCollectionOfferEditor } from '../../utils/actions/marketplace/OpenSeaCollectionOfferEditor';
+import { SwapToUsdcEditor } from '../../utils/actions/swaps/SwapToUsdcEditor';
 import { OpenSeaListNftEditor } from '../../utils/actions/marketplace/OpenSeaListNftEditor';
 import { OpenSeaCancelAllEditor } from '../../utils/actions/marketplace/OpenSeaCancelAllEditor';
 import { ClientRewardsStatusLine } from './ClientRewardsStatusLine';
@@ -933,6 +934,17 @@ export function ActionEditorModal({
       return (
         <div className={styles.formScroll}>
           <OpenSeaCancelAllEditor />
+        </div>
+      );
+    }
+    if (selectedTemplate.id === 'swap-to-usdc') {
+      return (
+        <div className={styles.formScroll}>
+          <SwapToUsdcEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
         </div>
       );
     }

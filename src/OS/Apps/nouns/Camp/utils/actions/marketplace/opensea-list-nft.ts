@@ -19,6 +19,7 @@
 
 import {
   buildApproveAndValidate,
+  isListingOrder,
   matchApproveAndValidate,
   tryParseOrderJson,
 } from './_validate-pattern';
@@ -53,7 +54,7 @@ export const openseaListNft: TransactionActionDef<Fields> = {
   },
 
   decode(actions, cursor) {
-    const match = matchApproveAndValidate(actions, cursor);
+    const match = matchApproveAndValidate(actions, cursor, isListingOrder);
     if (!match) return null;
     return {
       values: { order: match.orderJson },

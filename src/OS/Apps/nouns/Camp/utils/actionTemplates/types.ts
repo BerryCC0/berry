@@ -100,6 +100,7 @@ export type ActionTemplateType =
   | 'erc20-approve'
   | 'erc20-revoke-approval'
   | 'swap-uniswap-v3'
+  | 'swap-to-usdc'
   | 'swap-cowswap'
   | 'lst-wsteth-wrap'
   | 'lst-wsteth-unwrap'

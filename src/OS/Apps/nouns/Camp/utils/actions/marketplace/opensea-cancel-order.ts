@@ -32,14 +32,21 @@ interface Fields {
   orders: string;
 }
 
-const SIG = 'cancel(((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256)[]))';
-// Note: the actual Solidity signature is `cancel(OrderComponents[])` —
-// keccak256 of the full struct-expanded form yields the selector. The
-// short form below is what's stored on `action.signature` (Nouns DAO
-// proposals execute via `signature || ''` so we use the canonical
-// human-readable form here).
-const HUMAN_SIG = 'cancel(OrderComponents[])';
-void SIG;
+/**
+ * Canonical Solidity signature for Seaport's `cancel(OrderComponents[])`.
+ *
+ * The Nouns Timelock computes `bytes4(keccak256(bytes(signature)))` to
+ * produce the 4-byte selector — we MUST give it the fully tuple-expanded
+ * form here, otherwise Seaport receives an unknown selector and reverts.
+ *
+ * The previous form double-wrapped the array (extra outer paren around the
+ * `[]`); that produced a meaningless selector. Correct shape is
+ * `cancel(OC[])` → one open paren after `cancel`, one close at the end.
+ */
+const SIG = 'cancel((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256)[])';
+
+/** Legacy form kept only for backward-compatible decode of stale drafts. */
+const LEGACY_HUMAN_SIG = 'cancel(OrderComponents[])';
 
 const TARGET = SEAPORT_1_6 as Address;
 
@@ -86,7 +93,7 @@ export const openseaCancelOrder: TransactionActionDef<Fields> = {
       {
         target: TARGET,
         value: '0',
-        signature: HUMAN_SIG,
+        signature: SIG,
         calldata: encodeCancelCalldata(orders),
       },
     ];
@@ -96,7 +103,14 @@ export const openseaCancelOrder: TransactionActionDef<Fields> = {
     const action = actions[cursor];
     if (!action) return null;
     if (!matchTarget(action, TARGET)) return null;
-    if (!matchSignature(action, HUMAN_SIG)) return null;
+    // Accept both the canonical form (what we emit now) and the legacy form
+    // (what older drafts were saved with).
+    if (
+      !matchSignature(action, SIG) &&
+      !matchSignature(action, LEGACY_HUMAN_SIG)
+    ) {
+      return null;
+    }
     const decoded = decodeCancelCalldata(action.calldata);
     if (!decoded) return null;
     return {

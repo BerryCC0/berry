@@ -25,6 +25,7 @@
 
 import {
   buildApproveAndValidate,
+  isCollectionOfferOrder,
   matchApproveAndValidate,
   tryParseOrderJson,
 } from './_validate-pattern';
@@ -62,7 +63,7 @@ export const openseaCollectionOffer: TransactionActionDef<Fields> = {
   },
 
   decode(actions, cursor) {
-    const match = matchApproveAndValidate(actions, cursor);
+    const match = matchApproveAndValidate(actions, cursor, isCollectionOfferOrder);
     if (!match) return null;
     return {
       values: { order: match.orderJson },

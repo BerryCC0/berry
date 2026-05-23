@@ -91,7 +91,14 @@ export const nounTransfer: TransactionActionDef<Fields> = {
         title: `Send Noun #${values.nounId}`,
         description: `to ${values.recipient}`,
         functionName: 'safeTransferFrom',
-        params: { recipient: values.recipient, nounId: values.nounId },
+        // `from` lets TransactionSummary detect Noun swaps (treasury → user
+        // + user → treasury pair). The decode path pins from to the V2
+        // treasury, so we mirror that here.
+        params: {
+          from: NOUNS_ADDRESSES.treasury,
+          recipient: values.recipient,
+          nounId: values.nounId,
+        },
       },
     ];
   },

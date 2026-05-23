@@ -1860,6 +1860,13 @@ export function decodeTransactions(
  * Glue between the registry's `ActionDescription` shape and the legacy
  * `DecodedTransaction` shape used by `TransactionSummary.tsx`. Carries over
  * target / value / contract-name lookup so existing rendering stays intact.
+ *
+ * Also normalises the primary recipient into `params.to` — the renderer
+ * (`SimulationStatus.tsx` and `TransactionSummary.tsx`) reads `params.to`
+ * to drive ENS resolution. New action defs use semantic param names like
+ * `recipient`, `delegatee`, `owner`, `spender`; mirror whichever one looks
+ * like the primary destination into `to` so ENS resolution keeps working
+ * without forcing every action to duplicate the field.
  */
 function adaptDescription(
   action: ProposalAction,
@@ -1873,6 +1880,28 @@ function adaptDescription(
     targetName: getContractName(target.toLowerCase()),
     functionName: desc.functionName,
     value: action.value,
-    params: desc.params,
+    params: normalizeRecipientParam(desc.params),
   };
+}
+
+/**
+ * Aliases for the recipient address. Order matters: the first key present
+ * wins, mirroring "what would a user think of as the destination" for each
+ * action. `recipient` (treasury-transfer / payment-once) precedes
+ * `delegatee` (delegations) precedes `spender` (approvals) precedes `owner`.
+ */
+const RECIPIENT_PARAM_KEYS = ['recipient', 'delegatee', 'spender', 'owner'] as const;
+
+function normalizeRecipientParam(
+  params: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!params) return params;
+  if (params.to && params.to.length > 0) return params;
+  for (const key of RECIPIENT_PARAM_KEYS) {
+    const value = params[key];
+    if (typeof value === 'string' && value.length > 0) {
+      return { ...params, to: value };
+    }
+  }
+  return params;
 }

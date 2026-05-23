@@ -19,7 +19,7 @@ import {
   SEAPORT_1_6,
   stringifyOrder,
 } from '../_seaport';
-import { assertRoundTrip } from '../../__tests__/roundTrip';
+import { assertRoundTrip, emptyDecodeContext } from '../../__tests__/roundTrip';
 
 const TREASURY = '0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71' as const;
 const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' as const;
@@ -80,9 +80,13 @@ describe('opensea-collection-offer', () => {
     // First action: WETH.approve(OPENSEA_CONDUIT, 1 WETH)
     expect(actions[0].target.toLowerCase()).toBe(WETH);
     expect(actions[0].signature).toBe('approve(address,uint256)');
-    // Second action: Seaport.validate([order])
+    // Second action: Seaport.validate([order]) — canonical (tuple-expanded)
+    // signature so `bytes4(keccak256(signature))` produces Seaport's real
+    // selector. Human form `validate(Order[])` would hash to a junk selector
+    // and the on-chain call would revert.
     expect(actions[1].target).toBe(SEAPORT_1_6);
-    expect(actions[1].signature).toBe('validate(Order[])');
+    expect(actions[1].signature.startsWith('validate(((address,address,'))
+      .toBe(true);
   });
 
   it('approves the conduit (not Seaport directly)', () => {
@@ -241,5 +245,166 @@ describe('opensea-list-nft', () => {
     expect(actions[0].target.toLowerCase()).toBe(NOUNS_TOKEN);
     expect(actions[0].signature).toBe('setApprovalForAll(address,bool)');
     expect(actions[1].target).toBe(SEAPORT_1_6);
+  });
+});
+
+/**
+ * REGRESSION: all four validate-based actions share the same on-chain shape
+ * (`approve + Seaport.validate`). Without order-shape discrimination, the
+ * first-registered action def would claim every order — meaning a listing
+ * would render as a collection offer in the proposal breakdown.
+ *
+ * These tests pin the discriminator: each action's `decode()` must return a
+ * match for its OWN shape and null for every other shape.
+ */
+describe('validate-pattern discriminators (cross-action regression)', () => {
+  function listingJson(): string {
+    return stringifyOrder({
+      parameters: {
+        offerer: TREASURY,
+        zone: '0x0000000000000000000000000000000000000000',
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: NOUNS_TOKEN,
+            identifierOrCriteria: BigInt(100),
+            startAmount: BigInt(1),
+            endAmount: BigInt(1),
+          },
+        ],
+        consideration: [
+          {
+            itemType: ItemType.NATIVE,
+            token: '0x0000000000000000000000000000000000000000',
+            identifierOrCriteria: BigInt(0),
+            startAmount: BigInt('10000000000000000000'),
+            endAmount: BigInt('10000000000000000000'),
+            recipient: TREASURY,
+          },
+        ],
+        orderType: OrderType.FULL_OPEN,
+        startTime: BigInt(1700000000),
+        endTime: BigInt(1700604800),
+        zoneHash:
+          '0x0000000000000000000000000000000000000000000000000000000000000000',
+        salt: BigInt('111'),
+        conduitKey: OPENSEA_CONDUIT_KEY,
+        totalOriginalConsiderationItems: BigInt(1),
+      },
+      signature: '0x',
+    });
+  }
+
+  function itemOfferJson(): string {
+    return stringifyOrder({
+      parameters: {
+        offerer: TREASURY,
+        zone: '0x0000000000000000000000000000000000000000',
+        offer: [
+          {
+            itemType: ItemType.ERC20,
+            token: WETH,
+            identifierOrCriteria: BigInt(0),
+            startAmount: BigInt('500000000000000000'),
+            endAmount: BigInt('500000000000000000'),
+          },
+        ],
+        consideration: [
+          {
+            itemType: ItemType.ERC721,
+            token: NOUNS_TOKEN,
+            identifierOrCriteria: BigInt(42),
+            startAmount: BigInt(1),
+            endAmount: BigInt(1),
+            recipient: TREASURY,
+          },
+        ],
+        orderType: OrderType.FULL_RESTRICTED,
+        startTime: BigInt(1700000000),
+        endTime: BigInt(1700604800),
+        zoneHash:
+          '0x0000000000000000000000000000000000000000000000000000000000000000',
+        salt: BigInt('987'),
+        conduitKey: OPENSEA_CONDUIT_KEY,
+        totalOriginalConsiderationItems: BigInt(1),
+      },
+      signature: '0x',
+    });
+  }
+
+  function traitOfferJson(): string {
+    return stringifyOrder({
+      parameters: {
+        offerer: TREASURY,
+        zone: '0x0000000000000000000000000000000000000000',
+        offer: [
+          {
+            itemType: ItemType.ERC20,
+            token: WETH,
+            identifierOrCriteria: BigInt(0),
+            startAmount: BigInt('2000000000000000000'),
+            endAmount: BigInt('2000000000000000000'),
+          },
+        ],
+        consideration: [
+          {
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: NOUNS_TOKEN,
+            identifierOrCriteria: BigInt(
+              '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+            ),
+            startAmount: BigInt(1),
+            endAmount: BigInt(1),
+            recipient: TREASURY,
+          },
+        ],
+        orderType: OrderType.PARTIAL_RESTRICTED,
+        startTime: BigInt(1700000000),
+        endTime: BigInt(1700604800),
+        zoneHash:
+          '0x0000000000000000000000000000000000000000000000000000000000000000',
+        salt: BigInt('555'),
+        conduitKey: OPENSEA_CONDUIT_KEY,
+        totalOriginalConsiderationItems: BigInt(1),
+      },
+      signature: '0x',
+    });
+  }
+
+  const ctx = emptyDecodeContext();
+
+  it('a LISTING decodes as opensea-list-nft and nothing else', () => {
+    const actions = openseaListNft.encode({ order: listingJson() }, {});
+    expect(openseaListNft.decode(actions, 0, ctx)).not.toBeNull();
+    expect(openseaCollectionOffer.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaItemOffer.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaTraitOffer.decode(actions, 0, ctx)).toBeNull();
+  });
+
+  it('a COLLECTION OFFER decodes as opensea-collection-offer and nothing else', () => {
+    const actions = openseaCollectionOffer.encode(
+      { order: collectionOfferJson() },
+      {},
+    );
+    expect(openseaCollectionOffer.decode(actions, 0, ctx)).not.toBeNull();
+    expect(openseaListNft.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaItemOffer.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaTraitOffer.decode(actions, 0, ctx)).toBeNull();
+  });
+
+  it('an ITEM OFFER decodes as opensea-item-offer and nothing else', () => {
+    const actions = openseaItemOffer.encode({ order: itemOfferJson() }, {});
+    expect(openseaItemOffer.decode(actions, 0, ctx)).not.toBeNull();
+    expect(openseaListNft.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaCollectionOffer.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaTraitOffer.decode(actions, 0, ctx)).toBeNull();
+  });
+
+  it('a TRAIT OFFER decodes as opensea-trait-offer and nothing else', () => {
+    const actions = openseaTraitOffer.encode({ order: traitOfferJson() }, {});
+    expect(openseaTraitOffer.decode(actions, 0, ctx)).not.toBeNull();
+    expect(openseaListNft.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaCollectionOffer.decode(actions, 0, ctx)).toBeNull();
+    expect(openseaItemOffer.decode(actions, 0, ctx)).toBeNull();
   });
 });

@@ -1965,6 +1965,25 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ],
   },
 
+  // Focused swapper: any treasury holding (ETH/WETH/wstETH) → USDC. Custom
+  // editor in SwapToUsdcEditor.tsx handles live quoting + the wrap step;
+  // encoding lives in actions/swaps/to-usdc.ts (registry-first dispatch).
+  'swap-to-usdc': {
+    id: 'swap-to-usdc',
+    category: 'dex',
+    name: 'Swap to USDC',
+    description:
+      'Swap a treasury holding (ETH / WETH / wstETH) to USDC on Uniswap V3. Auto-wraps ETH and auto-picks the best Uniswap fee tier.',
+    isMultiAction: true,
+    fields: [
+      { name: 'sourceToken', label: 'From', type: 'text', required: true },
+      { name: 'amountIn', label: 'Amount In', type: 'amount', required: true, validation: { min: 0 } },
+      { name: 'amountOutMinimum', label: 'Min USDC Out', type: 'amount', required: true, validation: { min: 0 } },
+      { name: 'fee', label: 'Pool Fee Tier', type: 'number', required: true },
+      { name: 'slippageBps', label: 'Slippage (BPS)', type: 'number', required: false },
+    ],
+  },
+
   'swap-cowswap': {
     id: 'swap-cowswap',
     category: 'dex',
