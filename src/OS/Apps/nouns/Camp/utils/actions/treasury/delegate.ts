@@ -76,7 +76,7 @@ export const treasuryDelegate: TransactionActionDef<Fields> = {
     // Don't claim Nouns-token delegations — that's `noun-delegate`.
     if (addressEquals(action.target, NOUNS_ADDRESSES.token)) return null;
 
-    const args = decodeArgs<readonly [Address]>(action.calldata, 'address');
+    const args = decodeArgs<readonly [Address]>(action, 'address');
     if (!args) return null;
 
     const target = action.target as Address;

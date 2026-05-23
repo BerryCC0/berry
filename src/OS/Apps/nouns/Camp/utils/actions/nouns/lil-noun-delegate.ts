@@ -76,7 +76,7 @@ export const lilNounDelegate: TransactionActionDef<Fields> = {
     if (!addressEquals(action.target, LIL_NOUNS_TOKEN)) return null;
     if (!matchSignature(action, DELEGATE_SIG)) return null;
 
-    const args = decodeArgs<readonly [Address]>(action.calldata, 'address');
+    const args = decodeArgs<readonly [Address]>(action, 'address');
     if (!args) return null;
     return { values: { delegatee: args[0] }, consumed: 1 };
   },

@@ -10,6 +10,7 @@
 import {
   decodeAbiParameters,
   parseAbiParameters,
+  toFunctionSelector,
   type Hex,
 } from 'viem';
 import type { ProposalAction } from '../types';
@@ -21,16 +22,47 @@ function asHex(calldata: string | undefined): Hex {
 }
 
 /**
- * Decode action calldata against an ABI parameter signature. Returns null on
- * any failure — empty calldata, malformed bytes, or shape mismatch.
+ * Strip the leading 4-byte function selector from calldata. Used when an
+ * action stores its selector inside `calldata` and leaves `signature` empty
+ * (a perfectly valid form for Nouns DAO proposals — `delegate-treasury-nouns-
+ * to-nouncileth` is a real example).
+ */
+function stripSelector(calldata: string | undefined): Hex {
+  const hex = asHex(calldata);
+  // 4-byte selector = 8 hex chars + '0x' prefix = 10-char prefix
+  if (hex.length < 10) return '0x';
+  return ('0x' + hex.slice(10)) as Hex;
+}
+
+/**
+ * Decode the args portion of an action against an ABI parameter signature.
  *
- * Example: `decodeArgs(action.calldata, 'address, uint256')` returns
- * `[Address, bigint] | null`.
+ * Accepts either a raw calldata hex string OR a `ProposalAction`. When given
+ * an action, it transparently handles the two on-chain forms Nouns proposals
+ * can use:
+ *
+ *   1. `signature: 'foo(address)'`, `calldata: <abi-encoded args>`
+ *      → calldata is args-only; selector is computed from signature at exec.
+ *
+ *   2. `signature: ''`, `calldata: 0x{selector}{abi-encoded args}`
+ *      → calldata already contains the selector; the executor uses it as-is.
+ *
+ * Many clients (Tally, Nouns.wtf, Etherscan-pasted actions) use form #2.
+ * Pre-fix, every action def's decode() assumed form #1, so any candidate /
+ * proposal built in those clients rendered as "Unknown - Call to <target>".
+ *
+ * Returns null on any failure (empty calldata, malformed bytes, shape
+ * mismatch).
  */
 export function decodeArgs<T extends readonly unknown[]>(
-  calldata: string | undefined,
+  source: string | ProposalAction | undefined,
   signature: string,
 ): T | null {
+  const calldata = isAction(source)
+    ? source.signature
+      ? source.calldata
+      : stripSelector(source.calldata)
+    : source;
   if (!calldata || calldata === '0x') return null;
   try {
     return decodeAbiParameters(parseAbiParameters(signature), asHex(calldata)) as unknown as T;
@@ -39,16 +71,63 @@ export function decodeArgs<T extends readonly unknown[]>(
   }
 }
 
+function isAction(value: unknown): value is ProposalAction {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'target' in value &&
+    'calldata' in value
+  );
+}
+
 /**
  * Sugar for the very common "decode this single action against this ABI" path.
  * Lets matchers write `if (!matchSignature(action, 'transfer(address,uint256)')) return null;`
  * and then `const args = decodeArgs(action.calldata, 'address, uint256');`.
+ *
+ * Comparison is by **4-byte function selector**, not exact string equality.
+ * Different clients write proposal signatures in different forms — all of
+ * these encode to the same selector and should match the same decoder:
+ *
+ *   • `delegate(address)`              (canonical, what we use internally)
+ *   • `delegate(address delegatee)`    (with parameter name — common in
+ *                                       Nouns.wtf candidates, Tally drafts)
+ *   • `delegate( address )`            (extra whitespace)
+ *
+ * Without normalisation, an action created in another client would render
+ * as "Unknown" in our breakdown even though it's a perfectly recognisable
+ * delegate / transfer / approve call. We canonicalise via viem's
+ * `toFunctionSelector` (which strips param names and whitespace internally)
+ * and compare the two 4-byte selectors.
+ *
+ * Empty `action.signature` is supported too: the selector lives in the
+ * first 4 bytes of `calldata` in that form, so we compare against that.
+ * Use `decodeArgs(action, ...)` (not `decodeArgs(action.calldata, ...)`)
+ * downstream so the selector gets stripped correctly before ABI decoding.
  */
 export function matchSignature(
   action: ProposalAction,
   expected: string,
 ): boolean {
-  return action.signature === expected;
+  if (action.signature) {
+    if (action.signature === expected) return true;
+    try {
+      return (
+        toFunctionSelector(action.signature) === toFunctionSelector(expected)
+      );
+    } catch {
+      return false;
+    }
+  }
+  // Empty signature → selector is at the start of calldata.
+  if (!action.calldata || action.calldata.length < 10) return false;
+  try {
+    const got = asHex(action.calldata).slice(0, 10).toLowerCase();
+    const want = toFunctionSelector(expected).toLowerCase();
+    return got === want;
+  } catch {
+    return false;
+  }
 }
 
 /**

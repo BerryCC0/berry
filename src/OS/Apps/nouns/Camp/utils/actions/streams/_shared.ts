@@ -97,7 +97,10 @@ export interface StreamCancelRecoverShape {
 export function matchCancelAndRecover(
   actions: readonly ProposalAction[],
   cursor: number,
-  decodeArgs: <T extends readonly unknown[]>(calldata: string | undefined, sig: string) => T | null,
+  decodeArgs: <T extends readonly unknown[]>(
+    source: string | import('../types').ProposalAction | undefined,
+    sig: string,
+  ) => T | null,
 ): StreamCancelRecoverShape | null {
   const cancel = actions[cursor];
   const recover = actions[cursor + 1];
@@ -105,7 +108,7 @@ export function matchCancelAndRecover(
   if (cancel.signature !== CANCEL_SIG) return null;
   if (recover.signature !== RECOVER_SIG) return null;
   if (cancel.target.toLowerCase() !== recover.target.toLowerCase()) return null;
-  const args = decodeArgs<readonly [Address]>(recover.calldata, 'address');
+  const args = decodeArgs<readonly [Address]>(recover, 'address');
   if (!args) return null;
   return {
     streamAddress: cancel.target,

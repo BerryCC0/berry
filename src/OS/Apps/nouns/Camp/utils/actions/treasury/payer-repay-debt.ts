@@ -96,7 +96,7 @@ export const payerRepayDebt: TransactionActionDef<Fields> = {
     // 2nd action: payBackDebt(amount) on Payer
     if (!addressEquals(repay.target, PAYER_ADDRESS)) return null;
     if (!matchSignature(repay, PAY_BACK_DEBT_SIG)) return null;
-    const repayArgs = decodeArgs<readonly [bigint]>(repay.calldata, 'uint256');
+    const repayArgs = decodeArgs<readonly [bigint]>(repay, 'uint256');
     if (!repayArgs) return null;
 
     // The approve amount and the repay amount must match — otherwise this

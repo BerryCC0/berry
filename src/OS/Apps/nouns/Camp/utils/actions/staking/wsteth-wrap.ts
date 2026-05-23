@@ -79,7 +79,7 @@ export const wstethWrap: TransactionActionDef<Fields> = {
     );
     if (!approveArgs) return null;
     if (!addressEquals(approveArgs[0], WSTETH_ADDRESS)) return null;
-    const wrapArgs = decodeArgs<readonly [bigint]>(wrap.calldata, 'uint256');
+    const wrapArgs = decodeArgs<readonly [bigint]>(wrap, 'uint256');
     if (!wrapArgs) return null;
     if (wrapArgs[0] !== approveArgs[1]) return null;
 

@@ -143,7 +143,7 @@ export const streamRestream: TransactionActionDef<Fields> = {
     // 2: recoverTokens(treasury) on same target
     if (!matchSignature(b, RECOVER_SIG)) return null;
     if (b.target.toLowerCase() !== source) return null;
-    const recoverArgs = decodeArgs<readonly [Address]>(b.calldata, 'address');
+    const recoverArgs = decodeArgs<readonly [Address]>(b, 'address');
     if (!recoverArgs) return null;
     if (!addressEquals(recoverArgs[0], TREASURY)) return null;
 

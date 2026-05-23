@@ -1876,17 +1876,22 @@ function adaptDescription(
   const params = normalizeRecipientParam(desc.params);
   // If `params.to` is set, the renderer (`SimulationStatus` and
   // `TransactionSummary`) will display the recipient as an ENS-resolved
-  // chip on its own line. Many action `describe()` methods also stuff
-  // `to ${recipient}` into the description so the raw text reads naturally
-  // on its own — but combined with the chip that becomes a redundant
-  // "to 0xabc…" alongside "To: ian.eth". Stripping the address-only tail
-  // here gives every renderer a clean description by default.
+  // chip on its own line. Several action `describe()` methods also stuff
+  // `to ${recipient}` into the title or description so the raw text reads
+  // naturally on its own — but combined with the chip that becomes a
+  // redundant "to 0xabc…" alongside "To: ian.eth". Stripping the address-
+  // only tail here gives every renderer a clean title + description by
+  // default, without forcing every action def to special-case it.
+  const title =
+    params?.to && desc.title
+      ? stripRecipientFromText(desc.title, params.to) ?? desc.title
+      : desc.title;
   const description =
     params?.to && desc.description
-      ? stripRecipientFromDescription(desc.description, params.to)
+      ? stripRecipientFromText(desc.description, params.to)
       : desc.description;
   return {
-    title: desc.title,
+    title,
     description,
     target,
     targetName: getContractName(target.toLowerCase()),
@@ -1897,32 +1902,36 @@ function adaptDescription(
 }
 
 /**
- * Drop a trailing `to 0x...` (with or without a leading dash) from a
- * description string when the address matches `params.to`. Defensive: also
- * matches any 40-hex address since some actions hardcode their own targets
- * (e.g. "Sweep ETH from candidate-fee … to 0x{treasury}").
+ * Drop a trailing `to 0x...` (with or without a leading dash) from a text
+ * string when the address matches `params.to`. Defensive: also matches any
+ * 40-hex address since some actions hardcode their own targets (e.g.
+ * "Sweep ETH from candidate-fee … to 0x{treasury}"). Returns `undefined`
+ * when stripping leaves the text empty so the renderer can drop empty
+ * description rows entirely (titles fall back to the original via `??`).
  */
-function stripRecipientFromDescription(
-  description: string,
+function stripRecipientFromText(
+  text: string,
   recipient: string,
 ): string | undefined {
   const lowerRecipient = recipient.toLowerCase();
   // Try with the specific recipient address first.
-  let cleaned = description.replace(
+  let cleaned = text.replace(
     new RegExp(`\\s*[-–]?\\s*to\\s+${escapeRegex(recipient)}\\s*$`, 'i'),
     '',
   );
-  if (cleaned === description) {
+  if (cleaned === text) {
     // Fall back to matching ANY 40-hex address whose lowercased form equals
     // the recipient (handles checksum-case drift between fields and text).
-    cleaned = description.replace(
+    cleaned = text.replace(
       /\s*[-–]?\s*to\s+(0x[a-fA-F0-9]{40})\s*$/i,
       (match, addr: string) =>
         addr.toLowerCase() === lowerRecipient ? '' : match,
     );
   }
-  // If the description was just "to 0x..." and stripping leaves empty, drop
-  // it entirely so the renderer doesn't render an empty meta row.
+  // If the text was just "to 0x..." and stripping leaves empty, drop it
+  // entirely so the renderer doesn't render an empty meta row. For titles,
+  // the caller falls back to the original via `?? desc.title` so an empty
+  // title doesn't make the row unreadable.
   const trimmed = cleaned.trim();
   return trimmed.length > 0 ? trimmed : undefined;
 }

@@ -66,7 +66,7 @@ export const wethUnwrap: TransactionActionDef<Fields> = {
     if (!action) return null;
     if (!matchTarget(action, WETH)) return null;
     if (!matchSignature(action, WITHDRAW_SIG)) return null;
-    const args = decodeArgs<readonly [bigint]>(action.calldata, 'uint256');
+    const args = decodeArgs<readonly [bigint]>(action, 'uint256');
     if (!args) return null;
     return {
       values: { wethAmount: formatTokenAmount(args[0], 18) },

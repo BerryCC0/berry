@@ -91,7 +91,7 @@ export const swapBuyEth: TransactionActionDef<Fields> = {
 
     if (!matchTarget(buy, TOKEN_BUYER_ADDRESS)) return null;
     if (!matchSignature(buy, BUY_ETH_SIG)) return null;
-    const buyArgs = decodeArgs<readonly [bigint]>(buy.calldata, 'uint256');
+    const buyArgs = decodeArgs<readonly [bigint]>(buy, 'uint256');
     if (!buyArgs) return null;
     if (buyArgs[0] !== approveArgs[1]) return null;
 

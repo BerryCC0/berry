@@ -44,7 +44,7 @@ export const methUnstakeClaim: TransactionActionDef<Fields> = {
     if (!action) return null;
     if (!matchTarget(action, TARGET)) return null;
     if (!matchSignature(action, SIG)) return null;
-    const args = decodeArgs<readonly [bigint]>(action.calldata, 'uint256');
+    const args = decodeArgs<readonly [bigint]>(action, 'uint256');
     if (!args) return null;
     return {
       values: { requestId: args[0].toString() },

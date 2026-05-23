@@ -85,6 +85,62 @@ describe('delegate-action discrimination', () => {
     expect(lilNounDelegate.decode(nounDelegation, 0, ctx)).toBeNull();
   });
 
+  it('matches the empty-signature form (selector embedded in calldata)', () => {
+    // Several clients (Tally, custom contract callers, raw Etherscan-pasted
+    // actions) leave `signature` empty and put the full calldata — selector
+    // + args — in `calldata`. The executor uses it as-is. Pre-fix, our
+    // decoder bailed at `matchSignature` for empty-sig actions, leaving the
+    // breakdown rendering as "Unknown - Call to <contract>".
+    //
+    // Construct that variant directly: WAY shorter than mocking a candidate
+    // round-trip. Selector for delegate(address) is 0x5c19a95c.
+    const SELECTOR = '0x5c19a95c';
+    const argsHex =
+      DELEGATEE.replace('0x', '').toLowerCase().padStart(64, '0');
+    const action = {
+      target: LIL_NOUNS_TOKEN,
+      value: '0',
+      signature: '', // <-- empty
+      calldata: SELECTOR + argsHex, // <-- selector+args embedded
+    };
+    const result = lilNounDelegate.decode([action], 0, ctx);
+    expect(result).not.toBeNull();
+    expect(result?.values.delegatee.toLowerCase()).toBe(
+      DELEGATEE.toLowerCase(),
+    );
+  });
+
+  it('matches signature variants other clients emit (e.g., `delegate(address delegatee)`)', () => {
+    // Some clients (Nouns.wtf, Tally, Etherscan-pasted actions) write the
+    // function signature WITH the parameter name. These all hash to the
+    // same 4-byte selector and should decode identically. Pre-fix this
+    // rendered "Unknown - Call to Nouns Token" in the breakdown.
+    const baseAction = lilNounDelegate.encode(
+      { delegatee: DELEGATEE },
+      {},
+    )[0];
+    // Real-world variants the indexer holds for different clients. viem's
+    // `toFunctionSelector` canonicalises parameter names but does NOT strip
+    // arbitrary inner whitespace — clients don't emit that form anyway.
+    const variants = [
+      'delegate(address)',
+      'delegate(address delegatee)',
+      'delegate(address _delegatee)',
+      'delegate(address to)',
+    ];
+    for (const sig of variants) {
+      const result = lilNounDelegate.decode(
+        [{ ...baseAction, signature: sig }],
+        0,
+        ctx,
+      );
+      expect(result, `signature "${sig}" should match`).not.toBeNull();
+      expect(result?.values.delegatee.toLowerCase()).toBe(
+        DELEGATEE.toLowerCase(),
+      );
+    }
+  });
+
   it('generic ERC20Votes delegation decodes ONLY as treasury-delegate', () => {
     const ensDelegation = treasuryDelegate.encode(
       {

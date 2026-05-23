@@ -196,7 +196,7 @@ export function makeAddressAction<TName extends string>(
       if (!action) return null;
       if (!matchTarget(action, opts.target)) return null;
       if (!matchSignature(action, opts.signature)) return null;
-      const decoded = decodeArgs<readonly [Address]>(action.calldata, 'address');
+      const decoded = decodeArgs<readonly [Address]>(action, 'address');
       if (!decoded) return null;
       return {
         values: { [opts.field.name]: decoded[0] } as Record<TName, string>,
@@ -333,7 +333,7 @@ export function makeStringAction<TName extends string>(
       if (!action) return null;
       if (!matchTarget(action, opts.target)) return null;
       if (!matchSignature(action, opts.signature)) return null;
-      const decoded = decodeArgs<readonly [string]>(action.calldata, 'string');
+      const decoded = decodeArgs<readonly [string]>(action, 'string');
       if (!decoded) return null;
       return {
         values: { [opts.field.name]: decoded[0] } as Record<TName, string>,
