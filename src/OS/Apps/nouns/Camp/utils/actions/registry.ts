@@ -34,7 +34,13 @@ import {
   streamRedirect,
   streamRestream,
 } from './streams';
-import { swapBuyEth, swapCowswap, swapUniswapV3 } from './swaps';
+import {
+  swapBuyEth,
+  swapCowswap,
+  swapUniswapV3,
+  wethUnwrap,
+  wethWrap,
+} from './swaps';
 import {
   lidoClaimWithdrawal,
   lidoRequestWithdrawal,
@@ -130,8 +136,6 @@ import {
   adminTokenSeeder,
 } from './token-admin';
 import {
-  adminForkEscrowClose,
-  adminForkEscrowReturnTokens,
   adminForkEscrowWithdrawTokens,
 } from './fork-escrow-admin';
 import {
@@ -146,7 +150,18 @@ import {
   descriptorToggleDataUri,
   descriptorTransferOwnership,
 } from './descriptor';
-import { openseaListing, seaportFulfill } from './marketplace';
+import {
+  blurExecuteTrade,
+  openseaCancelAll,
+  openseaCancelOrder,
+  openseaCollectionOffer,
+  openseaFulfillOffer,
+  openseaItemOffer,
+  openseaListNft,
+  openseaListing,
+  openseaTraitOffer,
+  seaportFulfill,
+} from './marketplace';
 import { metaPropose } from './meta';
 import { customAction } from './custom';
 import type {
@@ -196,6 +211,8 @@ export const transactionActions: TransactionActionDef<any>[] = [
   auctionBid,          // createBid on AuctionHouse
   paymentOnce,         // sendOrRegisterDebt on Payer
   swapCowswap,         // setPreSignature on CoW Settlement
+  wethWrap,            // WETH.deposit{value} — value-bearing, signature='deposit()'
+  wethUnwrap,          // WETH.withdraw(uint256)
   wstethUnwrap,        // unwrap on wstETH
   lidoClaimWithdrawal, // claimWithdrawal on the Lido queue
   methUnstakeClaim,    // claimUnstakeRequest on Mantle staking
@@ -232,9 +249,14 @@ export const transactionActions: TransactionActionDef<any>[] = [
   adminTokenSeeder,
   adminTokenNoundersDao,
   adminTokenContractUriHash,
-  adminForkEscrowClose,
+  // Fork escrow: only the withdraw-via-Governor wrapper is callable by a
+  // DAO proposal. `closeEscrow` and `returnTokensToOwner` on the ForkEscrow
+  // are gated `onlyDAO` where `dao` is the Governor proxy — but proposals
+  // execute with msg.sender = timelock, and there is NO Governor wrapper
+  // for those two. The legacy templateIds for close/return-tokens are
+  // intentionally NOT registered here; they remain in the legacy generator
+  // (where they'll revert on-chain — surfaced as the user's failure here).
   adminForkEscrowWithdrawTokens,
-  adminForkEscrowReturnTokens,
 
   // ----- Auction admin ----------------------------------------------------
   adminAuctionReservePrice,
@@ -287,12 +309,26 @@ export const transactionActions: TransactionActionDef<any>[] = [
   descriptorAddBackground,
   descriptorAddManyBackgrounds,
 
-  // ----- Marketplace + meta -----------------------------------------------
-  // These have null decoders — their decode() returns null so unmatched
-  // calldata falls through to legacy. Only registered for encode-side
-  // template-id lookup.
+  // ----- Marketplace ------------------------------------------------------
+  // Multi-action (approve + validate) templates first so they claim the
+  // 2-action bundle. The cancel/list/buy passthroughs follow.
+  // Decode for the validate-based defs is shared via _validate-pattern.ts:
+  // whichever def runs FIRST will claim a generic `validate(Order[])` call.
+  // For round-trip purposes this is fine because the full Order JSON is
+  // preserved in the field; the displayed templateId may not exactly match
+  // what the proposer originally picked (collection-vs-item-vs-trait offer
+  // is only distinguishable from the Order's consideration shape).
+  openseaCollectionOffer,
+  openseaItemOffer,
+  openseaTraitOffer,
+  openseaListNft,
+  openseaFulfillOffer,
+  openseaCancelOrder,
+  openseaCancelAll,
+  // Passthrough-calldata templates (decode → null, falls through to custom):
   openseaListing,
   seaportFulfill,
+  blurExecuteTrade,
   metaPropose,
 
   // ----- Single-action generic --------------------------------------------

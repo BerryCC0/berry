@@ -1,0 +1,166 @@
+/**
+ * OpenSeaCollectionOfferEditor styles — house-style --berry-* tokens.
+ */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quickPickRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.quickPickChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button, 6px);
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background var(--berry-duration-fast, 150ms),
+    border-color var(--berry-duration-fast, 150ms);
+}
+
+.quickPickChip:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+}
+
+.quickPickChip.active {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+  box-shadow: inset 0 0 0 1px var(--berry-primary);
+}
+
+.quickPickChip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.durationRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.durationChip {
+  padding: 6px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button, 6px);
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  font-family: var(--berry-font-mono, monospace);
+  cursor: pointer;
+  transition:
+    background var(--berry-duration-fast, 150ms),
+    border-color var(--berry-duration-fast, 150ms);
+}
+
+.durationChip:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+}
+
+.durationChip.active {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+  box-shadow: inset 0 0 0 1px var(--berry-primary);
+}
+
+.durationChip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feePreview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-left: 3px solid var(--berry-primary);
+  border-radius: var(--berry-radius-card, 6px);
+  font-size: 12px;
+}
+
+.feeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.feeLabel {
+  color: var(--berry-text-secondary);
+}
+
+.feeValue {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.feeTotal {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--berry-border);
+}
+
+.feeTotal .feeValue {
+  font-weight: 600;
+  color: var(--berry-primary);
+}
+
+.expirationLine {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.expirationWarning {
+  color: #b91c1c;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.fieldInput {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-input, 6px);
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  font-family: var(--berry-font-mono, monospace);
+  transition: border-color var(--berry-duration-fast, 150ms);
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}

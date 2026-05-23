@@ -38,6 +38,11 @@ import { MarketplaceFulfillSeaportEditor } from './MarketplaceFulfillSeaportEdit
 import { OctantCreateVaultEditor } from './OctantCreateVaultEditor';
 import { OctantVaultActionEditor } from './OctantVaultActionEditor';
 import { WithdrawTokenFromRewardsEditor } from './WithdrawTokenFromRewardsEditor';
+import { WithdrawTokensEditor as ForkEscrowWithdrawTokensEditor } from '../../utils/actions/fork-escrow-admin/WithdrawTokensEditor';
+import { ReturnTokensEditor as ForkEscrowReturnTokensEditor } from '../../utils/actions/fork-escrow-admin/ReturnTokensEditor';
+import { OpenSeaCollectionOfferEditor } from '../../utils/actions/marketplace/OpenSeaCollectionOfferEditor';
+import { OpenSeaListNftEditor } from '../../utils/actions/marketplace/OpenSeaListNftEditor';
+import { OpenSeaCancelAllEditor } from '../../utils/actions/marketplace/OpenSeaCancelAllEditor';
 import { ClientRewardsStatusLine } from './ClientRewardsStatusLine';
 import { StreamSelect } from './StreamSelect';
 import { TreasuryTokenSelect } from './TreasuryTokenSelect';
@@ -871,6 +876,63 @@ export function ActionEditorModal({
             onUpdateField={updateField}
             disabled={disabled}
           />
+        </div>
+      );
+    }
+
+    // Fork-escrow editors — pick from the live escrow contents instead of
+    // hand-typing token IDs. Backed by /api/nouns/fork-escrow.
+    if (selectedTemplate.id === 'admin-fork-escrow-withdraw-tokens') {
+      return (
+        <div className={styles.formScroll}>
+          <ForkEscrowWithdrawTokensEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+    if (selectedTemplate.id === 'admin-fork-escrow-return-tokens') {
+      return (
+        <div className={styles.formScroll}>
+          <ForkEscrowReturnTokensEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+
+    // OpenSea structured editors. Each one collects high-level inputs and
+    // rebuilds the action's `order` field as a Seaport-ready JSON blob.
+    if (selectedTemplate.id === 'opensea-collection-offer') {
+      return (
+        <div className={styles.formScroll}>
+          <OpenSeaCollectionOfferEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+    if (selectedTemplate.id === 'opensea-list-nft') {
+      return (
+        <div className={styles.formScroll}>
+          <OpenSeaListNftEditor
+            fieldValues={fieldValues}
+            onUpdateField={updateField}
+            disabled={disabled}
+          />
+        </div>
+      );
+    }
+    if (selectedTemplate.id === 'opensea-cancel-all') {
+      return (
+        <div className={styles.formScroll}>
+          <OpenSeaCancelAllEditor />
         </div>
       );
     }

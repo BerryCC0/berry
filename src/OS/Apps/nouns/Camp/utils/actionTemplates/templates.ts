@@ -2625,6 +2625,97 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  // ---- OpenSea structured marketplace templates -----------------------------
+  // Encoding for these lives in actions/marketplace/* (registry-first dispatch).
+  // The 3 with custom editors (collection-offer, list-nft, cancel-all) are
+  // wired in ActionEditorModal.tsx. The other 5 use the generic schema-driven
+  // form, which renders the `order` field as a textarea (power-user paste).
+  'opensea-collection-offer': {
+    id: 'opensea-collection-offer',
+    category: 'nft',
+    name: 'Make Collection Offer (OpenSea)',
+    description:
+      'Standing offer on any NFT in a collection. Useful for treasury buybacks and CC0 proliferation buys.',
+    isMultiAction: true,
+    fields: [
+      { name: 'order', label: 'Seaport Order (JSON)', type: 'text', required: true },
+    ],
+  },
+  'opensea-item-offer': {
+    id: 'opensea-item-offer',
+    category: 'nft',
+    name: 'Make Item Offer (OpenSea)',
+    description: 'Standing offer on one specific NFT. Lower-than-ask bidding.',
+    isMultiAction: true,
+    fields: [
+      { name: 'order', label: 'Seaport Order (JSON)', type: 'text', required: true },
+    ],
+  },
+  'opensea-trait-offer': {
+    id: 'opensea-trait-offer',
+    category: 'nft',
+    name: 'Make Trait Offer (OpenSea)',
+    description:
+      'Standing offer on any NFT matching specific traits (criteria = merkle root of qualifying tokenIds).',
+    isMultiAction: true,
+    fields: [
+      { name: 'order', label: 'Seaport Order (JSON)', type: 'text', required: true },
+    ],
+  },
+  'opensea-list-nft': {
+    id: 'opensea-list-nft',
+    category: 'nft',
+    name: 'List NFT for Sale (OpenSea)',
+    description: 'Authorise the treasury to sell a held NFT at a specific price.',
+    isMultiAction: true,
+    fields: [
+      { name: 'order', label: 'Seaport Order (JSON)', type: 'text', required: true },
+    ],
+  },
+  'opensea-cancel-all': {
+    id: 'opensea-cancel-all',
+    category: 'nft',
+    name: 'Cancel All OpenSea Orders',
+    description:
+      'Emergency button. Bulk-invalidates every open OpenSea order the treasury has authorised.',
+    isMultiAction: false,
+    fields: [],
+  },
+  'opensea-cancel-order': {
+    id: 'opensea-cancel-order',
+    category: 'nft',
+    name: 'Cancel Specific OpenSea Order',
+    description: 'Cancel one or more specific Seaport orders. Surgical alternative to cancel-all.',
+    isMultiAction: false,
+    fields: [
+      { name: 'orders', label: 'Orders to cancel (JSON)', type: 'text', required: true },
+    ],
+  },
+  'opensea-fulfill-offer': {
+    id: 'opensea-fulfill-offer',
+    category: 'nft',
+    name: 'Fulfill OpenSea Offer (sell INTO a bid)',
+    description: "Accept someone else's standing OpenSea bid.",
+    isMultiAction: true,
+    fields: [
+      { name: 'nftContract', label: 'NFT Contract Address', type: 'address', required: true },
+      { name: 'advancedOrder', label: "Bidder's AdvancedOrder (JSON)", type: 'text', required: true },
+      { name: 'criteriaResolvers', label: 'Criteria Resolvers (JSON, optional)', type: 'text' },
+    ],
+  },
+  'blur-execute-trade': {
+    id: 'blur-execute-trade',
+    category: 'nft',
+    name: 'Buy on Blur (pre-built calldata)',
+    description: 'Execute a pre-built Blur trade. Power-user paste mode.',
+    isMultiAction: false,
+    fields: [
+      { name: 'to', label: 'Blur Exchange Address', type: 'address', required: true },
+      { name: 'value', label: 'ETH Value (wei)', type: 'text', required: true },
+      { name: 'calldata', label: 'Pre-built Calldata', type: 'text', required: true },
+    ],
+  },
+
   // Custom Transaction
   'custom': {
     id: 'custom',

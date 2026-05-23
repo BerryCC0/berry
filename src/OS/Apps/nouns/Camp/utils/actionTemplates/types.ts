@@ -117,6 +117,17 @@ export type ActionTemplateType =
   | 'octant-splitter-create'
   | 'opensea-listing'
   | 'marketplace-fulfill-seaport'
+  // OpenSea structured order templates (Phase 1 has editors for the first 3;
+  // the rest fall back to the generic schema-driven form which renders the
+  // `order` field as a raw textarea — power-user paste mode).
+  | 'opensea-collection-offer'
+  | 'opensea-item-offer'
+  | 'opensea-trait-offer'
+  | 'opensea-list-nft'
+  | 'opensea-cancel-all'
+  | 'opensea-cancel-order'
+  | 'opensea-fulfill-offer'
+  | 'blur-execute-trade'
   | 'meta-propose'
   | 'custom';
 

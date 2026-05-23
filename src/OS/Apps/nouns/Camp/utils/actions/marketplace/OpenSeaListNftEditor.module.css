@@ -1,0 +1,397 @@
+/**
+ * OpenSeaListNftEditor styles — Berry house tokens.
+ *
+ * Tabbed picker UI: a horizontal tab bar selects which collection to
+ * display; the panel below shows that tab's holdings in a card grid.
+ */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.fieldInput {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-input, 6px);
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  font-family: var(--berry-font-mono, monospace);
+  transition: border-color var(--berry-duration-fast, 150ms);
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}
+
+/* ----- Tab bar -------------------------------------------------------- */
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 4px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-card, 6px);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--berry-radius-button, 6px);
+  color: var(--berry-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--berry-duration-fast, 150ms),
+    color var(--berry-duration-fast, 150ms),
+    border-color var(--berry-duration-fast, 150ms);
+}
+
+.tab:hover:not(:disabled):not(.tabActive) {
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+}
+
+.tabActive {
+  background: var(--berry-bg);
+  border-color: var(--berry-primary);
+  color: var(--berry-primary);
+  font-weight: 600;
+}
+
+.tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tabCount {
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+  color: var(--berry-text-muted, var(--berry-text-secondary));
+  background: var(--berry-bg-secondary);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.tabActive .tabCount {
+  background: color-mix(in srgb, var(--berry-primary) 12%, transparent);
+  color: var(--berry-primary);
+}
+
+/* ----- Tab panel + grid ---------------------------------------------- */
+
+.tabPanel {
+  padding: 12px;
+  min-height: 180px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-card, 6px);
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.tabPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--berry-border);
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.tabPanelHeader strong {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+  font-weight: 600;
+}
+
+.nounGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.nounCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  background: var(--berry-bg-tertiary);
+  border: 2px solid transparent;
+  border-radius: var(--berry-radius-card, 6px);
+  cursor: pointer;
+  transition:
+    border-color var(--berry-duration-fast, 150ms),
+    background var(--berry-duration-fast, 150ms);
+}
+
+.nounCard:hover:not(.disabled) {
+  border-color: var(--berry-primary);
+  background: var(--berry-bg);
+}
+
+.nounCard.selected {
+  border-color: var(--berry-primary);
+  background: color-mix(in srgb, var(--berry-primary) 10%, transparent);
+}
+
+.nounCard.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nounImageWrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  overflow: hidden;
+  image-rendering: pixelated;
+  background: var(--berry-bg);
+}
+
+.nounImageWrap img,
+.nounImageWrap svg {
+  width: 100% !important;
+  height: 100% !important;
+  image-rendering: pixelated;
+}
+
+.externalNftImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.nounId {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+/* ----- Treasury sub-sections within a tab ----------------------------- */
+
+.treasurySection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.treasurySection:last-child {
+  margin-bottom: 0;
+}
+
+.treasurySectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.treasurySectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.treasurySectionCount {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-mono, monospace);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Inline indicator shown in the panel header while pages 2+ stream in */
+.fetchingMoreInline {
+  color: var(--berry-primary);
+  font-family: var(--berry-font-mono, monospace);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.otherCollectionGroup {
+  margin-top: 8px;
+}
+
+.otherCollectionGroupHeader {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  margin-bottom: 6px;
+}
+
+/* V1 selection warning card */
+.v1Warning {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, #d97706 8%, var(--berry-bg-secondary));
+  border: 1px solid #d97706;
+  border-left: 3px solid #d97706;
+  border-radius: var(--berry-radius-card, 6px);
+  font-size: 12px;
+  color: var(--berry-text-primary);
+  line-height: 1.5;
+}
+
+.v1Warning strong {
+  color: #92400e;
+}
+
+.v1Warning code {
+  font-family: var(--berry-font-mono, monospace);
+  background: var(--berry-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+/* ----- States --------------------------------------------------------- */
+
+.loadingState,
+.emptyState {
+  padding: 32px 16px;
+  background: transparent;
+  text-align: center;
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.errorState {
+  padding: 12px;
+  background: color-mix(in srgb, #ef4444 8%, var(--berry-bg-secondary));
+  border: 1px solid #ef4444;
+  border-radius: var(--berry-radius-card, 6px);
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+/* ----- Currency / duration chips ------------------------------------- */
+
+.chipRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 6px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-button, 6px);
+  color: var(--berry-text-primary);
+  font-size: 12px;
+  font-family: var(--berry-font-mono, monospace);
+  cursor: pointer;
+  transition:
+    background var(--berry-duration-fast, 150ms),
+    border-color var(--berry-duration-fast, 150ms);
+}
+
+.chip:hover:not(:disabled) {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+}
+
+.chip.active {
+  background: var(--berry-bg-secondary);
+  border-color: var(--berry-primary);
+  box-shadow: inset 0 0 0 1px var(--berry-primary);
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----- Fee preview --------------------------------------------------- */
+
+.feePreview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-left: 3px solid var(--berry-primary);
+  border-radius: var(--berry-radius-card, 6px);
+  font-size: 12px;
+}
+
+.feeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.feeLabel {
+  color: var(--berry-text-secondary);
+}
+
+.feeValue {
+  color: var(--berry-text-primary);
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.feeTotal {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--berry-border);
+}
+
+.feeTotal .feeValue {
+  font-weight: 600;
+  color: var(--berry-primary);
+}
+
+.expirationLine {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-mono, monospace);
+}

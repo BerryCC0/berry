@@ -1,0 +1,56 @@
+/**
+ * Shared styles for the two fork-escrow editor wrappers
+ * (WithdrawTokensEditor + ReturnTokensEditor).
+ */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-primary);
+}
+
+.fieldInput {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  border-radius: var(--berry-radius-input, 6px);
+  color: var(--berry-text-primary);
+  font-size: 13px;
+  font-family: var(--berry-font-mono, monospace);
+  transition: border-color var(--berry-duration-fast, 150ms);
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: var(--berry-primary);
+}
+
+.fieldInput:disabled {
+  background: var(--berry-bg-tertiary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.fieldInput::placeholder {
+  color: var(--berry-text-secondary);
+  opacity: 0.6;
+  font-family: var(--berry-font-mono, monospace);
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+  line-height: 1.4;
+}

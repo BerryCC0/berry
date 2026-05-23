@@ -35,3 +35,9 @@ export { useEthPrice } from './useEthPrice';
 
 export { useSwapPool, type SwapPoolNoun } from './useSwapPool';
 export { useTokenSwap, type UseTokenSwapResult } from './useTokenSwap';
+
+export {
+  useForkEscrowNouns,
+  useForkEscrowGroupedByOwner,
+  type EscrowedOwnerGroup,
+} from './useForkEscrow';
