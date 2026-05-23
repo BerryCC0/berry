@@ -94,7 +94,11 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
       const cleaned =
         typeof text === 'string' ? stripTrailingAddress(text) : text;
       const addr = (
-        <AddressWithENS address={to} className={styles.txSummaryRecipient} />
+        <AddressWithENS
+          address={to}
+          className={styles.txSummaryRecipient}
+          showAvatar
+        />
       );
       return (
         <>

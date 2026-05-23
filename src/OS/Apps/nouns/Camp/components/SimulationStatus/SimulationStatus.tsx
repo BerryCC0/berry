@@ -5,10 +5,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { formatAddress } from '@/shared/format';
-import { useEnsName } from '@/OS/hooks/useEnsData';
+import { useEnsName, useEnsAvatar } from '@/OS/hooks/useEnsData';
 import { keccak256, toBytes, slice } from 'viem';
+import { addressToAvatar } from '../../utils/addressAvatar';
 import type { SimulationResult, TransactionResult, ProposalAction } from '../../hooks/useSimulation';
 import {
   type DecodedTransaction,
@@ -76,15 +77,64 @@ export function formatGas(gasUsed: string): string {
   return gas.toString();
 }
 
-// Component to display an address with ENS resolution
-export function AddressWithENS({ address, className }: { address: string; className?: string }) {
+/**
+ * Address with ENS resolution. When `showAvatar` is set the component
+ * renders an inline avatar (ENS-defined or a deterministic blockies
+ * fallback) alongside the name/address.
+ *
+ * The avatar is the same one used by `VoterIdentity` so addresses look
+ * consistent everywhere — voter pills, simulation rows, proposal summaries.
+ *
+ * `showAvatar` is opt-in (default off) because some call sites use this
+ * component for contract addresses, where the blockies fallback for an
+ * unnamed contract is visual noise. Display surfaces that mean "recipient"
+ * (Send to / Delegate to / Withdraw to) should pass `showAvatar`.
+ */
+export function AddressWithENS({
+  address,
+  className,
+  showAvatar = false,
+}: {
+  address: string;
+  className?: string;
+  showAvatar?: boolean;
+}) {
   const ensName = useEnsName(address);
+  const ensAvatar = useEnsAvatar(address);
+  const fallback = useMemo(() => addressToAvatar(address), [address]);
+  const avatarSrc = ensAvatar || fallback;
+
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      if (fallback && e.currentTarget.src !== fallback) {
+        e.currentTarget.src = fallback;
+      }
+    },
+    [fallback],
+  );
 
   const display = formatAddress(address, ensName);
-  
+
+  if (!showAvatar) {
+    return (
+      <span className={className || styles.address} title={address}>
+        {display}
+      </span>
+    );
+  }
+
   return (
-    <span className={className || styles.address} title={address}>
-      {display}
+    <span
+      className={`${styles.addressWithAvatar} ${className || styles.address}`}
+      title={address}
+    >
+      <img
+        src={avatarSrc}
+        alt=""
+        className={styles.addressAvatar}
+        onError={handleError}
+      />
+      <span>{display}</span>
     </span>
   );
 }
@@ -142,7 +192,11 @@ function TransactionRow({
         {recipientAddress && (
           <div className={styles.metaRow}>
             <span className={styles.metaLabel}>To:</span>
-            <AddressWithENS address={recipientAddress} className={styles.recipientAddress} />
+            <AddressWithENS
+              address={recipientAddress}
+              className={styles.recipientAddress}
+              showAvatar
+            />
           </div>
         )}
         {/* Show contract address for unknown contracts */}
@@ -235,7 +289,11 @@ function TransactionRowStatic({
         {recipientAddress && (
           <div className={styles.metaRow}>
             <span className={styles.metaLabel}>To:</span>
-            <AddressWithENS address={recipientAddress} className={styles.recipientAddress} />
+            <AddressWithENS
+              address={recipientAddress}
+              className={styles.recipientAddress}
+              showAvatar
+            />
           </div>
         )}
         {/* Show contract address for unknown contracts */}

@@ -228,6 +228,27 @@
   color: var(--color-text-secondary);
 }
 
+/* `showAvatar` variant — keeps the address text styling but lays the avatar
+ * + name on one inline row so the recipient reads as a single unit. */
+.addressWithAvatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+
+.addressAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--berry-bg-tertiary, var(--color-bg-secondary, transparent));
+  flex-shrink: 0;
+  /* Pixelated for the deterministic blockies fallback; harmless for ENS
+   * avatars that are bitmap/raster too. SVG/raster ENS avatars look fine. */
+  image-rendering: -webkit-optimize-contrast;
+}
+
 .transactionGas {
   font-size: 12px;
   color: var(--color-text-secondary);
