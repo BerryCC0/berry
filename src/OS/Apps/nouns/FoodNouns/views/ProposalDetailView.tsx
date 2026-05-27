@@ -614,6 +614,39 @@ function ActionRow({ index, decoded }: { index: number; decoded: DecodedAction }
     );
   }
 
+  if (decoded.kind === 'known') {
+    // Registry-matched typed action — show the def's friendly name as the
+    // headline and its describe() as the sub-line, then a technical row
+    // with the underlying signature + target for power users.
+    return (
+      <div className={styles.actionItem}>
+        <div className={styles.actionHeader}>
+          <span className={styles.actionIndex}>#{index + 1}</span>
+          <span className={styles.actionVerb}>{decoded.def.name}</span>
+          {decoded.valueWei > BigInt(0) && (
+            <span className={styles.actionValue}>
+              with Ξ {formatEther(decoded.valueWei)}
+            </span>
+          )}
+        </div>
+        <div className={styles.actionHeader}>
+          <span className={styles.actionVerb}>→</span>
+          <span className={styles.actionValue}>
+            {decoded.def.describe(decoded.values)}
+          </span>
+        </div>
+        <div className={styles.actionHeader}>
+          <code className={styles.actionSig}>{decoded.signature || '(no signature)'}</code>
+          <span className={styles.actionVerb}>on</span>
+          <AddressWithAvatar
+            address={decoded.target}
+            onClick={() => openInEtherscan(decoded.target)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (decoded.kind === 'contract-call') {
     return (
       <div className={styles.actionItem}>

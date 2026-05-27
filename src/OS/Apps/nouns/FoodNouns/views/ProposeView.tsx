@@ -1,20 +1,35 @@
 /**
- * Create a Food Nouns proposal: "send X ETH to Y address" + description.
- * Mirrors Camp's CreateProposal layout — flat sections, not nested labels.
+ * Create a Food Nouns proposal.
  *
- * Builds a single V1 governor action where target=recipient, value=wei,
- * signature="" and calldata="0x" — the timelock forwards a plain ETH transfer.
+ * Multi-action authoring backed by the FN action registry — users stage
+ * one or more typed actions (ETH transfer, auction admin setters, custom
+ * call, …), preview each one's human-readable summary, and submit them all
+ * to the V1 governor as parallel arrays.
+ *
+ * State model:
+ *   stagedActions[]  — the actions that will be submitted, in display order
+ *   description      — markdown body for the proposal
+ *   editor           — { closed } | { add } | { edit, index } — single
+ *                      inline editor at a time, open in either "new" or
+ *                      "edit-existing" mode
+ *
+ * Encoding is centralised in `encodeStagedActions`, which throws a
+ * user-readable error naming the offending action if any one of them is
+ * invalid — caught here and surfaced inline above the submit button.
  */
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { isAddress, parseEther, formatEther } from 'viem';
-import { AddressInput } from '@/OS/Apps/nouns/Camp/components/CreateProposal/AddressInput';
+import { useEffect, useState } from 'react';
+import { ActionEditor } from '../components/CreateProposal/ActionEditor';
 import { TxStatusBanner } from '../components/TxStatusBanner';
 import { useFNPropose } from '../hooks/useFNPropose';
 import { useFNTreasuryBalance } from '../hooks/useFNTreasury';
-import { fmtEth, truncateAddr } from '../utils/format';
+import {
+  encodeStagedActions,
+  getActionDef,
+  type StagedAction,
+} from '../utils/proposalActions';
+import { fmtEth } from '../utils/format';
 import styles from './ProposeView.module.css';
 
 interface Props {
@@ -24,65 +39,91 @@ interface Props {
   userVotes: bigint;
 }
 
-export function ProposeView({ onBack, onCreated, proposalThreshold, userVotes }: Props) {
+type EditorState =
+  | { mode: 'closed' }
+  | { mode: 'add' }
+  | { mode: 'edit'; index: number };
+
+export function ProposeView({
+  onBack,
+  onCreated,
+  proposalThreshold,
+  userVotes,
+}: Props) {
   const propose = useFNPropose();
   const treasury = useFNTreasuryBalance();
 
-  const [recipient, setRecipient] = useState('');
-  const [amount, setAmount] = useState('');
+  const [stagedActions, setStagedActions] = useState<StagedAction[]>([]);
   const [description, setDescription] = useState('');
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [editor, setEditor] = useState<EditorState>({ mode: 'closed' });
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const insufficient = proposalThreshold > BigInt(0) && userVotes < proposalThreshold;
-
-  const amountWei = useMemo(() => {
-    const trimmed = amount.trim();
-    if (!trimmed) return null;
-    try {
-      return parseEther(trimmed as `${number}`);
-    } catch {
-      return null;
-    }
-  }, [amount]);
-
-  const exceedsTreasury =
-    amountWei !== null && treasury.wei > BigInt(0) && amountWei > treasury.wei;
+  const insufficient =
+    proposalThreshold > BigInt(0) && userVotes < proposalThreshold;
+  const submitting = propose.isPending || propose.isConfirming;
 
   useEffect(() => {
     if (propose.isSuccess) {
       onBack();
+      // The proposalId isn't available from a write tx (governor emits it
+      // in an event we'd need to decode); for now the consumer of onCreated
+      // can refetch the list. Keep the callback in the signature so a
+      // future improvement can populate it.
       void onCreated;
     }
   }, [propose.isSuccess, onBack, onCreated]);
 
-  const validateAndSubmit = () => {
-    setValidationError(null);
-    if (!recipient || !isAddress(recipient)) {
-      setValidationError('Recipient must be a valid address (or resolved ENS name).');
-      return;
+  // ---- staged-action mutations ------------------------------------------
+
+  const addAction = (action: StagedAction) => {
+    setStagedActions((prev) => [...prev, action]);
+    setEditor({ mode: 'closed' });
+    setSubmitError(null);
+  };
+
+  const updateAction = (index: number, action: StagedAction) => {
+    setStagedActions((prev) =>
+      prev.map((s, i) => (i === index ? action : s)),
+    );
+    setEditor({ mode: 'closed' });
+    setSubmitError(null);
+  };
+
+  const removeAction = (index: number) => {
+    setStagedActions((prev) => prev.filter((_, i) => i !== index));
+    // If the editor was open on the removed item, close it.
+    if (editor.mode === 'edit' && editor.index === index) {
+      setEditor({ mode: 'closed' });
     }
-    if (amountWei === null) {
-      setValidationError('Enter a valid ETH amount.');
-      return;
-    }
-    if (amountWei <= BigInt(0)) {
-      setValidationError('Amount must be greater than zero.');
+    setSubmitError(null);
+  };
+
+  // ---- submit ------------------------------------------------------------
+
+  const onSubmit = () => {
+    setSubmitError(null);
+    if (stagedActions.length === 0) {
+      setSubmitError('Add at least one action before submitting.');
       return;
     }
     if (!description.trim()) {
-      setValidationError('Description is required.');
+      setSubmitError('Description is required.');
+      return;
+    }
+    let encoded;
+    try {
+      encoded = encodeStagedActions(stagedActions);
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Invalid action');
       return;
     }
     propose.propose({
-      targets: [recipient as `0x${string}`],
-      values: [amountWei],
-      signatures: [''],
-      calldatas: ['0x'],
+      ...encoded,
       description,
     });
   };
 
-  const submitting = propose.isPending || propose.isConfirming;
+  // ---- render ------------------------------------------------------------
 
   return (
     <div className={styles.container}>
@@ -91,16 +132,19 @@ export function ProposeView({ onBack, onCreated, proposalThreshold, userVotes }:
       </button>
 
       <div className={styles.header}>
-        <h1 className={styles.title}>New treasury proposal</h1>
+        <h1 className={styles.title}>New Food Nouns proposal</h1>
         <p className={styles.subtitle}>
-          Request a one-time ETH transfer from the Food Nouns treasury.
+          Bundle one or more typed actions to be executed by the treasury if
+          this proposal passes.
         </p>
       </div>
 
       <div className={styles.statRow}>
         <div className={styles.stat}>
           <span className={styles.statLabel}>Threshold</span>
-          <span className={styles.statValue}>{proposalThreshold.toString()} votes</span>
+          <span className={styles.statValue}>
+            {proposalThreshold.toString()} votes
+          </span>
         </div>
         <div className={styles.stat}>
           <span className={styles.statLabel}>Your votes</span>
@@ -114,94 +158,142 @@ export function ProposeView({ onBack, onCreated, proposalThreshold, userVotes }:
 
       {insufficient && (
         <div className={styles.warning}>
-          You don&apos;t meet the proposal threshold. The transaction will revert if submitted.
+          You don&apos;t meet the proposal threshold. The transaction will
+          revert if submitted.
         </div>
       )}
 
-      <div className={styles.form}>
-        <div className={styles.section}>
-          <span className={styles.label}>Recipient</span>
-          <AddressInput
-            value={recipient}
-            onChange={setRecipient}
-            placeholder="0x… or name.eth"
-            disabled={submitting}
-            helpText="Where the ETH goes if this proposal passes"
-          />
-        </div>
-
-        <div className={styles.section}>
-          <span className={styles.label}>Amount (ETH)</span>
-          <input
-            type="number"
-            min="0"
-            step="0.0001"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.0"
-            disabled={submitting}
-            className={styles.input}
-          />
-          {exceedsTreasury && (
-            <span className={styles.amountWarn}>
-              Exceeds current treasury balance (Ξ {fmtEth(treasury.wei)}).
-            </span>
-          )}
-        </div>
-
-        <div className={styles.section}>
-          <span className={styles.label}>Description (markdown)</span>
-          <textarea
-            className={styles.textarea}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={10}
-            placeholder={'# Title\n\nWhat is this funding? Why?'}
-            disabled={submitting}
-          />
-          <span className={styles.helpText}>
-            The first line becomes the proposal title in lists.
+      {/* Actions section */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionTitle}>
+            Actions ({stagedActions.length})
           </span>
-        </div>
-
-        <div className={styles.summary}>
-          <span className={styles.summaryTitle}>Summary</span>
-          {recipient && isAddress(recipient) && amountWei !== null && amountWei > BigInt(0) ? (
-            <p className={styles.summaryText}>
-              Send <strong>Ξ {formatEther(amountWei)}</strong> from the treasury to{' '}
-              <code className={styles.summaryAddr}>{truncateAddr(recipient)}</code>.
-            </p>
-          ) : (
-            <p className={styles.summaryEmpty}>
-              Fill in a recipient and amount to preview the action.
-            </p>
+          {editor.mode === 'closed' && (
+            <button
+              type="button"
+              className={styles.addBtn}
+              onClick={() => setEditor({ mode: 'add' })}
+              disabled={submitting}
+            >
+              + Add action
+            </button>
           )}
         </div>
 
-        {validationError && <div className={styles.error}>{validationError}</div>}
+        {stagedActions.length === 0 && editor.mode === 'closed' && (
+          <div className={styles.emptyActions}>
+            No actions yet. Click <strong>+ Add action</strong> to start —
+            you can stage an ETH transfer, an auction-admin setter, or a
+            custom call.
+          </div>
+        )}
 
-        <div className={styles.submitRow}>
-          <button
-            type="button"
-            className={styles.submitBtn}
-            onClick={validateAndSubmit}
-            disabled={submitting}
-          >
-            {submitting ? 'Submitting…' : 'Submit proposal'}
-          </button>
+        <div className={styles.stagedList}>
+          {stagedActions.map((staged, i) => {
+            const def = getActionDef(staged.defId);
+            const isBeingEdited =
+              editor.mode === 'edit' && editor.index === i;
+
+            if (isBeingEdited) {
+              return (
+                <ActionEditor
+                  key={`edit-${i}`}
+                  initial={staged}
+                  onCancel={() => setEditor({ mode: 'closed' })}
+                  onSave={(next) => updateAction(i, next)}
+                  disabled={submitting}
+                />
+              );
+            }
+
+            return (
+              <div key={`row-${i}`} className={styles.stagedRow}>
+                <div className={styles.stagedMain}>
+                  <span className={styles.stagedIndex}>#{i + 1}</span>
+                  <div className={styles.stagedText}>
+                    <span className={styles.stagedName}>
+                      {def?.name ?? 'Unknown action'}
+                    </span>
+                    <span className={styles.stagedDescribe}>
+                      {def ? def.describe(staged.values) : '—'}
+                    </span>
+                  </div>
+                </div>
+                <div className={styles.stagedActions}>
+                  <button
+                    type="button"
+                    className={styles.iconBtn}
+                    onClick={() => setEditor({ mode: 'edit', index: i })}
+                    disabled={submitting || editor.mode !== 'closed'}
+                    title="Edit"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.iconBtnDanger}
+                    onClick={() => removeAction(i)}
+                    disabled={submitting}
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <TxStatusBanner
-          hash={propose.hash ?? null}
-          isPending={propose.isPending}
-          isConfirming={propose.isConfirming}
-          isSuccess={propose.isSuccess}
-          error={propose.error}
-          onDismiss={propose.reset}
-          successMessage="Proposal submitted."
+        {editor.mode === 'add' && (
+          <ActionEditor
+            onCancel={() => setEditor({ mode: 'closed' })}
+            onSave={addAction}
+            disabled={submitting}
+          />
+        )}
+      </section>
+
+      {/* Description */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionTitle}>Description</span>
+        </div>
+        <textarea
+          className={styles.textarea}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={10}
+          placeholder={'# Title\n\nWhat does this proposal do, and why?'}
+          disabled={submitting}
         />
+        <span className={styles.helpText}>
+          The first line becomes the proposal title in lists.
+        </span>
+      </section>
+
+      {submitError && <div className={styles.error}>{submitError}</div>}
+
+      <div className={styles.submitRow}>
+        <button
+          type="button"
+          className={styles.submitBtn}
+          onClick={onSubmit}
+          disabled={submitting}
+        >
+          {submitting ? 'Submitting…' : 'Submit proposal'}
+        </button>
       </div>
+
+      <TxStatusBanner
+        hash={propose.hash ?? null}
+        isPending={propose.isPending}
+        isConfirming={propose.isConfirming}
+        isSuccess={propose.isSuccess}
+        error={propose.error}
+        onDismiss={propose.reset}
+        successMessage="Proposal submitted."
+      />
     </div>
   );
 }

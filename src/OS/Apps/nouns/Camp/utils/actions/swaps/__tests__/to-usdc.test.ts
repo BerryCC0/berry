@@ -27,15 +27,23 @@ describe('swap-to-usdc — WETH source', () => {
     amountOutMinimum: '5000',
   };
 
-  it('emits 2 actions: approve(WETH, router) + exactInputSingle(WETH→USDC)', () => {
+  it('emits 3 actions: approve + swap + revoke', () => {
     const actions = swapToUsdc.encode(fields, emptyEncodeContext());
-    expect(actions).toHaveLength(2);
+    expect(actions).toHaveLength(3);
+    // Approve leg
     expect(actions[0].target.toLowerCase()).toBe(WETH.toLowerCase());
     expect(actions[0].signature).toBe('approve(address,uint256)');
+    expect(actions[0].value).toBe('0');
+    // Swap leg
     expect(actions[1].target).toBe(ROUTER);
     expect(actions[1].signature).toContain('exactInputSingle');
-    expect(actions[0].value).toBe('0');
     expect(actions[1].value).toBe('0');
+    // Revoke leg — same token, same spender (router), amount = 0
+    expect(actions[2].target.toLowerCase()).toBe(WETH.toLowerCase());
+    expect(actions[2].signature).toBe('approve(address,uint256)');
+    expect(actions[2].value).toBe('0');
+    // The last 32 bytes of the revoke calldata should be all zeros (amount=0).
+    expect(actions[2].calldata.endsWith('0'.repeat(64))).toBe(true);
   });
 
   it('round-trips', () => {
@@ -57,11 +65,13 @@ describe('swap-to-usdc — wstETH source', () => {
     amountOutMinimum: '8200',
   };
 
-  it('emits 2 actions: approve(wstETH, router) + exactInputSingle(wstETH→USDC)', () => {
+  it('emits 3 actions: approve(wstETH, router) + exactInputSingle(wstETH→USDC) + revoke', () => {
     const actions = swapToUsdc.encode(fields, emptyEncodeContext());
-    expect(actions).toHaveLength(2);
+    expect(actions).toHaveLength(3);
     expect(actions[0].target.toLowerCase()).toBe(WSTETH_ADDRESS.toLowerCase());
     expect(actions[1].target).toBe(ROUTER);
+    expect(actions[2].target.toLowerCase()).toBe(WSTETH_ADDRESS.toLowerCase());
+    expect(actions[2].calldata.endsWith('0'.repeat(64))).toBe(true);
   });
 
   it('round-trips', () => {
@@ -69,7 +79,7 @@ describe('swap-to-usdc — wstETH source', () => {
   });
 });
 
-describe('swap-to-usdc — ETH source (wrap + approve + swap)', () => {
+describe('swap-to-usdc — ETH source (wrap + approve + swap + revoke)', () => {
   const fields = {
     sourceToken: 'eth',
     amountIn: '5',
@@ -77,9 +87,9 @@ describe('swap-to-usdc — ETH source (wrap + approve + swap)', () => {
     amountOutMinimum: '17000',
   };
 
-  it('emits 3 actions: WETH.deposit{value} + approve + swap', () => {
+  it('emits 4 actions: WETH.deposit{value} + approve + swap + revoke', () => {
     const actions = swapToUsdc.encode(fields, emptyEncodeContext());
-    expect(actions).toHaveLength(3);
+    expect(actions).toHaveLength(4);
     // Wrap leg
     expect(actions[0].target.toLowerCase()).toBe(WETH.toLowerCase());
     expect(actions[0].signature).toBe('deposit()');
@@ -93,10 +103,46 @@ describe('swap-to-usdc — ETH source (wrap + approve + swap)', () => {
     expect(actions[2].target).toBe(ROUTER);
     expect(actions[2].signature).toContain('exactInputSingle');
     expect(actions[2].value).toBe('0');
+    // Revoke leg — WETH.approve(router, 0)
+    expect(actions[3].target.toLowerCase()).toBe(WETH.toLowerCase());
+    expect(actions[3].signature).toBe('approve(address,uint256)');
+    expect(actions[3].calldata.endsWith('0'.repeat(64))).toBe(true);
   });
 
   it('round-trips with the same fields', () => {
     assertRoundTrip(swapToUsdc, fields);
+  });
+});
+
+/**
+ * Backward compatibility: drafts saved before the revoke leg landed are
+ * legacy 2-action (token source) or 3-action (ETH source) shapes. The
+ * decoder must still recognise them so old drafts re-edit cleanly.
+ */
+describe('swap-to-usdc — legacy decoder support (no revoke leg)', () => {
+  it('decodes a legacy 2-action WETH bundle (approve + swap, no revoke)', () => {
+    const full = swapToUsdc.encode(
+      { sourceToken: 'weth', amountIn: '1', fee: '500', amountOutMinimum: '3300' },
+      emptyEncodeContext(),
+    );
+    // Drop the revoke to simulate a legacy draft.
+    const legacy = full.slice(0, 2);
+    const result = swapToUsdc.decode(legacy, 0, ctx);
+    expect(result).not.toBeNull();
+    expect(result?.consumed).toBe(2);
+    expect(result?.values.sourceToken).toBe('weth');
+  });
+
+  it('decodes a legacy 3-action ETH bundle (wrap + approve + swap, no revoke)', () => {
+    const full = swapToUsdc.encode(
+      { sourceToken: 'eth', amountIn: '1', fee: '500', amountOutMinimum: '3300' },
+      emptyEncodeContext(),
+    );
+    const legacy = full.slice(0, 3);
+    const result = swapToUsdc.decode(legacy, 0, ctx);
+    expect(result).not.toBeNull();
+    expect(result?.consumed).toBe(3);
+    expect(result?.values.sourceToken).toBe('eth');
   });
 });
 
@@ -181,14 +227,15 @@ describe('swap-to-usdc — describe', () => {
       [],
       ctx,
     );
-    expect(lines).toHaveLength(2);
+    expect(lines).toHaveLength(3);
     expect(lines[0].title).toContain('Approve');
     expect(lines[1].title).toContain('Swap');
     expect(lines[1].title).toContain('WETH');
     expect(lines[1].title).toContain('USDC');
+    expect(lines[2].title).toContain('Revoke');
   });
 
-  it('describes an ETH source as 3 lines (wrap + approve + swap)', () => {
+  it('describes an ETH source as 4 lines (wrap + approve + swap + revoke)', () => {
     const lines = swapToUsdc.describe(
       {
         sourceToken: 'eth',
@@ -199,11 +246,12 @@ describe('swap-to-usdc — describe', () => {
       [],
       ctx,
     );
-    expect(lines).toHaveLength(3);
+    expect(lines).toHaveLength(4);
     expect(lines[0].title).toContain('Wrap');
     expect(lines[0].title).toContain('ETH');
     expect(lines[1].title).toContain('Approve');
     expect(lines[2].title).toContain('USDC');
+    expect(lines[3].title).toContain('Revoke');
   });
 });
 

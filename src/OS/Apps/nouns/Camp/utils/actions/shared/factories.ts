@@ -62,8 +62,17 @@ interface UintActionOpts<TName extends string> {
    * that take ETH/USDC amounts (auction reserve price, payer USDC ops).
    */
   decimals?: number;
-  /** Optional title prefix for `describe()`. Defaults to `Set X to N`. */
+  /**
+   * Optional title override for `describe()`. Defaults to `opts.name`
+   * (e.g., "Set Auction Reserve Price") — almost always what you want.
+   */
   describePrefix?: string;
+  /**
+   * Optional unit appended to the value in the description line. If unset,
+   * one is inferred from `field.label`: parenthesised "(UNIT)" wins, else
+   * common labels ("Percentage", "BPS", "Blocks") map to sensible suffixes.
+   */
+  displayUnit?: string;
 }
 
 export function makeUintAction<TName extends string>(
@@ -127,16 +136,52 @@ export function makeUintAction<TName extends string>(
 
     describe(values) {
       const display = values[opts.field.name];
-      const prefix = opts.describePrefix ?? `Set ${opts.field.label}`;
+      // Use the action's `name` ("Set Auction Reserve Price") as the title
+      // by default — the previous `Set ${field.label}` produced confusing
+      // titles like "Set Amount (ETH)" that drop the parameter's context.
+      // `describePrefix` overrides if a caller needs custom phrasing.
+      const title = opts.describePrefix ?? opts.name;
+      const unit = opts.displayUnit ?? inferUnitFromLabel(opts.field.label);
+      const suffix = unit ? ` ${unit}` : '';
       return [
         {
-          title: `${prefix} → ${display}`,
+          title,
+          description: `→ ${display}${suffix}`,
           functionName: opts.signature.slice(0, opts.signature.indexOf('(')),
           params: { [opts.field.name]: String(display) },
         },
       ];
     },
   };
+}
+
+/**
+ * Infer a display unit from the field label so describe() can append
+ * "→ 0.5 ETH" / "→ 5000 blocks" / "→ 1000 BPS" instead of the bare value.
+ *
+ *   "Amount (ETH)"  → "ETH"     (extract parenthesised unit)
+ *   "Pool Fee (bps)" → "bps"     (same)
+ *   "Percentage"    → "%"
+ *   "BPS"           → "BPS"
+ *   "Blocks"        → "blocks"
+ *   "Seconds"       → "seconds"
+ *   "Address"       → ""         (no useful unit; let the value stand alone)
+ */
+function inferUnitFromLabel(label: string): string {
+  const parens = label.match(/\(([^)]+)\)\s*$/);
+  if (parens) return parens[1];
+  switch (label) {
+    case 'Percentage':
+      return '%';
+    case 'BPS':
+      return 'BPS';
+    case 'Blocks':
+      return 'blocks';
+    case 'Seconds':
+      return 'seconds';
+    default:
+      return '';
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -206,12 +251,15 @@ export function makeAddressAction<TName extends string>(
 
     describe(values) {
       const display = values[opts.field.name];
-      const prefix = opts.describePrefix ?? `Set ${opts.field.label}`;
+      const title = opts.describePrefix ?? opts.name;
       return [
         {
-          title: `${prefix} → ${display}`,
+          title,
+          description: `→ ${display}`,
           functionName: opts.signature.slice(0, opts.signature.indexOf('(')),
-          params: { [opts.field.name]: String(display) },
+          // `owner` here so the renderer's recipient normalisation picks
+          // the address up for ENS chip + avatar resolution.
+          params: { [opts.field.name]: String(display), owner: String(display) },
         },
       ];
     },

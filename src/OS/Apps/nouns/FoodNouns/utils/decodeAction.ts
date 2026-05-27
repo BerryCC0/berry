@@ -1,22 +1,39 @@
 /**
  * Decode a Food Nouns proposal action into a human-readable shape.
  *
- * FN is a V1 GovernorBravo fork whose actions are forwarded through the
- * timelock. In practice that means actions fall into two buckets:
- *   • Plain ETH transfer — signature empty, calldata "0x", value > 0
- *   • Generic contract call — signature is the ABI signature (e.g.
- *     "transfer(address,uint256)") and calldata is ABI-encoded args.
+ * Dispatch order:
+ *   1. Plain ETH transfer (no signature, no calldata, value > 0)
+ *   2. Known typed action via the FN action registry (admin setters,
+ *      pause/unpause, etc.) — matched by exact (target, signature)
+ *   3. Generic contract call (signature is set, e.g. transfer(address,uint256))
+ *   4. Raw call (signature empty, calldata non-empty)
  *
- * We don't try to fully ABI-decode arbitrary calls (Camp leans on a
- * Nouns-specific decoder for that). Instead we surface the function
- * signature + target so the action becomes legible at a glance and
- * power-users can still inspect raw calldata.
+ * The "known" kind preserves the action def + its decoded form values so
+ * the detail view can render the def's friendly `describe()` line. The
+ * generic kinds remain the fallback for anything not in the registry.
  */
 import { formatEther } from 'viem';
 import type { FNProposalAction } from '../hooks/useFNProposal';
+import { FN_ACTION_DEFS, type FNActionDef } from './proposalActions';
+
+// Registry defs that participate in the dispatch above. ETH transfer is
+// handled specifically (we already have a richer 'eth-transfer' kind),
+// and custom-call would claim every action so it must be excluded.
+const TYPED_DEFS: readonly FNActionDef[] = FN_ACTION_DEFS.filter(
+  (d) => d.id !== 'eth-transfer' && d.id !== 'custom-call',
+);
 
 export type DecodedAction =
   | { kind: 'eth-transfer'; recipient: `0x${string}`; valueWei: bigint; valueEth: string }
+  | {
+      kind: 'known';
+      def: FNActionDef;
+      values: Record<string, string>;
+      target: `0x${string}`;
+      valueWei: bigint;
+      signature: string;
+      calldata: string;
+    }
   | { kind: 'contract-call'; target: `0x${string}`; signature: string; valueWei: bigint; calldata: string }
   | { kind: 'raw-call'; target: `0x${string}`; valueWei: bigint; calldata: string };
 
@@ -31,6 +48,28 @@ export function decodeAction(action: FNProposalAction): DecodedAction {
       valueWei: action.value,
       valueEth: formatEther(action.value),
     };
+  }
+
+  // Try every typed def in registry order. Defs key off (target, signature)
+  // so collisions are impossible — the first match is the right match.
+  for (const def of TYPED_DEFS) {
+    const values = def.decode({
+      target: action.target,
+      value: action.value,
+      signature: action.signature,
+      calldata: action.calldata as `0x${string}`,
+    });
+    if (values) {
+      return {
+        kind: 'known',
+        def,
+        values,
+        target: action.target,
+        valueWei: action.value,
+        signature: action.signature,
+        calldata: action.calldata,
+      };
+    }
   }
 
   if (hasSig) {
@@ -70,6 +109,9 @@ export function summarizeActions(actions: FNProposalAction[]): { headline: strin
       ethTotalWei += decoded.valueWei;
       ethCount += 1;
     } else {
+      // 'known' (admin setters, pause/unpause), 'contract-call', and
+      // 'raw-call' are all "contract calls" for summary purposes. Any
+      // ETH value forwarded with the call still contributes to the total.
       callCount += 1;
       if (decoded.valueWei > BigInt(0)) ethTotalWei += decoded.valueWei;
     }

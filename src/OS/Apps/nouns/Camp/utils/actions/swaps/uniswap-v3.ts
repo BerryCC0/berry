@@ -99,12 +99,30 @@ export const swapUniswapV3: TransactionActionDef<Fields> = {
         multiActionGroupId: groupId,
         multiActionIndex: 1,
       },
+      // Defense-in-depth revoke: reset the router allowance to 0 after the
+      // swap. SwapRouter02's transferFrom consumes exactly `amountIn` so the
+      // allowance is naturally 0 on success, but explicitly pinning it makes
+      // the proposal safe against partial fills, Permit2 path changes, and
+      // any future shared-approval bug. Security-audit standard.
+      {
+        target: tokenIn.address,
+        value: '0',
+        signature: APPROVE_SIG,
+        calldata: encodeAbiParameters(parseAbiParameters('address, uint256'), [
+          UNISWAP_V3_ROUTER_ADDRESS as Address,
+          BigInt(0),
+        ]),
+        isPartOfMultiAction: true,
+        multiActionGroupId: groupId,
+        multiActionIndex: 2,
+      },
     ];
   },
 
   decode(actions, cursor) {
     const approve = actions[cursor];
     const swap = actions[cursor + 1];
+    const revoke = actions[cursor + 2];
     if (!approve || !swap) return null;
 
     if (!matchSignature(approve, APPROVE_SIG)) return null;
@@ -112,7 +130,7 @@ export const swapUniswapV3: TransactionActionDef<Fields> = {
     if (!matchSignature(swap, SWAP_SIG)) return null;
 
     const approveArgs = decodeArgs<readonly [Address, bigint]>(
-      approve.calldata,
+      approve,
       'address, uint256',
     );
     if (!approveArgs) return null;
@@ -120,12 +138,33 @@ export const swapUniswapV3: TransactionActionDef<Fields> = {
 
     const swapArgs = decodeArgs<
       readonly [readonly [Address, Address, number, Address, bigint, bigint, bigint]]
-    >(swap.calldata, '(address, address, uint24, address, uint256, uint256, uint160)');
+    >(swap, '(address, address, uint24, address, uint256, uint256, uint160)');
     if (!swapArgs) return null;
     const [tokenInAddr, tokenOut, fee, recipient, amountIn, amountOutMin] = swapArgs[0];
     if (!addressEquals(recipient, TREASURY)) return null;
     if (!addressEquals(approve.target, tokenInAddr)) return null;
     if (approveArgs[1] !== amountIn) return null;
+
+    // Optional revoke leg: same tokenIn.approve(router, 0). Legacy 2-action
+    // drafts pre-date this — fall back to consumed: 2 in that case.
+    let consumed = 2;
+    if (
+      revoke &&
+      matchSignature(revoke, APPROVE_SIG) &&
+      addressEquals(revoke.target, tokenInAddr)
+    ) {
+      const revokeArgs = decodeArgs<readonly [Address, bigint]>(
+        revoke,
+        'address, uint256',
+      );
+      if (
+        revokeArgs &&
+        addressEquals(revokeArgs[0], UNISWAP_V3_ROUTER_ADDRESS) &&
+        revokeArgs[1] === BigInt(0)
+      ) {
+        consumed = 3;
+      }
+    }
 
     const knownIn = COMMON_TOKENS.find((t) => addressEquals(t.address, tokenInAddr));
     const decimalsIn = knownIn?.decimals ?? 18;
@@ -145,22 +184,28 @@ export const swapUniswapV3: TransactionActionDef<Fields> = {
         amountOutMinimum: formatTokenAmount(amountOutMin, 18),
         tokenOutDecimals: '18',
       },
-      consumed: 2,
+      consumed,
     };
   },
 
   describe(values) {
     const tokenIn = parseTokenSelectValue(values.tokenIn);
+    const symbol = tokenIn?.symbol ?? 'tokens';
     return [
       {
-        title: `Approve ${values.amountIn} ${tokenIn?.symbol ?? 'tokens'}`,
+        title: `Approve ${values.amountIn} ${symbol}`,
         description: 'for the Uniswap V3 router',
         functionName: 'approve',
       },
       {
-        title: `Swap ${values.amountIn} ${tokenIn?.symbol ?? 'tokens'}`,
+        title: `Swap ${values.amountIn} ${symbol}`,
         description: `for at least ${values.amountOutMinimum} of ${values.tokenOut}`,
         functionName: 'exactInputSingle',
+      },
+      {
+        title: `Revoke ${symbol} approval`,
+        description: 'Reset the Uniswap V3 router allowance to 0 (defense-in-depth)',
+        functionName: 'approve',
       },
     ];
   },

@@ -194,6 +194,13 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
 
     const swap = buildSwapAction(tokenInForSwap, amountIn, amountOutMin, fee);
     const approve = buildApproveAction(tokenInForSwap, ROUTER, amountIn);
+    // Defense-in-depth revoke: explicitly set the allowance back to 0 after
+    // the swap. The router's `transferFrom` consumes exactly `amountIn` so
+    // the allowance is already 0 on success — but if the router behavior
+    // ever changes (Permit2 path, partial fills, multi-hop) or a future
+    // proposal references the same approval, we want the post-state pinned.
+    // Security-audit standard for any "approve + use" pattern.
+    const revoke = buildApproveAction(tokenInForSwap, ROUTER, BigInt(0));
 
     // Hash off the swap calldata so the group id is deterministic and stable
     // across encode → decode → re-encode, matching the pattern used in
@@ -211,29 +218,36 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
         { ...wrap, isPartOfMultiAction: true, multiActionGroupId: groupId, multiActionIndex: 0 },
         { ...approve, isPartOfMultiAction: true, multiActionGroupId: groupId, multiActionIndex: 1 },
         { ...swap, isPartOfMultiAction: true, multiActionGroupId: groupId, multiActionIndex: 2 },
+        { ...revoke, isPartOfMultiAction: true, multiActionGroupId: groupId, multiActionIndex: 3 },
       ];
     }
 
     return [
       { ...approve, isPartOfMultiAction: true, multiActionGroupId: groupId, multiActionIndex: 0 },
       { ...swap, isPartOfMultiAction: true, multiActionGroupId: groupId, multiActionIndex: 1 },
+      { ...revoke, isPartOfMultiAction: true, multiActionGroupId: groupId, multiActionIndex: 2 },
     ];
   },
 
   decode(actions, cursor) {
-    // First, try the 3-action ETH shape: wrap + approve + swap.
+    // ETH source: 4 actions (wrap + approve + swap + revoke), or 3 actions
+    // for legacy drafts that pre-date the revoke leg.
     const a0 = actions[cursor];
     const a1 = actions[cursor + 1];
     const a2 = actions[cursor + 2];
+    const a3 = actions[cursor + 3];
 
-    if (
+    const isWrap =
       a0 &&
-      a1 &&
-      a2 &&
       addressEquals(a0.target, WETH) &&
       a0.signature === DEPOSIT_SIG &&
       a0.value &&
-      a0.value !== '0' &&
+      a0.value !== '0';
+
+    if (
+      isWrap &&
+      a1 &&
+      a2 &&
       matchSignature(a1, APPROVE_SIG) &&
       addressEquals(a1.target, WETH) &&
       matchTarget(a2, ROUTER) &&
@@ -241,6 +255,8 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
     ) {
       const swapArgs = decodeSwap(a2.calldata);
       if (swapArgs && addressEquals(swapArgs.tokenIn, WETH) && addressEquals(swapArgs.tokenOut, USDC)) {
+        // Optional revoke leg: tokenIn.approve(router, 0)
+        const hasRevoke = a3 && isRevokeAction(a3, swapArgs.tokenIn);
         return {
           values: {
             sourceToken: 'eth',
@@ -251,14 +267,16 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
               USDC_DECIMALS,
             ),
           },
-          consumed: 3,
+          consumed: hasRevoke ? 4 : 3,
         };
       }
     }
 
-    // Then the 2-action shape: approve + swap.
+    // Token source (WETH / wstETH): 3 actions (approve + swap + revoke),
+    // or 2 actions for legacy drafts.
     const approve = actions[cursor];
     const swap = actions[cursor + 1];
+    const revoke = actions[cursor + 2];
     if (
       approve &&
       swap &&
@@ -267,7 +285,7 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
       matchSignature(swap, SWAP_SIG)
     ) {
       const approveArgs = decodeArgs<readonly [Address, bigint]>(
-        approve.calldata,
+        approve,
         'address, uint256',
       );
       if (!approveArgs || !addressEquals(approveArgs[0], ROUTER)) return null;
@@ -283,6 +301,8 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
 
       if (!source) return null;
 
+      const hasRevoke = revoke && isRevokeAction(revoke, swapArgs.tokenIn);
+
       return {
         values: {
           sourceToken: source,
@@ -293,7 +313,7 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
             USDC_DECIMALS,
           ),
         },
-        consumed: 2,
+        consumed: hasRevoke ? 3 : 2,
       };
     }
 
@@ -330,9 +350,29 @@ export const swapToUsdc: TransactionActionDef<Fields> = {
         amountOutMinimum: values.amountOutMinimum,
       },
     });
+    descriptions.push({
+      title: `Revoke ${source === 'eth' ? 'WETH' : symbol} approval`,
+      description: 'Reset the Uniswap V3 router allowance to 0 (defense-in-depth)',
+      functionName: 'approve',
+      params: { spender: ROUTER, amount: '0' },
+    });
     return descriptions;
   },
 };
+
+/**
+ * Match a `tokenIn.approve(router, 0)` action — the revoke leg paired with
+ * a Uniswap V3 swap. Returns true only when target, spender, AND amount
+ * (zero) all line up, so a generic `approve(router, X)` for X != 0 doesn't
+ * accidentally get claimed as a revoke.
+ */
+function isRevokeAction(action: ProposalAction, tokenIn: Address): boolean {
+  if (!addressEquals(action.target, tokenIn)) return false;
+  if (!matchSignature(action, APPROVE_SIG)) return false;
+  const args = decodeArgs<readonly [Address, bigint]>(action, 'address, uint256');
+  if (!args) return false;
+  return addressEquals(args[0], ROUTER) && args[1] === BigInt(0);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers

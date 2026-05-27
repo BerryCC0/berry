@@ -1,0 +1,132 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+.editorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.editorTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-secondary);
+}
+
+.fieldWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+}
+
+.select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.helpText {
+  font-size: 11px;
+  color: var(--berry-text-tertiary);
+  line-height: 1.4;
+}
+
+.noFields {
+  padding: 10px 12px;
+  background: var(--berry-bg);
+  border: 1px dashed var(--berry-border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--berry-text-tertiary);
+}
+
+.noFields code {
+  font-family: var(--berry-font-mono);
+  font-size: 11px;
+  color: var(--berry-text-primary);
+}
+
+.editorErr {
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--berry-error) 12%, transparent);
+  border: 1px solid var(--berry-error);
+  border-radius: 4px;
+  color: var(--berry-error);
+  font-size: 12px;
+}
+
+.editorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancelBtn,
+.saveBtn {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cancelBtn {
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+}
+
+.saveBtn {
+  background: var(--berry-accent);
+  color: white;
+  border-color: var(--berry-accent);
+}
+
+.saveBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.cancelBtn:disabled,
+.saveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

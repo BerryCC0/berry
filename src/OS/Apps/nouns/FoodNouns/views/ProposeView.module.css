@@ -1,5 +1,8 @@
 /**
- * ProposeView — mirrors Camp's CreateProposal layout patterns.
+ * ProposeView — multi-action authoring layout.
+ *
+ * Top to bottom: back button, header, stats row, threshold warning,
+ * actions section (staged list + inline editor), description, submit.
  */
 
 .container {
@@ -99,26 +102,155 @@
   font-size: 13px;
 }
 
-.form {
+/* -- Sections (Actions, Description) ------------------------------------- */
+.section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 }
 
-.section {
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--berry-text-secondary);
+  font-family: var(--berry-font-system);
+}
+
+.addBtn {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.addBtn:hover:not(:disabled) {
+  background: var(--berry-accent);
+  color: white;
+  border-color: var(--berry-accent);
+}
+
+.addBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* -- Empty / staged action list ------------------------------------------ */
+.emptyActions {
+  padding: 16px;
+  background: var(--berry-bg-secondary);
+  border: 1px dashed var(--berry-border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--berry-text-tertiary);
+  line-height: 1.5;
+}
+
+.stagedList {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.label {
+.stagedRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+.stagedMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.stagedIndex {
+  font-size: 11px;
+  font-family: var(--berry-font-mono);
+  color: var(--berry-text-tertiary);
+  padding-top: 2px;
+  min-width: 24px;
+}
+
+.stagedText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.stagedName {
   font-size: 13px;
   font-weight: 600;
   color: var(--berry-text-primary);
-  font-family: var(--berry-font-system);
 }
 
-.input,
+.stagedDescribe {
+  font-size: 12px;
+  color: var(--berry-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.stagedActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.iconBtn,
+.iconBtnDanger {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: var(--berry-bg-tertiary);
+}
+
+.iconBtnDanger {
+  color: var(--berry-error);
+}
+
+.iconBtnDanger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--berry-error) 15%, transparent);
+}
+
+.iconBtn:disabled,
+.iconBtnDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* -- Description textarea ------------------------------------------------ */
 .textarea {
   width: 100%;
   padding: 10px 12px;
@@ -126,90 +258,37 @@
   border: 1px solid var(--berry-border);
   border-radius: 6px;
   color: var(--berry-text-primary);
-  font-size: 14px;
-  font-family: var(--berry-font-system);
-  transition: border-color 0.15s ease;
+  font-size: 13px;
+  font-family: var(--berry-font-mono);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 200px;
   box-sizing: border-box;
+  transition: border-color 0.15s ease;
 }
 
-.input:focus,
 .textarea:focus {
   outline: none;
-  border-color: var(--berry-primary);
+  border-color: var(--berry-accent);
 }
 
-.input:disabled,
 .textarea:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-.input::placeholder,
 .textarea::placeholder {
   color: var(--berry-text-secondary);
   opacity: 0.6;
 }
 
-.textarea {
-  resize: vertical;
-  min-height: 200px;
-  font-family: var(--berry-font-mono);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.helpText,
-.amountWarn {
+.helpText {
   font-size: 12px;
   color: var(--berry-text-tertiary);
   font-family: var(--berry-font-system);
 }
 
-.amountWarn {
-  color: var(--berry-error);
-}
-
-.summary {
-  padding: 14px 16px;
-  background: var(--berry-bg-secondary);
-  border: 1px solid var(--berry-border);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.summaryTitle {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--berry-text-tertiary);
-}
-
-.summaryText {
-  margin: 0;
-  font-size: 14px;
-  color: var(--berry-text-primary);
-  font-family: var(--berry-font-system);
-  line-height: 1.5;
-}
-
-.summaryEmpty {
-  margin: 0;
-  font-size: 13px;
-  color: var(--berry-text-tertiary);
-  font-family: var(--berry-font-system);
-}
-
-.summaryAddr {
-  font-family: var(--berry-font-mono);
-  background: var(--berry-bg-tertiary);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 12px;
-}
-
+/* -- Submit + errors ----------------------------------------------------- */
 .error {
   padding: 12px 16px;
   background: rgba(239, 68, 68, 0.1);
