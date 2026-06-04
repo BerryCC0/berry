@@ -68,7 +68,11 @@ export function NounImageById({ id, size = 320, className, style, fallback, onCl
           width: size,
           height: size,
           background: '#e5e5e5',
-          display: 'flex',
+          // inline-flex (not flex) so the placeholder flows inline alongside
+          // adjacent text — otherwise inline call sites (e.g. the Noun art
+          // inside a transaction summary line) wrap to a new line while
+          // loading, then snap back inline once the <img> swap completes.
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           ...cursorStyle,
@@ -91,7 +95,8 @@ export function NounImageById({ id, size = 320, className, style, fallback, onCl
           width: size,
           height: size,
           background: '#f5f5f5',
-          display: 'flex',
+          // See loading branch above — match the success <img>'s inline flow.
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           ...cursorStyle,
