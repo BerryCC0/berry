@@ -1,37 +1,7 @@
 /**
  * UpdateCandidateModal Styles
+ * Body-only — Dialog primitive owns overlay/title bar/actions chrome.
  */
-
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-
-.modalContent {
-  background: var(--berry-bg-tertiary);
-  border: 2px solid var(--berry-border);
-  border-radius: 8px;
-  padding: 20px;
-  max-width: 450px;
-  width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.modalTitle {
-  font-family: var(--berry-font-system);
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--berry-text-primary);
-  margin: 0 0 12px 0;
-}
 
 .modalDescription {
   font-family: var(--berry-font-system);
@@ -51,7 +21,6 @@
   font-family: var(--berry-font-system);
   font-size: 12px;
   resize: vertical;
-  margin-bottom: 12px;
 }
 
 .modalTextarea:focus {
@@ -101,7 +70,7 @@
   background: rgba(255, 152, 0, 0.1);
   border: 1px solid rgba(255, 152, 0, 0.3);
   border-radius: 4px;
-  margin-bottom: 12px;
+  margin-top: 12px;
 }
 
 .modalFeeNote {
@@ -117,7 +86,7 @@
   background: rgba(244, 67, 54, 0.1);
   border: 1px solid rgba(244, 67, 54, 0.3);
   border-radius: 4px;
-  margin-bottom: 12px;
+  margin-top: 12px;
 }
 
 .modalSuccess {
@@ -129,54 +98,4 @@
   border: 1px solid rgba(76, 175, 80, 0.3);
   border-radius: 4px;
   text-align: center;
-}
-
-.modalActions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.modalButtonPrimary {
-  padding: 8px 16px;
-  background: var(--berry-primary);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-family: var(--berry-font-system);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.modalButtonPrimary:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.modalButtonPrimary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.modalButtonSecondary {
-  padding: 8px 16px;
-  background: transparent;
-  color: var(--berry-text-secondary);
-  border: 1px solid var(--berry-border);
-  border-radius: 4px;
-  font-family: var(--berry-font-system);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.modalButtonSecondary:hover:not(:disabled) {
-  background: var(--berry-bg-secondary);
-}
-
-.modalButtonSecondary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }

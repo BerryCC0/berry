@@ -14,6 +14,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTheme } from '@/OS/lib/ThemeProvider';
+import { Dialog } from '@/OS/Primitives';
 import styles from './PersonaKYC.module.css';
 
 interface PersonaKYCProps {
@@ -563,29 +564,19 @@ export function PersonaKYC({
         </>
       )}
 
-      {/* Loading overlay when KYC modal is opening */}
-      {isKYCOpen && isLoading && (
-        <div className={styles.kycModal}>
-          <div className={styles.modalOverlay} onClick={handleCancelKYC} />
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h3>KYC with Persona</h3>
-              <button
-                className={styles.closeButton}
-                onClick={handleCancelKYC}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.loadingState}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/loader.gif" alt="" className={styles.loaderGif} />
-              <p>{STEP_MESSAGES[verificationStep]}</p>
-            </div>
-          </div>
+      {/* Loading overlay while the Persona SDK widget opens */}
+      <Dialog
+        open={isKYCOpen && isLoading}
+        onClose={handleCancelKYC}
+        title="KYC with Persona"
+        width={400}
+      >
+        <div className={styles.loadingState}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/loader.gif" alt="" className={styles.loaderGif} />
+          <p>{STEP_MESSAGES[verificationStep]}</p>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

@@ -47,34 +47,6 @@
   color: white;
 }
 
-.onionRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-bottom: 1px solid var(--berry-border);
-  flex-shrink: 0;
-}
-.onionLabel {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--berry-text-secondary);
-  flex-shrink: 0;
-}
-.onionSlider {
-  flex: 1;
-  height: 14px;
-  accent-color: var(--berry-primary);
-}
-.onionValue {
-  font-family: var(--berry-font-mono);
-  font-size: 10px;
-  color: var(--berry-text-secondary);
-  min-width: 26px;
-  text-align: right;
-}
-
 .list {
   list-style: none;
   margin: 0;
@@ -86,9 +58,9 @@
 
 .row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
-  padding: 3px 4px;
+  padding: 5px 4px;
   border-radius: 4px;
   cursor: pointer;
   border: 1px solid transparent;
@@ -117,10 +89,18 @@
 .meta {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 4px;
   flex: 1;
   min-width: 0;
 }
+
+.metaTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
 .partName {
   font-size: 12px;
   font-weight: 500;
@@ -139,6 +119,7 @@
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  padding-top: 2px;
 }
 
 .iconBtn {

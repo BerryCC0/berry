@@ -25,27 +25,9 @@
   display: block;
 }
 
-.meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--berry-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.metaLabel {
-  font-weight: 600;
-}
-
-.metaSize {
-  font-family: var(--berry-font-mono);
-}
-
 .actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 4px;
 }
 

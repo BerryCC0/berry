@@ -9,6 +9,10 @@
 import { type Address } from 'viem';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns';
 import {
+  formatRecoverSummary,
+  formatVestedSummary,
+} from '../../transactionDecoder';
+import {
   addressEquals,
   decodeArgs,
   multiActionId,
@@ -89,19 +93,39 @@ export const streamRedirect: TransactionActionDef<Fields> = {
     };
   },
 
-  describe(values) {
+  describe(values, _actions, ctx) {
+    // Pull the stream's vested/unvested split if the indexer has surfaced it.
+    // Without ctx data we fall back to address-only text so the summary still
+    // reads correctly (just less concretely than the legacy decoder).
+    const streamInfo = ctx?.streams.get(values.streamAddress.toLowerCase());
+
+    const cancelDescription = streamInfo
+      ? formatVestedSummary(streamInfo)
+      : `at ${values.streamAddress}`;
+
+    // For the recover leg we hand the destination to TransactionSummary as
+    // `recipient` — normalizeRecipientParam mirrors that into `params.to`,
+    // which drives the ENS chip + stripping the trailing "to 0x…" out of
+    // `description`. So `description` stays focused on the amount; the
+    // destination renders as an ENS chip instead of a raw 0x… string.
+    const redirectDescription = streamInfo
+      ? formatRecoverSummary(streamInfo, 'Redirects')
+      : `to ${values.destination}`;
+
     const descriptions: ActionDescription[] = [
       {
         title: 'Cancel stream',
-        description: `at ${values.streamAddress}`,
+        description: cancelDescription,
         functionName: 'cancel',
         params: { streamAddress: values.streamAddress },
       },
       {
         title: 'Redirect unvested funds',
-        description: `to ${values.destination}`,
+        description: redirectDescription,
         functionName: 'recoverTokens',
-        params: { destination: values.destination },
+        // `recipient` is in RECIPIENT_PARAM_KEYS (transactionDecoder.ts);
+        // adaptDescription mirrors it into `params.to` for ENS resolution.
+        params: { recipient: values.destination },
       },
     ];
     return descriptions;

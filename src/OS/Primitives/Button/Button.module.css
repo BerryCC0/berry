@@ -1,6 +1,13 @@
 /**
  * Button Styles
- * Mac OS 8 classic button appearance
+ *
+ * Every variant — base and era-specific — reads colors from --berry-*
+ * theme tokens so dark mode and custom themes propagate correctly. Each
+ * era preserves its visual character (Platinum bevels, Aqua gel,
+ * Skeuomorphic warmth, Big Sur / Liquid Glass translucency) by varying
+ * gradient stops, radii, shadows, and transitions — but the colors
+ * themselves are derived from --berry-button-bg / --berry-button-text /
+ * --berry-primary / --berry-border via color-mix() when stops are needed.
  */
 
 .button {
@@ -14,57 +21,89 @@
   gap: 6px;
   white-space: nowrap;
   user-select: none;
-  transition: none; /* No transitions for retro feel */
+  transition: none; /* Era overrides re-enable transitions where appropriate */
 }
 
-.button:focus {
+/* Suppress focus ring on mouse click — only show it on keyboard focus
+   (matches macOS convention). The global :focus-visible rule in
+   globals.css would otherwise paint a ring on every click. */
+.button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Default (non-primary) focus ring: uses --berry-accent (theme-driven). */
+.button:focus-visible {
   outline: 2px solid var(--berry-accent, #000);
   outline-offset: 2px;
 }
 
+/* Primary buttons paint their own ring derived from --berry-primary so the
+   ring color always tracks the button's fill — regardless of what
+   --berry-accent happens to be in the active theme. */
+.primary:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--berry-primary) 60%, white);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   BASE VARIANTS (token-driven, no era selector)
+   ============================================================================= */
+
 /* Variant: Default */
 .default {
-  background: linear-gradient(180deg, #fff 0%, #ccc 100%);
-  color: #000;
-  border: 1px solid #808080;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-button-bg) 70%, white) 0%,
+    var(--berry-button-bg) 100%
+  );
+  color: var(--berry-button-text);
+  border: 1px solid var(--berry-bevel-dark, #808080);
   border-radius: 3px;
-  box-shadow: 
-    inset 1px 1px 0 #fff,
-    inset -1px -1px 0 #808080,
-    1px 1px 0 #000;
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, var(--berry-button-bg) 60%, white),
+    inset -1px -1px 0 var(--berry-bevel-dark, #808080),
+    1px 1px 0 rgba(0, 0, 0, 0.4);
 }
 
 .default:hover:not(.disabled) {
-  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-button-bg) 60%, white) 0%,
+    color-mix(in srgb, var(--berry-button-bg) 90%, white) 100%
+  );
 }
 
 .default:active:not(.disabled),
 .default.active {
-  background: linear-gradient(180deg, #999 0%, #ccc 100%);
-  box-shadow: 
-    inset 1px 1px 0 #808080,
-    inset -1px -1px 0 #fff;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-button-bg) 70%, black) 0%,
+    var(--berry-button-bg) 100%
+  );
+  box-shadow:
+    inset 1px 1px 0 var(--berry-bevel-dark, #808080),
+    inset -1px -1px 0 color-mix(in srgb, var(--berry-button-bg) 60%, white);
 }
 
-/* Variant: Primary */
+/* Variant: Primary — uses --berry-primary (Noun red by default) */
 .primary {
-  background: var(--berry-button-primary-bg, #000);
-  color: var(--berry-button-primary-text, #fff);
-  border: 2px solid #000;
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse, #fff);
+  border: 2px solid color-mix(in srgb, var(--berry-primary) 70%, black);
   border-radius: 4px;
-  box-shadow: 
+  box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.2),
     inset -1px -1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .primary:hover:not(.disabled) {
-  background: #333;
+  background: var(--berry-primary-hover, color-mix(in srgb, var(--berry-primary) 85%, black));
 }
 
 .primary:active:not(.disabled),
 .primary.active {
-  background: #555;
-  box-shadow: 
+  background: var(--berry-accent-active, color-mix(in srgb, var(--berry-primary) 70%, black));
+  box-shadow:
     inset 1px 1px 0 rgba(0, 0, 0, 0.2),
     inset -1px -1px 0 rgba(255, 255, 255, 0.1);
 }
@@ -72,19 +111,19 @@
 /* Variant: Text */
 .text {
   background: transparent;
-  color: var(--berry-text, #000);
+  color: var(--berry-text-primary, #000);
   border: none;
   border-radius: 3px;
   padding: 2px 6px;
 }
 
 .text:hover:not(.disabled) {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(127, 127, 127, 0.16);
 }
 
 .text:active:not(.disabled),
 .text.active {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(127, 127, 127, 0.28);
 }
 
 /* Variant: Icon */
@@ -97,12 +136,12 @@
 }
 
 .icon:hover:not(.disabled) {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(127, 127, 127, 0.16);
 }
 
 .icon:active:not(.disabled),
 .icon.active {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(127, 127, 127, 0.28);
 }
 
 /* Sizes */
@@ -136,33 +175,14 @@
 }
 
 /* =============================================================================
-   ERA-SPECIFIC OVERRIDES
+   ERA-SPECIFIC OVERRIDES — preserve era character, derive colors from tokens
    ============================================================================= */
 
-/* --- Platinum / Classic: Already close — ensure no transitions, sharp corners --- */
+/* --- Platinum / Classic: sharp, beveled (base variants already match) --- */
 :global([data-window-style="platinum"]) .button,
 :global([data-window-style="classic"]) .button {
   transition: none;
   border-radius: 3px;
-}
-
-:global([data-window-style="platinum"]) .default,
-:global([data-window-style="classic"]) .default {
-  background: linear-gradient(180deg, #fff 0%, #ccc 100%);
-  border: 1px solid #808080;
-  border-radius: 3px;
-  box-shadow:
-    inset 1px 1px 0 #fff,
-    inset -1px -1px 0 #808080,
-    1px 1px 0 #000;
-}
-
-:global([data-window-style="platinum"]) .default:active:not(.disabled),
-:global([data-window-style="classic"]) .default:active:not(.disabled) {
-  background: linear-gradient(180deg, #999 0%, #ccc 100%);
-  box-shadow:
-    inset 1px 1px 0 #808080,
-    inset -1px -1px 0 #fff;
 }
 
 :global([data-window-style="platinum"]) .primary,
@@ -171,58 +191,93 @@
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.2),
     inset -1px -1px 0 rgba(0, 0, 0, 0.2),
-    1px 1px 0 #000;
+    1px 1px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* --- Aqua: Gel buttons — glossy multi-stop gradient with highlight --- */
+/* --- Aqua: glossy gel buttons — multi-stop vertical gradient with highlight --- */
 :global([data-window-style="aqua"]) .button {
   transition: background 150ms ease-out;
   border-radius: 4px;
 }
 
 :global([data-window-style="aqua"]) .default {
-  background: linear-gradient(180deg, #FFFFFF 0%, #E8E8E8 40%, #D0D0D0 60%, #E0E0E0 100%);
-  color: #000;
-  border: 1px solid #B0B0B0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-button-bg) 50%, white) 0%,
+    color-mix(in srgb, var(--berry-button-bg) 85%, white) 40%,
+    color-mix(in srgb, var(--berry-button-bg) 85%, black) 60%,
+    var(--berry-button-bg) 100%
+  );
+  color: var(--berry-button-text);
+  border: 1px solid var(--berry-border);
   border-radius: 4px;
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 :global([data-window-style="aqua"]) .default:hover:not(.disabled) {
-  background: linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 40%, #DCDCDC 60%, #EAEAEA 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-button-bg) 40%, white) 0%,
+    color-mix(in srgb, var(--berry-button-bg) 80%, white) 40%,
+    color-mix(in srgb, var(--berry-button-bg) 90%, black) 60%,
+    color-mix(in srgb, var(--berry-button-bg) 95%, white) 100%
+  );
 }
 
 :global([data-window-style="aqua"]) .default:active:not(.disabled) {
-  background: linear-gradient(180deg, #C0C0C0 0%, #D0D0D0 40%, #B8B8B8 60%, #C8C8C8 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-button-bg) 75%, black) 0%,
+    color-mix(in srgb, var(--berry-button-bg) 85%, black) 50%,
+    var(--berry-button-bg) 100%
+  );
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 :global([data-window-style="aqua"]) .primary {
-  background: linear-gradient(180deg, #7CB8FF 0%, #2B6EFF 40%, #1A5CD4 60%, #4D8BFF 100%);
-  color: #fff;
-  border: 1px solid #1048AA;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-primary) 60%, white) 0%,
+    var(--berry-primary) 40%,
+    color-mix(in srgb, var(--berry-primary) 70%, black) 60%,
+    color-mix(in srgb, var(--berry-primary) 80%, white) 100%
+  );
+  color: var(--berry-text-inverse, #fff);
+  border: 1px solid color-mix(in srgb, var(--berry-primary) 60%, black);
+  /* Aqua's signature pill shape */
   border-radius: 16px;
   box-shadow:
-    0 1px 3px rgba(43, 110, 255, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 1px 3px color-mix(in srgb, var(--berry-primary) 35%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 :global([data-window-style="aqua"]) .primary:hover:not(.disabled) {
-  background: linear-gradient(180deg, #8FC4FF 0%, #3B7EFF 40%, #2A6CE4 60%, #5D9BFF 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-primary) 50%, white) 0%,
+    color-mix(in srgb, var(--berry-primary) 90%, white) 40%,
+    color-mix(in srgb, var(--berry-primary) 80%, black) 60%,
+    color-mix(in srgb, var(--berry-primary) 70%, white) 100%
+  );
 }
 
-/* --- Skeuomorphic: Warm, refined gel buttons --- */
+/* --- Skeuomorphic: warm, soft gel --- */
 :global([data-window-style="skeuomorphic"]) .button {
   transition: background 200ms ease-out;
   border-radius: 4px;
 }
 
 :global([data-window-style="skeuomorphic"]) .default {
-  background: linear-gradient(180deg, #FEFEFE 0%, #E8E4DE 50%, #D6D2CC 100%);
-  color: #333;
-  border: 1px solid #B0A898;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-button-bg) 30%, white) 0%,
+    color-mix(in srgb, var(--berry-button-bg) 85%, white) 50%,
+    var(--berry-button-bg) 100%
+  );
+  color: var(--berry-button-text);
+  border: 1px solid var(--berry-border);
   border-radius: 4px;
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.08),
@@ -230,21 +285,31 @@
 }
 
 :global([data-window-style="skeuomorphic"]) .default:active:not(.disabled) {
-  background: linear-gradient(180deg, #D6D2CC 0%, #C8C4BE 50%, #BAB6B0 100%);
+  background: linear-gradient(
+    180deg,
+    var(--berry-button-bg) 0%,
+    color-mix(in srgb, var(--berry-button-bg) 85%, black) 50%,
+    color-mix(in srgb, var(--berry-button-bg) 75%, black) 100%
+  );
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 :global([data-window-style="skeuomorphic"]) .primary {
-  background: linear-gradient(180deg, #5CA0FF 0%, #007AFF 50%, #0066DD 100%);
-  color: #fff;
-  border: 1px solid #0055BB;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--berry-primary) 60%, white) 0%,
+    var(--berry-primary) 50%,
+    color-mix(in srgb, var(--berry-primary) 80%, black) 100%
+  );
+  color: var(--berry-text-inverse, #fff);
+  border: 1px solid color-mix(in srgb, var(--berry-primary) 70%, black);
   border-radius: 4px;
   box-shadow:
-    0 1px 3px rgba(0, 122, 255, 0.25),
+    0 1px 3px color-mix(in srgb, var(--berry-primary) 25%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-/* --- Flat / Modern: Clean, subtle depth --- */
+/* --- Flat / Modern: clean, subtle depth --- */
 :global([data-window-style="flat"]) .button,
 :global([data-window-style="modern"]) .button {
   transition: background var(--berry-transition-speed, 0.2s) var(--berry-easing, ease);
@@ -253,25 +318,34 @@
 
 :global([data-window-style="flat"]) .default,
 :global([data-window-style="modern"]) .default {
-  background: var(--berry-button-bg, #E0E0E0);
-  color: var(--berry-button-text, #000);
-  border: 1px solid var(--berry-input-border, #BDBDBD);
+  background: var(--berry-button-bg);
+  color: var(--berry-button-text);
+  border: 1px solid var(--berry-border);
   border-radius: var(--berry-border-radius, 4px);
   box-shadow: none;
 }
 
 :global([data-window-style="flat"]) .default:hover:not(.disabled),
 :global([data-window-style="modern"]) .default:hover:not(.disabled) {
-  background: var(--berry-bg-tertiary, #eee);
+  background: color-mix(in srgb, var(--berry-button-bg) 85%, white);
 }
 
 :global([data-window-style="flat"]) .default:active:not(.disabled),
 :global([data-window-style="modern"]) .default:active:not(.disabled) {
-  background: var(--berry-bg-secondary, #ddd);
+  background: color-mix(in srgb, var(--berry-button-bg) 80%, black);
   box-shadow: none;
 }
 
-/* --- Big Sur / Liquid Glass: Rounded, vibrancy --- */
+:global([data-window-style="flat"]) .primary,
+:global([data-window-style="modern"]) .primary {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse, #fff);
+  border: 1px solid color-mix(in srgb, var(--berry-primary) 80%, black);
+  border-radius: var(--berry-border-radius, 4px);
+  box-shadow: none;
+}
+
+/* --- Big Sur / Liquid Glass: rounded, vibrancy --- */
 :global([data-window-style="big-sur"]) .button,
 :global([data-window-style="liquid-glass"]) .button {
   transition: all var(--berry-transition-speed, 0.25s) var(--berry-easing, ease);
@@ -280,9 +354,9 @@
 
 :global([data-window-style="big-sur"]) .default,
 :global([data-window-style="liquid-glass"]) .default {
-  background: var(--berry-button-bg, #E0E0E0);
-  color: var(--berry-button-text, #000);
-  border: 1px solid var(--berry-input-border, #d0d0d0);
+  background: var(--berry-button-bg);
+  color: var(--berry-button-text);
+  border: 1px solid var(--berry-border);
   border-radius: var(--berry-border-radius, 8px);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
@@ -290,7 +364,15 @@
 :global([data-window-style="liquid-glass"]) .default {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.3);
-  border-color: var(--berry-glass-border, rgba(255, 255, 255, 0.5));
+  background: color-mix(in srgb, var(--berry-button-bg) 55%, transparent);
+  border-color: var(--berry-glass-border, color-mix(in srgb, var(--berry-button-bg) 70%, transparent));
 }
 
+:global([data-window-style="big-sur"]) .primary,
+:global([data-window-style="liquid-glass"]) .primary {
+  background: var(--berry-primary);
+  color: var(--berry-text-inverse, #fff);
+  border: 1px solid color-mix(in srgb, var(--berry-primary) 80%, black);
+  border-radius: var(--berry-border-radius, 8px);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--berry-primary) 30%, transparent);
+}

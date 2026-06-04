@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useReadContract, useAccount, usePublicClient } from 'wagmi';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import { useEnsName } from '@/OS/hooks/useEnsData';
+import { Dialog, type DialogAction } from '@/OS/Primitives';
 import { HoverPopover } from './HoverPopover';
 import { VoterHoverCard } from './VoterHoverCard';
 import { useSponsorCandidate } from '../hooks/useSponsorCandidate';
@@ -461,11 +462,62 @@ export function SponsorsPanel({
       )}
       
       {/* Sponsor Modal */}
-      {showSponsorModal && (
-        <div className={styles.modalOverlay} onClick={handleCloseModal}>
-          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>Sponsor Candidate</h3>
-            
+      {showSponsorModal && (() => {
+        const isInflight = isSigning || isPending || isConfirming;
+        const primaryAction: DialogAction = isSmartContractWallet
+          ? !hasPendingSignature
+            ? {
+                label: isSigning ? 'Signing...' : 'Step 1: Sign Message',
+                variant: 'primary',
+                onClick: () => {
+                  if (isInflight) return;
+                  handleSignOnly();
+                },
+                closeOnClick: false,
+              }
+            : {
+                label: isPending
+                  ? 'Submitting...'
+                  : isConfirming
+                    ? 'Confirming...'
+                    : 'Step 2: Submit Transaction',
+                variant: 'primary',
+                onClick: () => {
+                  if (isInflight) return;
+                  handleSubmitSignature();
+                },
+                closeOnClick: false,
+              }
+          : {
+              label: isSigning
+                ? 'Sign in wallet...'
+                : isPending
+                  ? 'Confirm in wallet...'
+                  : isConfirming
+                    ? 'Confirming...'
+                    : 'Sponsor',
+              variant: 'primary',
+              onClick: () => {
+                if (isInflight) return;
+                handleSponsorSubmit();
+              },
+              closeOnClick: false,
+            };
+
+        const actions: DialogAction[] = sponsorSuccess
+          ? []
+          : [{ label: 'Cancel', variant: 'default' }, primaryAction];
+
+        return (
+          <Dialog
+            open
+            onClose={handleCloseModal}
+            title="Sponsor Candidate"
+            width={400}
+            closeOnBackdropClick={!isInflight}
+            closeOnEscape={!isInflight}
+            actions={actions}
+          >
             {sponsorSuccess ? (
               <div className={styles.successMessage}>
                 Sponsorship submitted successfully! Your signature has been added to this candidate.
@@ -473,36 +525,36 @@ export function SponsorsPanel({
             ) : (
               <>
                 <p className={styles.modalDescription}>
-                  By sponsoring, you&apos;re adding your voting power to help this candidate reach the threshold 
+                  By sponsoring, you&apos;re adding your voting power to help this candidate reach the threshold
                   for promotion to a full proposal.
                 </p>
-                
+
                 {isSmartContractWallet && !hasPendingSignature && (
                   <div className={styles.scwWarning}>
                     <strong>⚠️ Smart Contract Wallet - Important</strong>
                     <p>
-                      <strong>The signer must have voting power.</strong> When you sign, the signature 
-                      is created by your Safe owner EOA, not the Safe itself. The Nouns contract 
+                      <strong>The signer must have voting power.</strong> When you sign, the signature
+                      is created by your Safe owner EOA, not the Safe itself. The Nouns contract
                       checks if the <em>signer</em> (your owner EOA) has voting power.
                     </p>
                     <p>
-                      <strong>Solution:</strong> From your Safe, delegate voting power to your owner 
-                      EOA by calling <code>NounsToken.delegate(ownerAddress)</code>. Then the owner 
+                      <strong>Solution:</strong> From your Safe, delegate voting power to your owner
+                      EOA by calling <code>NounsToken.delegate(ownerAddress)</code>. Then the owner
                       will have voting power and can sign sponsorships.
                     </p>
                   </div>
                 )}
-                
+
                 {hasPendingSignature && (
                   <div className={styles.pendingSignature}>
                     <strong>✓ Signature Ready</strong>
                     <p>
-                      Your signature has been created. Click &quot;Submit Transaction&quot; below to add your 
+                      Your signature has been created. Click &quot;Submit Transaction&quot; below to add your
                       sponsorship to the blockchain.
                     </p>
                   </div>
                 )}
-                
+
                 <div className={styles.expirationField}>
                   <label className={styles.fieldLabel}>Signature Expiration</label>
                   <div className={styles.expirationRow}>
@@ -512,7 +564,7 @@ export function SponsorsPanel({
                       value={expirationDate}
                       onChange={e => setExpirationDate(e.target.value)}
                       min={minDate}
-                      disabled={isSigning || isPending || isConfirming}
+                      disabled={isInflight}
                     />
                     <span className={styles.expirationHint}>
                       {expirationDays} day{expirationDays !== 1 ? 's' : ''} from now
@@ -522,7 +574,7 @@ export function SponsorsPanel({
                     Your sponsorship will be valid until this date. You can set it as far in the future as you want.
                   </p>
                 </div>
-                
+
                 <div className={styles.reasonField}>
                   <label className={styles.fieldLabel}>Reason (optional)</label>
                   <textarea
@@ -532,10 +584,10 @@ export function SponsorsPanel({
                     onChange={e => setSponsorReason(e.target.value)}
                     placeholder="Why are you sponsoring this candidate?"
                     rows={3}
-                    disabled={isSigning || isPending || isConfirming}
+                    disabled={isInflight}
                   />
                 </div>
-                
+
                 {sponsorError && (
                   <div className={styles.errorMessage}>
                     {sponsorError.message.includes('user rejected') || sponsorError.message.includes('User rejected')
@@ -549,70 +601,25 @@ export function SponsorsPanel({
                       : sponsorError.message}
                   </div>
                 )}
-                
-                <div className={styles.modalButtons}>
-                  <button
-                    className={styles.cancelButton}
-                    onClick={handleCloseModal}
-                    disabled={isSigning || isPending || isConfirming}
-                  >
-                    Cancel
-                  </button>
-                  
-                  {isSmartContractWallet ? (
-                    <>
-                      {!hasPendingSignature ? (
-                        <button
-                          className={styles.confirmButton}
-                          onClick={handleSignOnly}
-                          disabled={isSigning || isPending || isConfirming}
-                        >
-                          {isSigning ? 'Signing...' : 'Step 1: Sign Message'}
-                        </button>
-                      ) : (
-                        <button
-                          className={styles.confirmButton}
-                          onClick={handleSubmitSignature}
-                          disabled={isSigning || isPending || isConfirming}
-                        >
-                          {isPending ? 'Submitting...' :
-                           isConfirming ? 'Confirming...' :
-                           'Step 2: Submit Transaction'}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <button
-                      className={styles.confirmButton}
-                      onClick={handleSponsorSubmit}
-                      disabled={isSigning || isPending || isConfirming}
-                    >
-                      {isSigning ? 'Sign in wallet...' :
-                       isPending ? 'Confirm in wallet...' :
-                       isConfirming ? 'Confirming...' :
-                       'Sponsor'}
-                    </button>
-                  )}
-                </div>
-                
-                {(isSigning || isPending || isConfirming) && (
+
+                {isInflight && (
                   <div className={styles.statusHint}>
                     {isSigning && 'Please sign the message in your wallet...'}
                     {isPending && 'Please confirm the transaction in your wallet...'}
                     {isConfirming && 'Waiting for transaction confirmation...'}
                   </div>
                 )}
-                
-                {!isSigning && !isPending && !isConfirming && !hasPendingSignature && (
+
+                {!isInflight && !hasPendingSignature && (
                   <p className={styles.processHint}>
                     This will require a signature request followed by a transaction.
                   </p>
                 )}
               </>
             )}
-          </div>
-        </div>
-      )}
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }

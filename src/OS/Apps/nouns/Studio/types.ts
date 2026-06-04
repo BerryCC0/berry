@@ -1,3 +1,5 @@
+import type { StudioLayerSource } from '@/app/lib/studio/types';
+
 /**
  * Studio types.
  *
@@ -94,6 +96,8 @@ export interface LayerState {
   locked: boolean;
   /** True if the layer has been edited since load/import. */
   edited: boolean;
+  /** Where the current pixels originated before further edits. */
+  source?: StudioLayerSource;
 }
 
 /** Available drawing modes for shape tools (rectangle/ellipse/line). */

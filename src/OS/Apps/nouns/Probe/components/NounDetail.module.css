@@ -229,65 +229,8 @@
   opacity: 0.6;
 }
 
-/* ── Bids modal ── */
-.modalOverlay {
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(2px);
-}
-
-.modalContent {
-  background: #fff;
-  border: 3px solid #000;
-  width: 90%;
-  max-width: 480px;
-  max-height: 70%;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.15);
-}
-
-.modalHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 2px solid #000;
-}
-
-.modalTitle {
-  font-family: var(--font-comic-neue), 'Comic Neue', cursive;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: #000;
-  margin: 0;
-}
-
-.modalClose {
-  background: none;
-  border: none;
-  font-size: 22px;
-  color: #000;
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
-  opacity: 0.5;
-  transition: opacity 0.15s;
-}
-
-.modalClose:hover {
-  opacity: 1;
-}
-
+/* ── Bids modal body (rendered inside the shared Dialog primitive) ── */
 .modalBody {
-  padding: 16px 20px 20px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;

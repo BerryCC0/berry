@@ -1635,8 +1635,20 @@ function applyRatio(amount: bigint, ratio: number): bigint {
 
 /**
  * Format the "Vested X of Y SYMBOL (Z%)" half of a stream cancel description.
+ *
+ * Exported so registry action defs (e.g. streams/cancel.ts, streams/redirect.ts)
+ * can reuse the same wording the legacy decoder uses. The input type accepts
+ * either the legacy `StreamInfo` or the registry's `StreamMeta` — only the
+ * fields read below are required, and the optional `status` literal differs
+ * by one value between the two ('active' vs 'streaming') which neither branch
+ * here special-cases.
  */
-function formatVestedSummary(info: StreamInfo): string {
+export function formatVestedSummary(info: {
+  tokenAddress: string;
+  tokenAmountRaw: string;
+  vestedRatio: number;
+  status?: string;
+}): string {
   const total = BigInt(info.tokenAmountRaw);
   const symbol = TOKEN_SYMBOLS[info.tokenAddress] || 'tokens';
   const decimals = TOKEN_DECIMALS[info.tokenAddress] || 18;
@@ -1658,9 +1670,17 @@ function formatVestedSummary(info: StreamInfo): string {
  *
  * `verb` matches the action's intent: "Returns" (cancel → treasury),
  * "Redirects" (cancel → other), "Recovers" (standalone cleanup).
+ *
+ * Exported so registry action defs can produce identical wording to the
+ * legacy decoder. See `formatVestedSummary` above for the type-widening note.
  */
-function formatRecoverSummary(
-  info: StreamInfo,
+export function formatRecoverSummary(
+  info: {
+    tokenAddress: string;
+    tokenAmountRaw: string;
+    vestedRatio: number;
+    status?: string;
+  },
   verb: 'Returns' | 'Redirects' | 'Recovers',
 ): string {
   const total = BigInt(info.tokenAmountRaw);

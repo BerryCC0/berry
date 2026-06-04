@@ -20,6 +20,7 @@ import { useWorkspace } from '../model/workspace';
 import { useUpdateStudioProject } from './useStudioProjects';
 import { composeThumbnail } from '../utils/composeThumbnail';
 import { serializeLayers } from '../utils/serializeWorkspace';
+import { NOUN_PARTS } from '../types';
 
 const DEBOUNCE_MS = 2000;
 
@@ -55,7 +56,14 @@ export function useAutoSave(): AutoSaveState {
       setSaving(true);
       setError(null);
       const canvases = getCanvases();
-      const serialized = serializeLayers(canvases, descriptor);
+      const layerMeta: NonNullable<Parameters<typeof serializeLayers>[2]> = {};
+      for (const part of NOUN_PARTS) {
+        layerMeta[part] = {
+          edited: layers[part].edited,
+          source: layers[part].source,
+        };
+      }
+      const serialized = serializeLayers(canvases, descriptor, layerMeta);
       const thumbnailDataUrl = composeThumbnail(canvases, { size: 128 });
       await update.mutateAsync({
         id: projectId,
@@ -81,6 +89,7 @@ export function useAutoSave(): AutoSaveState {
     descriptor,
     customPalette,
     name,
+    layers,
     update,
     setDirty,
   ]);

@@ -24,30 +24,31 @@
 .currentRow {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
+  gap: 8px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--berry-border);
   flex-shrink: 0;
+  background: color-mix(in srgb, var(--berry-bg-secondary) 84%, var(--berry-bg) 16%);
 }
 
 .swatchPair {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
 }
 
 .swatchPrev {
   position: absolute;
-  right: -8px;
-  bottom: -6px;
+  right: -3px;
+  bottom: -3px;
   width: 14px;
   height: 14px;
   border: 1px solid var(--berry-border);
   border-radius: 3px;
   padding: 0;
   cursor: pointer;
-  z-index: 2;
+  z-index: 4;
 }
 .swatchPrev:hover {
   outline: 1px solid var(--berry-text-primary);
@@ -55,10 +56,11 @@
 }
 
 .swatch {
-  width: 22px;
-  height: 22px;
+  display: block;
+  width: 26px;
+  height: 26px;
   border: 1px solid var(--berry-border);
-  border-radius: 3px;
+  border-radius: 5px;
   flex-shrink: 0;
   /* Show transparency for #00000000 */
   background-image:
@@ -70,51 +72,21 @@
   background-position: 0 0, 0 4px, 4px -4px, -4px 0;
 }
 
-.hexInput {
+.hexValue {
   flex: 1;
+  display: block;
+  color: var(--berry-text-primary);
   background: var(--berry-bg);
-  color: var(--berry-text-primary);
   border: 1px solid var(--berry-border);
-  border-radius: 3px;
-  padding: 2px 4px;
+  border-radius: 5px;
+  padding: 4px 6px;
   font-family: var(--berry-font-mono);
-  font-size: 10px;
-  min-width: 0;
-  width: 0;
-}
-.hexInput:focus {
-  outline: none;
-  border-color: var(--berry-primary);
-}
-
-.colorInput {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--berry-border);
-  border-radius: 3px;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.miniButton {
-  background: transparent;
-  border: 1px solid var(--berry-border);
-  border-radius: 3px;
-  color: var(--berry-text-secondary);
-  padding: 2px 8px;
   font-size: 11px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.miniButton:hover:not(:disabled) {
-  background: var(--berry-bg-tertiary);
-  color: var(--berry-text-primary);
-}
-.miniButton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  line-height: 16px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .section {
@@ -125,31 +97,31 @@
   border-bottom: none;
 }
 
-.sectionHeader {
+.groupedPalette {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
+  flex-direction: column;
+  gap: 8px;
 }
-.sectionTitle {
-  font-size: 10px;
+
+.paletteGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.paletteGroupTitle {
+  font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--berry-text-secondary);
-}
-.hint {
-  font-size: 9px;
-  color: var(--berry-text-secondary);
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 .swatchGrid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 2px;
-  max-height: 220px;
-  overflow-y: auto;
   padding-right: 2px;
 }
 

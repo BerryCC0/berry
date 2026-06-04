@@ -25,44 +25,6 @@
   margin-left: 8px;
 }
 
-.newProjectBtn {
-  padding: 4px 10px;
-  background: var(--berry-bg-tertiary);
-  border: 1px solid var(--berry-border);
-  border-radius: 4px;
-  color: var(--berry-text-primary);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
-}
-
-.newProjectBtn:hover {
-  background: var(--berry-primary);
-  border-color: var(--berry-primary);
-  color: white;
-}
-
-.headerBtn {
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--berry-border);
-  border-radius: 4px;
-  color: var(--berry-text-secondary);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.1s, border-color 0.1s, color 0.1s;
-}
-.headerBtn:hover:not(:disabled) {
-  background: var(--berry-bg-tertiary);
-  color: var(--berry-text-primary);
-}
-.headerBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .flex {
   flex: 1;
 }

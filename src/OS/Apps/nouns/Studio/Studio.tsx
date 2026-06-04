@@ -15,7 +15,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 import type { AppComponentProps } from '@/OS/types/app';
 import { CompositePreview } from './components/CompositePreview';
 import { LayersPanel } from './components/LayersPanel';
@@ -31,10 +30,7 @@ import { TraitGalleryDialog } from './components/TraitGalleryDialog';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useDescriptorPalette } from './hooks/useDescriptorPalette';
 import { useStudioKeybindings } from './hooks/useStudioKeybindings';
-import { useLayers } from './model/layers';
 import { useWorkspace } from './model/workspace';
-import { composeThumbnail } from './utils/composeThumbnail';
-import { downloadDataUrl, slugify } from './utils/downloadDataUrl';
 import styles from './Studio.module.css';
 
 export function Studio({}: AppComponentProps) {
@@ -42,15 +38,7 @@ export function Studio({}: AppComponentProps) {
   useAutoSave();           // mount once — drives debounced background save
   useDescriptorPalette();  // mount once — hydrates the on-chain palette into store
 
-  const { isConnected } = useAccount();
   const name = useWorkspace((s) => s.name);
-  const getCanvases = useLayers((s) => s.getCanvases);
-
-  function exportPng(): void {
-    const dataUrl = composeThumbnail(getCanvases(), { size: 512 });
-    if (!dataUrl) return;
-    downloadDataUrl(dataUrl, `${slugify(name)}-512.png`);
-  }
 
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [projectGalleryOpen, setProjectGalleryOpen] = useState(false);
@@ -75,41 +63,6 @@ export function Studio({}: AppComponentProps) {
   return (
     <div className={styles.studio}>
       <div className={styles.header}>
-        <button
-          type="button"
-          className={styles.newProjectBtn}
-          onClick={() => setNewProjectOpen(true)}
-          title="Start blank, fork a Noun, or fork a single trait"
-        >
-          New / Fork…
-        </button>
-        <button
-          type="button"
-          className={styles.headerBtn}
-          onClick={() => setProjectGalleryOpen(true)}
-          disabled={!isConnected}
-          title={isConnected ? 'Open a saved project' : 'Connect wallet to open projects'}
-        >
-          Open…
-        </button>
-        <button
-          type="button"
-          className={styles.headerBtn}
-          onClick={() => setTraitGalleryOpen(true)}
-          disabled={!isConnected}
-          title={isConnected ? 'Browse saved traits' : 'Connect wallet to browse traits'}
-        >
-          Traits…
-        </button>
-        <button
-          type="button"
-          className={styles.headerBtn}
-          onClick={exportPng}
-          title="Export composite as 512×512 PNG"
-        >
-          Export PNG
-        </button>
-
         <span className={styles.title}>{name}</span>
 
         <span className={styles.flex} />

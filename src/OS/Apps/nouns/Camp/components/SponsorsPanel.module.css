@@ -183,38 +183,7 @@
   text-align: center;
 }
 
-/* Modal overlay */
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-
-.modalContent {
-  background: var(--berry-bg-tertiary);
-  border: 2px solid var(--berry-border);
-  border-radius: 8px;
-  padding: 20px;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.modalTitle {
-  font-family: var(--berry-font-system);
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--berry-text-primary);
-  margin: 0 0 12px 0;
-}
-
+/* Sponsor Candidate dialog body (Dialog primitive owns the chrome) */
 .modalDescription {
   font-family: var(--berry-font-system);
   font-size: 11px;
@@ -304,54 +273,6 @@
   color: var(--berry-text-muted);
   margin: 6px 0 0 0;
   line-height: 1.4;
-}
-
-/* Modal buttons */
-.modalButtons {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.cancelButton {
-  padding: 8px 16px;
-  font-family: var(--berry-font-system);
-  font-size: 11px;
-  background: var(--berry-bg-tertiary);
-  color: var(--berry-text-primary);
-  border: 1px solid var(--berry-border);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.cancelButton:hover:not(:disabled) {
-  background: var(--berry-bg-secondary);
-}
-
-.cancelButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.confirmButton {
-  padding: 8px 16px;
-  font-family: var(--berry-font-system);
-  font-size: 11px;
-  font-weight: bold;
-  background: var(--berry-accent);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.confirmButton:hover:not(:disabled) {
-  background: var(--berry-accent-hover, #005f5f);
-}
-
-.confirmButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
 }
 
 /* Status messages */

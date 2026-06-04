@@ -23,6 +23,7 @@ import { extractPaletteIndices } from '../utils/paletteColors';
 import { getClientName, isBerryOSClient } from '@/OS/lib/clientNames';
 import { useNounDetail, useNounOwner } from '../hooks/useNounDetail';
 import { useEnsName } from '@/OS/hooks/useEnsData';
+import { Dialog } from '@/OS/Primitives';
 import styles from './NounDetail.module.css';
 
 interface NounDetailProps {
@@ -236,31 +237,16 @@ function BidRow({ bid }: { bid: Bid }) {
  * Modal displaying all bids for the auction
  */
 function BidsModal({ bids, onClose }: { bids: Bid[]; onClose: () => void }) {
-  // Close on Escape
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>ALL BIDS</h2>
-          <button className={styles.modalClose} onClick={onClose}>×</button>
-        </div>
-        <div className={styles.modalBody}>
-          {bids.length === 0 ? (
-            <div className={styles.modalEmpty}>No bids yet</div>
-          ) : (
-            bids.map((bid) => <BidRow key={bid.id} bid={bid} />)
-          )}
-        </div>
+    <Dialog open onClose={onClose} title="ALL BIDS" width={480}>
+      <div className={styles.modalBody}>
+        {bids.length === 0 ? (
+          <div className={styles.modalEmpty}>No bids yet</div>
+        ) : (
+          bids.map((bid) => <BidRow key={bid.id} bid={bid} />)
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 }
 

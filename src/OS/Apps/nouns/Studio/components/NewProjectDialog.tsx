@@ -18,13 +18,9 @@ import { useLayers } from '../model/layers';
 import { useWorkspace } from '../model/workspace';
 import { useBundledTraits } from '../hooks/useBundledTraits';
 import {
-  bundledBackgroundColor,
-  decodeBundledTrait,
-} from '../utils/decodeBundledTrait';
-import {
-  pixelArrayToImageData,
-  solidColorImageData,
-} from '../utils/pixelArrayToImageData';
+  imageDataForBundledTrait,
+  sourceForBundledTrait,
+} from '../utils/loadBundledTrait';
 import { NOUN_PARTS, type NounPart } from '../types';
 import { ForkNounPicker, type ForkNounResolved } from './ForkNounPicker';
 import { ForkTraitPicker } from './ForkTraitPicker';
@@ -70,15 +66,14 @@ export function NewProjectDialog({ open, onClose }: NewProjectDialogProps) {
   }, [onClose, reset]);
 
   const loadTraitIntoLayer = useCallback(
-    (part: NounPart, index: number) => {
-      if (part === 'background') {
-        const color = bundledBackgroundColor(index);
-        loadImageData(part, solidColorImageData(color));
-        return;
-      }
-      const decoded = decodeBundledTrait(part, index);
-      const imageData = pixelArrayToImageData(decoded.pixels, bundled.palette);
-      loadImageData(part, imageData);
+    (part: NounPart, index: number, nounId?: number) => {
+      loadImageData(
+        part,
+        imageDataForBundledTrait(part, index, bundled.palette),
+        nounId === undefined
+          ? sourceForBundledTrait(index)
+          : { kind: 'fork-noun', traitIndex: index, nounId },
+      );
     },
     [bundled.palette, loadImageData],
   );
@@ -107,7 +102,7 @@ export function NewProjectDialog({ open, onClose }: NewProjectDialogProps) {
                 : part === 'head'
                   ? forkNoun.head
                   : forkNoun.glasses;
-        loadTraitIntoLayer(part, idx);
+        loadTraitIntoLayer(part, idx, forkNoun.id);
       }
       setName_(name.trim() || `Fork of Noun ${forkNoun.id}`);
       setActivePart('head');

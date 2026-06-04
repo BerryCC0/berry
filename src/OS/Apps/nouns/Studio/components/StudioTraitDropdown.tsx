@@ -1,47 +1,56 @@
-/**
- * TraitDropdown Component
- * Custom dropdown that shows Noun trait images in options
- */
-
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
-import type { TraitType } from '@/app/lib/nouns/utils/trait-name-utils';
-import { getTraitImageUrl } from '@/app/lib/nouns/utils/trait-image';
-import styles from './TraitDropdown.module.css';
+/**
+ * StudioTraitDropdown — Treasury-style trait picker adapted for editable
+ * Studio layers.
+ */
 
-interface TraitOption {
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { getTraitImageUrl } from '@/app/lib/nouns/utils/trait-image';
+import type { TraitType } from '@/app/lib/nouns/utils/trait-name-utils';
+import styles from './StudioTraitDropdown.module.css';
+
+export interface StudioTraitOption {
   value: number;
   name: string;
 }
 
-interface TraitDropdownProps {
+interface StudioTraitDropdownProps {
   type: TraitType;
-  options: TraitOption[];
+  options: StudioTraitOption[];
   value: number | null;
   onChange: (value: number | null) => void;
   placeholder?: string;
 }
 
-export function TraitDropdown({ type, options, value, onChange, placeholder }: TraitDropdownProps) {
+export function StudioTraitDropdown({
+  type,
+  options,
+  value,
+  onChange,
+  placeholder,
+}: StudioTraitDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const selectedOption = options.find((opt) => opt.value === value);
 
-  // Find the selected option
-  const selectedOption = options.find(opt => opt.value === value);
-
-  // Filter options by search query
   const filteredOptions = useMemo(() => {
     if (!searchQuery) return options;
     const query = searchQuery.toLowerCase();
-    return options.filter(opt => opt.name.toLowerCase().includes(query));
+    return options.filter((opt) =>
+      `${opt.name} ${opt.value}`.toLowerCase().includes(query),
+    );
   }, [options, searchQuery]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
         setSearchQuery('');
       }
@@ -49,42 +58,46 @@ export function TraitDropdown({ type, options, value, onChange, placeholder }: T
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
-  // Handle keyboard navigation
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      setIsOpen(false);
-      setSearchQuery('');
-    } else if (event.key === 'Enter' && !isOpen) {
-      setIsOpen(true);
-    }
-  };
-
-  const handleSelect = (optionValue: number | null) => {
-    onChange(optionValue);
+  function handleSelect(next: number | null): void {
+    onChange(next);
     setIsOpen(false);
     setSearchQuery('');
-  };
+  }
 
-  const displayLabel = selectedOption?.name || placeholder || type.charAt(0).toUpperCase() + type.slice(1);
+  const displayLabel =
+    selectedOption?.name ?? placeholder ?? `Choose ${type}`;
 
   return (
-    <div className={styles.container} ref={containerRef}>
+    <div
+      className={styles.container}
+      ref={containerRef}
+      onClick={(e) => e.stopPropagation()}
+    >
       <button
         type="button"
-        className={`${styles.trigger} ${isOpen ? styles.open : ''} ${value !== null ? styles.hasValue : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
+        className={`${styles.trigger} ${isOpen ? styles.open : ''} ${
+          value !== null ? styles.hasValue : ''
+        }`}
+        onClick={() => setIsOpen((prev) => !prev)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            setIsOpen(false);
+            setSearchQuery('');
+          } else if (event.key === 'Enter' && !isOpen) {
+            setIsOpen(true);
+          }
+        }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         <span className={styles.triggerContent}>
           {selectedOption && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img 
-              src={getTraitImageUrl(type, selectedOption.value)} 
-              alt="" 
+            <img
+              src={getTraitImageUrl(type, selectedOption.value)}
+              alt=""
               className={styles.triggerImage}
             />
           )}
@@ -95,7 +108,7 @@ export function TraitDropdown({ type, options, value, onChange, placeholder }: T
 
       {isOpen && (
         <div className={styles.dropdown}>
-          {options.length > 5 && (
+          {options.length > 8 && (
             <div className={styles.searchContainer}>
               <input
                 type="text"
@@ -103,12 +116,18 @@ export function TraitDropdown({ type, options, value, onChange, placeholder }: T
                 placeholder={`Search ${type}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    setIsOpen(false);
+                    setSearchQuery('');
+                  }
+                }}
+                autoFocus
               />
             </div>
           )}
-          
+
           <div className={styles.optionsList} role="listbox">
-            {/* Clear option */}
             <button
               type="button"
               className={`${styles.option} ${value === null ? styles.selected : ''}`}
@@ -116,32 +135,38 @@ export function TraitDropdown({ type, options, value, onChange, placeholder }: T
               role="option"
               aria-selected={value === null}
             >
-              <span className={styles.optionImagePlaceholder}>—</span>
-              <span className={styles.optionLabel}>All {type}s</span>
+              <span className={styles.optionImagePlaceholder}>✎</span>
+              <span className={styles.optionLabel}>Draw custom</span>
             </button>
 
             {filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
-                className={`${styles.option} ${value === option.value ? styles.selected : ''}`}
+                className={`${styles.option} ${
+                  value === option.value ? styles.selected : ''
+                }`}
                 onClick={() => handleSelect(option.value)}
                 role="option"
                 aria-selected={value === option.value}
-            >
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src={getTraitImageUrl(type, option.value)} 
-                  alt="" 
+                <img
+                  src={getTraitImageUrl(type, option.value)}
+                  alt=""
                   className={styles.optionImage}
                   loading="lazy"
                 />
-                <span className={styles.optionLabel}>{option.name}</span>
+                <span className={styles.optionLabel}>
+                  #{option.value} {option.name}
+                </span>
               </button>
             ))}
 
             {filteredOptions.length === 0 && searchQuery && (
-              <div className={styles.noResults}>No {type}s match &quot;{searchQuery}&quot;</div>
+              <div className={styles.noResults}>
+                No {type}s match &quot;{searchQuery}&quot;
+              </div>
             )}
           </div>
         </div>

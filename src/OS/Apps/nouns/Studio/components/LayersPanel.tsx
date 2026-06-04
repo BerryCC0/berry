@@ -14,10 +14,20 @@
  * Clicking a row selects it as the active layer (where the tools draw).
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { getTraitName } from '@/app/lib/nouns/utils/trait-name-utils';
+import { useBundledTraits } from '../hooks/useBundledTraits';
 import { useLayers } from '../model/layers';
 import { useWorkspace } from '../model/workspace';
 import { NOUN_PARTS, type NounPart } from '../types';
+import {
+  imageDataForBundledTrait,
+  sourceForBundledTrait,
+} from '../utils/loadBundledTrait';
+import {
+  StudioTraitDropdown,
+  type StudioTraitOption,
+} from './StudioTraitDropdown';
 import styles from './LayersPanel.module.css';
 
 const THUMB_SIZE = 28; // displayed thumbnail size in CSS px
@@ -59,14 +69,44 @@ function LayerThumb({ part }: { part: NounPart }) {
 export function LayersPanel() {
   const activePart = useWorkspace((s) => s.activePart);
   const setActivePart = useWorkspace((s) => s.setActivePart);
+  const setDirty = useWorkspace((s) => s.setDirty);
   const soloActiveLayer = useWorkspace((s) => s.soloActiveLayer);
   const toggleSolo = useWorkspace((s) => s.toggleSoloActiveLayer);
-  const onionOpacity = useWorkspace((s) => s.onionOpacity);
-  const setOnionOpacity = useWorkspace((s) => s.setOnionOpacity);
   const layers = useLayers((s) => s.layers);
+  const loadImageData = useLayers((s) => s.loadImageData);
+  const setSource = useLayers((s) => s.setSource);
   const toggleVisible = useLayers((s) => s.toggleVisible);
   const toggleLocked = useLayers((s) => s.toggleLocked);
   const clear = useLayers((s) => s.clear);
+  const bundled = useBundledTraits();
+
+  const traitOptions = useMemo(() => {
+    const out = {} as Record<NounPart, StudioTraitOption[]>;
+    for (const part of NOUN_PARTS) {
+      out[part] = bundled[part]
+        .map((trait) => ({
+          value: trait.index,
+          name: getTraitName(part, trait.index),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return out;
+  }, [bundled]);
+
+  function handleTraitChange(part: NounPart, index: number | null): void {
+    setActivePart(part);
+    if (index === null) {
+      setSource(part, undefined);
+      setDirty(true);
+      return;
+    }
+    loadImageData(
+      part,
+      imageDataForBundledTrait(part, index, bundled.palette),
+      sourceForBundledTrait(index),
+    );
+    setDirty(true);
+  }
 
   // Show layers TOP-down (glasses first) so it reads like Photoshop.
   const ordered = [...NOUN_PARTS].reverse();
@@ -84,23 +124,6 @@ export function LayersPanel() {
           Solo
         </button>
       </div>
-      <div className={styles.onionRow}>
-        <span className={styles.onionLabel} title="Fade non-active layers">
-          Onion
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={Math.round(onionOpacity * 100)}
-          onChange={(e) => setOnionOpacity(parseInt(e.target.value, 10) / 100)}
-          className={styles.onionSlider}
-        />
-        <span className={styles.onionValue}>
-          {onionOpacity === 0 ? 'off' : `${Math.round(onionOpacity * 100)}%`}
-        </span>
-      </div>
       <ul className={styles.list}>
         {ordered.map((part) => {
           const layer = layers[part];
@@ -113,10 +136,19 @@ export function LayersPanel() {
             >
               <LayerThumb part={part} />
               <div className={styles.meta}>
-                <span className={styles.partName}>{part}</span>
-                {layer.edited && (
-                  <span className={styles.partSub}>edited</span>
-                )}
+                <div className={styles.metaTopRow}>
+                  <span className={styles.partName}>{part}</span>
+                  {layer.edited && (
+                    <span className={styles.partSub}>edited</span>
+                  )}
+                </div>
+                <StudioTraitDropdown
+                  type={part}
+                  options={traitOptions[part]}
+                  value={layer.source?.traitIndex ?? null}
+                  onChange={(index) => handleTraitChange(part, index)}
+                  placeholder={`Choose ${part}…`}
+                />
               </div>
               <div className={styles.actions}>
                 <button

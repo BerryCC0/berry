@@ -13,6 +13,8 @@
 import { create } from 'zustand';
 import { CANVAS_SIZE, NOUN_PARTS, type LayerState, type NounPart } from '../types';
 
+type LayerSource = LayerState['source'];
+
 interface LayersState {
   /** Per-part state, always all 5 slots present. */
   layers: Record<NounPart, LayerState>;
@@ -26,7 +28,13 @@ interface LayersState {
   /** Clear a layer (transparent). Commits to history. */
   clear: (part: NounPart) => void;
   /** Replace a layer's canvas contents with provided ImageData. Commits. */
-  loadImageData: (part: NounPart, imageData: ImageData) => void;
+  loadImageData: (
+    part: NounPart,
+    imageData: ImageData,
+    source?: LayerSource,
+  ) => void;
+  /** Update layer provenance without changing pixels. */
+  setSource: (part: NounPart, source?: LayerSource) => void;
   /** Toggle layer visibility. */
   toggleVisible: (part: NounPart) => void;
   /** Toggle layer lock. */
@@ -160,14 +168,34 @@ export const useLayers = create<LayersState>()((set, get) => ({
     if (!state.canvas) return;
     clearCanvas(state.canvas);
     get().commit(part);
+    set((s) => ({
+      layers: {
+        ...s.layers,
+        [part]: { ...s.layers[part], source: undefined },
+      },
+    }));
   },
 
-  loadImageData: (part, imageData) => {
+  loadImageData: (part, imageData, source) => {
     const state = get().layers[part];
     if (!state.canvas) return;
     restore(state.canvas, imageData);
     get().commit(part);
+    set((s) => ({
+      layers: {
+        ...s.layers,
+        [part]: { ...s.layers[part], source },
+      },
+    }));
   },
+
+  setSource: (part, source) =>
+    set((s) => ({
+      layers: {
+        ...s.layers,
+        [part]: { ...s.layers[part], source },
+      },
+    })),
 
   toggleVisible: (part) =>
     set((s) => ({

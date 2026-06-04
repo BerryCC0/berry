@@ -6,4 +6,4 @@
 export { ImageData } from './image-data';
 export { buildSVG } from './svg-builder';
 export { getTraitName, type TraitType } from './trait-name-utils';
-
+export { getTraitImageUrl } from './trait-image';

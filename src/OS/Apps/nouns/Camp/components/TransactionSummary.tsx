@@ -132,6 +132,20 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
         </>
       );
     };
+
+    // Render a Noun-transfer line preserving the action's original title
+    // prefix ("Transfer Noun ", "Send Noun #") and inserting the Noun art
+    // inline after the ID. Falls back to the raw title if the action didn't
+    // surface a nounId in params (defensive — every Noun transfer should).
+    const renderNounTransferLabel = (tx: DecodedTransaction): ReactNode => {
+      const nounId = tx.params?.nounId as string | undefined;
+      if (!nounId) return tx.title;
+      if (tx.title.startsWith('Send Noun')) {
+        return <>Send Noun #{nounIdWithImage(nounId)}</>;
+      }
+      // Legacy decoder ("Transfer Noun 123")
+      return <>Transfer Noun {nounIdWithImage(nounId)}</>;
+    };
     
     // Aggregators for transfers
     let ethTotal = 0;
@@ -224,13 +238,18 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
         continue;
       }
 
-      // Cancel / redirect / recover — aggregate as stream cancellations.
-      // The recoverTokens leg of a cancel pair gets folded into the cancel
+      // Cancel / recover — aggregate as stream cancellations. The
+      // recoverTokens leg of a cancel pair gets folded into the cancel
       // entry so a 2-action cancel reads as a single "Cancel" item.
+      //
+      // 'Redirect unvested funds' is intentionally NOT in this list: each
+      // redirect has a meaningful amount + destination chip that aggregation
+      // would discard. It falls through to the Contract Call branch below,
+      // which renders "Redirect unvested funds - Redirects {amount} {symbol}
+      // to <ENS chip>".
       if (
         title === 'Cancel payment stream' ||
         title === 'Return unvested funds to Treasury' ||
-        title === 'Redirect unvested funds' ||
         title.startsWith('Recover stream funds') ||
         title.endsWith(' from stream')
       ) {
@@ -244,8 +263,10 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
         continue;
       }
       
-      // Noun NFT transfers: "Transfer Noun 123" — collect for swap detection below
-      if (title.startsWith('Transfer Noun')) {
+      // Noun NFT transfers: collect for swap detection below.
+      //   - "Transfer Noun 123" — legacy decoder path
+      //   - "Send Noun #123"    — action-registry path (noun-transfer.ts)
+      if (title.startsWith('Transfer Noun') || title.startsWith('Send Noun')) {
         nounTransfers.push(tx);
         continue;
       }
@@ -338,7 +359,7 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
             type: 'Noun Transfer',
             count: 1,
             details: withRecipient(
-              <>Transfer Noun {nounIdWithImage(tx.params?.nounId as string | undefined)}</>,
+              renderNounTransferLabel(tx),
               tx.params?.to as string | undefined,
             ),
           });
@@ -350,7 +371,7 @@ export function TransactionSummary({ actions, onNavigate }: TransactionSummaryPr
           type: 'Noun Transfer',
           count: 1,
           details: withRecipient(
-            <>Transfer Noun {nounIdWithImage(tx.params?.nounId as string | undefined)}</>,
+            renderNounTransferLabel(tx),
             tx.params?.to as string | undefined,
           ),
         });

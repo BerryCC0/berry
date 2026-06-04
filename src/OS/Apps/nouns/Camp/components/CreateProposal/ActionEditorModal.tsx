@@ -23,6 +23,7 @@ import { COMMON_TOKENS } from '../../utils/actionTemplates/constants';
 import type { ActionTemplateState, ValidationError } from '../../utils/types';
 import { useActionTemplate } from '../../utils/hooks/useActionTemplate';
 import { useTreasuryStreams } from '@/app/lib/nouns/hooks';
+import { Dialog, type DialogAction } from '@/OS/Primitives';
 import { Select, type SelectOption } from '@/OS/Primitives/Select/Select';
 import {
   TemplatePickerView,
@@ -692,20 +693,6 @@ export function ActionEditorModal({
     updateField,
   ]);
 
-  // Escape closes; body scroll lock.
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handler);
-    const orig = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handler);
-      document.body.style.overflow = orig;
-    };
-  }, [onClose]);
-
   const handlePickTemplate = (id: string) => {
     if (!id) return;
     if (selectedTemplate?.id !== id) {
@@ -741,10 +728,6 @@ export function ActionEditorModal({
       fieldValues,
       generatedActions,
     });
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose();
   };
 
   const renderConfigure = () => {
@@ -1103,79 +1086,64 @@ export function ActionEditorModal({
         ? selectedTemplate.name
         : 'Configure transaction';
 
+  const actions: DialogAction[] =
+    step === 'configure'
+      ? [
+          { label: 'Cancel', variant: 'default' },
+          {
+            label: 'Save action',
+            variant: 'primary',
+            onClick: () => {
+              if (!selectedTemplate || disabled) return;
+              handleSave();
+            },
+            closeOnClick: false,
+          },
+        ]
+      : [{ label: 'Cancel', variant: 'default' }];
+
   return (
-    <div
-      className={styles.overlay}
-      onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Configure transaction"
+    <Dialog
+      open
+      onClose={onClose}
+      title={headerTitle}
+      width={720}
+      actions={actions}
     >
-      <div className={styles.modal}>
-        <div className={styles.modalHeader}>
-          {step === 'configure' && (
-            <button
-              type="button"
-              className={styles.backButton}
-              onClick={() => setStep('pick')}
-              aria-label="Change transaction type"
-              title="Change transaction type"
-            >
-              ‹
-            </button>
-          )}
-          <span className={styles.modalTitle}>{headerTitle}</span>
+      {step === 'configure' && (
+        <div className={styles.subHeader}>
           <button
             type="button"
-            className={styles.closeButton}
-            onClick={onClose}
-            aria-label="Close"
+            className={styles.backButton}
+            onClick={() => setStep('pick')}
+            aria-label="Change transaction type"
+            title="Change transaction type"
           >
-            ×
+            ‹ Change type
           </button>
         </div>
+      )}
 
-        {step === 'pick' ? (
-          <TemplatePickerView
-            groups={OPTION_GROUPS}
-            value={selectedTemplate?.id || ''}
-            // Preserve the tab the user came from when they back out of
-            // step 2: derive the category from the currently-selected
-            // template so the picker re-mounts on the same tab.
-            initialTab={
-              selectedTemplate
-                ? OPTION_GROUPS.find((g) =>
-                    g.options.some((o) => o.value === selectedTemplate.id),
-                  )?.label
-                : undefined
-            }
-            onSelect={handlePickTemplate}
-          />
-        ) : (
-          renderConfigure()
-        )}
-
-        <div className={styles.modalFooter}>
-          <button
-            type="button"
-            className={styles.cancelButton}
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          {step === 'configure' && (
-            <button
-              type="button"
-              className={styles.saveButton}
-              onClick={handleSave}
-              disabled={!selectedTemplate || disabled}
-            >
-              Save action
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+      {step === 'pick' ? (
+        <TemplatePickerView
+          groups={OPTION_GROUPS}
+          value={selectedTemplate?.id || ''}
+          // Preserve the tab the user came from when they back out of
+          // step 2: derive the category from the currently-selected
+          // template so the picker re-mounts on the same tab.
+          initialTab={
+            selectedTemplate
+              ? OPTION_GROUPS.find((g) =>
+                  g.options.some((o) => o.value === selectedTemplate.id),
+                )?.label
+              : undefined
+          }
+          onSelect={handlePickTemplate}
+        />
+      ) : (
+        renderConfigure()
+      )}
+    </Dialog>
   );
 }
 

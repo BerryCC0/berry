@@ -5,6 +5,7 @@
 
 import React, { useMemo } from 'react';
 import { useReadContracts } from 'wagmi';
+import { Dialog, type DialogAction } from '@/OS/Primitives';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
 import type { Candidate } from '../../types';
 import styles from './UpdateCandidateModal.module.css';
@@ -100,91 +101,80 @@ export function UpdateCandidateModal({
 
   const sigCount = sigsToInvalidate.length;
   const showInvalidationWarning = sigCount > 0 && state !== 'success';
+  const isPending = state === 'pending';
 
-  if (!isOpen) return null;
-
-  const handleBackgroundClick = () => {
-    if (state !== 'pending') {
-      onClose();
-    }
-  };
-
-  const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-  };
+  const actions: DialogAction[] =
+    state === 'success'
+      ? []
+      : [
+          { label: 'Cancel', variant: 'default' },
+          {
+            label: isPending ? 'Updating...' : 'Update Candidate',
+            variant: 'primary',
+            onClick: onConfirm,
+            closeOnClick: false,
+          },
+        ];
 
   return (
-    <div className={styles.modalOverlay} onClick={handleBackgroundClick}>
-      <div className={styles.modalContent} onClick={handleContentClick}>
-        <h3 className={styles.modalTitle}>Update Candidate</h3>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title="Update Candidate"
+      width={450}
+      closeOnBackdropClick={!isPending}
+      closeOnEscape={!isPending}
+      actions={actions}
+    >
+      {state === 'success' ? (
+        <div className={styles.modalSuccess}>
+          Your candidate has been successfully updated! Redirecting...
+        </div>
+      ) : (
+        <>
+          <p className={styles.modalDescription}>
+            Provide an optional reason for this update. This will be recorded on-chain.
+          </p>
 
-        {state === 'success' ? (
-          <div className={styles.modalSuccess}>
-            Your candidate has been successfully updated! Redirecting...
-          </div>
-        ) : (
-          <>
-            <p className={styles.modalDescription}>
-              Provide an optional reason for this update. This will be recorded on-chain.
-            </p>
-
-            {showInvalidationWarning && (
-              <div className={styles.invalidationWarning}>
-                <strong className={styles.invalidationWarningTitle}>
-                  ⚠ This edit will invalidate active sponsor signatures
-                </strong>
-                <p className={styles.invalidationWarningBody}>
-                  {sigCount} active sponsor signature{sigCount !== 1 ? 's' : ''}
-                  {nounsToInvalidate > 0 && (
-                    <> ({nounsToInvalidate} noun{nounsToInvalidate !== 1 ? 's' : ''})</>
-                  )}{' '}
-                  will stop counting toward the promotion threshold as soon as this
-                  update lands on-chain. Sponsors will need to re-sign to be counted
-                  again.
-                </p>
-              </div>
-            )}
-
-            <textarea
-              ref={textareaRef}
-              className={styles.modalTextarea}
-              value={updateReason}
-              onChange={(e) => onUpdateReason(e.target.value)}
-              placeholder="Briefly describe what changed (optional)"
-              disabled={state === 'pending'}
-              rows={3}
-            />
-
-            {!hasVotingPower && updateCandidateCost && (
-              <div className={styles.modalFeeNotice}>
-                Update fee: {(Number(updateCandidateCost) / 1e18).toFixed(4)} ETH
-                <span className={styles.modalFeeNote}>(waived for Noun owners)</span>
-              </div>
-            )}
-
-            {state === 'error' && errorMessage && (
-              <div className={styles.modalError}>{errorMessage}</div>
-            )}
-
-            <div className={styles.modalActions}>
-              <button
-                className={styles.modalButtonSecondary}
-                onClick={onClose}
-                disabled={state === 'pending'}
-              >
-                Cancel
-              </button>
-              <button
-                className={styles.modalButtonPrimary}
-                onClick={onConfirm}
-                disabled={state === 'pending'}
-              >
-                {state === 'pending' ? 'Updating...' : 'Update Candidate'}
-              </button>
+          {showInvalidationWarning && (
+            <div className={styles.invalidationWarning}>
+              <strong className={styles.invalidationWarningTitle}>
+                ⚠ This edit will invalidate active sponsor signatures
+              </strong>
+              <p className={styles.invalidationWarningBody}>
+                {sigCount} active sponsor signature{sigCount !== 1 ? 's' : ''}
+                {nounsToInvalidate > 0 && (
+                  <> ({nounsToInvalidate} noun{nounsToInvalidate !== 1 ? 's' : ''})</>
+                )}{' '}
+                will stop counting toward the promotion threshold as soon as this
+                update lands on-chain. Sponsors will need to re-sign to be counted
+                again.
+              </p>
             </div>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+
+          <textarea
+            ref={textareaRef}
+            className={styles.modalTextarea}
+            value={updateReason}
+            onChange={(e) => onUpdateReason(e.target.value)}
+            placeholder="Briefly describe what changed (optional)"
+            disabled={isPending}
+            rows={3}
+          />
+
+          {!hasVotingPower && updateCandidateCost && (
+            <div className={styles.modalFeeNotice}>
+              Update fee: {(Number(updateCandidateCost) / 1e18).toFixed(4)} ETH
+              <span className={styles.modalFeeNote}>(waived for Noun owners)</span>
+            </div>
+          )}
+
+          {state === 'error' && errorMessage && (
+            <div className={styles.modalError}>{errorMessage}</div>
+          )}
+        </>
+      )}
+    </Dialog>
   );
 }

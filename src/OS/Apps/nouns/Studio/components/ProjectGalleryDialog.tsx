@@ -95,7 +95,8 @@ export function ProjectGalleryDialog({
       const imageDatas = deserializeLayers(project);
       for (const part of NOUN_PARTS) {
         const data = imageDatas[part as NounPart];
-        if (data) loadImageData(part as NounPart, data);
+        const source = project.layers[part]?.source;
+        if (data) loadImageData(part as NounPart, data, source);
       }
       setProjectId(project.id);
       setName(project.name);
@@ -122,8 +123,11 @@ export function ProjectGalleryDialog({
   useEffect(() => {
     if (opening.data && opening.data.id === openingId) {
       applyProject(opening.data);
-      setOpeningId(null);
-      onClose();
+      const timeout = window.setTimeout(() => {
+        setOpeningId(null);
+        onClose();
+      }, 0);
+      return () => window.clearTimeout(timeout);
     }
   }, [opening.data, openingId, applyProject, onClose]);
 

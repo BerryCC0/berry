@@ -10,7 +10,7 @@
  * simple (1 pixel = 1 trait pixel) and the on-screen render crisp.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLayers } from '../model/layers';
 import { useWorkspace } from '../model/workspace';
 import { CANVAS_SIZE, NOUN_PARTS } from '../types';
@@ -18,27 +18,13 @@ import { composeThumbnail } from '../utils/composeThumbnail';
 import { downloadDataUrl, slugify } from '../utils/downloadDataUrl';
 import styles from './CompositePreview.module.css';
 
-const BACKGROUNDS: Array<{ id: string; label: string; value: string | null }> = [
-  { id: 'checker', label: 'Checker', value: null },
-  { id: 'cool', label: 'Cool', value: '#d5d7e1' },
-  { id: 'warm', label: 'Warm', value: '#e1d7d5' },
-  { id: 'white', label: 'White', value: '#ffffff' },
-  { id: 'black', label: 'Black', value: '#000000' },
-];
-
 function compositeOnto(
   dst: CanvasRenderingContext2D,
   layers: ReturnType<typeof useLayers.getState>['layers'],
   size: number,
-  background: string | null,
 ): void {
   dst.imageSmoothingEnabled = false;
-  if (background === null) {
-    drawChecker(dst, size);
-  } else {
-    dst.fillStyle = background;
-    dst.fillRect(0, 0, size, size);
-  }
+  drawChecker(dst, size);
   for (const part of NOUN_PARTS) {
     const state = layers[part];
     if (!state.canvas || !state.visible) continue;
@@ -62,9 +48,6 @@ export function CompositePreview() {
   const getCanvases = useLayers((s) => s.getCanvases);
   const name = useWorkspace((s) => s.name);
 
-  const [bgIndex, setBgIndex] = useState(0);
-  const background = BACKGROUNDS[bgIndex];
-
   // Repaint when any layer's pixels or visibility change.
   const fingerprint = NOUN_PARTS.map(
     (p) => `${layers[p].historyIndex}:${layers[p].visible}`,
@@ -75,23 +58,17 @@ export function CompositePreview() {
     if (!c) return;
     const ctx = c.getContext('2d');
     if (!ctx) return;
-    compositeOnto(ctx, layers, CANVAS_SIZE, background.value);
-  }, [layers, background, fingerprint]);
+    compositeOnto(ctx, layers, CANVAS_SIZE);
+  }, [layers, fingerprint]);
 
   function handleExport(): void {
-    const dataUrl = composeThumbnail(getCanvases(), {
-      size: 512,
-      background: background.value,
-    });
+    const dataUrl = composeThumbnail(getCanvases(), { size: 512 });
     if (!dataUrl) return;
     downloadDataUrl(dataUrl, `${slugify(name)}-512.png`);
   }
 
   async function handleCopy(): Promise<void> {
-    const dataUrl = composeThumbnail(getCanvases(), {
-      size: 512,
-      background: background.value,
-    });
+    const dataUrl = composeThumbnail(getCanvases(), { size: 512 });
     if (!dataUrl) return;
     try {
       const blob = await (await fetch(dataUrl)).blob();
@@ -106,10 +83,6 @@ export function CompositePreview() {
     }
   }
 
-  function cycleBackground(): void {
-    setBgIndex((i) => (i + 1) % BACKGROUNDS.length);
-  }
-
   return (
     <div className={styles.panel}>
       <div className={styles.previewWrap}>
@@ -120,22 +93,7 @@ export function CompositePreview() {
           className={styles.previewCanvas}
         />
       </div>
-      <div className={styles.meta}>
-        <span className={styles.metaLabel}>{background.label}</span>
-        <span className={styles.metaSize}>
-          {CANVAS_SIZE}×{CANVAS_SIZE}
-        </span>
-      </div>
       <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.actionBtn}
-          onClick={cycleBackground}
-          title="Cycle preview background"
-          aria-label="Cycle background"
-        >
-          <BgIcon />
-        </button>
         <button
           type="button"
           className={styles.actionBtn}
@@ -156,18 +114,6 @@ export function CompositePreview() {
         </button>
       </div>
     </div>
-  );
-}
-
-function BgIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width={14} height={14} aria-hidden="true">
-      <path
-        d="M2 2h12v12H2V2zm2 2v8h8V4H4z"
-        fill="currentColor"
-      />
-      <path d="M5 5h3v3H5zM8 8h3v3H8z" fill="currentColor" opacity="0.5" />
-    </svg>
   );
 }
 

@@ -22,8 +22,8 @@ import { TOOLS } from '../tools';
 import {
   CANVAS_SIZE,
   NOUN_PARTS,
-  type NounPart,
   type Point,
+  type ToolId,
 } from '../types';
 import styles from './PixelCanvas.module.css';
 
@@ -42,6 +42,28 @@ function screenToCanvas(
     x: clamp(Math.floor((clientX - rect.left) / zoom), 0, CANVAS_SIZE - 1),
     y: clamp(Math.floor((clientY - rect.top) / zoom), 0, CANVAS_SIZE - 1),
   };
+}
+
+function cursorForTool(toolId: ToolId): React.CSSProperties['cursor'] {
+  switch (toolId) {
+    case 'move':
+      return 'grab';
+    case 'eyedropper':
+      return 'copy';
+    case 'bucket':
+      return 'cell';
+    case 'selection':
+    case 'line':
+    case 'rectangle':
+    case 'filledRectangle':
+    case 'ellipse':
+    case 'filledEllipse':
+      return 'crosshair';
+    case 'brush':
+    case 'eraser':
+    default:
+      return 'crosshair';
+  }
 }
 
 export function PixelCanvas() {
@@ -64,6 +86,7 @@ export function PixelCanvas() {
   const [drawing, setDrawing] = useState(false);
   const [hover, setHover] = useState<Point | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const tool = TOOLS[toolId];
@@ -169,6 +192,7 @@ export function PixelCanvas() {
     const rect = e.currentTarget.getBoundingClientRect();
     if (spaceDown || e.button === 1) {
       panStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+      setIsPanning(true);
       e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
@@ -198,6 +222,7 @@ export function PixelCanvas() {
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (panStartRef.current) {
       panStartRef.current = null;
+      setIsPanning(false);
       return;
     }
     if (!drawing) return;
@@ -211,11 +236,13 @@ export function PixelCanvas() {
     setHover(null);
   };
 
-  const cursor = panStartRef.current
+  const cursor = isPanning
     ? 'grabbing'
     : spaceDown
       ? 'grab'
-      : 'crosshair';
+      : layers[activePart].locked
+        ? 'not-allowed'
+        : cursorForTool(toolId);
 
   return (
     <div
@@ -243,6 +270,8 @@ export function PixelCanvas() {
           width={dim}
           height={dim}
           className={styles.overlay}
+          aria-label={`${tool.name} canvas for ${activePart}`}
+          title={`${tool.name} on ${activePart}. Hold Space to pan.`}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -258,7 +287,7 @@ function drawCheckerboard(ctx: CanvasRenderingContext2D, size: number): void {
   const cell = 8;
   for (let y = 0; y < size; y += cell) {
     for (let x = 0; x < size; x += cell) {
-      ctx.fillStyle = ((x / cell + y / cell) & 1) === 0 ? '#404040' : '#3a3a3a';
+      ctx.fillStyle = ((x / cell + y / cell) & 1) === 0 ? '#f2f3f4' : '#c9cacc';
       ctx.fillRect(x, y, cell, cell);
     }
   }
@@ -270,7 +299,7 @@ function drawGrid(
   zoom: number,
 ): void {
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.strokeStyle = 'rgba(150, 158, 166, 0.22)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let i = 0; i <= CANVAS_SIZE; i++) {
@@ -282,8 +311,8 @@ function drawGrid(
     ctx.lineTo(size, y);
   }
   ctx.stroke();
-  // Heavier mid-line at 16 (every 8 pixels) for orientation.
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  // Heavier guide lines every 8 pixels for orientation.
+  ctx.strokeStyle = 'rgba(110, 118, 126, 0.42)';
   ctx.beginPath();
   for (let i = 0; i <= CANVAS_SIZE; i += 8) {
     const x = i * zoom + 0.5;

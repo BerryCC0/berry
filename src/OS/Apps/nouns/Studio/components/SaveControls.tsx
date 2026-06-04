@@ -19,6 +19,8 @@ import { useAutoSave } from '../hooks/useAutoSave';
 import { useCreateStudioProject } from '../hooks/useStudioProjects';
 import { composeThumbnail } from '../utils/composeThumbnail';
 import { serializeLayers } from '../utils/serializeWorkspace';
+import { NOUN_PARTS } from '../types';
+import { SaveAsDialog } from './SaveAsDialog';
 import styles from './SaveControls.module.css';
 
 function timeAgo(ms: number): string {
@@ -40,11 +42,13 @@ export function SaveControls() {
   const descriptor = usePalette((s) => s.descriptor);
   const customPalette = usePalette((s) => s.custom);
   const getCanvases = useLayers((s) => s.getCanvases);
+  const layersState = useLayers((s) => s.layers);
 
   const autoSave = useAutoSave();
   const create = useCreateStudioProject();
 
   const [agoLabel, setAgoLabel] = useState<string>('');
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
 
   useEffect(() => {
     if (!autoSave.lastSavedAt) {
@@ -73,12 +77,16 @@ export function SaveControls() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function saveAs(): Promise<void> {
-    const next = prompt('Save as…', name) ?? '';
-    const trimmed = next.trim();
-    if (!trimmed) return;
+  async function saveAsWithName(trimmed: string): Promise<void> {
     const canvases = getCanvases();
-    const layers = serializeLayers(canvases, descriptor);
+    const layerMeta: NonNullable<Parameters<typeof serializeLayers>[2]> = {};
+    for (const part of NOUN_PARTS) {
+      layerMeta[part] = {
+        edited: layersState[part].edited,
+        source: layersState[part].source,
+      };
+    }
+    const layers = serializeLayers(canvases, descriptor, layerMeta);
     const thumbnailDataUrl = composeThumbnail(canvases, { size: 128 });
     try {
       const project = await create.mutateAsync({
@@ -91,6 +99,7 @@ export function SaveControls() {
       setProjectId(project.id);
       setName(trimmed);
       setDirty(false);
+      setSaveAsOpen(false);
     } catch (e) {
       alert(`Save failed: ${(e as Error).message}`);
     }
@@ -98,7 +107,7 @@ export function SaveControls() {
 
   async function save(): Promise<void> {
     if (!projectId) {
-      await saveAs();
+      setSaveAsOpen(true);
       return;
     }
     await autoSave.saveNow();
@@ -135,7 +144,7 @@ export function SaveControls() {
       <button
         type="button"
         className={styles.button}
-        onClick={saveAs}
+        onClick={() => setSaveAsOpen(true)}
         disabled={!isConnected || create.isPending}
         title="Save as new project…"
       >
@@ -146,6 +155,13 @@ export function SaveControls() {
           {address.slice(0, 6)}…{address.slice(-4)}
         </span>
       )}
+
+      <SaveAsDialog
+        open={saveAsOpen}
+        initialName={name}
+        onClose={() => setSaveAsOpen(false)}
+        onConfirm={(n) => void saveAsWithName(n)}
+      />
     </div>
   );
 }
