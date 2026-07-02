@@ -23,15 +23,44 @@ export type CampRoute =
 
 export function parseRoute(path?: string): CampRoute {
   if (!path) return { view: 'activity' };
-  
-  // Parse query parameters
-  const [pathPart, queryPart] = path.split('?');
+
+  // Only the `create` route uses `?` as a query-string separator (for
+  // `create?draft=x`). Every other section reads the entire path as-is
+  // because slugs are allowed to contain `?` — e.g., a candidate titled
+  // "Should Nouns simulate proposals before funding?" has slug
+  // `should-nouns-simulate-proposals-before-funding?` (question mark and
+  // all — that's how the client that created it emitted the slug on-chain).
+  // The previous unconditional split lost the trailing `?` from any such
+  // slug and 404'd against the DB.
+  const firstSlash = path.indexOf('/');
+  const head = firstSlash === -1 ? path : path.slice(0, firstSlash);
+  let pathPart = path;
+  let queryPart = '';
+  if (head === 'create') {
+    const qIdx = path.indexOf('?');
+    if (qIdx !== -1) {
+      pathPart = path.slice(0, qIdx);
+      queryPart = path.slice(qIdx + 1);
+    }
+  }
   const queryParams = new URLSearchParams(queryPart || '');
-  
-  const parts = pathPart.split('/').filter(Boolean);
-  
+
+  // Decode each path segment so slugs written back into state by
+  // `routeToPath` (which percent-encodes `?` and other reserved chars to
+  // survive browser URLs) come back out as their DB form.
+  const parts = pathPart
+    .split('/')
+    .filter(Boolean)
+    .map((seg) => {
+      try {
+        return decodeURIComponent(seg);
+      } catch {
+        return seg;
+      }
+    });
+
   if (parts.length === 0) return { view: 'activity' };
-  
+
   switch (parts[0]) {
     case 'proposals':
       return { view: 'proposals' };
@@ -93,8 +122,12 @@ export function routeToPath(route: CampRoute): string {
     case 'candidates':
       return 'candidates';
     case 'candidate':
-      // Use clean URL format: /c/{slug}
-      return `c/${route.slug}`;
+      // Use clean URL format: /c/{slug}. Slugs can legitimately contain
+      // `?` (the client that created "Should Nouns simulate proposals
+      // before funding?" preserved it on-chain), so percent-encode reserved
+      // URL chars — otherwise the browser treats a trailing `?` as the
+      // query-string separator and drops it, and our lookup 404s.
+      return `c/${encodeURIComponent(route.slug)}`;
     case 'voters':
       return 'voters';
     case 'voter':

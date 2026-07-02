@@ -21,7 +21,15 @@ export async function GET(request: NextRequest) {
       // the indexer — e.g. `fund-usdc-buyer-contract` has 3 rows). When a
       // clean `/c/{slug}` URL is resolved, prefer the newest non-canceled
       // candidate so users don't land on a stale/canceled collision.
-      const rows = await sql`
+      //
+      // Candidates whose on-chain slug ends with `?` (a real thing — e.g.
+      // "Should Nouns simulate proposals before funding?") lose the `?` when
+      // shared as a bare URL because the browser treats it as the query-
+      // separator. If the exact-match lookup misses AND the slug doesn't
+      // already end in `?`, we fall back to trying `slug + '?'`. Safe: if
+      // both `foo` and `foo?` exist, `foo` wins on the first try; if only
+      // `foo?` exists, the fallback finds it.
+      let rows = await sql`
         SELECT c.id, c.slug, c.proposer, c.title, c.description,
                c.targets, c."values", c.signatures AS signatures_list, c.calldatas,
                c.encoded_proposal_hash, c.proposal_id_to_update,
@@ -34,6 +42,21 @@ export async function GET(request: NextRequest) {
         ORDER BY c.canceled ASC, c.created_timestamp DESC NULLS LAST
         LIMIT 1
       `;
+      if (rows.length === 0 && !slug.endsWith('?')) {
+        rows = await sql`
+          SELECT c.id, c.slug, c.proposer, c.title, c.description,
+                 c.targets, c."values", c.signatures AS signatures_list, c.calldatas,
+                 c.encoded_proposal_hash, c.proposal_id_to_update,
+                 c.created_timestamp, c.last_updated_timestamp, c.canceled,
+                 c.signature_count,
+                 e.name as proposer_ens
+          FROM ponder_live.candidates c
+          LEFT JOIN ponder_live.ens_names e ON LOWER(c.proposer) = LOWER(e.address)
+          WHERE c.slug = ${slug + '?'}
+          ORDER BY c.canceled ASC, c.created_timestamp DESC NULLS LAST
+          LIMIT 1
+        `;
+      }
       if (rows.length === 0) {
         return NextResponse.json({ error: 'Candidate not found' }, { status: 404 });
       }
