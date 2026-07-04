@@ -138,11 +138,23 @@ export async function batchResolveAndStoreEns(
 
 /**
  * Extract a title from a proposal/candidate description.
- * Titles are the first line, typically formatted as "# Title" in markdown.
+ *
+ * Titles are typically formatted as "# Title" in markdown on the first
+ * non-empty line. Many clients (Noundry, some Nouns.wtf drafts) prefix
+ * the description with blank lines before the heading — the naive
+ * `split('\n')[0]` returned "" for those and produced empty titles for
+ * ~an accumulating count of proposals. Skip leading blank/whitespace-only
+ * lines before looking for the heading.
  */
 export function extractTitle(description: string | undefined | null): string {
   if (!description) return "";
-  const firstLine = description.split("\n")[0]?.trim() ?? "";
-  // Remove markdown heading prefix
-  return firstLine.replace(/^#+\s*/, "").trim();
+  for (const line of description.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) continue;
+    // Remove markdown heading prefix. If the first non-empty line isn't a
+    // heading (no leading `#`), still use it verbatim as the title — that's
+    // how some very old proposals encode it.
+    return trimmed.replace(/^#+\s*/, "").trim();
+  }
+  return "";
 }

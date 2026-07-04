@@ -11,6 +11,28 @@ export function escapeRegex(str: string): string {
 }
 
 /**
+ * Extract a title from a proposal/candidate description.
+ *
+ * Mirrors `ponder/src/helpers/ens.ts::extractTitle`. Used as a frontend
+ * fallback when the stored `title` field is empty — many proposals have
+ * empty titles in the DB because the client that created them prefixed
+ * the description with a blank line (`\n# Title\n...`) and the older
+ * indexer's `split('\n')[0]` returned "" for those. Fixing the indexer
+ * helps future events but existing rows need this fallback to render.
+ */
+export function deriveTitleFromDescription(
+  description: string | undefined | null,
+): string {
+  if (!description) return '';
+  for (const line of description.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) continue;
+    return trimmed.replace(/^#+\s*/, '').trim();
+  }
+  return '';
+}
+
+/**
  * Strip the title from the description
  * The API returns description with title at the start (e.g., "# Title\n\nDescription...")
  */

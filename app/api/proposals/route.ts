@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { deriveTitleFromDescription } from '@/OS/Apps/nouns/Camp/utils/descriptionUtils';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -65,8 +66,17 @@ export async function GET(request: NextRequest) {
       WHERE 1=1 ${statusFilter ? sql.unsafe(statusFilter) : sql``}
     `;
 
+    // Backfill empty titles from the description body — the older
+    // indexer's `extractTitle` returned "" for descriptions that started
+    // with a blank line (`\n# Title\n...`).
+    const proposals = rows.map((r) =>
+      r.title
+        ? r
+        : { ...r, title: deriveTitleFromDescription(r.description) },
+    );
+
     return NextResponse.json({
-      proposals: rows,
+      proposals,
       total: parseInt(countRows[0]?.total || '0'),
       limit,
       offset,

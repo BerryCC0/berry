@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { deriveTitleFromDescription } from '@/OS/Apps/nouns/Camp/utils/descriptionUtils';
 
 export async function GET(
   request: NextRequest,
@@ -60,6 +61,11 @@ export async function GET(
     }
 
     const candidate = candidateRows[0];
+
+    // Backfill empty title from the description (see proposals route).
+    if (!candidate.title) {
+      candidate.title = deriveTitleFromDescription(candidate.description);
+    }
 
     return NextResponse.json({
       candidate: {

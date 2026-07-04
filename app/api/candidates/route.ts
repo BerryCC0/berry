@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { deriveTitleFromDescription } from '@/OS/Apps/nouns/Camp/utils/descriptionUtils';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -84,6 +85,11 @@ export async function GET(request: NextRequest) {
         `,
       ]);
 
+      // Backfill empty title from the description body (see proposals route).
+      if (!candidate.title) {
+        candidate.title = deriveTitleFromDescription(candidate.description);
+      }
+
       return NextResponse.json({
         candidate: {
           ...candidate,
@@ -112,7 +118,14 @@ export async function GET(request: NextRequest) {
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    return NextResponse.json({ candidates: rows });
+    // Backfill empty titles across the list (see proposals route).
+    const candidates = rows.map((r) =>
+      r.title
+        ? r
+        : { ...r, title: deriveTitleFromDescription(r.description) },
+    );
+
+    return NextResponse.json({ candidates });
   } catch (error) {
     console.error('Failed to fetch candidates:', error);
     return NextResponse.json({ error: 'Failed to fetch candidates' }, { status: 500 });

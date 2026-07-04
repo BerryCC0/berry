@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
 import { NOUNS_ADDRESSES } from '@/app/lib/nouns/contracts';
+import { deriveTitleFromDescription } from '@/OS/Apps/nouns/Camp/utils/descriptionUtils';
 
 // RPC endpoint and contract config for dynamic quorum
 const ETH_RPC = 'https://eth.llamarpc.com';
@@ -119,6 +120,15 @@ export async function GET(
     // Override quorum_votes with dynamic on-chain value when available
     if (dynamicQuorum !== null) {
       proposal.quorum_votes = dynamicQuorum.toString();
+    }
+
+    // Backfill empty title from the description. The indexer's older
+    // `extractTitle` returned "" for descriptions that started with a
+    // blank line (`\n# Title\n...`) — several clients (Noundry, some
+    // Nouns.wtf drafts) emit that shape. Fixed in ponder but existing rows
+    // still have empty titles until re-index. This gives immediate coverage.
+    if (!proposal.title) {
+      proposal.title = deriveTitleFromDescription(proposal.description);
     }
 
     return NextResponse.json({
