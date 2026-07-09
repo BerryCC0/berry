@@ -1,96 +1,35 @@
 /**
  * ENS Batch Resolution API Route
- * POST /api/ens - Batch resolve addresses to ENS names/avatars
+ * POST /api/ens              — batch resolve addresses to ENS names/avatars
+ * GET  /api/ens?address=0x…  — single address lookup
  *
- * Primary source: ponder_live.ens_names (populated during Ponder indexing).
+ * Source of truth: ponder_live.ens_names, populated by the Ponder indexer.
  *
- * Staleness handling: entries older than STALE_THRESHOLD_DAYS are
- * re-resolved in a non-blocking background pass so the *next* request
- * returns fresh data without slowing down the current one.
+ * This route is READ-ONLY by design. ponder_live.* are Ponder-owned tables
+ * guarded by live-query/reorg triggers, so the frontend cannot write them — an
+ * earlier "background refresh" upsert here silently failed on *every* call (it
+ * named a non-existent column, `"resolvedAt"` vs the real `resolved_at`, and
+ * targeted a non-writable view). It has been removed rather than fixed, because
+ * writing the indexer's tables from the frontend is neither possible nor the
+ * right layering.
  *
- * The response now includes `resolvedAt` (unix seconds) per address so
- * clients can reason about freshness if needed.
+ * Healing of missing / stale / poisoned rows happens two other ways:
+ *   - the indexer re-resolves addresses as it sees new events, and no longer
+ *     persists failed lookups as nulls (see ponder/src/helpers/ens.ts), and
+ *   - the client (src/OS/hooks/useEnsData.ts) resolves any null-name address
+ *     live via ensideas for display.
+ *
+ * `resolvedAt` (unix seconds, null = not in DB) is returned per address for
+ * clients that want to reason about freshness.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
 
-/** How old (in days) before we consider an ENS entry stale and re-resolve. */
-const STALE_THRESHOLD_DAYS = 7;
-
 interface EnsEntry {
   name: string | null;
   avatar: string | null;
   resolvedAt: number | null; // unix seconds, null = not in DB
-}
-
-// ---------------------------------------------------------------------------
-// Background re-resolution via ensideas.com
-// ---------------------------------------------------------------------------
-
-async function resolveEnsLive(
-  address: string,
-): Promise<{ name: string | null; avatar: string | null }> {
-  try {
-    const res = await fetch(
-      `https://api.ensideas.com/ens/resolve/${address}`,
-    );
-    if (!res.ok) return { name: null, avatar: null };
-    const data = (await res.json()) as {
-      name?: string;
-      avatar?: string;
-    };
-    return {
-      name: data.name || null,
-      avatar: data.avatar || null,
-    };
-  } catch {
-    return { name: null, avatar: null };
-  }
-}
-
-/**
- * Fire-and-forget: re-resolve stale addresses and upsert into the DB.
- * Runs after the response is sent so it doesn't block the client.
- */
-function backgroundRefreshStale(addresses: string[]) {
-  if (addresses.length === 0) return;
-
-  // Don't await — fire and forget
-  (async () => {
-    try {
-      const sql = ponderSql();
-      const BATCH = 10;
-      for (let i = 0; i < addresses.length; i += BATCH) {
-        const batch = addresses.slice(i, i + BATCH);
-        const results = await Promise.all(
-          batch.map(async (addr) => {
-            const ens = await resolveEnsLive(addr);
-            return { addr, ...ens };
-          }),
-        );
-
-        for (const { addr, name, avatar } of results) {
-          try {
-            const now = Math.floor(Date.now() / 1000);
-            await sql`
-              INSERT INTO ponder_live.ens_names (address, name, avatar, "resolvedAt")
-              VALUES (${addr}, ${name}, ${avatar}, ${now})
-              ON CONFLICT (address)
-              DO UPDATE SET
-                name = ${name},
-                avatar = ${avatar},
-                "resolvedAt" = ${now}
-            `;
-          } catch {
-            // Individual upsert failed — don't block the rest
-          }
-        }
-      }
-    } catch (err) {
-      console.error('[ENS] Background refresh failed:', err);
-    }
-  })();
 }
 
 // ---------------------------------------------------------------------------
@@ -106,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ens: {} });
     }
 
-    // Limit to 100 addresses per request
+    // Limit to 100 addresses per request; normalize and validate
     const limitedAddresses = addresses
       .slice(0, 100)
       .map((addr) => addr.toLowerCase())
@@ -118,48 +57,27 @@ export async function POST(request: NextRequest) {
 
     const sql = ponderSql();
 
-    // Query ens_names table — include resolved_at for staleness checks
     const rows = await sql`
       SELECT address, name, avatar, resolved_at AS "resolvedAt"
       FROM ponder_live.ens_names
       WHERE address = ANY(${limitedAddresses})
     `;
 
-    // Build result map
+    // Build result map, defaulting addresses not present in the DB to nulls.
     const ensMap: Record<string, EnsEntry> = {};
-    const dbAddresses = new Set<string>();
-
     for (const row of rows) {
       const addr = (row.address as string).toLowerCase();
-      dbAddresses.add(addr);
       ensMap[addr] = {
         name: row.name || null,
         avatar: row.avatar || null,
         resolvedAt: row.resolvedAt ? Number(row.resolvedAt) : null,
       };
     }
-
-    // Fill in addresses not found in DB
     for (const addr of limitedAddresses) {
       if (!ensMap[addr]) {
         ensMap[addr] = { name: null, avatar: null, resolvedAt: null };
       }
     }
-
-    // Identify stale entries for background refresh
-    const staleThreshold =
-      Math.floor(Date.now() / 1000) - STALE_THRESHOLD_DAYS * 86400;
-    const staleAddresses = limitedAddresses.filter((addr) => {
-      const entry = ensMap[addr];
-      if (!entry) return false;
-      // Never resolved, or resolved before threshold
-      return (
-        entry.resolvedAt === null || entry.resolvedAt < staleThreshold
-      );
-    });
-
-    // Kick off background re-resolution (non-blocking)
-    backgroundRefreshStale(staleAddresses);
 
     return NextResponse.json({ ens: ensMap });
   } catch (error) {
@@ -194,29 +112,14 @@ export async function GET(request: NextRequest) {
     `;
 
     if (rows.length === 0) {
-      // Not in DB — try live resolution, return result, and store
-      backgroundRefreshStale([address]);
-      return NextResponse.json({
-        name: null,
-        avatar: null,
-        resolvedAt: null,
-      });
+      return NextResponse.json({ name: null, avatar: null, resolvedAt: null });
     }
 
     const row = rows[0];
-    const resolvedAt = row.resolvedAt ? Number(row.resolvedAt) : null;
-
-    // Check staleness
-    const staleThreshold =
-      Math.floor(Date.now() / 1000) - STALE_THRESHOLD_DAYS * 86400;
-    if (resolvedAt === null || resolvedAt < staleThreshold) {
-      backgroundRefreshStale([address]);
-    }
-
     return NextResponse.json({
       name: row.name || null,
       avatar: row.avatar || null,
-      resolvedAt,
+      resolvedAt: row.resolvedAt ? Number(row.resolvedAt) : null,
     });
   } catch (error) {
     console.error('[API] Failed to resolve ENS:', error);

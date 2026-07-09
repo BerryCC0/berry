@@ -16,29 +16,45 @@ export interface EnsResult {
   avatar: string | null;
 }
 
-// In-memory cache: persists for the lifetime of the Ponder process.
-// During backfill, this means each unique address is resolved exactly once.
+/**
+ * Outcome of a resolution attempt. `ok` is false only when the upstream lookup
+ * FAILED (network error, rate-limit, non-2xx) — distinct from succeeding and
+ * finding no name.
+ *
+ * Why this distinction matters: callers must never persist a failed lookup. A
+ * failed lookup written as a fresh `null` row is indistinguishable from an
+ * authoritative "this address has no ENS", so it (a) suppresses re-resolution
+ * and (b) can overwrite a previously-good name. Transient ensideas rate-limits
+ * doing exactly this poisoned ~75% of the ens_names table with nulls.
+ */
+interface EnsLookup extends EnsResult {
+  ok: boolean;
+}
+
+// In-memory cache: persists for the lifetime of the Ponder process. Holds only
+// SUCCESSFUL lookups — so each unique address is resolved at most once per
+// process, while failures stay uncached and get retried on the next event.
 const ENS_CACHE = new Map<string, EnsResult>();
 
 /**
  * Resolve an Ethereum address to its ENS name and avatar via ensideas.com.
- * Results are cached in memory for the lifetime of the process.
- * Returns { name, avatar } -- both may be null if no ENS record exists.
+ * Successful results are cached in memory for the lifetime of the process.
+ * Returns { name, avatar, ok }; `ok: false` means the lookup failed and the
+ * result must not be persisted (name/avatar are null placeholders in that case).
  */
-export async function resolveEns(address: string): Promise<EnsResult> {
+export async function resolveEns(address: string): Promise<EnsLookup> {
   const lower = address.toLowerCase();
 
   const cached = ENS_CACHE.get(lower);
   if (cached !== undefined) {
-    return cached;
+    return { ...cached, ok: true };
   }
 
   try {
     const res = await fetch(`https://api.ensideas.com/ens/resolve/${lower}`);
     if (!res.ok) {
-      const result: EnsResult = { name: null, avatar: null };
-      ENS_CACHE.set(lower, result);
-      return result;
+      // Rate-limited or upstream error — transient. Don't cache, don't persist.
+      return { name: null, avatar: null, ok: false };
     }
     const data = (await res.json()) as {
       name?: string;
@@ -50,11 +66,10 @@ export async function resolveEns(address: string): Promise<EnsResult> {
       avatar: data.avatar || null,
     };
     ENS_CACHE.set(lower, result);
-    return result;
+    return { ...result, ok: true };
   } catch {
-    const result: EnsResult = { name: null, avatar: null };
-    ENS_CACHE.set(lower, result);
-    return result;
+    // Network error — transient. Don't cache, don't persist.
+    return { name: null, avatar: null, ok: false };
   }
 }
 
@@ -76,7 +91,12 @@ export async function resolveAndStoreEns(
   if (lower === ZERO_ADDRESS) return null;
 
   // Resolve (uses in-memory cache internally)
-  const { name, avatar } = await resolveEns(lower);
+  const { name, avatar, ok } = await resolveEns(lower);
+
+  // Failed lookup: leave any existing row untouched (don't wipe a good name)
+  // and don't write a fresh null (which would poison the cache and block
+  // re-resolution). The address gets another chance on its next event.
+  if (!ok) return null;
 
   // Write to ens_names table (upsert)
   try {

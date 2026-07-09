@@ -4,12 +4,17 @@
  * Two-tier resolution strategy:
  *   1. **Primary** — batch fetch from /api/ens (Ponder-indexed ens_names table,
  *      9,000+ entries).  Fast, batched, React Query cached.
- *   2. **Fallback** — for addresses the DB returned null (never interacted with
- *      Nouns contracts), resolve live via api.ensideas.com.  Results are merged
- *      into the same map so consumers see a single, seamless data source.
+ *   2. **Fallback** — for any address the indexer has no NAME for, resolve live
+ *      via api.ensideas.com.  Results are merged into the same map so consumers
+ *      see a single, seamless data source.
  *
- * Staleness is handled server-side: /api/ens background-refreshes entries older
- * than 7 days so the *next* request returns updated data.
+ * The fallback deliberately fires for *every* null-name row, not just addresses
+ * missing from the DB. The indexer stores a null both when an address genuinely
+ * has no ENS and when its resolver call transiently failed (rate-limits poisoned
+ * ~75% of ens_names rows with nulls). We can't tell the two apart, so we re-check
+ * live — that's the only way a freshly-set primary name or a poisoned row shows.
+ * The indexer's tables are Ponder-owned (live-query/reorg triggers) and cannot be
+ * written by the frontend, so this client-side re-check is the healing path.
  *
  * This is the recommended ENS resolution strategy for all apps.  It replaces:
  *   - Direct wagmi useEnsName / useEnsAvatar imports (1 RPC call per component)
@@ -31,6 +36,13 @@ export interface EnsData {
 }
 
 export type EnsMap = Record<string, EnsData>;
+
+/**
+ * Cap on live ensideas fallbacks per batch. Bounds fan-out when a single view
+ * has many addresses the indexer has no name for; addresses beyond the cap keep
+ * their truncated-address display and resolve on a later, smaller view.
+ */
+const MAX_LIVE_FALLBACK = 50;
 
 // ---------------------------------------------------------------------------
 // Live resolution via ensideas.com (used as fallback for DB misses)
@@ -132,14 +144,17 @@ export function useEnsDataBatch(addresses: (string | undefined | null)[]) {
     enabled: validAddresses.length > 0,
   });
 
-  // Identify addresses where DB returned null name (not in DB or genuinely no ENS)
+  // Addresses to resolve live: any the indexer has no NAME for — whether the
+  // row is missing entirely or present-but-null. A present null may be a genuine
+  // "no ENS" or a stale/poisoned resolver failure; re-checking live is the only
+  // way a freshly-set name (or a poisoned row) surfaces. Capped to bound fan-out.
   const missedAddresses = useMemo(() => {
     if (!dbQuery.data) return [];
-    return validAddresses.filter((addr) => {
+    const misses = validAddresses.filter((addr) => {
       const entry = dbQuery.data[addr];
-      // No entry at all, or entry with null name AND null resolvedAt (never looked up)
-      return !entry || (entry.name === null && !(entry as EnsData & { resolvedAt?: number | null }).resolvedAt);
+      return !entry || entry.name === null;
     });
+    return misses.slice(0, MAX_LIVE_FALLBACK);
   }, [dbQuery.data, validAddresses]);
 
   // Tier 2: Live fallback for DB misses
