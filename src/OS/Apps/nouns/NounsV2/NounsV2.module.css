@@ -40,6 +40,11 @@
   border-bottom-color: var(--berry-accent);
 }
 
+/* Right-aligned tab (Account), mirroring Camp's account button. */
+.tabRight {
+  margin-left: auto;
+}
+
 .content {
   flex: 1;
   overflow: auto;

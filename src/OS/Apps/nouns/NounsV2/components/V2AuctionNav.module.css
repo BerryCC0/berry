@@ -1,0 +1,65 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+}
+
+.navBtn,
+.currentBtn {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.navBtn {
+  width: 28px;
+  height: 28px;
+  font-size: 15px;
+}
+
+.navBtn:hover:not(:disabled),
+.currentBtn:hover:not(:disabled) {
+  background: var(--berry-bg-hover, var(--berry-bg-secondary));
+  border-color: var(--berry-accent);
+}
+
+.navBtn:disabled,
+.currentBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.searchForm {
+  flex: 1;
+  min-width: 0;
+}
+
+.searchInput {
+  width: 100%;
+  max-width: 140px;
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg);
+  color: var(--berry-text-primary);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font: 500 13px var(--berry-font-mono);
+}
+
+.currentBtn {
+  padding: 6px 12px;
+  font-size: 13px;
+  margin-left: auto;
+}

@@ -20,17 +20,17 @@ export async function GET(req: Request) {
     const sql = ponderSql();
     const rows = await sql`
       SELECT
-        a."nounId"            AS noun_id,
-        a."startTime"         AS start_time,
-        a."endTime"           AS end_time,
+        a.noun_id,
+        a.start_time,
+        a.end_time,
         a.winner,
         a.amount,
         a.settled,
-        a."settlerAddress"    AS settler_address,
-        a."settledTimestamp"  AS settled_timestamp
+        a.settler_address,
+        a.settled_timestamp
       FROM ponder_live.nouns_v2_auctions a
       WHERE a.settled = TRUE
-      ORDER BY a."nounId" DESC
+      ORDER BY a.noun_id DESC
       LIMIT ${limit}
     `;
 

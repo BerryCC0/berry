@@ -22,18 +22,18 @@ export async function GET(req: Request) {
         p.id,
         p.proposer,
         p.description,
-        p."startBlock"        AS start_block,
-        p."endBlock"          AS end_block,
+        p.start_block,
+        p.end_block,
         p.eta,
-        p."forVotes"          AS for_votes,
-        p."againstVotes"      AS against_votes,
-        p."abstainVotes"      AS abstain_votes,
+        p.for_votes,
+        p.against_votes,
+        p.abstain_votes,
         p.canceled,
         p.queued,
         p.executed,
-        p."createdTimestamp"  AS created_timestamp,
-        p."createdBlock"      AS created_block,
-        p."txHash"            AS tx_hash
+        p.created_timestamp,
+        p.created_block,
+        p.tx_hash
       FROM ponder_live.nouns_v2_proposals p
       ORDER BY p.id DESC
       LIMIT ${limit}

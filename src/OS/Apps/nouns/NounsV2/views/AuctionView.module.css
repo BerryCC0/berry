@@ -128,31 +128,3 @@
   font-size: 13px;
 }
 
-.historySection {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.historyTitle {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--berry-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.empty {
-  padding: 24px;
-  text-align: center;
-  color: var(--berry-text-tertiary);
-  font-size: 13px;
-  border: 1px dashed var(--berry-border);
-  border-radius: 6px;
-}
-
-.empty code {
-  font-family: var(--berry-font-mono);
-  font-size: 12px;
-}

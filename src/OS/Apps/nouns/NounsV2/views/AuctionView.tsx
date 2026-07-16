@@ -1,17 +1,27 @@
 /**
- * Live NounV2 auction — bid, watch the countdown, settle.
+ * NounV2 auction — live bidding + settle, plus historical browsing.
+ *
+ * Live auction state (amount / bidder / countdown / settled) is read in
+ * real time from the auction-house contract. Everything historical — traits,
+ * bid history, winner, settler — comes from the indexer via the API routes.
+ * Feature parity with the V1 Nouns auction app, adapted to V2's data path.
  */
 
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { formatEther } from 'viem';
 import { V2NounImage } from '../components/V2NounImage';
 import { V2TxStatusBanner } from '../components/V2TxStatusBanner';
+import { V2AuctionNav } from '../components/V2AuctionNav';
+import { V2TraitsList } from '../components/V2TraitsList';
+import { V2BidHistory } from '../components/V2BidHistory';
+import { CrystalBallView } from './CrystalBallView';
 import { useV2CurrentAuction, useV2AuctionParams } from '../hooks/useV2CurrentAuction';
 import { useV2Bid } from '../hooks/useV2Bid';
-import { fmtCountdown, fmtEth, minNextBid, truncateAddr } from '../utils/format';
+import { useV2AuctionDetail } from '../hooks/useV2AuctionHistory';
+import { fmtCountdown, fmtEth, fmtTimestamp, minNextBid, truncateAddr } from '../utils/format';
 import { useEnsDataBatch, getEnsFromMap } from '@/OS/hooks/useEnsData';
 import styles from './AuctionView.module.css';
 
@@ -19,10 +29,11 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export function AuctionView() {
   const { isConnected } = useAccount();
-  const { auction, isLoading } = useV2CurrentAuction();
+  const { auction: live, isLoading: liveLoading } = useV2CurrentAuction();
   const { reservePrice, minBidIncrementPct } = useV2AuctionParams();
   const bid = useV2Bid();
 
+  const [viewingNounId, setViewingNounId] = useState<number | null>(null);
   const [bidInput, setBidInput] = useState('');
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
 
@@ -31,18 +42,44 @@ export function AuctionView() {
     return () => clearInterval(t);
   }, []);
 
-  const minNextBidWei = useMemo(() => {
-    if (!auction) return BigInt(0);
-    return minNextBid(auction.amount, minBidIncrementPct, reservePrice);
-  }, [auction, minBidIncrementPct, reservePrice]);
+  const currentNounId = live ? Number(live.nounId) : null;
+  const isViewingCurrent = viewingNounId == null;
+  const displayNounId = isViewingCurrent ? currentNounId : viewingNounId;
 
+  // Full detail (traits + bids + winner/settler) for whichever noun is shown.
+  // Poll the live auction's bids; historical detail is static.
+  const detail = useV2AuctionDetail(displayNounId, isViewingCurrent ? 12_000 : 0);
+
+  const histAuction = detail.data?.auction ?? null;
+  const nounRow = detail.data?.noun ?? null;
+  const bids = detail.data?.bids ?? [];
+
+  // ---- Unified display state (live contract read vs. indexed history) -------
+  const amountWei: bigint | null = isViewingCurrent
+    ? live
+      ? live.amount
+      : null
+    : histAuction?.amount != null
+      ? BigInt(histAuction.amount)
+      : null;
+
+  const settled = isViewingCurrent ? (live?.settled ?? false) : (histAuction?.settled ?? false);
+  const isExpired = isViewingCurrent ? !!live && Number(live.endTime) <= now : true;
+  // A minted noun with no auction row (e.g. a founder reward) was never auctioned.
+  const wasAuctioned = isViewingCurrent ? true : !!histAuction;
+
+  // ---- Minimum next bid (live only) -----------------------------------------
+  const minNextBidWei = useMemo(() => {
+    if (!live) return BigInt(0);
+    return minNextBid(live.amount, minBidIncrementPct, reservePrice);
+  }, [live, minBidIncrementPct, reservePrice]);
   const minNextBidEth = formatEther(minNextBidWei);
 
   useEffect(() => {
-    if (!bidInput && minNextBidWei > BigInt(0)) {
+    if (isViewingCurrent && !bidInput && minNextBidWei > BigInt(0)) {
       setBidInput(minNextBidEth);
     }
-  }, [bidInput, minNextBidWei, minNextBidEth]);
+  }, [isViewingCurrent, bidInput, minNextBidWei, minNextBidEth]);
 
   useEffect(() => {
     if (bid.isSuccess) {
@@ -51,64 +88,152 @@ export function AuctionView() {
     }
   }, [bid.isSuccess, bid]);
 
+  // ---- ENS resolution (top bidder / winner / settler / owner / grid) --------
   const addressesToResolve = useMemo(() => {
-    if (!auction || auction.bidder === ZERO_ADDRESS) return [];
-    return [auction.bidder];
-  }, [auction]);
+    const set = new Set<string>();
+    if (isViewingCurrent && live && live.bidder !== ZERO_ADDRESS) set.add(live.bidder);
+    if (histAuction?.winner) set.add(histAuction.winner);
+    if (histAuction?.settlerAddress) set.add(histAuction.settlerAddress);
+    if (nounRow?.owner) set.add(nounRow.owner);
+    return [...set].filter((a) => a && a !== ZERO_ADDRESS);
+  }, [isViewingCurrent, live, histAuction, nounRow]);
   const { data: ensMap } = useEnsDataBatch(addressesToResolve);
-  const displayAddr = (addr: string) => getEnsFromMap(ensMap, addr).name ?? truncateAddr(addr);
+  const displayAddr = useCallback(
+    (addr?: string | null) =>
+      addr && addr !== ZERO_ADDRESS
+        ? (getEnsFromMap(ensMap, addr).name ?? truncateAddr(addr))
+        : '—',
+    [ensMap]
+  );
 
-  const isExpired = !!auction && Number(auction.endTime) <= now;
-  const canBid = !!auction && !auction.settled && !isExpired && isConnected;
-  const canSettle = !!auction && !auction.settled && isExpired;
+  // ---- Actions (live only) --------------------------------------------------
+  const canBid = isViewingCurrent && !!live && !live.settled && !isExpired && isConnected;
+  const canSettle = isViewingCurrent && !!live && !live.settled && isExpired;
 
   const handleBid = () => {
-    if (!auction || !bidInput) return;
-    bid.placeBid(auction.nounId, bidInput);
+    if (!live || !bidInput) return;
+    bid.placeBid(live.nounId, bidInput);
   };
+
+  // ---- Navigation -----------------------------------------------------------
+  const handlePrevious = useCallback(() => {
+    if (displayNounId == null) return;
+    const prev = Math.max(0, displayNounId - 1);
+    setViewingNounId(prev === currentNounId ? null : prev);
+  }, [displayNounId, currentNounId]);
+
+  const handleNext = useCallback(() => {
+    if (viewingNounId == null || currentNounId == null) return;
+    const next = Math.min(currentNounId, viewingNounId + 1);
+    setViewingNounId(next === currentNounId ? null : next);
+  }, [viewingNounId, currentNounId]);
+
+  const handleSearch = useCallback(
+    (id: number) => setViewingNounId(id === currentNounId ? null : id),
+    [currentNounId]
+  );
+  const handleCurrent = useCallback(() => setViewingNounId(null), []);
+
+  const title =
+    displayNounId != null
+      ? `Noun V2 #${displayNounId}`
+      : liveLoading
+        ? 'Loading…'
+        : 'No auction';
 
   return (
     <div className={styles.view}>
+      <V2AuctionNav
+        currentNounId={currentNounId}
+        viewingNounId={viewingNounId}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        onSearch={handleSearch}
+        onCurrent={handleCurrent}
+      />
+
+      {/* Auction ended, awaiting settlement → become the Crystal Ball: predict
+          the next noun from the current block hash and offer to settle. */}
+      {canSettle ? (
+        <CrystalBallView />
+      ) : (
       <div className={styles.main}>
         <div className={styles.imageCol}>
-          <V2NounImage tokenId={auction?.nounId ?? null} size={300} />
+          <V2NounImage
+            tokenId={displayNounId != null ? BigInt(displayNounId) : null}
+            size={300}
+          />
           <div className={styles.titleRow}>
-            <h2 className={styles.title}>
-              {auction
-                ? `Noun V2 #${auction.nounId.toString()}`
-                : isLoading
-                  ? 'Loading…'
-                  : 'No auction'}
-            </h2>
+            <h2 className={styles.title}>{title}</h2>
           </div>
+          <V2TraitsList
+            seed={
+              nounRow
+                ? {
+                    background: nounRow.background,
+                    body: nounRow.body,
+                    accessory: nounRow.accessory,
+                    head: nounRow.head,
+                    glasses: nounRow.glasses,
+                  }
+                : null
+            }
+            isSlobber={nounRow?.isSlobber}
+            loading={detail.isLoading}
+          />
         </div>
 
         <div className={styles.detailsCol}>
           <div className={styles.statusGrid}>
             <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>{auction?.settled ? 'Winning bid' : 'Current bid'}</div>
+              <div className={styles.statusLabel}>{settled ? 'Winning bid' : 'Current bid'}</div>
               <div className={styles.statusValue}>
-                {auction ? `Ξ ${fmtEth(auction.amount)}` : '—'}
+                {!wasAuctioned ? 'Not auctioned' : amountWei != null ? `Ξ ${fmtEth(amountWei)}` : '—'}
               </div>
             </div>
+
             <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>{isExpired ? 'Ended' : 'Ends in'}</div>
+              <div className={styles.statusLabel}>
+                {isViewingCurrent && !isExpired ? 'Ends in' : 'Ended'}
+              </div>
               <div className={styles.statusValue}>
-                {auction ? fmtCountdown(auction.endTime) : '—'}
+                {isViewingCurrent
+                  ? live
+                    ? fmtCountdown(live.endTime)
+                    : '—'
+                  : histAuction?.settledTimestamp
+                    ? fmtTimestamp(histAuction.settledTimestamp)
+                    : histAuction?.endTime
+                      ? fmtTimestamp(histAuction.endTime)
+                      : '—'}
               </div>
             </div>
+
             <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>Top bidder</div>
+              <div className={styles.statusLabel}>
+                {isViewingCurrent ? 'Top bidder' : settled ? 'Winner' : 'Owner'}
+              </div>
               <div className={styles.statusValue}>
-                {auction && auction.bidder !== ZERO_ADDRESS
-                  ? displayAddr(auction.bidder)
-                  : 'No bids yet'}
+                {isViewingCurrent
+                  ? live && live.bidder !== ZERO_ADDRESS
+                    ? displayAddr(live.bidder)
+                    : 'No bids yet'
+                  : settled
+                    ? displayAddr(histAuction?.winner)
+                    : displayAddr(nounRow?.owner)}
               </div>
             </div>
+
             <div className={styles.statusItem}>
-              <div className={styles.statusLabel}>Min next bid</div>
+              <div className={styles.statusLabel}>
+                {isViewingCurrent ? 'Min next bid' : 'Settled by'}
+              </div>
               <div className={styles.statusValue}>
-                {auction ? `Ξ ${fmtEth(minNextBidWei)}` : '—'}
+                {isViewingCurrent
+                  ? live
+                    ? `Ξ ${fmtEth(minNextBidWei)}`
+                    : '—'
+                  : displayAddr(histAuction?.settlerAddress)}
               </div>
             </div>
           </div>
@@ -138,47 +263,30 @@ export function AuctionView() {
             </div>
           )}
 
-          {canSettle && (
-            <div className={styles.settleRow}>
-              <button
-                type="button"
-                className={styles.settleButton}
-                disabled={bid.isPending || bid.isConfirming || !isConnected}
-                onClick={() => bid.settle()}
-              >
-                {bid.isPending || bid.isConfirming
-                  ? 'Settling…'
-                  : 'Settle & Start Next Auction'}
-              </button>
-              {!isConnected && (
-                <span className={styles.settleHint}>Connect a wallet to settle.</span>
-              )}
-            </div>
+          {isViewingCurrent &&
+            !canBid &&
+            !canSettle &&
+            !isConnected &&
+            live &&
+            !live.settled &&
+            !isExpired && <div className={styles.connectHint}>Connect a wallet to bid.</div>}
+
+          {isViewingCurrent && (
+            <V2TxStatusBanner
+              hash={bid.hash ?? null}
+              isPending={bid.isPending}
+              isConfirming={bid.isConfirming}
+              isSuccess={bid.isSuccess}
+              error={bid.error}
+              onDismiss={bid.reset}
+              successMessage="Transaction confirmed."
+            />
           )}
 
-          {!canBid && !canSettle && !isConnected && auction && !auction.settled && !isExpired && (
-            <div className={styles.connectHint}>Connect a wallet to bid.</div>
-          )}
-
-          <V2TxStatusBanner
-            hash={bid.hash ?? null}
-            isPending={bid.isPending}
-            isConfirming={bid.isConfirming}
-            isSuccess={bid.isSuccess}
-            error={bid.error}
-            onDismiss={bid.reset}
-            successMessage="Transaction confirmed."
-          />
+          <V2BidHistory bids={bids} loading={detail.isLoading} />
         </div>
       </div>
-
-      <section className={styles.historySection}>
-        <h3 className={styles.historyTitle}>Recent settled auctions</h3>
-        <div className={styles.empty}>
-          History indexer is syncing. Once <code>ponder_live.nouns_v2_auctions</code> populates,
-          settled-auction history will appear here.
-        </div>
-      </section>
+      )}
     </div>
   );
 }

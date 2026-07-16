@@ -1,0 +1,225 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.crumbLink {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--berry-accent);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.crumbLink:hover {
+  text-decoration: underline;
+}
+
+.crumbSep {
+  color: var(--berry-text-tertiary);
+}
+
+.crumbCurrent {
+  color: var(--berry-text-primary);
+}
+
+.navButtons {
+  display: flex;
+  gap: 6px;
+}
+
+.navButton {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.navButton:hover:not(:disabled) {
+  border-color: var(--berry-accent);
+}
+
+.navButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 460px);
+  gap: 20px;
+  padding: 16px 4px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--berry-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.slobberBadge,
+.burnedBadge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.slobberBadge {
+  background: var(--berry-accent);
+  color: #fff;
+}
+
+.burnedBadge {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.infoBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.infoRow {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.infoLabel {
+  font-weight: 700;
+  color: var(--berry-text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.infoValue {
+  font-weight: 700;
+  color: var(--berry-text-primary);
+}
+
+.infoSecondary {
+  color: var(--berry-text-tertiary);
+}
+
+.infoLink {
+  color: var(--berry-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.infoLink:hover {
+  text-decoration: underline;
+}
+
+.traitsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.traitsTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--berry-text-tertiary);
+  margin-bottom: 2px;
+}
+
+.traitRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.traitLabel {
+  font-weight: 700;
+  color: var(--berry-text-tertiary);
+  min-width: 96px;
+}
+
+.traitLink {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--berry-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  text-align: left;
+}
+
+.traitLink:hover {
+  color: var(--berry-accent);
+  text-decoration: underline;
+}
+
+.imageSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--berry-border);
+  border-radius: 10px;
+  padding: 16px;
+  aspect-ratio: 1;
+  max-width: 460px;
+}
+
+.nounImage {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}

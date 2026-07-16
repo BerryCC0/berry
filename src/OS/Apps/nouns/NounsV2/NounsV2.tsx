@@ -1,6 +1,8 @@
 /**
  * Nouns V2 — single-window app for the standalone V2 DAO + Small Grants pot.
- * Tabs: Auction · Crystal Ball · Governance · Treasury · Holdings · Small Grants.
+ * Tabs: Auction · Probe · Governance · Treasury · Holdings · Small Grants.
+ * The Auction tab folds in the Crystal Ball (next-noun prediction + settle)
+ * once the current auction has ended and needs settling.
  */
 
 'use client';
@@ -8,7 +10,7 @@
 import { useState } from 'react';
 import type { AppComponentProps } from '@/OS/types/app';
 import { AuctionView } from './views/AuctionView';
-import { CrystalBallView } from './views/CrystalBallView';
+import { ProbeView } from './views/ProbeView';
 import { GovernanceView } from './views/GovernanceView';
 import { TreasuryView } from './views/TreasuryView';
 import { HoldingsView } from './views/HoldingsView';
@@ -17,7 +19,7 @@ import styles from './NounsV2.module.css';
 
 type TabId =
   | 'auction'
-  | 'crystal-ball'
+  | 'probe'
   | 'governance'
   | 'treasury'
   | 'holdings'
@@ -25,11 +27,13 @@ type TabId =
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'auction', label: 'Auction' },
-  { id: 'crystal-ball', label: 'Crystal Ball' },
+  { id: 'probe', label: 'Probe' },
   { id: 'governance', label: 'Governance' },
   { id: 'treasury', label: 'Treasury' },
-  { id: 'holdings', label: 'Holdings' },
   { id: 'small-grants', label: 'Small Grants' },
+  // Pushed to the right edge (see tabRight) — the connected user's profile,
+  // mirroring Camp's Account button.
+  { id: 'holdings', label: 'Account' },
 ];
 
 interface InitialState {
@@ -43,8 +47,12 @@ function isInitialState(state: unknown): state is InitialState {
 }
 
 export function NounsV2({ initialState, onStateChange }: AppComponentProps) {
-  const startTab: TabId =
-    (isInitialState(initialState) && (initialState.tab as TabId)) || 'auction';
+  // Fall back to Auction if the saved tab no longer exists (e.g. the removed
+  // "crystal-ball" tab from an older window state).
+  const savedTab = isInitialState(initialState) ? initialState.tab : undefined;
+  const startTab: TabId = TABS.some((t) => t.id === savedTab)
+    ? (savedTab as TabId)
+    : 'auction';
 
   const [tab, setTab] = useState<TabId>(startTab);
 
@@ -62,7 +70,7 @@ export function NounsV2({ initialState, onStateChange }: AppComponentProps) {
             type="button"
             role="tab"
             aria-selected={tab === t.id}
-            className={`${styles.tab} ${tab === t.id ? styles.tabActive : ''}`}
+            className={`${styles.tab} ${t.id === 'holdings' ? styles.tabRight : ''} ${tab === t.id ? styles.tabActive : ''}`}
             onClick={() => handleTabChange(t.id)}
           >
             {t.label}
@@ -72,7 +80,7 @@ export function NounsV2({ initialState, onStateChange }: AppComponentProps) {
 
       <div className={styles.content}>
         {tab === 'auction' && <AuctionView />}
-        {tab === 'crystal-ball' && <CrystalBallView />}
+        {tab === 'probe' && <ProbeView />}
         {tab === 'governance' && <GovernanceView />}
         {tab === 'treasury' && <TreasuryView />}
         {tab === 'holdings' && <HoldingsView />}

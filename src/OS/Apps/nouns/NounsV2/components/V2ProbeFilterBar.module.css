@@ -1,0 +1,63 @@
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 4px 10px;
+  border-bottom: 1px solid var(--berry-border);
+}
+
+.sortRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sortButtons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sortButton {
+  appearance: none;
+  border: 1px solid var(--berry-border);
+  background: var(--berry-bg-secondary);
+  color: var(--berry-text-secondary);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.sortButton:hover {
+  border-color: var(--berry-accent);
+}
+
+.sortButton.active {
+  background: var(--berry-accent);
+  color: #fff;
+  border-color: var(--berry-accent);
+}
+
+.count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--berry-text-tertiary);
+  white-space: nowrap;
+}
+
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .filtersGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -1,0 +1,103 @@
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--berry-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px 0;
+  color: var(--berry-text-tertiary);
+  font-size: 13px;
+}
+
+.scroll {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-radius: 6px;
+}
+
+.bidder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 95%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.bidderName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--berry-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extendedBadge {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--berry-bg);
+  border: 1px solid var(--berry-border);
+  color: var(--berry-text-tertiary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.amount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--berry-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tx {
+  color: var(--berry-text-tertiary);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.tx:hover {
+  color: var(--berry-accent);
+}
