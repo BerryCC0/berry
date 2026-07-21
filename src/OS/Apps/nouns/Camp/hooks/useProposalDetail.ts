@@ -10,6 +10,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAccount, useReadContract, useBlockNumber } from 'wagmi';
 import { useProposal, useSignal } from './index';
 import { useSimulation } from './useSimulation';
+import { useProposalCanceller } from './useProposalCanceller';
 import { useProposalActions } from '../utils/hooks/useProposalActions';
 import { useVote } from '@/app/lib/nouns/hooks';
 import { NOUNS_CONTRACTS } from '@/app/lib/nouns/contracts';
@@ -23,13 +24,16 @@ export type ActionMode = 'vote' | 'comment';
 
 export interface ActivityItem {
   id: string;
-  type: 'vote' | 'feedback';
+  /** 'cancelled' marks who cancelled the proposal — not a vote. */
+  type: 'vote' | 'feedback' | 'cancelled';
   address: string;
   support: number;
   votes: string;
   reason: string | null;
   timestamp: string;
   clientId?: number;
+  /** Set on 'cancelled' items — the cancel transaction. */
+  txHash?: string;
 }
 
 export interface TimeRemaining {
@@ -246,11 +250,31 @@ export function useProposalDetail(proposalId: string, onNavigate: (path: string)
   const shouldSkipSimulation = proposal ? SKIP_SIMULATION_STATUSES.includes(proposal.status) : false;
   const simulation = useSimulation(shouldSkipSimulation ? undefined : proposal?.actions);
 
+  // Who cancelled the proposal (resolved from chain — the DAO event has no
+  // actor). Only fetched for proposals that are actually cancelled.
+  const { data: cancelInfo } = useProposalCanceller(
+    proposalId,
+    proposal?.status === 'CANCELLED'
+  );
+
   // Combine votes and feedback into one sorted activity feed
   const activity = useMemo<ActivityItem[]>(() => {
     if (!proposal) return [];
-    
+
     const items: ActivityItem[] = [];
+
+    if (proposal.status === 'CANCELLED' && cancelInfo?.canceller && cancelInfo.cancelledTimestamp) {
+      items.push({
+        id: `cancelled-${proposal.id}`,
+        type: 'cancelled',
+        address: cancelInfo.canceller,
+        support: -1,
+        votes: '0',
+        reason: null,
+        timestamp: cancelInfo.cancelledTimestamp,
+        txHash: cancelInfo.txHash,
+      });
+    }
 
     for (const v of proposal.votes || []) {
       items.push({
@@ -279,7 +303,7 @@ export function useProposalDetail(proposalId: string, onNavigate: (path: string)
 
     items.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
     return items;
-  }, [proposal]);
+  }, [proposal, cancelInfo]);
 
   // Vote count computations
   const voteCounts = useMemo(() => {

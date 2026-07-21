@@ -18,6 +18,7 @@ import { ShareButton } from '../components/ShareButton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { SimulationStatus } from '../components/SimulationStatus';
 import { VoterRow } from '../components/VoterRow';
+import { CancelledRow } from '../components/CancelledRow';
 import { BerryLoader } from '../components/BerryLoader';
 import { DetailTabs, useDetailTabs } from '../components/DetailTabs';
 import { getClientName } from '@/OS/lib/clientNames';
@@ -505,19 +506,29 @@ export function ProposalDetailView({ proposalId, onNavigate, onBack, toolbar }: 
         Activity ({activity.length})
       </h2>
       <div className={styles.activityList}>
-        {activity.map((item) => (
-          <VoterRow
-            key={item.id}
-            address={item.address}
-            support={item.support}
-            votes={item.votes}
-            reason={item.reason}
-            timestamp={item.timestamp}
-            clientId={item.clientId}
-            isFeedback={item.type === 'feedback'}
-            onNavigate={onNavigate}
-          />
-        ))}
+        {activity.map((item) =>
+          item.type === 'cancelled' ? (
+            <CancelledRow
+              key={item.id}
+              address={item.address}
+              timestamp={item.timestamp}
+              txHash={item.txHash}
+              onNavigate={onNavigate}
+            />
+          ) : (
+            <VoterRow
+              key={item.id}
+              address={item.address}
+              support={item.support}
+              votes={item.votes}
+              reason={item.reason}
+              timestamp={item.timestamp}
+              clientId={item.clientId}
+              isFeedback={item.type === 'feedback'}
+              onNavigate={onNavigate}
+            />
+          )
+        )}
       </div>
     </div>
   ) : null;

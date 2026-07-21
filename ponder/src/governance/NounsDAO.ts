@@ -277,11 +277,16 @@ ponder.on("NounsDAO:ProposalTransactionsUpdated", async ({ event, context }) => 
   });
 });
 
+// ProposalCanceled carries no actor, so capture the cancel tx's sender — the
+// same approach the auction handlers use for the settler. Not always the
+// proposer: anyone may cancel once the proposer falls below the threshold.
 ponder.on("NounsDAO:ProposalCanceled", async ({ event, context }) => {
   await context.db.update(proposals, { id: Number(event.args.id) }).set({
     status: "CANCELLED",
     cancelledTimestamp: event.block.timestamp,
     cancelledBlock: event.block.number,
+    cancelledBy: event.transaction.from,
+    cancelledTxHash: event.transaction.hash,
   });
 });
 

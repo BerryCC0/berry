@@ -1,0 +1,106 @@
+/**
+ * CancelledRow Styles
+ * Mirrors VoterRow, with a red accent to mark the cancellation.
+ */
+
+.row {
+  padding: 10px;
+  background: var(--berry-bg-secondary);
+  border: 1px solid var(--berry-border);
+  border-left: 3px solid #b91c1c;
+  border-radius: 4px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.identity:hover .name {
+  text-decoration: underline;
+}
+
+.identity:focus-visible {
+  outline: 2px solid var(--berry-accent);
+  outline-offset: 2px;
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.name {
+  font-family: var(--berry-font-system);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--berry-text-primary);
+}
+
+.action {
+  font-family: var(--berry-font-system);
+  font-size: 11px;
+  color: var(--berry-text-secondary);
+}
+
+.date {
+  font-family: var(--berry-font-system);
+  font-size: 10px;
+  color: var(--berry-text-muted);
+}
+
+.txLink {
+  font-size: 11px;
+  color: var(--berry-text-muted);
+  text-decoration: none;
+}
+
+.txLink:hover {
+  color: var(--berry-accent);
+}
+
+.badge {
+  font-family: var(--berry-font-system);
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 2px 4px;
+  background: #b91c1c;
+  color: white;
+  border-radius: 3px;
+}

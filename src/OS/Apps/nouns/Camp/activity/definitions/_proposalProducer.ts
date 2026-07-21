@@ -38,6 +38,8 @@ export interface ApiProposalRow {
   against_votes: string | null;
   quorum_votes: string | null;
   cancelled_timestamp: string | null;
+  /** Who cancelled — null until the indexer deployment adding it has synced. */
+  cancelled_by: string | null;
   queued_timestamp: string | null;
   executed_timestamp: string | null;
   vetoed_timestamp: string | null;
@@ -56,6 +58,10 @@ export const buildProposalsQuery = ({ sql, since, limit }: QueryContext) => sql`
                p.start_timestamp, p.end_timestamp,
                p.status, p.for_votes, p.against_votes, p.quorum_votes, p.client_id,
                p.cancelled_timestamp, p.queued_timestamp, p.executed_timestamp, p.vetoed_timestamp,
+               -- Read cancelled_by via JSON so this query still works against an
+               -- indexer deployment that predates the column (missing key → NULL,
+               -- instead of "column does not exist" taking down the whole feed).
+               to_jsonb(p) ->> 'cancelled_by' AS cancelled_by,
                e.name as proposer_ens,
                c.slug as promoted_from_candidate_slug,
                c.proposer as promoted_from_candidate_proposer,
@@ -104,12 +110,20 @@ function buildOutcomeItem(
   endTimestamp: string,
   outcome: ProposalOutcome,
 ): ActivityItem {
+  // A cancellation's actor is whoever sent the cancel transaction — not
+  // necessarily the proposer (a sponsor withdrawing their signature drops the
+  // proposer below threshold and lets anyone cancel). Falls back to the
+  // proposer until the indexer has backfilled cancelled_by.
+  const cancelledBy = outcome === 'cancelled' ? row.cancelled_by : null;
+  const actor = cancelledBy || row.proposer;
+
   return {
     id: `proposal-outcome-${row.id}`,
     type: OUTCOME_TO_TYPE[outcome],
     timestamp: endTimestamp,
-    actor: row.proposer,
-    actorEns: row.proposer_ens || undefined,
+    actor,
+    // proposer_ens only describes the proposer — don't mislabel a canceller.
+    actorEns: cancelledBy ? undefined : row.proposer_ens || undefined,
     proposalId: String(row.id),
     proposalTitle: row.title,
     proposalStatus: OUTCOME_TO_PROPOSAL_STATUS[outcome],

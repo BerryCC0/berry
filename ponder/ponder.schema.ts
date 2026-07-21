@@ -240,6 +240,14 @@ export const proposals = onchainTable(
     // Lifecycle timestamps (stored when status changes)
     cancelledTimestamp: t.bigint(),
     cancelledBlock: t.bigint(),
+    /**
+     * Who cancelled the proposal. ProposalCanceled carries no actor, so this is
+     * the sender of the cancel transaction. Often the proposer, but not always —
+     * anyone may cancel once the proposer drops below the proposal threshold
+     * (e.g. a sponsor withdrawing their signature).
+     */
+    cancelledBy: t.hex(),
+    cancelledTxHash: t.hex(),
     queuedTimestamp: t.bigint(),
     queuedBlock: t.bigint(),
     executedTimestamp: t.bigint(),
