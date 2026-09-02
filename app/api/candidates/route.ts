@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { getCandidateVersions } from '@/app/lib/candidateVersions';
 import { deriveTitleFromDescription } from '@/OS/Apps/nouns/Camp/utils/descriptionUtils';
 
 export async function GET(request: NextRequest) {
@@ -62,9 +63,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Candidate not found' }, { status: 404 });
       }
 
-      // Fetch signatures and feedback for the found candidate
+      // Match the full-ID detail route, including complete version history.
       const candidate = rows[0];
-      const [sigRows, fbRows] = await Promise.all([
+      const [sigRows, fbRows, versionRows] = await Promise.all([
         sql`
           SELECT cs.id, cs.signer, cs.sig, cs.expiration_timestamp, cs.reason,
                  cs.block_timestamp, cs.encoded_prop_hash,
@@ -83,6 +84,7 @@ export async function GET(request: NextRequest) {
           ORDER BY cf.block_timestamp DESC
           LIMIT 100
         `,
+        getCandidateVersions(sql, candidate.id),
       ]);
 
       // Backfill empty title from the description body (see proposals route).
@@ -95,6 +97,7 @@ export async function GET(request: NextRequest) {
           ...candidate,
           signatures: sigRows,
           feedback: fbRows,
+          versions: versionRows,
         },
       });
     }

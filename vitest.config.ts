@@ -11,6 +11,7 @@ export default defineConfig({
       "src/**/*.test.ts",
       "src/**/__tests__/**/*.test.ts",
       "app/**/*.test.ts",
+      "ponder/tests/**/*.test.ts",
     ],
   },
   resolve: {

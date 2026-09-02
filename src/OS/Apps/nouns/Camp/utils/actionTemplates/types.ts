@@ -46,6 +46,8 @@ export type ActionTemplateType =
   | 'admin-tokenbuyer-admin'
   | 'admin-tokenbuyer-price-feed'
   | 'admin-tokenbuyer-payer'
+  | 'admin-op-tokenbuyer-recovery-stage-1'
+  | 'admin-op-tokenbuyer-recovery-stage-2'
   | 'admin-payer-withdraw-usdc'
   | 'admin-auction-reserve-price'
   | 'admin-auction-time-buffer'

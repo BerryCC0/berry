@@ -183,6 +183,12 @@ export interface TransactionActionDef<TFields = Record<string, unknown>> {
   description: string;
   /** Whether this action emits multiple on-chain actions as one logical unit. */
   isMultiAction: boolean;
+  /**
+   * Proposal executor required by this action, when execution authority is
+   * part of the transaction's correctness. Most actions work through either
+   * timelock and leave this unset.
+   */
+  requiredProposalType?: 'standard' | 'timelock_v1';
   /** Form schema — used by the default editor; ignored if `Editor` is set. */
   fields: ActionFieldDef[];
 

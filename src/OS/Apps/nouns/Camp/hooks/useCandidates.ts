@@ -7,6 +7,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { Candidate, CandidateSignature, CandidateFeedback } from '../types';
+import { mapCandidateVersion, type ApiCandidateVersionRow } from '../utils/candidateVersions';
 
 // ============================================================================
 // API RESPONSE TYPES
@@ -40,6 +41,7 @@ interface ApiCandidateDetailRow extends ApiCandidateListRow {
   proposal_id_to_update: string | null;
   signatures: ApiSignatureRow[];
   feedback: ApiFeedbackRow[];
+  versions?: ApiCandidateVersionRow[];
 }
 
 /**
@@ -150,6 +152,7 @@ function mapCandidateDetail(c: ApiCandidateDetailRow): Candidate {
     actions,
     signatures,
     feedback,
+    versions: c.versions?.map(mapCandidateVersion),
   };
 }
 

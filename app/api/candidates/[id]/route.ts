@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { ponderSql } from '@/app/lib/ponder-db';
+import { getCandidateVersions } from '@/app/lib/candidateVersions';
 import { deriveTitleFromDescription } from '@/OS/Apps/nouns/Camp/utils/descriptionUtils';
 
 export async function GET(
@@ -47,13 +48,7 @@ export async function GET(
         ORDER BY cf.block_timestamp DESC
         LIMIT 100
       `,
-      sql`
-        SELECT id, candidate_id, version_number, title, description,
-               update_message, block_timestamp
-        FROM ponder_live.candidate_versions
-        WHERE candidate_id = ${id}
-        ORDER BY block_timestamp DESC
-      `,
+      getCandidateVersions(sql, id),
     ]);
 
     if (candidateRows.length === 0) {

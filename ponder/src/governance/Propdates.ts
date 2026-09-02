@@ -27,7 +27,7 @@ ponder.on("Propdates:PostUpdate", async ({ event, context }) => {
   try {
     const info = await context.client.readContract({
       abi: context.contracts.Propdates.abi,
-      address: context.contracts.Propdates.address,
+      address: event.log.address,
       functionName: "propdateInfo",
       args: [propId],
     });

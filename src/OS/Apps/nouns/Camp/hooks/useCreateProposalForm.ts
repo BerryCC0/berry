@@ -12,6 +12,7 @@ import { useNounHolderStatus } from '../utils/hooks/useNounHolderStatus';
 import { useCandidate } from './useCandidates';
 import { useProposal } from './useProposals';
 import { useSimulation } from './useSimulation';
+import { findActionById } from '../utils/actions/registry';
 
 type ProposalState = 'idle' | 'confirming' | 'pending' | 'error' | 'success';
 
@@ -663,6 +664,16 @@ export function useCreateProposalForm({
       updated[index] = newState;
       return updated;
     });
+
+    // Executor-sensitive builders select their safe submission path for the
+    // user. Candidates can still be chosen manually afterward, but a direct
+    // proposal starts on the required timelock by default.
+    const def = newState.templateId
+      ? findActionById(newState.templateId)
+      : undefined;
+    if (def?.requiredProposalType) {
+      setProposalType(def.requiredProposalType);
+    }
   }, []);
 
   const validateForm = () => {
@@ -677,6 +688,11 @@ export function useCreateProposalForm({
     }
 
     const allActions = flattenActionTemplates(actionTemplateStates);
+    if (allActions.length === 0) {
+      setErrorMessage('Add and configure at least one transaction');
+      return false;
+    }
+
     for (let i = 0; i < allActions.length; i++) {
       const action = allActions[i];
       if (!action.target.trim()) {
@@ -835,6 +851,21 @@ export function useCreateProposalForm({
 
   const handleSubmitProposal = async (isTimelockV1: boolean = false) => {
     if (!validateForm()) return;
+
+    const submittedProposalType = isTimelockV1 ? 'timelock_v1' : 'standard';
+    const incompatibleAction = actionTemplateStates
+      .map((state) => state.templateId ? findActionById(state.templateId) : undefined)
+      .find((def) =>
+        def?.requiredProposalType &&
+        def.requiredProposalType !== submittedProposalType
+      );
+    if (incompatibleAction?.requiredProposalType) {
+      const requiredLabel = incompatibleAction.requiredProposalType === 'timelock_v1'
+        ? 'Timelock V1 Proposal'
+        : 'Standard Proposal';
+      setErrorMessage(`${incompatibleAction.name} must be submitted as a ${requiredLabel}.`);
+      return;
+    }
 
     setErrorMessage(null);
     setSubmissionTarget(isTimelockV1 ? 'timelock_v1' : 'proposal');

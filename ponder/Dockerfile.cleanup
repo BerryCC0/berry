@@ -1,6 +1,7 @@
 # Minimal image for the schema-cleanup cron service.
-# Runs node scripts/cleanup-stale-schemas.mjs --execute on a schedule
-# set in Railway's dashboard (Settings → Cron Schedule).
+# Runs the cleanup preview on a schedule set in Railway's dashboard
+# (Settings → Cron Schedule). Destructive execution is enabled separately
+# after the preview has been reviewed.
 #
 # Sister to ponder/Dockerfile but with a much smaller surface — only needs
 # the script + the pg client. Decoupled from the indexer image so a broken
@@ -16,7 +17,6 @@ RUN npm install --no-save --omit=dev pg@^8
 # Copy just the cleanup script.
 COPY ponder/scripts/cleanup-stale-schemas.mjs ./cleanup-stale-schemas.mjs
 
-# Always run in execute mode — the service exists to clean up. Dashboard
-# cron determines frequency. Script exits on completion as Railway requires
-# for cron jobs.
-CMD ["node", "cleanup-stale-schemas.mjs", "--execute"]
+# Default to a non-destructive preview. The service's start command can add
+# --execute after an operator reviews the proposed schema deletions.
+CMD ["node", "cleanup-stale-schemas.mjs"]

@@ -304,6 +304,7 @@ export interface Candidate {
   signatures?: CandidateSignature[];
   // Feedback signals
   feedback?: CandidateFeedback[];
+  versions?: CandidateVersion[];
   // Latest version info for digest display
   latestVersion?: {
     content: {
@@ -311,6 +312,25 @@ export interface Candidate {
       contentSignatures?: { signer: { id: string } }[];
     };
   };
+}
+
+/** Historical content; optional fields are absent on pre-backfill rows. */
+export interface CandidateVersion {
+  id: string;
+  versionNumber: number;
+  title?: string;
+  description: string;
+  targets?: string[];
+  values?: string[];
+  signatures?: string[];
+  calldatas?: string[];
+  encodedProposalHash?: string;
+  proposalIdToUpdate?: string;
+  updateMessage?: string;
+  blockNumber: string;
+  blockTimestamp: string;
+  transactionHash?: string;
+  logIndex?: number;
 }
 
 export interface CandidateFeedback {

@@ -1,0 +1,11 @@
+[build]
+dockerfilePath = "ponder/Dockerfile.cleanup"
+watchPatterns = [
+  "ponder/Dockerfile.cleanup",
+  "ponder/scripts/cleanup-stale-schemas.mjs",
+]
+
+[deploy]
+# Cron jobs should run once and exit. Railway will invoke this image on the
+# schedule configured for the schema-cleanup service.
+restartPolicyType = "NEVER"

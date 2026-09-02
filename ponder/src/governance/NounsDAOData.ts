@@ -22,24 +22,43 @@ ponder.on("NounsDAOData:ProposalCandidateCreated", async ({ event, context }) =>
   await resolveAndStoreEns(context, msgSender);
 
   const candidateId = `${msgSender.toLowerCase()}-${slug}`;
+  const content = {
+    title: extractTitle(description),
+    description,
+    targets: [...targets],
+    values: values.map((v) => v.toString()),
+    signatures: [...signatures],
+    calldatas: [...calldatas],
+    encodedProposalHash,
+    proposalIdToUpdate: Number(proposalIdToUpdate) || null,
+  };
 
   await context.db.insert(candidates).values({
     id: candidateId,
     slug,
     proposer: msgSender,
-    title: extractTitle(description),
-    description,
-    targets: targets as string[],
-    values: values.map((v) => v.toString()),
-    signatures: signatures as string[],
-    calldatas: calldatas as string[],
-    encodedProposalHash,
-    proposalIdToUpdate: Number(proposalIdToUpdate) || null,
+    ...content,
     canceled: false,
     signatureCount: 0,
+    versionCount: 1,
     createdTimestamp: event.block.timestamp,
+    createdTxHash: event.transaction.hash,
     lastUpdatedTimestamp: event.block.timestamp,
+    lastUpdatedBlock: event.block.number,
+    lastUpdatedTxHash: event.transaction.hash,
     blockNumber: event.block.number,
+  }).onConflictDoNothing();
+
+  await context.db.insert(candidateVersions).values({
+    id: `${event.transaction.hash}-${event.log.logIndex}`,
+    candidateId,
+    versionNumber: 1,
+    ...content,
+    updateMessage: null,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
   }).onConflictDoNothing();
 });
 
@@ -47,29 +66,42 @@ ponder.on("NounsDAOData:ProposalCandidateUpdated", async ({ event, context }) =>
   const { msgSender, targets, values, signatures, calldatas, description, slug, proposalIdToUpdate, encodedProposalHash, reason } = event.args;
 
   const candidateId = `${msgSender.toLowerCase()}-${slug}`;
+  const candidate = await context.db.find(candidates, { id: candidateId });
+  if (!candidate) {
+    throw new Error(`Candidate creation missing before update: ${candidateId}`);
+  }
+  const versionNumber = candidate.versionCount + 1;
+  const content = {
+    title: extractTitle(description),
+    description,
+    targets: [...targets],
+    values: values.map((v) => v.toString()),
+    signatures: [...signatures],
+    calldatas: [...calldatas],
+    encodedProposalHash,
+    proposalIdToUpdate: Number(proposalIdToUpdate) || null,
+  };
 
-  // Insert version
+  // Save the full new content without mutating any earlier snapshot.
   await context.db.insert(candidateVersions).values({
     id: `${event.transaction.hash}-${event.log.logIndex}`,
     candidateId,
-    versionNumber: 0,
-    title: extractTitle(description),
-    description,
+    versionNumber,
+    ...content,
     updateMessage: reason,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
+    txHash: event.transaction.hash,
+    logIndex: event.log.logIndex,
   });
 
   // Update candidate
   await context.db.update(candidates, { id: candidateId }).set({
-    title: extractTitle(description),
-    description,
-    targets: targets as string[],
-    values: values.map((v) => v.toString()),
-    signatures: signatures as string[],
-    calldatas: calldatas as string[],
-    encodedProposalHash,
+    ...content,
+    versionCount: versionNumber,
     lastUpdatedTimestamp: event.block.timestamp,
+    lastUpdatedBlock: event.block.number,
+    lastUpdatedTxHash: event.transaction.hash,
   });
 });
 
@@ -81,6 +113,7 @@ ponder.on("NounsDAOData:ProposalCandidateCanceled", async ({ event, context }) =
     canceled: true,
     canceledTimestamp: event.block.timestamp,
     canceledBlock: event.block.number,
+    canceledTxHash: event.transaction.hash,
   });
 });
 

@@ -129,6 +129,34 @@ export const ACTION_TEMPLATES: Record<ActionTemplateType, ActionTemplate> = {
     ]
   },
 
+  'admin-op-tokenbuyer-recovery-stage-1': {
+    id: 'admin-op-tokenbuyer-recovery-stage-1',
+    category: 'admin',
+    name: 'OP TokenBuyer Recovery — Stage 1',
+    description: 'Timelock v1 only: pause the OP TokenBuyer, recover its ETH to the OP proxy, and begin transferring proxy control to Timelock v2',
+    isMultiAction: true,
+    fields: [],
+  },
+
+  'admin-op-tokenbuyer-recovery-stage-2': {
+    id: 'admin-op-tokenbuyer-recovery-stage-2',
+    category: 'admin',
+    name: 'OP TokenBuyer Recovery — Stage 2',
+    description: 'Standard proposal only, after Stage 1 relays: accept OP proxy control and bridge its exact ETH balance to Timelock v2',
+    isMultiAction: true,
+    fields: [
+      {
+        name: 'proxyBalanceEth',
+        label: 'Verified OP Proxy Balance (ETH)',
+        type: 'amount',
+        placeholder: '1.090910787345462498',
+        required: true,
+        validation: { min: 0.000000000000000001, decimals: 18 },
+        helpText: 'Enter the exact Optimism proxy balance only after Stage 1 has relayed. This amount becomes the bridge call value.',
+      },
+    ],
+  },
+
   // Nouns Operations
   'noun-transfer': {
     id: 'noun-transfer',

@@ -102,13 +102,16 @@ export default createConfig({
     },
 
     // Propdates: proposal authors / designated admins post on-chain updates
-    // on the status of an executed proposal. The address is the UUPS proxy;
-    // implementation is upgradable to PropdatesV2 (and beyond).
+    // on the status of an executed proposal. Index both the original contract
+    // and its V2 replacement so historical updates survive the migration.
     Propdates: {
       chain: "mainnet",
       abi: PropdatesV2ABI,
-      address: "0xa5Bf9A9b8f60CFD98b1cCB592f2F9F37Bb0033a4",
-      startBlock: 18689732,
+      address: [
+        "0x94b4fb16893c0fb4e470eef2559c24fd87fed5f1",
+        "0xa5Bf9A9b8f60CFD98b1cCB592f2F9F37Bb0033a4",
+      ],
+      startBlock: 17514928,
     },
 
     // =========================================================================

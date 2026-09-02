@@ -29,4 +29,4 @@ EXPOSE 42069
 # scripts/progress-pinger.mjs runs alongside in the background — polls
 # Ponder's /metrics endpoint and logs at 5% backfill milestones, replacing
 # the firehose of INFO-level per-batch progress logs that flooded Railway.
-CMD ["sh", "-c", "node scripts/progress-pinger.mjs & npx ponder start --schema \"${RAILWAY_DEPLOYMENT_ID:-ponder}\" --views-schema ponder_live"]
+CMD ["sh", "-c", "node scripts/progress-pinger.mjs & npx ponder start --hostname 0.0.0.0 --schema \"${RAILWAY_DEPLOYMENT_ID:-ponder}\" --views-schema ponder_live"]

@@ -347,8 +347,15 @@ export const candidates = onchainTable(
     canceledTimestamp: t.bigint(),
     canceledBlock: t.bigint(),
     signatureCount: t.integer().notNull().default(0),
+    // Includes the creation snapshot (version 1), then every content update.
+    versionCount: t.integer().notNull().default(1),
     createdTimestamp: t.bigint(),
+    createdTxHash: t.hex(),
     lastUpdatedTimestamp: t.bigint(),
+    lastUpdatedBlock: t.bigint(),
+    lastUpdatedTxHash: t.hex(),
+    canceledTxHash: t.hex(),
+    // Creation block; never overwrite this when the candidate is edited.
     blockNumber: t.bigint().notNull(),
   }),
   (table) => ({
@@ -358,7 +365,7 @@ export const candidates = onchainTable(
   })
 );
 
-/** Candidate version history */
+/** Immutable candidate content snapshots. Version 1 is the creation event. */
 export const candidateVersions = onchainTable(
   "candidate_versions",
   (t) => ({
@@ -367,12 +374,21 @@ export const candidateVersions = onchainTable(
     versionNumber: t.integer().notNull(),
     title: t.text(),
     description: t.text(),
+    targets: t.json().$type<string[]>().notNull(),
+    values: t.json().$type<string[]>().notNull(),
+    signatures: t.json().$type<string[]>().notNull(),
+    calldatas: t.json().$type<string[]>().notNull(),
+    encodedProposalHash: t.hex().notNull(),
+    proposalIdToUpdate: t.integer(),
     updateMessage: t.text(),
     blockNumber: t.bigint().notNull(),
     blockTimestamp: t.bigint().notNull(),
+    txHash: t.hex().notNull(),
+    logIndex: t.integer().notNull(),
   }),
   (table) => ({
-    candidateIdx: index().on(table.candidateId),
+    candidateIdx: index().on(table.candidateId, table.blockNumber, table.versionNumber),
+    contentHashIdx: index().on(table.encodedProposalHash),
   })
 );
 

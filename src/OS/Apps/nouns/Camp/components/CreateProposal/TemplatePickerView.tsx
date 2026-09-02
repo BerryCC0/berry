@@ -94,6 +94,9 @@ const ADMIN_SUBGROUPS: Array<{ label: string; ids: string[] }> = [
   {
     label: 'Buyer / Payer',
     ids: [
+      // Optimism TokenBuyer recovery (ordered two-proposal sequence)
+      'admin-op-tokenbuyer-recovery-stage-1',
+      'admin-op-tokenbuyer-recovery-stage-2',
       // TokenBuyer params
       'admin-tokenbuyer-baseline',
       'admin-tokenbuyer-discount',

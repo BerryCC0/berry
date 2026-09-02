@@ -171,6 +171,10 @@ import {
 } from './marketplace';
 import { metaPropose } from './meta';
 import { customAction } from './custom';
+import {
+  opTokenBuyerRecoveryStageOne,
+  opTokenBuyerRecoveryStageTwo,
+} from './op-tokenbuyer-recovery';
 import type {
   ActionDescription,
   DecodeContext,
@@ -182,6 +186,11 @@ import type {
 /** The registry. Add new actions by importing them above and listing here. */
 export const transactionActions: TransactionActionDef<any>[] = [
   // ----- Multi-action aggregates (1-4 actions, longest possible) ----------
+  // Cross-chain recovery stages must precede any future generic
+  // CrossDomainMessenger matcher. Stage 1 is longer, so it comes first.
+  opTokenBuyerRecoveryStageOne,
+  opTokenBuyerRecoveryStageTwo,
+
   // vault-create-* variants are variable-length (1, 2, 3, or 4 actions
   // depending on optional splitter-prepend + seed-deposit). They MUST come
   // before octantSplitterCreate (otherwise the standalone splitter matcher
