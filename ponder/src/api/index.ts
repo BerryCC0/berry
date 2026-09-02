@@ -7,8 +7,9 @@
  *
  * The Berry OS frontend reads on-chain data via direct SQL queries against
  * ponder_live.* (see app/lib/ponder-db.ts), so no REST endpoints are exposed
- * here. The /graphql route is kept as a convenience for ad-hoc querying
- * (referenced from CLAUDE.md as berryos.up.railway.app/graphql).
+ * here. The /graphql route is kept as a convenience for ad-hoc querying,
+ * and the bare root redirects there so the public hostname is useful when
+ * opened in a browser.
  *
  * Liveness/readiness probes are served by Ponder internally — do not add a
  * manual /ready route (commit 32301133 removed one for exactly that reason).
@@ -21,6 +22,7 @@ import { graphql } from "ponder";
 
 const app = new Hono();
 
+app.get("/", (context) => context.redirect("/graphql"));
 app.use("/graphql", graphql({ db, schema }));
 
 export default app;
